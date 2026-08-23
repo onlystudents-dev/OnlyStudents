@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./backend
+    image: onlystudents/backend:latest
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    image: onlystudents/frontend:latest
+    environment:
+      BACKEND_URL: ${BACKEND_URL}
+    depends_on:
+      - backend
+
+  db:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
