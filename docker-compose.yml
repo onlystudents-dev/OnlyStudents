@@ -1,7 +1,9 @@
 services:
-  backend:
-    build: ./backend
-    image: onlystudents/backend:latest
+  app:
+    build: .
+    image: onlystudents/onlystudents:latest
+    ports:
+      - ${PORT}:8080
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -14,14 +16,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  frontend:
-    build: ./frontend
-    image: onlystudents/frontend:latest
-    environment:
-      BACKEND_URL: ${BACKEND_URL}
-    depends_on:
-      - backend
 
   db:
     image: postgres
