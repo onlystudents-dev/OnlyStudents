@@ -1,26 +1,24 @@
 package main
 
 import (
-	"embed"
-	"net/http"
+	"log"
 
-	"onlystudents/internal/web"
-
-	"github.com/go-chi/chi/v5"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
-//go:embed all:frontend/dist
-var dist embed.FS
-
 func main() {
-	r := chi.NewRouter()
-	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Pong!"))
+	app := fiber.New()
+
+	app.Use("/", static.New("frontend/dist"))
+
+	app.Get("/ping", func(c fiber.Ctx) error {
+		return c.SendString("Pong!")
 	})
-	r.Get("/api/hello", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"message":"hello world"}`))
+
+	app.Get("/api/hello", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"message": "hello world"})
 	})
-	r.Handle("/*", web.SPA(dist))
-	http.ListenAndServe(":8080", r)
+
+	log.Fatal(app.Listen(":8080"))
 }
