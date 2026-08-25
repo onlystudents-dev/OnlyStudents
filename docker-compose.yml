@@ -10,9 +10,6 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      MIGRATIONS_DIR: /migrations
-    volumes:
-      - ./migrations:/migrations:ro
     depends_on:
       db:
         condition: service_healthy
