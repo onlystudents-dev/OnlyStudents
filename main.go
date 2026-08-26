@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"onlystudents/internal/db"
+	db_queries "onlystudents/internal/db/store"
 	env "onlystudents/internal/helpers"
 
 	"github.com/goccy/go-json"
@@ -44,26 +45,13 @@ func main() {
 	})
 
 	app.Get("/api/students", func(c fiber.Ctx) error {
-		rows, err := pool.Query(context.Background(), "SELECT * FROM students")
+		queries := db_queries.New(pool)
+		students, err := queries.ListStudents(context.Background())
+
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to query students table: %s", err)
 			return c.SendStatus(500)
 		}
-		defer rows.Close()
 
-		var students []map[string]any
-		for rows.Next() {
-			values, err := rows.Values()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to iterate student row values: %s", err)
-				return c.SendStatus(500)
-			}
-			student := make(map[string]any)
-			for i, fd := range rows.FieldDescriptions() {
-				student[string(fd.Name)] = values[i]
-			}
-			students = append(students, student)
-		}
 		return c.JSON(students)
 	})
 
