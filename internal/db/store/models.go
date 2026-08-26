@@ -8,6 +8,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Account struct {
+	ID           pgtype.UUID
+	Role         string
+	PasswordHash string
+	StudentID    pgtype.Int4
+	TeacherID    pgtype.Int4
+	GuardianID   pgtype.Int4
+}
+
 type Class struct {
 	ID          int32
 	SchoolID    int32
@@ -29,8 +38,6 @@ type Guardian struct {
 	BirthCountry     string
 	PermamentAddress string
 	TemporaryAddress string
-	PasswordHash     string
-	PasswordSalt     string
 }
 
 type GuardianCitizenship struct {
@@ -89,8 +96,6 @@ type Student struct {
 	IbanNumber           string
 	DocumentType         string
 	DocumentNumber       string
-	PasswordHash         string
-	PasswordSalt         string
 }
 
 type StudentCitizenship struct {
