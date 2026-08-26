@@ -9,6 +9,7 @@ import (
 	"onlystudents/internal/db"
 	db_queries "onlystudents/internal/db/store"
 	env "onlystudents/internal/helpers"
+	"onlystudents/internal/middlewares"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
@@ -44,7 +45,12 @@ func main() {
 		return c.SendString("Pong!")
 	})
 
-	app.Get("/api/students", func(c fiber.Ctx) error {
+	api := app.Group("/api", func(c fiber.Ctx) error {
+		return middlewares.AuthMiddleware(c)
+	})
+
+	api_v1 := api.Group("/v1")
+	api_v1.Get("/students", func(c fiber.Ctx) error {
 		queries := db_queries.New(pool)
 		students, err := queries.ListStudents(context.Background())
 
