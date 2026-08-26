@@ -10,7 +10,7 @@ import (
 )
 
 const getStudent = `-- name: GetStudent :one
-SELECT id, id_number, school_id, phone_number, email_address, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, mother_birth_first_name, mother_birth_last_name, classes_id, permament_address, temporary_address, tax_number, ssn_number, bank_name, iban_owner, iban_number, document_type, document_number, password_hash, password_salt FROM students WHERE id = $1
+SELECT id, id_number, school_id, phone_number, email_address, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, mother_birth_first_name, mother_birth_last_name, classes_id, permament_address, temporary_address, tax_number, ssn_number, bank_name, iban_owner, iban_number, document_type, document_number FROM students WHERE id = $1
 `
 
 func (q *Queries) GetStudent(ctx context.Context, id int32) (Student, error) {
@@ -41,14 +41,12 @@ func (q *Queries) GetStudent(ctx context.Context, id int32) (Student, error) {
 		&i.IbanNumber,
 		&i.DocumentType,
 		&i.DocumentNumber,
-		&i.PasswordHash,
-		&i.PasswordSalt,
 	)
 	return i, err
 }
 
 const listStudents = `-- name: ListStudents :many
-SELECT id, id_number, school_id, phone_number, email_address, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, mother_birth_first_name, mother_birth_last_name, classes_id, permament_address, temporary_address, tax_number, ssn_number, bank_name, iban_owner, iban_number, document_type, document_number, password_hash, password_salt FROM students ORDER BY id
+SELECT id, id_number, school_id, phone_number, email_address, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, mother_birth_first_name, mother_birth_last_name, classes_id, permament_address, temporary_address, tax_number, ssn_number, bank_name, iban_owner, iban_number, document_type, document_number FROM students ORDER BY id
 `
 
 func (q *Queries) ListStudents(ctx context.Context) ([]Student, error) {
@@ -85,8 +83,6 @@ func (q *Queries) ListStudents(ctx context.Context) ([]Student, error) {
 			&i.IbanNumber,
 			&i.DocumentType,
 			&i.DocumentNumber,
-			&i.PasswordHash,
-			&i.PasswordSalt,
 		); err != nil {
 			return nil, err
 		}
