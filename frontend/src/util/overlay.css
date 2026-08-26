@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.overlay {
+    @apply absolute w-screen min-h-screen z-150 inset-0;
+    backdrop-filter: blur(2px);
+}

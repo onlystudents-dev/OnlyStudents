@@ -1,12 +1,19 @@
 FROM oven/bun:alpine AS frontend
 WORKDIR /app/frontend
-COPY frontend/ ./
-RUN bun install && bun run vite build
+COPY frontend/package.json frontend/bun.lock ./
+RUN bun install --frozen-lockfile
+COPY frontend/ .
+RUN bun run vite build
 
 FROM golang:1.26.5-alpine AS serve
 WORKDIR /go/src/app
-COPY . .
-RUN go mod download && CGO_ENABLED=0 go build -o /go/bin/app .
+ENV CGO_ENABLED=0
+
+COPY go.mod go.sum* ./
+RUN go mod download
+
+COPY . ./
+RUN go build -o /go/bin/app .
 
 FROM gcr.io/distroless/static-debian13
 WORKDIR /app

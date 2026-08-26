@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+body {
+    margin-top: 62px !important;
+    min-height: calc(100vh - 62px) !important;
+}
+
+nav {
+    @apply h-15 w-full flex justify-between items-center p-4 z-100 fixed top-0 left-0 right-0;
+    border-bottom: #2b303a solid 2px;
+    background-color: var(--bg-color);
+}

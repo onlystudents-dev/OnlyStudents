@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+.button {
+    @apply p-2 text-center rounded-lg cursor-pointer;
+    transition: background-color 300ms ease;
+}
+
+.button:hover {
+    background-color: var(--hover-color);
+    transition: background-color 200ms ease;
+}

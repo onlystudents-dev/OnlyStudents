@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+.login {
+    @apply flex w-120 h-90 p-6 rounded-2xl z-151 flex-col items-center;
+    background-color: var(--bg-color);
+    border: var(--txt-color) solid 4px;
+    font-family: 'Rubik', sans-serif;
+
+    animation: popIn 400ms ease-in-out;
+    transition: box-shadow 400ms ease-in-out;
+}
+
+.login:hover {
+    box-shadow: 0 0 10px var(--txt-color);
+    transition: box-shadow 200ms ease-in-out;
+}
+
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.4);
+    }
+
+    70% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.loginput {
+    @apply flex flex-col m-4 gap-4 w-full;
+    input {
+        @apply h-12 w-full rounded-lg p-3;
+        background-color: var(--hover-color);
+        transition: box-shadow 400ms ease-in-out;
+    }
+    input:focus, input:hover {
+        @apply outline-none;
+        box-shadow: 0 0 15px var(--hover-color);
+        transition: box-shadow 200ms ease-in-out;
+    }
+}
+
+.logbutton {
+    @apply flex flex-row justify-between items-center w-full mt-10;
+    .button {
+        background-color: var(--hover-color);
+        transition: box-shadow 400ms ease-in-out;
+    }
+    .button:hover {
+        box-shadow: 0 0 15px var(--hover-color);
+        transition: box-shadow 200ms ease-in-out;
+    }
+}
