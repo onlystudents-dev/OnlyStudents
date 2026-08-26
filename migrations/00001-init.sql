@@ -7,7 +7,7 @@ CREATE TABLE schools (
 	school_type INT NOT NULL,
     principal_id INT NOT NULL,
     phone_number VARCHAR(30) NOT NULL,
-    email_address VARCHAR(255) NOT NULL, 
+    email_address VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE school_type (
@@ -51,7 +51,7 @@ CREATE TABLE guardians_access (
     legal_representative BOOLEAN NOT NULL
 );
 
-CREATE TABLE guardians ( 
+CREATE TABLE guardians (
     id SERIAL PRIMARY KEY,
     email_address VARCHAR(256) NOT NULL UNIQUE,
     phone_number VARCHAR(30) NOT NULL UNIQUE,
@@ -79,10 +79,10 @@ CREATE TABLE teachers (
     birth_city VARCHAR(100) NOT NULL,
     birth_country CHAR(2) NOT NULL,
     permament_address VARCHAR(256) NOT NULL,
-    temporary_address VARCHAR(256) NOT NULL,
+    temporary_address VARCHAR(256) NOT NULL
 );
 
-CREATE TABLE teachers_school (
+CREATE TABLE teacher_school (
     id SERIAL PRIMARY KEY,
     teacher_id INT NOT NULL,
     school_id INT NOT NULL
@@ -93,17 +93,17 @@ CREATE TABLE classes (
     school_id INT NOT NULL,
     name VARCHAR(30) NOT NULL,
     teacher_id INT NOT NULL,
-    co_teacher_id INT DEFAULT(NULL),
-) 
+    co_teacher_id INT DEFAULT(NULL)
+);
 
-CREATE TABLE students_citizenships (
+CREATE TABLE student_citizenships (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     document_type VARCHAR(50) NOT NULL,
     country CHAR(2) NOT NULL
 );
 
-CREATE TABLE guardians_citizenships (
+CREATE TABLE guardian_citizenships (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     document_type VARCHAR(50) NOT NULL,
@@ -116,6 +116,3 @@ CREATE TABLE teacher_citizenships (
     document_type VARCHAR(50) NOT NULL,
     country CHAR(2) NOT NULL
 );
-
-
-
