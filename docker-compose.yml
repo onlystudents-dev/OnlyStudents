@@ -5,8 +5,8 @@ services:
     ports:
       - ${PORT}:8080
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
       DB_DATABASE: ${DB_DATABASE}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -14,6 +14,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      dragonfly:
+        condition: service_started
+
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    ulimits:
+      memlock: -1
 
   db:
     image: postgres
