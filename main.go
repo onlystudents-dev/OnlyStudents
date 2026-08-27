@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"onlystudents/internal/auth"
+	v1 "onlystudents/internal/api/v1"
 	"onlystudents/internal/db"
-	db_queries "onlystudents/internal/db/store"
+	"onlystudents/internal/helpers"
 	env "onlystudents/internal/helpers"
 	"onlystudents/internal/middlewares"
 
@@ -36,7 +36,7 @@ func main() {
 	})
 	defer rdb.Close()
 
-	session_store := auth.SessionStore{
+	session_store := helpers.SessionStore{
 		RedisDB: rdb,
 	}
 
@@ -60,41 +60,32 @@ func main() {
 
 	api := app.Group("/api")
 
+	api.Post("/login", func(c fiber.Ctx) error {
+		return v1.Login(c, pool, &session_store)
+	})
+
 	api_v1 := api.Group("/v1", func(c fiber.Ctx) error {
 		return middlewares.AuthMiddleware(c, &session_store)
 	})
 
+	api_v1.Get("/me", func(c fiber.Ctx) error {
+		return v1.Me(c, pool, &session_store)
+	})
+
 	api_v1.Get("/students", func(c fiber.Ctx) error {
-		queries := db_queries.New(pool)
-		students, err := queries.ListStudents(context.Background())
-
-		if err != nil {
-			return c.SendStatus(500)
-		}
-
-		return c.JSON(students)
+		return v1.Students(c, pool)
 	})
 
 	api_v1.Get("/guardians", func(c fiber.Ctx) error {
-		queries := db_queries.New(pool)
-		guardians, err := queries.ListGuardians(context.Background())
-
-		if err != nil {
-			return c.SendStatus(500)
-		}
-
-		return c.JSON(guardians)
+		return v1.Guardians(c, pool)
 	})
 
 	api_v1.Get("/teachers", func(c fiber.Ctx) error {
-		queries := db_queries.New(pool)
-		teachers, err := queries.ListTeachers(context.Background())
+		return v1.Teachers(c, pool)
+	})
 
-		if err != nil {
-			return c.SendStatus(500)
-		}
-
-		return c.JSON(teachers)
+	api_v1.Get("/schools", func(c fiber.Ctx) error {
+		return v1.School(c, pool)
 	})
 
 	api_v1.Get("/schools", func(c fiber.Ctx) error {

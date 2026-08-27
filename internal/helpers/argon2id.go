@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-func HashPassword(password string) (string, error) {
+func Argon2HashPassword(password string) (string, error) {
 	salt := make([]byte, GetUintEnvFallback("ARGON2_SALTLEN", 16))
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
@@ -38,7 +38,7 @@ func HashPassword(password string) (string, error) {
 	return hash_string, nil
 }
 
-func Verify(password string, hash_string string) bool {
+func Argon2Verify(password string, hash_string string) bool {
 	if !strings.HasPrefix(hash_string, "$argon2id$") {
 		return false
 	}
