@@ -92,10 +92,6 @@ func main() {
 		return v1.School(c, pool)
 	})
 
-	api_v1.Post("/login", func(c fiber.Ctx) error {
-		return v1.Login(c, pool)
-	})
-
 	log.Fatal(app.Listen(":8080", fiber.ListenConfig{
 		EnablePrefork:         true,
 		DisableStartupMessage: env.GetEnvFallback("APP_ENV", "development") == "production",
