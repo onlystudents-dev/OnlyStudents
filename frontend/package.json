@@ -15,7 +15,8 @@
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@fortawesome/react-fontawesome": "^3.5.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-toastify": "^11.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

@@ -1,26 +1,24 @@
 import "./navbar.css";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faHome, faUser} from "@fortawesome/free-solid-svg-icons";
-import {useState} from "react";
-import Login from "../auth/login/login.tsx";
-import Button from "../button/button.tsx";
+import {faStar, faTable} from "@fortawesome/free-solid-svg-icons";
+import Button from "../util/button/button.tsx";
 
 export default function Navbar() {
-    const [login, setLogin] = useState(false);
-
     return (
         <>
             <nav>
-                <Button href="/">
-                    <FontAwesomeIcon icon={faHome} /> Home
-                </Button>
+                <div className="flex flex-row items-center gap-2">
+                    <Button>
+                        <FontAwesomeIcon icon={faTable} /> Timetable
+                    </Button>
+                    <Button>
+                        <FontAwesomeIcon icon={faStar} /> Grades
+                    </Button>
+                </div>
+                <div className="flex flex-row-reverse items-center gap-2">
 
-                <Button onClick={() => setLogin(!login)}>
-                    <FontAwesomeIcon icon={faUser} /> Login
-                </Button>
+                </div>
             </nav>
-
-            {login && <Login setLogin={setLogin} />}
         </>
     )
 }

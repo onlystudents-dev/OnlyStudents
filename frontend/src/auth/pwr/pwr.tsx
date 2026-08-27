@@ -1,5 +1,5 @@
 import "./pwr.css";
-import Button from "../../button/button.tsx";
+import Button from "../../util/button/button.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faPaperPlane, faPlane} from "@fortawesome/free-solid-svg-icons";
 import React, {useState} from "react";
