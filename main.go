@@ -74,6 +74,7 @@ func main() {
 
 		return c.JSON(students)
 	})
+
 	api_v1.Get("/guardians", func(c fiber.Ctx) error {
 		queries := db_queries.New(pool)
 		guardians, err := queries.ListGuardians(context.Background())
@@ -84,6 +85,7 @@ func main() {
 
 		return c.JSON(guardians)
 	})
+
 	api_v1.Get("/teachers", func(c fiber.Ctx) error {
 		queries := db_queries.New(pool)
 		teachers, err := queries.ListTeachers(context.Background())
@@ -93,6 +95,14 @@ func main() {
 		}
 
 		return c.JSON(teachers)
+	})
+
+	api_v1.Get("/schools", func(c fiber.Ctx) error {
+		return v1.School(c, pool)
+	})
+
+	api_v1.Post("/login", func(c fiber.Ctx) error {
+		return v1.Login(c, pool)
 	})
 
 	log.Fatal(app.Listen(":8080", fiber.ListenConfig{

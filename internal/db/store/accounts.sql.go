@@ -54,7 +54,7 @@ func (q *Queries) CreateTeacherAccount(ctx context.Context, arg CreateTeacherAcc
 }
 
 const getAccountByGuardianID = `-- name: GetAccountByGuardianID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id FROM accounts WHERE guardian_id = $1 AND role = "guardian"
+SELECT id, role, password_hash, student_id, teacher_id, guardian_id FROM accounts WHERE guardian_id = $1 AND role = 'guardian'
 `
 
 func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.Int4) (Account, error) {
@@ -72,7 +72,7 @@ func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.
 }
 
 const getAccountByStudentID = `-- name: GetAccountByStudentID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id FROM accounts WHERE student_id = $1 AND role = "student"
+SELECT id, role, password_hash, student_id, teacher_id, guardian_id FROM accounts WHERE student_id = $1 AND role = 'student'
 `
 
 func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.Int4) (Account, error) {
@@ -90,7 +90,7 @@ func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.In
 }
 
 const getAccountByTeacherID = `-- name: GetAccountByTeacherID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id FROM accounts WHERE teacher_id = $1 AND role = "teacher"
+SELECT id, role, password_hash, student_id, teacher_id, guardian_id FROM accounts WHERE teacher_id = $1 AND role = 'teacher'
 `
 
 func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.Int4) (Account, error) {
