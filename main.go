@@ -88,10 +88,6 @@ func main() {
 		return v1.Schools(c, pool)
 	})
 
-	api_v1.Get("/schools", func(c fiber.Ctx) error {
-		return v1.School(c, pool)
-	})
-
 	log.Fatal(app.Listen(":8080", fiber.ListenConfig{
 		EnablePrefork:         true,
 		DisableStartupMessage: env.GetEnvFallback("APP_ENV", "development") == "production",
