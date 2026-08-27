@@ -12,17 +12,6 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-func GetUintEnvFallback(name string, default_val uint64) uint64 {
-	value := GetEnvFallback(name, strconv.FormatUint(default_val, 10))
-
-	uint_value, err := strconv.ParseUint(value, 10, 64)
-	if err != nil {
-		return default_val
-	}
-
-	return uint_value
-}
-
 func HashPassword(password string) (string, error) {
 	salt := make([]byte, GetUintEnvFallback("ARGON2_SALTLEN", 16))
 	if _, err := rand.Read(salt); err != nil {

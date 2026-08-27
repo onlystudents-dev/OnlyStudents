@@ -1,9 +1,23 @@
 package middlewares
 
 import (
+	"onlystudents/internal/auth"
+
 	"github.com/gofiber/fiber/v3"
 )
 
-func AuthMiddleware(c fiber.Ctx) error {
+func AuthMiddleware(c fiber.Ctx, session_store *auth.SessionStore) error {
+	session_token := c.Cookies("SessionToken", "")
+
+	if session_token == "" {
+		return c.SendStatus(401)
+	}
+
+	_, err := session_store.Get(c, session_token)
+
+	if err != nil {
+		return c.SendStatus(401)
+	}
+
 	return c.Next()
 }
