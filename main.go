@@ -85,7 +85,7 @@ func main() {
 	})
 
 	api_v1.Get("/schools", func(c fiber.Ctx) error {
-		return v1.School(c, pool)
+		return v1.Schools(c, pool)
 	})
 
 	api_v1.Get("/schools", func(c fiber.Ctx) error {

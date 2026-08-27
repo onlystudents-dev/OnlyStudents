@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func School(c fiber.Ctx, pool *pgxpool.Pool) error {
+func Schools(c fiber.Ctx, pool *pgxpool.Pool) error {
 	queries := db_queries.New(pool)
 
 	schools, err := queries.ListSchools(context.Background())
