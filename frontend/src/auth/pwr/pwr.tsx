@@ -4,7 +4,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faPaperPlane, faPlane} from "@fortawesome/free-solid-svg-icons";
 import React, {useState} from "react";
 
-export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId }: { pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>> }) {
+export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID }: { pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void }) {
     const [reset, setReset] = useState(false);
     const [resetA, setResetA] = useState(false);
 
@@ -18,7 +18,7 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId }
                         <option value="student">Student</option>
                         <option value="teacher">Teacher</option>
                     </select>
-                    <input type="text" placeholder="User ID" value={id} onChange={(e) => setId(e.target.value)} />
+                    <input className={`${red && "wrong"}`} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.target.value); checkUserID(e.target.value)}} />
                 </div>}
                 {reset && <div className="loginput fredoka in">
                     <input type="text" placeholder="Code" />

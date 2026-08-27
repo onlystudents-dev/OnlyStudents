@@ -10,7 +10,7 @@ export default function Login() {
     const [pwr, setPwr] = useState(false);
     const [pwrA, setPwrA] = useState(false);
 
-    const [redU, setRedU] = useState(false);
+    const [red, setRed] = useState(false);
     const [wrong, setWrong] = useState(false);
 
     const [role, setRole] = useState("guardian");
@@ -29,7 +29,7 @@ export default function Login() {
                             <option value="student">Student</option>
                             <option value="teacher">Teacher</option>
                         </select>
-                        <input className={`${(redU || wrong) && "wrong"}`} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.target.value); checkUserID(e.target.value); setWrong(false)}} />
+                        <input className={`${(red || wrong) && "wrong"}`} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.target.value); checkUserID(e.target.value); setWrong(false)}} />
                         <input className={`${wrong && "wrong"}`} type="password" placeholder="Password" value={password} onChange={(e) => {setPassword(e.target.value); setWrong(false)}} />
                     </div>
                     <div className="logbutton">
@@ -41,16 +41,16 @@ export default function Login() {
                         </Button>
                     </div>
                 </div>
-                {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} />}
+                {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} />}
             </div>
         </>
     )
 
     function checkUserID(id: string) {
         if (id && Number.isNaN(Number(id))) {
-            setRedU(true);
+            setRed(true);
         } else {
-            setRedU(false);
+            setRed(false);
         }
     }
 
@@ -65,7 +65,7 @@ export default function Login() {
     }
 
     async function login() {
-        if (redU) return;
+        if (red) return;
         if (!id) return;
         if (!password) return;
         const response = await fetch("/api/login", {
@@ -82,10 +82,6 @@ export default function Login() {
         switch (response.status) {
             case 200:
                 location.reload()
-                break
-            case 400:
-                toast.error("Username must only contain numbers!")
-                setRedU(true)
                 break
             case 401:
                 toast.error("The username doesn't pair with the password!")
