@@ -7,6 +7,6 @@ body {
 
 nav {
     @apply h-15 w-full flex justify-between items-center p-4 z-100 fixed top-0 left-0 right-0;
-    border-bottom: #2b303a solid 2px;
+    border-bottom: var(--border-color) solid 2px;
     background-color: var(--bg-color);
 }

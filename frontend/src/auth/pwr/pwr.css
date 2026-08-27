@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+.in {
+    animation: getIn 500ms ease-in-out;
+}
+
+@keyframes getIn {
+    0% {
+        transform: translateX(480px);
+    }
+
+    70% {
+        transform: translateX(-20px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+.pwrbutton {
+    @apply flex flex-row justify-between items-center w-full;
+    .button {
+        background-color: var(--hover-color);
+        transition: box-shadow 400ms ease-in-out;
+    }
+    .button:hover {
+        box-shadow: 0 0 15px var(--hover-color);
+        transition: box-shadow 200ms ease-in-out;
+    }
+}
+
+.outback {
+    transform: translateX(0);
+    transition: transform 200ms ease-in-out;
+}
+
+.outback.hid {
+    transform: translateX(480px);
+}
+
+.outbottom {
+    transform: translateY(0);
+    transition: transform 200ms ease-in-out !important;
+}
+
+.outbottom.hid {
+    transform: translateY(400px);
+}
