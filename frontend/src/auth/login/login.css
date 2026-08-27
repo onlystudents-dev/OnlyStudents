@@ -5,7 +5,6 @@
     background-color: var(--bg-color);
     border: var(--txt-color) solid 4px;
 
-    animation: popIn 400ms ease-in-out;
     transition: box-shadow 400ms ease-in-out;
 
     overflow: hidden;
@@ -27,23 +26,6 @@
 
 .out.hid {
     transform: translateX(-480px);
-}
-
-@keyframes popIn {
-    0% {
-        opacity: 0;
-        transform: scale(0.4);
-    }
-
-    70% {
-        opacity: 1;
-        transform: scale(1.15);
-    }
-
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
 }
 
 .loginput {
@@ -68,6 +50,10 @@
     select:hover {
         box-shadow: 0 0 15px var(--hover-color);
         transition: box-shadow 200ms ease-in-out;
+    }
+
+    .wrong {
+        box-shadow: 0 0 15px var(--wrong-color) !important;
     }
 }
 
