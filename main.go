@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"onlystudents/internal/auth"
 	"onlystudents/internal/db"
 	db_queries "onlystudents/internal/db/store"
 	env "onlystudents/internal/helpers"
@@ -35,6 +36,10 @@ func main() {
 	})
 	defer rdb.Close()
 
+	session_store := auth.SessionStore{
+		RedisDB: rdb,
+	}
+
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
@@ -53,11 +58,12 @@ func main() {
 		return c.SendString("Pong!")
 	})
 
-	api := app.Group("/api", func(c fiber.Ctx) error {
-		return middlewares.AuthMiddleware(c)
+	api := app.Group("/api")
+
+	api_v1 := api.Group("/v1", func(c fiber.Ctx) error {
+		return middlewares.AuthMiddleware(c, &session_store)
 	})
 
-	api_v1 := api.Group("/v1")
 	api_v1.Get("/students", func(c fiber.Ctx) error {
 		queries := db_queries.New(pool)
 		students, err := queries.ListStudents(context.Background())
