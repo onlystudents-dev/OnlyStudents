@@ -23,7 +23,7 @@ func GetUintEnvFallback(name string, default_val uint64) uint64 {
 	return uint_value
 }
 
-func hashPassword(password string) (string, error) {
+func HashPassword(password string) (string, error) {
 	salt := make([]byte, GetUintEnvFallback("ARGON2_SALTLEN", 16))
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
