@@ -1,18 +1,32 @@
 @import "tailwindcss";
 
-.login {
-    @apply flex w-120 h-90 p-6 rounded-2xl z-151 flex-col items-center;
+.box {
+    @apply flex w-120 h-100 p-6 rounded-2xl z-151 flex-row justify-start items-center;
     background-color: var(--bg-color);
     border: var(--txt-color) solid 4px;
-    font-family: 'Rubik', sans-serif;
 
     animation: popIn 400ms ease-in-out;
     transition: box-shadow 400ms ease-in-out;
+
+    overflow: hidden;
 }
 
-.login:hover {
+.box:hover {
     box-shadow: 0 0 10px var(--txt-color);
     transition: box-shadow 200ms ease-in-out;
+}
+
+.content {
+    @apply flex flex-col items-center absolute inset-6 w-106 h-86;
+}
+
+.out {
+    transform: translateX(0);
+    transition: transform 200ms ease-in-out;
+}
+
+.out.hid {
+    transform: translateX(-480px);
 }
 
 @keyframes popIn {
@@ -44,10 +58,21 @@
         box-shadow: 0 0 15px var(--hover-color);
         transition: box-shadow 200ms ease-in-out;
     }
+
+    select {
+        @apply w-full h-12 rounded-lg p-3;
+        background-color: var(--hover-color);
+        transition: box-shadow 400ms ease-in-out;
+    }
+
+    select:hover {
+        box-shadow: 0 0 15px var(--hover-color);
+        transition: box-shadow 200ms ease-in-out;
+    }
 }
 
 .logbutton {
-    @apply flex flex-row justify-between items-center w-full mt-10;
+    @apply flex flex-row justify-between items-center w-full mt-4;
     .button {
         background-color: var(--hover-color);
         transition: box-shadow 400ms ease-in-out;
