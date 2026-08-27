@@ -1,12 +1,12 @@
 package middlewares
 
 import (
-	"onlystudents/internal/auth"
+	"onlystudents/internal/helpers"
 
 	"github.com/gofiber/fiber/v3"
 )
 
-func AuthMiddleware(c fiber.Ctx, session_store *auth.SessionStore) error {
+func AuthMiddleware(c fiber.Ctx, session_store *helpers.SessionStore) error {
 	session_token := c.Cookies("SessionToken", "")
 
 	if session_token == "" {

@@ -1,11 +1,10 @@
-package auth
+package helpers
 
 import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"onlystudents/internal/helpers"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -22,13 +21,13 @@ type SessionStore struct {
 }
 
 func (s *SessionStore) Create(ctx context.Context, accountID int32, role string) (string, error) {
-	buf := make([]byte, helpers.GetUintEnvFallback("SESSION_COOKIE_LEN", 32))
+	buf := make([]byte, GetUintEnvFallback("SESSION_COOKIE_LEN", 32))
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
 	secret := base64.RawStdEncoding.EncodeToString(buf)
 
-	ttl := time.Duration(helpers.GetUintEnvFallback("SESSION_TTL", 3600)) * time.Second
+	ttl := time.Duration(GetUintEnvFallback("SESSION_TTL", 3600)) * time.Second
 
 	val, err := json.Marshal(SessionData{Role: role, AccountID: accountID})
 
