@@ -7,17 +7,19 @@ import (
 )
 
 func AuthMiddleware(c fiber.Ctx, session_store *helpers.SessionStore) error {
-	session_token := c.Cookies("SessionToken", "")
+	session_token := c.Cookies("session_token", "")
 
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
 
-	_, err := session_store.Get(c, session_token)
+	data, err := session_store.Get(c, session_token)
 
 	if err != nil {
 		return c.SendStatus(401)
 	}
+
+	c.Locals("account", data)
 
 	return c.Next()
 }

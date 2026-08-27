@@ -8,10 +8,10 @@ INSERT INTO accounts (role, password_hash, guardian_id) VALUES ("guardian", $1, 
 INSERT INTO accounts (role, password_hash, teacher_id) VALUES ("teacher", $1, $2);
 
 -- name: GetAccountByStudentID :one
-SELECT * FROM accounts WHERE student_id = $1 AND role = "student";
+SELECT * FROM accounts WHERE student_id = $1 AND role = 'student';
 
 -- name: GetAccountByGuardianID :one
-SELECT * FROM accounts WHERE guardian_id = $1 AND role = "guardian";
+SELECT * FROM accounts WHERE guardian_id = $1 AND role = 'guardian';
 
 -- name: GetAccountByTeacherID :one
-SELECT * FROM accounts WHERE teacher_id = $1 AND role = "teacher";
+SELECT * FROM accounts WHERE teacher_id = $1 AND role = 'teacher';
