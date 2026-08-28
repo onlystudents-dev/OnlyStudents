@@ -5,6 +5,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight, faQuestion} from "@fortawesome/free-solid-svg-icons";
 import PasswordReset from "../pwr/pwr.tsx";
 import {toast} from "react-toastify";
+import Loading from "../../util/loading.tsx";
 
 export default function Login() {
     const [pwr, setPwr] = useState(false);
@@ -17,6 +18,8 @@ export default function Login() {
 
     const [id, setId] = useState("");
     const [password, setPassword] = useState("");
+
+    const [waiting, setWaiting] = useState(false);
 
     return (
         <>
@@ -42,6 +45,7 @@ export default function Login() {
                     </div>
                 </div>
                 {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} />}
+                {waiting && <Loading />}
             </div>
         </>
     )
@@ -65,30 +69,36 @@ export default function Login() {
     }
 
     async function login() {
-        if (red) return;
-        if (!id) return;
-        if (!password) return;
-        const response = await fetch("/api/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                user: Number(id),
-                password: password,
-                role: role,
+        if (red) return
+        if (wrong) return
+        if (!id) return
+        if (!password) return
+        setWaiting(true)
+        try {
+            const response = await fetch("/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    user: Number(id),
+                    password: password,
+                    role: role,
+                })
             })
-        })
-        switch (response.status) {
-            case 200:
-                location.reload()
-                break
-            case 401:
-                toast.error("The username doesn't pair with the password!")
-                setWrong(true)
-                break
-            default:
-                toast.error(response.statusText)
+            switch (response.status) {
+                case 200:
+                    location.reload()
+                    break
+                case 401:
+                    toast.error("The username doesn't pair with the password!")
+                    setWrong(true)
+                    break
+                default:
+                    toast.error(response.statusText)
+            }
+        } finally {
+            setWaiting(false)
         }
     }
 }

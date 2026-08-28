@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+.hello {
+    @apply absolute top-12 left-36 text-5xl;
+    animation: move 1000ms ease-in-out;
+}
+
+@keyframes move {
+    0% {
+        transform: translateX(calc(50cqw - 100%)) translateY(calc(50cqh - 50% - 62px - 3rem));
+    }
+
+    100% {
+        transform: translateX(0) translateY(0);
+    }
+}

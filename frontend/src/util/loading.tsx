@@ -1,4 +1,4 @@
-import Overlay from "../overlay/overlay.tsx";
+import Overlay from "./overlay/overlay.tsx";
 
 export default function Loading() {
     return (
