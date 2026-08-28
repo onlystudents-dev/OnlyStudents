@@ -83,7 +83,7 @@ func main() {
 		return v1.Logout(c, pool, &session_store)
 	})
 
-	api.Get("/forget_password", func(c fiber.Ctx) error {
+	api.Post("/forget_password", func(c fiber.Ctx) error {
 		return v1.ForgetPassword(c, pool, &cache_store)
 	})
 

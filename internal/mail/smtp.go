@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"path/filepath"
 
 	"github.com/wneessen/go-mail"
+	"onlystudents/internal/mail/templates"
 )
 
 type Mailer struct {
@@ -60,14 +60,11 @@ func New(cfg Config) (*Mailer, error) {
 		fromName: cfg.FromName,
 	}
 
-	if cfg.TemplatesDir != "" {
-		pattern := filepath.Join(cfg.TemplatesDir, "*.html")
-		tmpl, err := template.ParseGlob(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("email: load templates from %q: %w", cfg.TemplatesDir, err)
-		}
-		svc.templates = tmpl
+	tmpl, err := template.ParseFS(templates.FS, "*.html")
+	if err != nil {
+		return nil, fmt.Errorf("email: load templates: %w", err)
 	}
+	svc.templates = tmpl
 
 	return svc, nil
 }
@@ -100,7 +97,7 @@ func (m *Mailer) SendTemplate(to, subject, name string, data any) error {
 
 func (m *Mailer) SendTemplateContext(ctx context.Context, to, subject, name string, data any) error {
 	if m.templates == nil {
-		return errors.New("email: no templates have been configured (set EMAIL_TEMPLATES_DIR)")
+		return errors.New("email: no templates have been configured (embedded templates missing)")
 	}
 
 	tmpl := m.templates.Lookup(name)
