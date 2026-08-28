@@ -3,7 +3,7 @@ import Home from "./home.tsx";
 import {ToastContainer} from "react-toastify";
 import {useEffect, useState} from "react";
 import Login from "./auth/login/login.tsx";
-import Loading from "./util/loading/loading.tsx";
+import Loading from "./util/loading.tsx";
 import GuardianHomeworks from "./ui/guardian/homeworks.tsx";
 
 export type Me = {

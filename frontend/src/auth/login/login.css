@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 .box {
-    @apply flex w-120 h-100 p-6 rounded-2xl z-151 flex-row justify-start items-center;
+    @apply flex w-120 h-100 p-6 rounded-2xl z-149 flex-row justify-start items-center;
     background-color: var(--bg-color);
     border: var(--txt-color) solid 4px;
 
