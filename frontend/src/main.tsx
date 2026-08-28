@@ -1,13 +1,11 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import {StrictMode} from 'react'
+import {createRoot} from 'react-dom/client'
 import './index.css'
 import "react-toastify/dist/ReactToastify.css";
-import Home from './home.tsx'
-import {ToastContainer} from "react-toastify";
+import App from "./app.tsx";
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <Home />
-        <ToastContainer theme={"dark"} position={"bottom-right"} />
+        <App />
     </StrictMode>,
 )

@@ -10,10 +10,14 @@ WORKDIR /go/src/app
 ENV CGO_ENABLED=0
 
 COPY go.mod go.sum* ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download
 
 COPY . ./
-RUN go build -o /go/bin/app .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -o /go/bin/app .
 
 FROM gcr.io/distroless/static-debian13
 WORKDIR /app

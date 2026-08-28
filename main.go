@@ -47,7 +47,17 @@ func main() {
 		AppName:     "OnlyStudents",
 	})
 
-	app.Use("/", static.New("frontend/dist"))
+	// frontend
+	app.Use("/assets", static.New("frontend/dist/assets"))
+	paths := []string{
+		"/",
+		"/homeworks",
+	}
+	for _, path := range paths {
+		app.Get(path, func(c fiber.Ctx) error {
+			return c.SendFile("frontend/dist/index.html")
+		})
+	}
 
 	app.Get("/ping", func(c fiber.Ctx) error {
 		err := pool.Ping(context.Background())
