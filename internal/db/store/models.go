@@ -43,16 +43,27 @@ type Announcement struct {
 	CreatedAt       pgtype.Timestamptz
 }
 
-type CalendarEvent struct {
-	ID          int64
-	SchoolID    pgtype.Int4
-	ClassID     pgtype.Int4
-	Title       string
-	Description pgtype.Text
-	Start       pgtype.Timestamptz
-	End         pgtype.Timestamptz
-	AllDay      bool
-	EventType   string
+type BaseSchedule struct {
+	ID        int32
+	SchoolID  int32
+	DayOfWeek int32
+	LessonNum int32
+	LessonID  int32
+}
+
+type BellSchedule struct {
+	ID           int32
+	TypeID       int32
+	IsLesson     bool
+	LessonNumber pgtype.Int4
+	AtStart      pgtype.Time
+	AtEnd        pgtype.Time
+}
+
+type BellScheduleType struct {
+	ID       int32
+	SchoolID int32
+	Name     string
 }
 
 type Class struct {
@@ -61,14 +72,13 @@ type Class struct {
 	Name        string
 	TeacherID   int32
 	CoTeacherID pgtype.Int4
+	BellID      int32
 }
 
-type ClassSubject struct {
-	ID        int32
-	ClassID   int32
-	SubjectID int32
-	TeacherID int32
-	TermID    int32
+type CustomSubject struct {
+	ID          int32
+	SchoolID    int32
+	SubjectName string
 }
 
 type Exam struct {
@@ -109,6 +119,19 @@ type GradeType struct {
 	SchoolID int32
 	Name     string
 	Weight   int32
+}
+
+type Group struct {
+	ID        int32
+	SchoolID  int32
+	BellID    int32
+	GroupName string
+}
+
+type GroupMember struct {
+	ID        int32
+	GroupID   int32
+	StudentID int32
 }
 
 type Guardian struct {
@@ -160,10 +183,13 @@ type HomeworkSubmission struct {
 
 type Lesson struct {
 	ID              int32
-	ClassSubjectsID int32
-	DayOfWeek       int16
-	TimeSlotID      int32
+	SchoolID        int32
+	TeacherID       int32
 	RoomID          int32
+	GroupID         int32
+	CustomSubject   bool
+	SubjectID       pgtype.Int4
+	CustomSubjectID pgtype.Int4
 }
 
 type LessonLog struct {
@@ -243,10 +269,8 @@ type StudentCitizenship struct {
 }
 
 type Subject struct {
-	ID       int32
-	SchoolID int32
-	Name     string
-	Code     string
+	ID          int32
+	SubjectName string
 }
 
 type Teacher struct {
@@ -287,11 +311,13 @@ type Term struct {
 	IsActive      bool
 }
 
-type TimeSlot struct {
-	ID        int32
-	SchoolID  int32
-	Label     string
-	StartTime pgtype.Time
-	EndTime   pgtype.Time
-	Position  int32
+type TimeTable struct {
+	ID                    int32
+	SchoolID              int32
+	ActualDate            pgtype.Date
+	LessonNum             int32
+	LessonID              int32
+	IsSubstitution        bool
+	SubstitutionTeacherID pgtype.Int4
+	Canceled              pgtype.Bool
 }
