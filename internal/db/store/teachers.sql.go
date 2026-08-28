@@ -10,7 +10,7 @@ import (
 )
 
 const getTeacher = `-- name: GetTeacher :one
-SELECT id, email_address, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address FROM teachers WHERE id = $1
+SELECT id, email_address, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers WHERE id = $1
 `
 
 func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
@@ -28,12 +28,14 @@ func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
 		&i.BirthCountry,
 		&i.PermamentAddress,
 		&i.TemporaryAddress,
+		&i.FirstName,
+		&i.LastName,
 	)
 	return i, err
 }
 
 const listTeachers = `-- name: ListTeachers :many
-SELECT id, email_address, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address FROM teachers ORDER BY id
+SELECT id, email_address, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers ORDER BY id
 `
 
 func (q *Queries) ListTeachers(ctx context.Context) ([]Teacher, error) {
@@ -57,6 +59,8 @@ func (q *Queries) ListTeachers(ctx context.Context) ([]Teacher, error) {
 			&i.BirthCountry,
 			&i.PermamentAddress,
 			&i.TemporaryAddress,
+			&i.FirstName,
+			&i.LastName,
 		); err != nil {
 			return nil, err
 		}

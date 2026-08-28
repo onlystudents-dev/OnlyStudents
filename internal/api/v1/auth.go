@@ -92,17 +92,3 @@ func Logout(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 
 	return c.Redirect().To("/")
 }
-
-func Me(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore) error {
-	session_token := c.Cookies("session_token", "")
-	if session_token == "" {
-		return c.SendStatus(401)
-	}
-
-	session_data, err := session_store.Get(c, session_token)
-	if err != nil {
-		return c.SendStatus(401)
-	}
-
-	return c.JSON(session_data)
-}

@@ -8,6 +8,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Absence struct {
+	ID         int64
+	StudentID  int32
+	LessonID   pgtype.Int4
+	Date       pgtype.Date
+	Type       string
+	Justified  bool
+	VerifiedBy pgtype.Int4
+	Note       pgtype.Text
+}
+
 type Account struct {
 	ID           pgtype.UUID
 	Role         string
@@ -17,12 +28,83 @@ type Account struct {
 	GuardianID   pgtype.Int4
 }
 
+type Announcement struct {
+	ID              int64
+	AuthorAccountID pgtype.UUID
+	SchoolID        pgtype.Int4
+	ClassID         pgtype.Int4
+	Title           string
+	Body            string
+	Pinned          bool
+	CreatedAt       pgtype.Timestamptz
+}
+
+type CalendarEvent struct {
+	ID          int64
+	SchoolID    pgtype.Int4
+	ClassID     pgtype.Int4
+	Title       string
+	Description pgtype.Text
+	Start       pgtype.Timestamptz
+	End         pgtype.Timestamptz
+	AllDay      bool
+	EventType   string
+}
+
 type Class struct {
 	ID          int32
 	SchoolID    int32
 	Name        string
 	TeacherID   int32
 	CoTeacherID pgtype.Int4
+}
+
+type ClassSubject struct {
+	ID        int32
+	ClassID   int32
+	SubjectID int32
+	TeacherID int32
+	TermID    int32
+}
+
+type Exam struct {
+	ID              int64
+	ClassSubjectsID int32
+	TeacherID       int32
+	Title           string
+	Description     pgtype.Text
+	Date            pgtype.Date
+	StartTime       pgtype.Time
+	EndTime         pgtype.Time
+	RoomID          pgtype.Int4
+}
+
+type FinalGrade struct {
+	ID              int64
+	StudentID       int32
+	ClassSubjectsID int32
+	TermID          int32
+	TeacherID       int32
+	Value           int16
+}
+
+type Grade struct {
+	ID              int64
+	StudentID       int32
+	ClassSubjectsID int32
+	TeacherID       int32
+	TermID          int32
+	GradeTypeID     int32
+	Value           int16
+	Date            pgtype.Date
+	Note            pgtype.Text
+}
+
+type GradeType struct {
+	ID       int32
+	SchoolID int32
+	Name     string
+	Weight   int32
 }
 
 type Guardian struct {
@@ -54,6 +136,50 @@ type GuardiansAccess struct {
 	LegalRepresentative bool
 }
 
+type Homework struct {
+	ID              int64
+	ClassSubjectsID int32
+	TeacherID       int32
+	Title           string
+	Description     pgtype.Text
+	DueDate         pgtype.Date
+	CreatedAt       pgtype.Timestamptz
+}
+
+type HomeworkSubmission struct {
+	ID          int64
+	HomeworkID  int32
+	StudentID   int32
+	Content     pgtype.Text
+	SubmittedAt pgtype.Timestamptz
+	GradedValue pgtype.Int2
+}
+
+type Lesson struct {
+	ID              int32
+	ClassSubjectsID int32
+	DayOfWeek       int16
+	TimeSlotID      int32
+	RoomID          int32
+}
+
+type LessonLog struct {
+	ID         int64
+	LessonID   int32
+	Date       pgtype.Date
+	TeacherID  int32
+	Topic      pgtype.Text
+	HomeworkID pgtype.Int4
+	Conducted  bool
+}
+
+type Room struct {
+	ID       int32
+	SchoolID int32
+	Name     string
+	Capacity int32
+}
+
 type School struct {
 	ID           int32
 	Name         string
@@ -69,6 +195,15 @@ type School struct {
 type SchoolType struct {
 	ID   int32
 	Name string
+}
+
+type SchoolYear struct {
+	ID        int32
+	SchoolID  int32
+	Name      string
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+	IsActive  bool
 }
 
 type Student struct {
@@ -105,6 +240,13 @@ type StudentCitizenship struct {
 	Country      string
 }
 
+type Subject struct {
+	ID       int32
+	SchoolID int32
+	Name     string
+	Code     string
+}
+
 type Teacher struct {
 	ID               int32
 	EmailAddress     string
@@ -117,6 +259,8 @@ type Teacher struct {
 	BirthCountry     string
 	PermamentAddress string
 	TemporaryAddress string
+	FirstName        string
+	LastName         string
 }
 
 type TeacherCitizenship struct {
@@ -130,4 +274,23 @@ type TeacherSchool struct {
 	ID        int32
 	TeacherID int32
 	SchoolID  int32
+}
+
+type Term struct {
+	ID            int32
+	SchoolYearID  int32
+	Name          string
+	StartDate     pgtype.Date
+	EndDate       pgtype.Date
+	GradeDeadline pgtype.Date
+	IsActive      bool
+}
+
+type TimeSlot struct {
+	ID        int32
+	SchoolID  int32
+	Label     string
+	StartTime pgtype.Time
+	EndTime   pgtype.Time
+	Position  int32
 }
