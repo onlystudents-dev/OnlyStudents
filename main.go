@@ -41,6 +41,10 @@ func main() {
 		RedisDB: rdb,
 	}
 
+	cache_store := helpers.CacheStore{
+		RedisDB: rdb,
+	}
+
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
@@ -72,11 +76,15 @@ func main() {
 	api := app.Group("/api")
 
 	api.Post("/login", func(c fiber.Ctx) error {
-		return v1.Login(c, pool, &session_store)
+		return v1.Login(c, pool, &session_store, &cache_store)
 	})
 
 	api.Get("/logout", func(c fiber.Ctx) error {
 		return v1.Logout(c, pool, &session_store)
+	})
+
+	api.Get("/forget_password", func(c fiber.Ctx) error {
+		return v1.ForgetPassword(c, pool, &cache_store)
 	})
 
 	api_v1 := api.Group("/v1", func(c fiber.Ctx) error {
@@ -86,7 +94,7 @@ func main() {
 	me := api_v1.Group("/me")
 
 	me.Get("/status", func(c fiber.Ctx) error {
-		return meapi.Status(c, pool, &session_store)
+		return meapi.Status(c, pool, &session_store, &cache_store)
 	})
 
 	me.Get("/timetable", func(c fiber.Ctx) error {

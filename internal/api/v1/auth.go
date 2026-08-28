@@ -2,12 +2,14 @@ package v1
 
 import (
 	"context"
+	"crypto/rand"
+	"math/big"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
+	"onlystudents/internal/mail"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,7 +19,7 @@ type loginRequest struct {
 	Role     string `json:"role"`
 }
 
-func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore) error {
+func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
 	var req loginRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
@@ -27,23 +29,8 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore)
 		return c.SendStatus(400)
 	}
 
-	user := pgtype.Int4{Int32: req.User, Valid: true}
-
 	queries := db_queries.New(pool)
-
-	var account db_queries.Account
-	var err error
-
-	switch req.Role {
-	case "student":
-		account, err = queries.GetAccountByStudentID(context.Background(), user)
-	case "guardian":
-		account, err = queries.GetAccountByGuardianID(context.Background(), user)
-	case "teacher":
-		account, err = queries.GetAccountByTeacherID(context.Background(), user)
-	default:
-		return c.SendStatus(400)
-	}
+	account, err := cache_store.CacheOrGetAccount(context.Background(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
 
 	if err != nil {
 		return c.SendStatus(401)
@@ -91,4 +78,61 @@ func Logout(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 	c.ClearCookie("session_token")
 
 	return c.Redirect().To("/")
+}
+
+type ResetPasswordEmailData struct {
+	ResetCode string
+}
+
+func generateResetCode(length int) (string, error) {
+	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	code := make([]byte, length)
+
+	for i := range code {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		code[i] = charset[n.Int64()]
+	}
+
+	return string(code), nil
+}
+
+func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheStore) error {
+	var req loginRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	if req.User <= 0 || req.Role == "" {
+		return c.SendStatus(400)
+	}
+
+	queries := db_queries.New(pool)
+
+	account, err := cache_store.CacheOrGetAccount(context.Background(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
+	if err != nil {
+		return c.SendStatus(401)
+	}
+
+	if !account.EmailAddress.Valid || account.EmailAddress.String == "" {
+		return c.SendStatus(400)
+	}
+
+	code, err := generateResetCode(int(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_LEN", 8)))
+	if err != nil {
+		return c.SendStatus(500)
+	}
+
+	mailer, err := mail.NewFromEnv()
+	if err != nil {
+		return c.SendStatus(500)
+	}
+
+	if err := mailer.SendTemplate(account.EmailAddress.String, "Reset password", "password_reset.html", ResetPasswordEmailData{ResetCode: code}); err != nil {
+		return c.SendStatus(500)
+	}
+
+	return c.SendStatus(200)
 }

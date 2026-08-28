@@ -26,6 +26,7 @@ type Account struct {
 	StudentID    pgtype.Int4
 	TeacherID    pgtype.Int4
 	GuardianID   pgtype.Int4
+	EmailAddress pgtype.Text
 }
 
 type Announcement struct {
@@ -109,7 +110,6 @@ type GradeType struct {
 
 type Guardian struct {
 	ID               int32
-	EmailAddress     string
 	PhoneNumber      string
 	FirstName        string
 	LastName         string
@@ -211,7 +211,6 @@ type Student struct {
 	IDNumber             int32
 	SchoolID             int32
 	PhoneNumber          pgtype.Text
-	EmailAddress         pgtype.Text
 	FirstName            string
 	LastName             string
 	BirthFirstName       string
@@ -249,7 +248,6 @@ type Subject struct {
 
 type Teacher struct {
 	ID               int32
-	EmailAddress     string
 	PhoneNumber      string
 	Username         string
 	BirthFirstName   string

@@ -16,7 +16,7 @@ type StatusData struct {
 	LastName  string `json:"last_name"`
 }
 
-func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore) error {
+func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
 	session_token := c.Cookies("session_token", "")
 	if session_token == "" {
 		return c.SendStatus(401)
@@ -31,10 +31,9 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 
 	var status_data StatusData
 
-	// TODO: add redis caching for this
 	switch session_data.Role {
 	case "student":
-		student, err := queries.GetStudent(context.Background(), session_data.AccountID)
+		student, err := cache_store.CacheOrGetStudent(context.Background(), *queries, session_data.AccountID, int32(helpers.GetUintEnvFallback("PERSON_CACHE_TTL", 5*60)))
 
 		if err != nil {
 			return c.SendStatus(401)
@@ -48,7 +47,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 		}
 
 	case "guardian":
-		guardian, err := queries.GetGuardian(context.Background(), session_data.AccountID)
+		guardian, err := cache_store.CacheOrGetGuardian(context.Background(), *queries, session_data.AccountID, int32(helpers.GetUintEnvFallback("PERSON_CACHE_TTL", 5*60)))
 
 		if err != nil {
 			return c.SendStatus(401)
@@ -62,7 +61,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 		}
 
 	case "teacher":
-		teacher, err := queries.GetTeacher(context.Background(), session_data.AccountID)
+		teacher, err := cache_store.CacheOrGetTeacher(context.Background(), *queries, session_data.AccountID, int32(helpers.GetUintEnvFallback("PERSON_CACHE_TTL", 5*60)))
 
 		if err != nil {
 			return c.SendStatus(401)

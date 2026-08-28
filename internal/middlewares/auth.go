@@ -13,13 +13,11 @@ func AuthMiddleware(c fiber.Ctx, session_store *helpers.SessionStore) error {
 		return c.SendStatus(401)
 	}
 
-	data, err := session_store.Get(c, session_token)
+	_, err := session_store.Get(c, session_token)
 
 	if err != nil {
 		return c.SendStatus(401)
 	}
-
-	c.Locals("account", data)
 
 	return c.Next()
 }
