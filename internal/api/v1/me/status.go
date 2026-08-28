@@ -10,9 +10,10 @@ import (
 )
 
 type StatusData struct {
-	session_data helpers.SessionData
-	first_name   string
-	last_name    string
+	Role      string `json:"role"`
+	AccountID int32  `json:"account_id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore) error {
@@ -40,9 +41,10 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 		}
 
 		status_data = StatusData{
-			session_data: session_data,
-			first_name:   student.FirstName,
-			last_name:    student.LastName,
+			Role:      session_data.Role,
+			AccountID: session_data.AccountID,
+			FirstName: student.FirstName,
+			LastName:  student.LastName,
 		}
 
 	case "guardian":
@@ -53,9 +55,10 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 		}
 
 		status_data = StatusData{
-			session_data: session_data,
-			first_name:   guardian.FirstName,
-			last_name:    guardian.LastName,
+			Role:      session_data.Role,
+			AccountID: session_data.AccountID,
+			FirstName: guardian.FirstName,
+			LastName:  guardian.LastName,
 		}
 
 	case "teacher":
@@ -66,9 +69,10 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 		}
 
 		status_data = StatusData{
-			session_data: session_data,
-			first_name:   teacher.FirstName,
-			last_name:    teacher.LastName,
+			Role:      session_data.Role,
+			AccountID: session_data.AccountID,
+			FirstName: teacher.FirstName,
+			LastName:  teacher.LastName,
 		}
 
 	default:
