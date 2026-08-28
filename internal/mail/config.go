@@ -7,22 +7,24 @@ import (
 )
 
 type Config struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	From     string
-	FromName string
-	UseTLS   bool
+	Host         string
+	Port         int
+	Username     string
+	Password     string
+	From         string
+	FromName     string
+	UseTLS       bool
+	TemplatesDir string
 }
 
 func LoadConfigFromEnv() (Config, error) {
 	cfg := Config{
-		Host:     os.Getenv("SMTP_HOST"),
-		Username: os.Getenv("SMTP_USERNAME"),
-		Password: os.Getenv("SMTP_PASSWORD"),
-		From:     os.Getenv("SMTP_FROM"),
-		FromName: os.Getenv("SMTP_FROM_NAME"),
+		Host:         os.Getenv("SMTP_HOST"),
+		Username:     os.Getenv("SMTP_USERNAME"),
+		Password:     os.Getenv("SMTP_PASSWORD"),
+		From:         os.Getenv("SMTP_FROM"),
+		FromName:     os.Getenv("SMTP_FROM_NAME"),
+		TemplatesDir: os.Getenv("EMAIL_TEMPLATES_DIR"),
 	}
 
 	portRaw := os.Getenv("SMTP_PORT")
@@ -67,16 +69,16 @@ func (c Config) validate() error {
 		missing = append(missing, "SMTP_PORT")
 	}
 
-	if c.Password == "" {
-		missing = append(missing, "SMTP_PASSWORD")
-	}
-
 	if c.From == "" {
 		missing = append(missing, "SMTP_FROM")
 	}
 
 	if len(missing) > 0 {
 		return fmt.Errorf("email: validate config: missing or invalid %v", missing)
+	}
+
+	if (c.Username == "") != (c.Password == "") {
+		return fmt.Errorf("email: validate config: SMTP_USERNAME and SMTP_PASSWORD must both be set or be both empty")
 	}
 
 	return nil
