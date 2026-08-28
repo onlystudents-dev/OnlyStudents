@@ -3,8 +3,9 @@ import Button from "../../util/button/button.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faPaperPlane, faPlane} from "@fortawesome/free-solid-svg-icons";
 import React, {useState} from "react";
+import {toast} from "react-toastify";
 
-export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID }: { pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void }) {
+export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID, setWaiting }: { pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void, setWaiting: React.Dispatch<React.SetStateAction<boolean>> }) {
     const [reset, setReset] = useState(false);
     const [resetA, setResetA] = useState(false);
 
@@ -42,10 +43,29 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
     )
 
     async function email() {
-        // no api yet
+        if (red) return
+        if (!id) return
+        setWaiting(true)
+        const response = await fetch("/api/forget_password", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user: Number(id),
+                role: role,
+            })
+        })
 
-        setResetA(true)
-        setTimeout(() => setReset(true), 200)
+        switch (response.status) {
+            case 200:
+                setResetA(true)
+                setTimeout(() => setReset(true), 200)
+                break
+            default:
+                toast.error(response.statusText)
+        }
+        setWaiting(false)
     }
 
     async function change() {

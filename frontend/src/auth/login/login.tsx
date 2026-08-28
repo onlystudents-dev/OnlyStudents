@@ -44,9 +44,9 @@ export default function Login() {
                         </Button>
                     </div>
                 </div>
-                {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} />}
-                {waiting && <Loading />}
+                {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} setWaiting={setWaiting} />}
             </div>
+            {waiting && <Loading />}
         </>
     )
 

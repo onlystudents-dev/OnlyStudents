@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"crypto/rand"
+	"log/slog"
 	"math/big"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
@@ -82,6 +83,7 @@ func Logout(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 
 type ResetPasswordEmailData struct {
 	ResetCode string
+	Name      string
 }
 
 func generateResetCode(length int) (string, error) {
@@ -130,8 +132,12 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheS
 		return c.SendStatus(500)
 	}
 
-	if err := mailer.SendTemplate(account.EmailAddress.String, "Reset password", "password_reset.html", ResetPasswordEmailData{ResetCode: code}); err != nil {
-		return c.SendStatus(500)
+	if err := mailer.SendTemplate(account.EmailAddress.String, "Reset password", "password_reset.html", ResetPasswordEmailData{ResetCode: code, Name: account.Role}); err != nil {
+		slog.Error("password reset email failed", "account", account.EmailAddress.String, "err", err)
+		if helpers.GetEnvFallback("APP_ENV", "development") != "production" {
+			return c.Status(502).SendString(err.Error())
+		}
+		return c.SendStatus(502)
 	}
 
 	return c.SendStatus(200)
