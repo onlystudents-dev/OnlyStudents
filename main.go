@@ -7,6 +7,7 @@ import (
 	"os"
 
 	v1 "onlystudents/internal/api/v1"
+	meapi "onlystudents/internal/api/v1/me"
 	"onlystudents/internal/db"
 	"onlystudents/internal/helpers"
 	env "onlystudents/internal/helpers"
@@ -64,28 +65,42 @@ func main() {
 		return v1.Login(c, pool, &session_store)
 	})
 
+	api.Get("/logout", func(c fiber.Ctx) error {
+		return v1.Logout(c, pool, &session_store)
+	})
+
 	api_v1 := api.Group("/v1", func(c fiber.Ctx) error {
 		return middlewares.AuthMiddleware(c, &session_store)
 	})
 
-	api_v1.Get("/me", func(c fiber.Ctx) error {
-		return v1.Me(c, pool, &session_store)
+	me := api_v1.Group("/me")
+
+	me.Get("/status", func(c fiber.Ctx) error {
+		return meapi.Status(c, pool, &session_store)
 	})
 
-	api_v1.Get("/students", func(c fiber.Ctx) error {
-		return v1.Students(c, pool)
+	me.Get("/timetable", func(c fiber.Ctx) error {
+		return meapi.TimeTable(c, pool, &session_store)
 	})
 
-	api_v1.Get("/guardians", func(c fiber.Ctx) error {
-		return v1.Guardians(c, pool)
+	me.Get("/subjects", func(c fiber.Ctx) error {
+		return meapi.Subjects(c, pool, &session_store)
 	})
 
-	api_v1.Get("/teachers", func(c fiber.Ctx) error {
-		return v1.Teachers(c, pool)
+	me.Get("/grades", func(c fiber.Ctx) error {
+		return meapi.Grades(c, pool, &session_store)
 	})
 
-	api_v1.Get("/schools", func(c fiber.Ctx) error {
-		return v1.Schools(c, pool)
+	me.Get("/absences", func(c fiber.Ctx) error {
+		return meapi.Absences(c, pool, &session_store)
+	})
+
+	me.Get("/exams", func(c fiber.Ctx) error {
+		return meapi.Exams(c, pool, &session_store)
+	})
+
+	me.Get("/homework", func(c fiber.Ctx) error {
+		return meapi.Homework(c, pool, &session_store)
 	})
 
 	log.Fatal(app.Listen(":8080", fiber.ListenConfig{
