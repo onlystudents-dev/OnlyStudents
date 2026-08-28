@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,10 +12,9 @@ import (
 )
 
 type Mailer struct {
-	client   *mail.Client
-	from     string
-	fromName string
-
+	client    *mail.Client
+	from      string
+	fromName  string
 	templates *template.Template
 }
 
@@ -55,9 +55,9 @@ func New(cfg Config) (*Mailer, error) {
 	}
 
 	svc := &Mailer{
-		client: client,
-		from: cfg.From,
-		fromName: cfg.fromName
+		client:   client,
+		from:     cfg.From,
+		fromName: cfg.FromName,
 	}
 
 	if cfg.TemplatesDir != "" {
@@ -70,75 +70,82 @@ func New(cfg Config) (*Mailer, error) {
 	}
 
 	return svc, nil
+}
 
-	func (m *Mailer) SendContext(ctx context.Context, to, subject, body string) error {
-		msg, err := m.newMessage(to, subject)
-		if err != nil {
-			return err
-		}
+func (m *Mailer) SendContext(ctx context.Context, to, subject, body string) error {
+	msg, err := m.newMessage(to, subject)
+	if err != nil {
+		return err
+	}
+	msg.SetBodyString(mail.TypeTextPlain, body)
+	return m.dialAndSend(ctx, msg)
+}
 
-		msg.SetBodyString(mail.TypeTextPlain, body)
-		return m.dialAndSend(ctx, msg)
+func (m *Mailer) SendHTML(to, subject, html string) error {
+	return m.SendHTMLContext(context.Background(), to, subject, html)
+}
 
+func (m *Mailer) SendHTMLContext(ctx context.Context, to, subject, html string) error {
+	msg, err := m.newMessage(to, subject)
+	if err != nil {
+		return err
+	}
+	msg.SetBodyString(mail.TypeTextHTML, html)
+	return m.dialAndSend(ctx, msg)
+}
+
+func (m *Mailer) SendTemplate(to, subject, name string, data any) error {
+	return m.SendTemplateContext(context.Background(), to, subject, name, data)
+}
+
+func (m *Mailer) SendTemplateContext(ctx context.Context, to, subject, name string, data any) error {
+	if m.templates == nil {
+		return errors.New("email: no templates have been configured (set EMAIL_TEMPLATES_DIR)")
 	}
 
-	func (m *Mailer) SendHTML(to, subject, html, string) error {
-		return s.SendHTMLContext(context.Background(), to, subject, html)
+	tmpl := m.templates.Lookup(name)
+	if tmpl == nil {
+		return fmt.Errorf("email: template %q not found", name)
 	}
 
-	func (m *Mailer) SendHTMLContext(ctx context.Context, to, subject, html, string) error {
-		if err != nil {
-		}
-
-		msg.SetBodyString(mail.TypeTextHTML, html)
-		return m.dialAndSend(ctx, msg)
-
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("email: render template %q: %w", name, err)
 	}
 
-	func (m *Mailer) SendTemplate(to, subject, name string, data any) error {
-		return m.SendTemplateContext(context.Background(), to subject, name, data)
+	msg, err := m.newMessage(to, subject)
+	if err != nil {
+		return err
+	}
+	msg.SetBodyString(mail.TypeTextHTML, buf.String())
+
+	return m.dialAndSend(ctx, msg)
+}
+
+func (m *Mailer) newMessage(to, subject string) (*mail.Msg, error) {
+	msg := mail.NewMsg()
+
+	var err error
+	if m.fromName != "" {
+		err = msg.FromFormat(m.fromName, m.from)
+	} else {
+		err = msg.From(m.from)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("email: set from address: %w", err)
 	}
 
-	func (m *Mailer) SendTemplateContext(ctx context.Context, to, subject, name, string, data any) error {
-		if m.templates == nil {
-			return errors.New("email: no templates has been configures (set EMAIL_TEMPLATES_DIR)")
-		}
-		tmpl := m.templates.Lookup(name)
-		if tmpl == nil {
-			return fmt.Errorf("email: template %q not found", name)
-		}
-
-		return m.dialAndSend(ctx, msg)
-
+	if err := msg.To(to); err != nil {
+		return nil, fmt.Errorf("email: set to address %q: %w", to, err)
 	}
 
-	func (m *Mailer) newMessage(to, subject string) (*mail.Msg, error) {
-		msg := mail.NewMsg()
+	msg.Subject(subject)
+	return msg, nil
+}
 
-		var err error
-		if m.fromName != "" {
-			err = msg.FromFormat(m.fromName, m.from)
-		} else {
-			err = msg.From(m.from)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("email: set from address: %w", err)
-		}
-
-		if err := msg.To(to); err != nil {
-			return nil, fmt.Errorf("email: set to address %q: %w", to, err)
-		}
-
-		msg.Subject(subject)
-		return msg, nil
+func (m *Mailer) dialAndSend(ctx context.Context, msg *mail.Msg) error {
+	if err := m.client.DialAndSendWithContext(ctx, msg); err != nil {
+		return fmt.Errorf("email: send message: %w", err)
 	}
-
-	func (m *Mailer) dialAndSend(ctx context.Context, msg *mail.Msg) error {
-		if err := m.client.DialAndSendWithContext(ctx, msg); err != nill {
-			return fmt.Errorf("email: send message: %w", err)
-		}
-
-		return nil
-	}
-
+	return nil
 }

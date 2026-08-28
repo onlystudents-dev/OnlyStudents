@@ -10,7 +10,7 @@ import (
 )
 
 const getTeacher = `-- name: GetTeacher :one
-SELECT id, email_address, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers WHERE id = $1
+SELECT id, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers WHERE id = $1
 `
 
 func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
@@ -18,7 +18,6 @@ func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
 	var i Teacher
 	err := row.Scan(
 		&i.ID,
-		&i.EmailAddress,
 		&i.PhoneNumber,
 		&i.Username,
 		&i.BirthFirstName,
@@ -35,7 +34,7 @@ func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
 }
 
 const listTeachers = `-- name: ListTeachers :many
-SELECT id, email_address, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers ORDER BY id
+SELECT id, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers ORDER BY id
 `
 
 func (q *Queries) ListTeachers(ctx context.Context) ([]Teacher, error) {
@@ -49,7 +48,6 @@ func (q *Queries) ListTeachers(ctx context.Context) ([]Teacher, error) {
 		var i Teacher
 		if err := rows.Scan(
 			&i.ID,
-			&i.EmailAddress,
 			&i.PhoneNumber,
 			&i.Username,
 			&i.BirthFirstName,

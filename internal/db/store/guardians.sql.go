@@ -10,7 +10,7 @@ import (
 )
 
 const getGuardian = `-- name: GetGuardian :one
-SELECT id, email_address, phone_number, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address FROM guardians WHERE id = $1
+SELECT id, phone_number, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address FROM guardians WHERE id = $1
 `
 
 func (q *Queries) GetGuardian(ctx context.Context, id int32) (Guardian, error) {
@@ -18,7 +18,6 @@ func (q *Queries) GetGuardian(ctx context.Context, id int32) (Guardian, error) {
 	var i Guardian
 	err := row.Scan(
 		&i.ID,
-		&i.EmailAddress,
 		&i.PhoneNumber,
 		&i.FirstName,
 		&i.LastName,
@@ -34,7 +33,7 @@ func (q *Queries) GetGuardian(ctx context.Context, id int32) (Guardian, error) {
 }
 
 const listGuardians = `-- name: ListGuardians :many
-SELECT id, email_address, phone_number, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address FROM guardians ORDER BY id
+SELECT id, phone_number, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address FROM guardians ORDER BY id
 `
 
 func (q *Queries) ListGuardians(ctx context.Context) ([]Guardian, error) {
@@ -48,7 +47,6 @@ func (q *Queries) ListGuardians(ctx context.Context) ([]Guardian, error) {
 		var i Guardian
 		if err := rows.Scan(
 			&i.ID,
-			&i.EmailAddress,
 			&i.PhoneNumber,
 			&i.FirstName,
 			&i.LastName,
