@@ -9,6 +9,10 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
     const [reset, setReset] = useState(false);
     const [resetA, setResetA] = useState(false);
 
+    const [code, setCode] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+
     return (
         <>
             <div className={`content in outback ${!pwrA && "hid"}`}>
@@ -22,9 +26,9 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
                     <input className={`${red && "wrong"}`} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.target.value); checkUserID(e.target.value)}} />
                 </div>}
                 {reset && <div className="loginput fredoka in">
-                    <input type="text" placeholder="Code" />
-                    <input type="password" placeholder="Password" />
-                    <input type="password" placeholder="Confirm password" />
+                    <input type="text" placeholder="Code" onChange={(e) => setCode(e.target.value)} />
+                    <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+                    <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder="Confirm password" onChange={(e) => setConfirmPassword(e.target.value)} />
                 </div>}
 
                 <div className={`pwrbutton ${reset ? "mt-4" : "mt-20"}`}>
@@ -69,6 +73,28 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
     }
 
     async function change() {
-        // api
+        if (!code) return
+        if (!password) return
+        if (password !== confirmPassword) return
+        const response = await fetch("/api/forget_password_confirm", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                password,
+                confirm_password: confirmPassword,
+                pending_password: code
+            })
+        })
+
+        switch (response.status) {
+            case 200:
+                unsPwr()
+                break
+            default:
+                toast.error(await response.text() || response.statusText)
+        }
+        setWaiting(false)
     }
 }

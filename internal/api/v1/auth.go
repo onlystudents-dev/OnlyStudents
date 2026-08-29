@@ -234,5 +234,8 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 		}
 	}
 
+	// invalidate cached account object which has the old password hash
+	cache_store.InvalidateCachedAccount(c.Context(), sessionData.Role, sessionData.AccountID)
+
 	return c.SendStatus(200)
 }
