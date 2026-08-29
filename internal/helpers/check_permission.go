@@ -2,10 +2,34 @@ package helpers
 
 import (
 	"context"
+	db_queries "onlystudents/internal/db/store"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func CheckPermission(ctx context.Context, pool *pgxpool.Pool, session_store *SessionStore, token string, permission string) {
+func CheckPermission(ctx context.Context, pool *pgxpool.Pool, store *SessionStore, token string, permission string) (bool, error) {
 
+	if token == "" {
+		return false, nil
+	}
+
+	sessionData, err := store.Get(ctx, token)
+	if err != nil {
+		return false, nil
+	}
+
+	queries := db_queries.New(pool)
+
+	params := db_queries.CheckPermissionParams{
+		Name:      permission,
+		TeacherID: sessionData.AccountID,
+	}
+
+	has, err := queries.CheckPermission(ctx, params)
+
+	if err != nil {
+		return false, nil
+	}
+
+	return has, nil
 }
