@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -34,9 +33,11 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore,
 	}
 
 	queries := db_queries.New(pool)
-	account, err := cache_store.CacheOrGetAccount(context.Background(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
+	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
 
 	if err != nil {
+		// run argon2verify to fix timing-based enumeration attacks, if the account does not exist, it would not verify with argon2, which would have a slight latency difference
+		helpers.Argon2Verify(req.Password, account.PasswordHash)
 		return c.SendStatus(401)
 	}
 
@@ -44,7 +45,7 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore,
 		return c.SendStatus(401)
 	}
 
-	session_token, err := session_store.Create(context.Background(), req.User, req.Role)
+	session_token, err := session_store.Create(c.Context(), req.User, req.Role)
 	if err != nil {
 		return c.SendStatus(500)
 	}
@@ -73,7 +74,7 @@ func Logout(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 		return c.SendStatus(401)
 	}
 
-	err := session_store.Delete(context.Background(), token)
+	err := session_store.Delete(c.Context(), token)
 
 	if err != nil {
 		return c.SendStatus(401)
@@ -81,7 +82,7 @@ func Logout(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 
 	c.ClearCookie("session_token")
 
-	return c.Redirect().To("/")
+	return c.SendStatus(200)
 }
 
 type ResetPasswordEmailData struct {
@@ -107,25 +108,25 @@ func generateResetCode(length int) (string, error) {
 func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheStore) error {
 	var req loginRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(200)
 	}
 
 	if req.User <= 0 || req.Role == "" {
-		return c.SendStatus(400)
+		return c.SendStatus(200)
 	}
 
 	queries := db_queries.New(pool)
 
-	account, err := cache_store.CacheOrGetAccount(context.Background(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
+	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(200)
 	}
 
 	if !account.EmailAddress.Valid || account.EmailAddress.String == "" {
-		return c.SendStatus(400)
+		return c.SendStatus(200)
 	}
 
-	code, err := generateResetCode(int(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_LEN", 8)))
+	code, err := generateResetCode(int(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_LEN", 10)))
 	if err != nil {
 		return c.SendStatus(500)
 	}
@@ -173,10 +174,6 @@ type ResetPasswordConfirmType struct {
 func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheStore) error {
 	var req ResetPasswordConfirmType
 
-	if c.Locals("user") != nil {
-		return c.SendStatus(400)
-	}
-
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
 	}
@@ -191,9 +188,9 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 
 	cacheKey := fmt.Sprintf("pending_password_reset_%s", req.PendingPassword)
 
-	dataJSON, err := cache_store.RedisDB.Get(c.Context(), cacheKey).Result()
+	dataJSON, err := cache_store.RedisDB.GetDel(c.Context(), cacheKey).Result()
 	if err != nil {
-		return c.SendStatus(500)
+		return c.Status(400).SendString("Invalid password reset token!")
 	}
 
 	var sessionData helpers.SessionData
@@ -236,8 +233,6 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 			return c.SendStatus(500)
 		}
 	}
-
-	_ = cache_store.RedisDB.Del(c.Context(), cacheKey).Err()
 
 	return c.SendStatus(200)
 }

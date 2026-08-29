@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -49,6 +48,7 @@ func main() {
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
 		AppName:     "OnlyStudents",
+		BodyLimit:   1 << 20,
 	})
 
 	// frontend
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	app.Get("/ping", func(c fiber.Ctx) error {
-		err := pool.Ping(context.Background())
+		err := pool.Ping(c.Context())
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to ping database: %s", err)
@@ -79,7 +79,7 @@ func main() {
 		return v1.Login(c, pool, &session_store, &cache_store)
 	})
 
-	api.Get("/logout", func(c fiber.Ctx) error {
+	api.Post("/logout", func(c fiber.Ctx) error {
 		return v1.Logout(c, pool, &session_store)
 	})
 
