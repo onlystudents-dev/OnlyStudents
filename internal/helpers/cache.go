@@ -37,11 +37,11 @@ func (cs *CacheStore) CacheAccount(ctx context.Context, queries db_queries.Queri
 
 	switch role {
 	case "student":
-		account, err = queries.GetAccountByStudentID(context.Background(), pg_user_id)
+		account, err = queries.GetAccountByStudentID(ctx, pg_user_id)
 	case "guardian":
-		account, err = queries.GetAccountByGuardianID(context.Background(), pg_user_id)
+		account, err = queries.GetAccountByGuardianID(ctx, pg_user_id)
 	case "teacher":
-		account, err = queries.GetAccountByTeacherID(context.Background(), pg_user_id)
+		account, err = queries.GetAccountByTeacherID(ctx, pg_user_id)
 	default:
 		return db_queries.Account{}, errors.New("Role does not exist")
 	}
@@ -104,7 +104,7 @@ func (cs *CacheStore) CacheOrGetStudent(ctx context.Context, queries db_queries.
 }
 
 func (cs *CacheStore) CacheStudent(ctx context.Context, queries db_queries.Queries, student_id int32, ttl int32) (db_queries.Student, error) {
-	student, err := queries.GetStudent(context.Background(), student_id)
+	student, err := queries.GetStudent(ctx, student_id)
 	if err != nil {
 		return db_queries.Student{}, err
 	}
@@ -151,7 +151,7 @@ func (cs *CacheStore) CacheOrGetTeacher(ctx context.Context, queries db_queries.
 }
 
 func (cs *CacheStore) CacheTeacher(ctx context.Context, queries db_queries.Queries, teacher_id int32, ttl int32) (db_queries.Teacher, error) {
-	teacher, err := queries.GetTeacher(context.Background(), teacher_id)
+	teacher, err := queries.GetTeacher(ctx, teacher_id)
 	if err != nil {
 		return db_queries.Teacher{}, err
 	}
@@ -198,7 +198,7 @@ func (cs *CacheStore) CacheOrGetGuardian(ctx context.Context, queries db_queries
 }
 
 func (cs *CacheStore) CacheGuardian(ctx context.Context, queries db_queries.Queries, guardian_id int32, ttl int32) (db_queries.Guardian, error) {
-	guardian, err := queries.GetGuardian(context.Background(), guardian_id)
+	guardian, err := queries.GetGuardian(ctx, guardian_id)
 	if err != nil {
 		return db_queries.Guardian{}, err
 	}

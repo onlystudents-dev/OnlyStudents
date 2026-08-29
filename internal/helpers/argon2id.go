@@ -5,7 +5,6 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -20,7 +19,7 @@ func Argon2HashPassword(password string) (string, error) {
 
 	argon2_time := uint32(GetUintEnvFallback("ARGON2_TIME", 1))
 	argon2_mem := uint32(GetUintEnvFallback("ARGON2_MEMORY", 64*1024))
-	argon2_threads := uint8(GetUintEnvFallback("ARGON2_THREADS", uint64(runtime.NumCPU())))
+	argon2_threads := uint8(GetUintEnvFallback("ARGON2_THREADS", 4))
 	argon2_len := uint32(GetUintEnvFallback("ARGON2_KEYLEN", 32))
 
 	hash := argon2.IDKey(
