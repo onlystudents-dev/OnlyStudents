@@ -73,10 +73,10 @@ func main() {
 		return c.SendString("Pong!")
 	})
 
-	authRateMax := helpers.GetUintEnvFallback("AUTH_RATE_MAX", 5)
-	authRateWindow := helpers.GetUintEnvFallback("AUTH_RATELIMIT_WINDOW", 60)
-	apiRateMax := helpers.GetUintEnvFallback("API_RATE_MAX", 60)
-	apiRateWindow := helpers.GetUintEnvFallback("API_RATELIMIT_WINDOW", 60)
+	authRateMax := helpers.GetInt64EnvFallback("AUTH_RATE_MAX", 5, 1000000)
+	authRateWindow := helpers.GetInt64EnvFallback("AUTH_RATELIMIT_WINDOW", 60, 1000000)
+	apiRateMax := helpers.GetInt64EnvFallback("API_RATE_MAX", 60, 1000000)
+	apiRateWindow := helpers.GetInt64EnvFallback("API_RATELIMIT_WINDOW", 60, 1000000)
 
 	api := app.Group("/api")
 	api.Use([]string{"/login", "/forgot_password", "/forgot_password_confirm", "/"},

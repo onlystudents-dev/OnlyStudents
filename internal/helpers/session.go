@@ -27,7 +27,7 @@ func (s *SessionStore) Create(ctx context.Context, accountID int32, role string)
 	}
 	secret := base64.RawStdEncoding.EncodeToString(buf)
 
-	ttl := time.Duration(GetUintEnvFallback("SESSION_TTL", 3600)) * time.Second
+	ttl := time.Duration(GetInt64EnvFallback("SESSION_TTL", 3600, 2592000)) * time.Second
 
 	val, err := json.Marshal(SessionData{Role: role, AccountID: accountID})
 

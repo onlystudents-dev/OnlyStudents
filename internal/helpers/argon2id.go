@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -17,10 +18,10 @@ func Argon2HashPassword(password string) (string, error) {
 		return "", err
 	}
 
-	argon2_time := uint32(GetUintEnvFallback("ARGON2_TIME", 1))
-	argon2_mem := uint32(GetUintEnvFallback("ARGON2_MEMORY", 64*1024))
-	argon2_threads := uint8(GetUintEnvFallback("ARGON2_THREADS", 4))
-	argon2_len := uint32(GetUintEnvFallback("ARGON2_KEYLEN", 32))
+	argon2_time := GetUint32EnvFallback("ARGON2_TIME", 1, 100)
+	argon2_mem := GetUint32EnvFallback("ARGON2_MEMORY", 64*1024, 1<<24)
+	argon2_threads := GetUint8EnvFallback("ARGON2_THREADS", 4, 32)
+	argon2_len := GetUint32EnvFallback("ARGON2_KEYLEN", 32, 1024)
 
 	hash := argon2.IDKey(
 		[]byte(password),
@@ -86,13 +87,18 @@ func Argon2Verify(password string, hash_string string) bool {
 		return false
 	}
 
+	keyLen := len(stored_hash)
+	if keyLen > math.MaxUint32 {
+		keyLen = math.MaxUint32
+	}
+
 	hash := argon2.IDKey(
 		[]byte(password),
 		salt,
-		uint32(argon2_time),
-		uint32(argon2_mem),
-		uint8(argon2_threads),
-		uint32(len(stored_hash)),
+		uint32(argon2_time),   // #nosec G115 -- parsed with ParseUint bitSize 32, <= MaxUint32
+		uint32(argon2_mem),    // #nosec G115 -- parsed with ParseUint bitSize 32, <= MaxUint32
+		uint8(argon2_threads), // #nosec G115 -- parsed with ParseUint bitSize 32, <= MaxUint32
+		uint32(keyLen),        // #nosec G115 -- keyLen bounded to MaxUint32 above
 	)
 
 	return subtle.ConstantTimeCompare(hash, stored_hash) == 1

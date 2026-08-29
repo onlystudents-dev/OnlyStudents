@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client, scope string, max, window uint64) error {
+func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client, scope string, max, window int64) error {
 	ctx := context.Background()
 	ip := c.IP()
 	key := fmt.Sprintf("ratelimit:%s:%s", scope, ip)
@@ -26,7 +26,7 @@ func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client, scope string, max, wind
 		}
 	}
 
-	if count > int64(max) {
+	if count > max {
 		ttl, err := rdb.TTL(ctx, key).Result()
 		if err == nil && ttl > 0 {
 			c.Set("Retry-After", strconv.Itoa(int(ttl.Seconds())))

@@ -34,7 +34,7 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore,
 	}
 
 	queries := db_queries.New(pool)
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
+	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
 		// run argon2verify to fix timing-based enumeration attacks, if the account does not exist, it would not verify with argon2, which would have a slight latency difference
@@ -51,7 +51,7 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore,
 		return c.SendStatus(500)
 	}
 
-	duration := time.Duration(helpers.GetUintEnvFallback("SESSION_TTL", 3600)) * time.Second
+	duration := time.Duration(helpers.GetInt64EnvFallback("SESSION_TTL", 3600, 2592000)) * time.Second
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "session_token",
@@ -118,10 +118,10 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheS
 
 	queries := db_queries.New(pool)
 
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
+	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	sendMail := err == nil && account.EmailAddress.Valid && account.EmailAddress.String != ""
 
-	code, e := generateResetCode(int(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_LEN", 10)))
+	code, e := generateResetCode(helpers.GetIntEnvFallback("PASSWORD_RESET_CODE_LEN", 10, 64))
 	if e != nil {
 		return c.SendStatus(500)
 	}
@@ -131,15 +131,18 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheS
 	if e != nil {
 		return c.SendStatus(500)
 	}
-	ttl := time.Duration(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_TTL", 15)) * time.Minute
+	ttl := time.Duration(helpers.GetInt64EnvFallback("PASSWORD_RESET_CODE_TTL", 15, 1440)) * time.Minute
 	if e := cache_store.RedisDB.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
 		return c.SendStatus(500)
 	}
 
 	if sendMail {
 		email := account.EmailAddress.String
+		// #nosec G118
 		go func() {
+			// intentionally detached to avoid timing-based user enumeration
 			bg, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 			defer cancel()
 			mailer, e := mail.NewFromEnv()
 			if e != nil {
@@ -185,13 +188,13 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 
 	var sessionData helpers.SessionData
 	if err = json.Unmarshal([]byte(dataJSON), &sessionData); err != nil {
-		slog.Error("json unmarshall error", err)
+		slog.Error("json unmarshall error", "err", err)
 		return c.SendStatus(500)
 	}
 
 	hashedPassword, err := helpers.Argon2HashPassword(req.Password)
 	if err != nil {
-		slog.Error("password hashing error", err)
+		slog.Error("password hashing error", "err", err)
 		return c.SendStatus(500)
 	}
 
@@ -201,7 +204,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 		err = queries.ResetPasswordGuardian(c.Context(), db_queries.ResetPasswordGuardianParams{PasswordHash: hashedPassword, GuardianID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
 
 		if err != nil {
-			slog.Error("password recovery error", err)
+			slog.Error("password recovery error", "err", err)
 			return c.SendStatus(500)
 		}
 	}
@@ -210,7 +213,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 		err = queries.ResetPasswordStudent(c.Context(), db_queries.ResetPasswordStudentParams{PasswordHash: hashedPassword, StudentID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
 
 		if err != nil {
-			slog.Error("password recovery error", err)
+			slog.Error("password recovery error", "err", err)
 			return c.SendStatus(500)
 		}
 	}
@@ -219,7 +222,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 		err = queries.ResetPasswordTeacher(c.Context(), db_queries.ResetPasswordTeacherParams{PasswordHash: hashedPassword, TeacherID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
 
 		if err != nil {
-			slog.Error("password recovery error", err)
+			slog.Error("password recovery error", "err", err)
 			return c.SendStatus(500)
 		}
 	}

@@ -1,9 +1,6 @@
-name: Build
+name: PR Checks
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -20,6 +17,10 @@ jobs:
         working-directory: frontend
         run: bun install --frozen-lockfile
 
+      - name: Check for vulnerabilities
+        working-directory: frontend
+        run: bun audit --audit-level=high
+
       - name: Build
         working-directory: frontend
         run: bun run vite build
@@ -30,9 +31,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # gitleaks needs full history
 
       - name: Download dependencies
         run: go mod download -x
+
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          $(go env GOPATH)/bin/govulncheck -show verbose ./...
+      - name: gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          $(go env GOPATH)/bin/gosec -exclude=G104 --exclude-dir frontend --exclude-dir internal/db/store ./...
+      - name: gitleaks
+        run: |
+          go install github.com/gitleaks/gitleaks/v8/cmd/gitleaks@latest
+          $(go env GOPATH)/bin/gitleaks detect --source=. --redact --exit-code=1
+      - name: go vet
+        run: |
+          go vet ./...
 
       - name: Build
         env:
