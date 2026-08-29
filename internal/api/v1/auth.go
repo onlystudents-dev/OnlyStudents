@@ -214,7 +214,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 		err = queries.ResetPasswordGuardian(c.Context(), db_queries.ResetPasswordGuardianParams{PasswordHash: hashedPassword, GuardianID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
 
 		if err != nil {
-			slog.Error("password recorvery error", err)
+			slog.Error("password recovery error", err)
 			return c.SendStatus(500)
 		}
 	}
@@ -223,7 +223,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 		err = queries.ResetPasswordStudent(c.Context(), db_queries.ResetPasswordStudentParams{PasswordHash: hashedPassword, StudentID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
 
 		if err != nil {
-			slog.Error("password recorvery error", err)
+			slog.Error("password recovery error", err)
 			return c.SendStatus(500)
 		}
 	}
@@ -232,7 +232,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 		err = queries.ResetPasswordTeacher(c.Context(), db_queries.ResetPasswordTeacherParams{PasswordHash: hashedPassword, TeacherID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
 
 		if err != nil {
-			slog.Error("password recorvery error", err)
+			slog.Error("password recovery error", err)
 			return c.SendStatus(500)
 		}
 	}

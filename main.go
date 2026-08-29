@@ -87,7 +87,7 @@ func main() {
 		return v1.ForgetPassword(c, pool, &cache_store)
 	})
 
-	api.Post("/recorvery_password", func(c fiber.Ctx) error {
+	api.Post("/forget_password_confirm", func(c fiber.Ctx) error {
 		return v1.ForgetPasswordConfirm(c, pool, &cache_store)
 	})
 
