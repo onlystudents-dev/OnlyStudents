@@ -108,6 +108,10 @@ func main() {
 
 	me := api_v1.Group("/me")
 
+	me.Patch("/passowrd", func(c fiber.Ctx() error {
+	return meapi.ChangePassword(c, pool, &session_store, &cache_store)
+	})
+
 	me.Get("/status", func(c fiber.Ctx) error {
 		return meapi.Status(c, pool, &session_store, &cache_store)
 	})

@@ -24,3 +24,12 @@ UPDATE accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher
 
 -- name: ResetPasswordGuardian :exec
 UPDATE accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian';
+
+-- name: ChangePasswordStudent :exec
+UPDATE accounts SET password_hash = $1 WHERE student_id = $2 AND role = 'student';
+
+-- name: ChangePasswordTeacher :exec
+UPDATE  accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher';
+
+-- name: ChangePasswordGuardian :exec
+UPDATE  accounts SET password_hash = $1 WHERE  teacher_id = $2 AND role = 'guardian';
