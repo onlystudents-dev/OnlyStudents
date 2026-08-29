@@ -12,14 +12,22 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client) error {
-	max := helpers.GetUintEnvFallback("AUTH_RATE_LIMIT_MAX", 5)
-	window := helpers.GetUintEnvFallback("AUTH_RATE_LIMIT_WINDOW", 60) // seconds
+func RateLimitMiddleWare(c fiber.Ctx, rdb *redis.Client) error {
+	max := helpers.GetUintEnvFallback("API_RATELIMIT_MAX", 60)
+	window := helpers.GwtUintEnvFallback("API_RATELIMIT_WINDOW", 60)
+	return rateLimit(c, rdb, "api", max, window)
+}
 
-	ip := c.IP()
-	key := fmt.Sprintf("ratelimit:auth:%s", ip)
+	func AuthRateLimitMiddleware(c fiber.Ctx, rdb *redis.Client) error {
+		max := helpers.GetUnitEnvFallback("AUTH_RATE_LIMIT_MAX", 5)
+		window := helpers.GwtUintEnvFallback("AUTH_RATELIMIT_WINDOW", 60)
+		return rateLimit(c, rdb, "api", max, window)
+	}
 
-	ctx := context.Background()
+	func rateLimit(c fiber.Ctx, rdb *redis.Client, scope string, max, window uint64) error {
+		ip := c.IP()
+		key := fmt.Sprintf("ratelimit:%s%s", scope, ip)
+	}
 
 	count, err := rdb.Incr(ctx, key).Result()
 	if err != nil {
