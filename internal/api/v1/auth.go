@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -118,48 +119,37 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheS
 	queries := db_queries.New(pool)
 
 	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, int32(helpers.GetUintEnvFallback("ACCOUNT_CACHE_TTL", 5*60)))
-	if err != nil {
-		return c.SendStatus(200)
-	}
+	sendMail := err == nil && account.EmailAddress.Valid && account.EmailAddress.String != ""
 
-	if !account.EmailAddress.Valid || account.EmailAddress.String == "" {
-		return c.SendStatus(200)
-	}
-
-	code, err := generateResetCode(int(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_LEN", 10)))
-	if err != nil {
+	code, e := generateResetCode(int(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_LEN", 10)))
+	if e != nil {
 		return c.SendStatus(500)
 	}
-
 	cacheKey := fmt.Sprintf("pending_password_reset_%s", code)
-
-	sessionData := helpers.SessionData{
-		AccountID: req.User,
-		Role:      req.Role,
-	}
-
-	dataJSON, err := json.Marshal(sessionData)
-	if err != nil {
+	sessionData := helpers.SessionData{AccountID: req.User, Role: req.Role}
+	dataJSON, e := json.Marshal(sessionData)
+	if e != nil {
 		return c.SendStatus(500)
 	}
-
 	ttl := time.Duration(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_TTL", 15)) * time.Minute
-	err = cache_store.RedisDB.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err()
-	if err != nil {
+	if e := cache_store.RedisDB.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
 		return c.SendStatus(500)
 	}
 
-	mailer, err := mail.NewFromEnv()
-	if err != nil {
-		return c.SendStatus(500)
-	}
-
-	if err := mailer.SendTemplate(account.EmailAddress.String, "Reset password", "password_reset.html", ResetPasswordEmailData{ResetCode: code, Name: account.Role}); err != nil {
-		slog.Error("password reset email failed", "account", account.EmailAddress.String, "err", err)
-		if helpers.GetEnvFallback("APP_ENV", "development") != "production" {
-			return c.Status(502).SendString(err.Error())
-		}
-		return c.SendStatus(502)
+	if sendMail {
+		email := account.EmailAddress.String
+		go func() {
+			bg, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			mailer, e := mail.NewFromEnv()
+			if e != nil {
+				slog.Error("password reset mailer init failed", "err", e)
+				return
+			}
+			if e := mailer.SendTemplateContext(bg, email, "Reset password", "password_reset.html", ResetPasswordEmailData{ResetCode: code, Name: account.Role}); e != nil {
+				slog.Error("password reset email failed", "account", email, "err", e)
+			}
+		}()
 	}
 
 	return c.SendStatus(200)
