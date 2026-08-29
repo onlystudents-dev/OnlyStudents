@@ -3,6 +3,8 @@ package v1
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"math/big"
 	db_queries "onlystudents/internal/db/store"
@@ -11,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -127,6 +130,24 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheS
 		return c.SendStatus(500)
 	}
 
+	cacheKey := fmt.Sprintf("pending_password_reset_%s", code)
+
+	sessionData := helpers.SessionData{
+		AccountID: req.User,
+		Role:      req.Role,
+	}
+
+	dataJSON, err := json.Marshal(sessionData)
+	if err != nil {
+		return c.SendStatus(500)
+	}
+
+	ttl := time.Duration(helpers.GetUintEnvFallback("PASSWORD_RESET_CODE_TTL", 15)) * time.Minute
+	err = cache_store.RedisDB.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err()
+	if err != nil {
+		return c.SendStatus(500)
+	}
+
 	mailer, err := mail.NewFromEnv()
 	if err != nil {
 		return c.SendStatus(500)
@@ -139,6 +160,84 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheS
 		}
 		return c.SendStatus(502)
 	}
+
+	return c.SendStatus(200)
+}
+
+type ResetPasswordConfirmType struct {
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"confirm_password"`
+	PendingPassword string `json:"pending_password"`
+}
+
+func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheStore) error {
+	var req ResetPasswordConfirmType
+
+	if c.Locals("user") != nil {
+		return c.SendStatus(400)
+	}
+
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	if req.Password == "" || req.ConfirmPassword == "" || req.PendingPassword == "" {
+		return c.SendStatus(400)
+	}
+
+	if req.Password != req.ConfirmPassword {
+		return c.SendStatus(401)
+	}
+
+	cacheKey := fmt.Sprintf("pending_password_reset_%s", req.PendingPassword)
+
+	dataJSON, err := cache_store.RedisDB.Get(c.Context(), cacheKey).Result()
+	if err != nil {
+		return c.SendStatus(500)
+	}
+
+	var sessionData helpers.SessionData
+	if err = json.Unmarshal([]byte(dataJSON), &sessionData); err != nil {
+		slog.Error("json unmarshall error", err)
+		return c.SendStatus(500)
+	}
+
+	hashedPassword, err := helpers.Argon2HashPassword(req.Password)
+	if err != nil {
+		slog.Error("password hashing error", err)
+		return c.SendStatus(500)
+	}
+
+	queries := db_queries.New(pool)
+
+	if sessionData.Role == "guardian" {
+		err = queries.ResetPasswordGuardian(c.Context(), db_queries.ResetPasswordGuardianParams{PasswordHash: hashedPassword, GuardianID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
+
+		if err != nil {
+			slog.Error("password recorvery error", err)
+			return c.SendStatus(500)
+		}
+	}
+
+	if sessionData.Role == "student" {
+		err = queries.ResetPasswordStudent(c.Context(), db_queries.ResetPasswordStudentParams{PasswordHash: hashedPassword, StudentID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
+
+		if err != nil {
+			slog.Error("password recorvery error", err)
+			return c.SendStatus(500)
+		}
+	}
+
+	if sessionData.Role == "teacher" {
+		err = queries.ResetPasswordTeacher(c.Context(), db_queries.ResetPasswordTeacherParams{PasswordHash: hashedPassword, TeacherID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
+
+		if err != nil {
+			slog.Error("password recorvery error", err)
+			return c.SendStatus(500)
+		}
+	}
+
+	_ = cache_store.RedisDB.Del(c.Context(), cacheKey).Err()
 
 	return c.SendStatus(200)
 }
