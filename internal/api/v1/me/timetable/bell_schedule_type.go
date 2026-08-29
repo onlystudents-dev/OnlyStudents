@@ -23,6 +23,11 @@ type DeleteBellScheduleTypeRequest struct {
 func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 	var req CreateBellScheduleTypeRequest
 
+	token := c.Cookies("session_token")
+	if token == "" {
+		return c.SendStatus(401)
+	}
+
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
 	}
@@ -33,4 +38,15 @@ func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 
 	queries := db_queries.New(pool)
 
+	params := db_queries.CreateBellScheduleTypeParams{
+		SchoolID: 1,
+		Name:     req.Name,
+	}
+
+	err := queries.CreateBellScheduleType(c.Context(), params)
+	if err != nil {
+		return c.SendStatus(500)
+	}
+
+	return c.SendStatus(200)
 }
