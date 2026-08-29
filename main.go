@@ -73,14 +73,14 @@ func main() {
 		return c.SendString("Pong!")
 	})
 
-	authRateMax := helpers.GetEnvFallback("AUTH_RATE_MAX", "5")
-	authRateWindow := helpers.GetEnvFallback("AUTH_RATELIMIT_WINDOW", 60)
-	apiMaxRate := helpers.GetEnvFallback("API_RATE_MAX", , 60")
-	apiRateWindow := helpers.GetEnvFallback("API_RATELIMIT_WINDOW", 60)
+	authRateMax := helpers.GetUintEnvFallback("AUTH_RATE_MAX", 5)
+	authRateWindow := helpers.GetUintEnvFallback("AUTH_RATELIMIT_WINDOW", 60)
+	apiRateMax := helpers.GetUintEnvFallback("API_RATE_MAX", 60)
+	apiRateWindow := helpers.GetUintEnvFallback("API_RATELIMIT_WINDOW", 60)
 
 	api := app.Group("/api")
 	api.Use([]string{"/login", "/forgot_password", "/forgot_password_confirm", "/"},
-		func(c *fiber.Ctx) error {
+		func(c fiber.Ctx) error {
 			return middlewares.RateLimitMiddleware(c, rdb, "auth", authRateMax, authRateWindow)
 		})
 
