@@ -92,6 +92,21 @@ func (cs *CacheStore) GetAccount(ctx context.Context, role string, account_id in
 	return data, true
 }
 
+func (cs *CacheStore) InvalidateCachedAccount(ctx context.Context, role string, account_id int32) {
+	switch role {
+	case "student":
+		//
+	case "guardian":
+		//
+	case "teacher":
+		//
+	default:
+		return
+	}
+
+	cs.RedisDB.Del(ctx, fmt.Sprintf("%s:%d", role, account_id))
+}
+
 // Student
 // TODO: use a generic method
 func (cs *CacheStore) CacheOrGetStudent(ctx context.Context, queries db_queries.Queries, student_id int32, ttl int32) (db_queries.Student, error) {
