@@ -7,6 +7,7 @@ on:
 
 jobs:
   frontend:
+    if: forgejo.event.pull_request.head.repo.full_name == forgejo.repository
     runs-on: bun
 
     steps:
@@ -26,6 +27,7 @@ jobs:
         run: bun run vite build
 
   backend:
+    if: forgejo.event.pull_request.head.repo.full_name == forgejo.repository
     runs-on: go
 
     steps:
