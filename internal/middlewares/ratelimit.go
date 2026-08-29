@@ -6,28 +6,14 @@ import (
 	"strconv"
 	"time"
 
-	"onlystudents/internal/helpers"
-
 	"github.com/gofiber/fiber/v3"
 	"github.com/redis/go-redis/v9"
 )
 
-func RateLimitMiddleWare(c fiber.Ctx, rdb *redis.Client) error {
-	max := helpers.GetUintEnvFallback("API_RATELIMIT_MAX", 60)
-	window := helpers.GwtUintEnvFallback("API_RATELIMIT_WINDOW", 60)
-	return rateLimit(c, rdb, "api", max, window)
-}
-
-	func AuthRateLimitMiddleware(c fiber.Ctx, rdb *redis.Client) error {
-		max := helpers.GetUnitEnvFallback("AUTH_RATE_LIMIT_MAX", 5)
-		window := helpers.GwtUintEnvFallback("AUTH_RATELIMIT_WINDOW", 60)
-		return rateLimit(c, rdb, "api", max, window)
-	}
-
-	func rateLimit(c fiber.Ctx, rdb *redis.Client, scope string, max, window uint64) error {
-		ip := c.IP()
-		key := fmt.Sprintf("ratelimit:%s%s", scope, ip)
-	}
+func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client, scope string, max, window uint64) error {
+	ctx := context.Background()
+	ip := c.IP()
+	key := fmt.Sprintf("ratelimit:%s:%s", scope, ip)
 
 	count, err := rdb.Incr(ctx, key).Result()
 	if err != nil {
