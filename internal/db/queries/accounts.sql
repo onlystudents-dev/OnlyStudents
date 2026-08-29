@@ -15,3 +15,12 @@ SELECT * FROM accounts WHERE guardian_id = $1 AND role = 'guardian';
 
 -- name: GetAccountByTeacherID :one
 SELECT * FROM accounts WHERE teacher_id = $1 AND role = 'teacher';
+
+-- name: ResetPasswordStudent :exec
+UPDATE accounts SET password_hash = $1 WHERE student_id = $2 AND role = 'student';
+
+-- name: ResetPasswordTeacher :exec
+UPDATE accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher';
+
+-- name: ResetPasswordGuardian :exec
+UPDATE accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian';

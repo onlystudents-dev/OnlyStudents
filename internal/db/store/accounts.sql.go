@@ -109,3 +109,45 @@ func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.In
 	)
 	return i, err
 }
+
+const resetPasswordGuardian = `-- name: ResetPasswordGuardian :exec
+UPDATE accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian'
+`
+
+type ResetPasswordGuardianParams struct {
+	PasswordHash string
+	GuardianID   pgtype.Int4
+}
+
+func (q *Queries) ResetPasswordGuardian(ctx context.Context, arg ResetPasswordGuardianParams) error {
+	_, err := q.db.Exec(ctx, resetPasswordGuardian, arg.PasswordHash, arg.GuardianID)
+	return err
+}
+
+const resetPasswordStudent = `-- name: ResetPasswordStudent :exec
+UPDATE accounts SET password_hash = $1 WHERE student_id = $2 AND role = 'student'
+`
+
+type ResetPasswordStudentParams struct {
+	PasswordHash string
+	StudentID    pgtype.Int4
+}
+
+func (q *Queries) ResetPasswordStudent(ctx context.Context, arg ResetPasswordStudentParams) error {
+	_, err := q.db.Exec(ctx, resetPasswordStudent, arg.PasswordHash, arg.StudentID)
+	return err
+}
+
+const resetPasswordTeacher = `-- name: ResetPasswordTeacher :exec
+UPDATE accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher'
+`
+
+type ResetPasswordTeacherParams struct {
+	PasswordHash string
+	TeacherID    pgtype.Int4
+}
+
+func (q *Queries) ResetPasswordTeacher(ctx context.Context, arg ResetPasswordTeacherParams) error {
+	_, err := q.db.Exec(ctx, resetPasswordTeacher, arg.PasswordHash, arg.TeacherID)
+	return err
+}
