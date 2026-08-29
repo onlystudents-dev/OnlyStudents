@@ -60,6 +60,7 @@ CREATE TABLE lessons (
 CREATE TABLE base_schedule (
     id SERIAL PRIMARY KEY,
     school_id INT NOT NULL REFERENCES schools(id),
+    class_id INT NOT NULL REFERENCES classes(id),
     day_of_week INT NOT NULL,
     lesson_num INT NOT NULL,
     lesson_id INT NOT NULL REFERENCES lessons(id),
@@ -80,5 +81,32 @@ CREATE TABLE time_table (
     CONSTRAINT chk_substitution CHECK (is_substitution = TRUE or substitution_teacher_id IS NULL),
     UNIQUE(day_of_week, lesson_num, room_id)
 );
+
+CREATE TABLE principal (
+    id SERIAL PRIMARY KEY,
+    school_id INT NOT NULL REFERENCES schools(id),
+    teacher_id INT NOT NULL REFERENCES teacher(id)
+);
+
+CREATE TABLE permissions (
+    id SERIAL PRIMARY KEY,
+    school_id INT NOT NULL REFERENCES schools(id),
+    teacher_id INT NOT NULL REFERENCES teacher(id),
+    permission_id INT NOT NULL REFERENCES permission_type(id)
+);
+
+CREATE TABLE permission_type (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL
+);
+
+INSERT INTO permission_type (name, description) VALUES ('PRINCIPAL', 'Has all additional permissions.');
+INSERT INTO permission_type (name, description) VALUES ('MANAGE_TIMETABLES', 'Can manage all class schedules.');
+INSERT INTO permission_type (name, description) VALUES ('MANAGE_BELL_SCHEDULE', 'Can manage all bell schedule type and manage bell schedule.');
+INSERT INTO permission_type (name, description) VALUES ('MANAGE_GROUPS', 'Can manage all groups and assign any student to any group.');
+INSERT INTO permission_type (name, description) VALUES ('MANAGE_ROOMS', 'Can manage all rooms');
+INSERT INTO permission_type (name, description) VALUES ('MANAGE_SUBSTITUTIONS', 'Can manage daily substitutions and cancel lessons.');
+INSERT INTO permission_type (name, description) VALUES ('MANAGE_CUSTOM_SUBJECT', 'Can create, edit, or delete custom subjects.');
 
 ALTER TABLE classes ADD COLUMN bell_id INT NOT NULL REFERENCES bell_schedule_type(id);

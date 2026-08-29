@@ -46,6 +46,7 @@ type Announcement struct {
 type BaseSchedule struct {
 	ID        int32
 	SchoolID  int32
+	ClassID   int32
 	DayOfWeek int32
 	LessonNum int32
 	LessonID  int32
@@ -200,6 +201,25 @@ type LessonLog struct {
 	Topic      pgtype.Text
 	HomeworkID pgtype.Int4
 	Conducted  bool
+}
+
+type Permission struct {
+	ID           int32
+	SchoolID     int32
+	TeacherID    int32
+	PermissionID int32
+}
+
+type PermissionType struct {
+	ID          int32
+	Name        string
+	Description string
+}
+
+type Principal struct {
+	ID        int32
+	SchoolID  int32
+	TeacherID int32
 }
 
 type Room struct {

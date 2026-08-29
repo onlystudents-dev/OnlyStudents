@@ -22,3 +22,61 @@ func (q *Queries) CreateBellScheduleType(ctx context.Context, arg CreateBellSche
 	_, err := q.db.Exec(ctx, createBellScheduleType, arg.SchoolID, arg.Name)
 	return err
 }
+
+const deleteBellScheduleType = `-- name: DeleteBellScheduleType :exec
+DELETE FROM bell_schedule_type WHERE school_id = $1 AND id = $2
+`
+
+type DeleteBellScheduleTypeParams struct {
+	SchoolID int32
+	ID       int32
+}
+
+func (q *Queries) DeleteBellScheduleType(ctx context.Context, arg DeleteBellScheduleTypeParams) error {
+	_, err := q.db.Exec(ctx, deleteBellScheduleType, arg.SchoolID, arg.ID)
+	return err
+}
+
+const editBellScheduleType = `-- name: EditBellScheduleType :exec
+UPDATE bell_schedule_type SET name = $1 WHERE id = $2 AND school_id = $3
+`
+
+type EditBellScheduleTypeParams struct {
+	Name     string
+	ID       int32
+	SchoolID int32
+}
+
+func (q *Queries) EditBellScheduleType(ctx context.Context, arg EditBellScheduleTypeParams) error {
+	_, err := q.db.Exec(ctx, editBellScheduleType, arg.Name, arg.ID, arg.SchoolID)
+	return err
+}
+
+const readBellScheduleType = `-- name: ReadBellScheduleType :many
+SELECT id, name FROM bell_schedule_type WHERE school_id = $1
+`
+
+type ReadBellScheduleTypeRow struct {
+	ID   int32
+	Name string
+}
+
+func (q *Queries) ReadBellScheduleType(ctx context.Context, schoolID int32) ([]ReadBellScheduleTypeRow, error) {
+	rows, err := q.db.Query(ctx, readBellScheduleType, schoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReadBellScheduleTypeRow
+	for rows.Next() {
+		var i ReadBellScheduleTypeRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
