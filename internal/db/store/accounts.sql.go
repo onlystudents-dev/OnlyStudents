@@ -193,3 +193,45 @@ func (q *Queries) ResetPasswordTeacher(ctx context.Context, arg ResetPasswordTea
 	_, err := q.db.Exec(ctx, resetPasswordTeacher, arg.PasswordHash, arg.TeacherID)
 	return err
 }
+
+const updaEmailteGuardian = `-- name: UpdaEmailteGuardian :exec
+UPDATE accounts SET email_address = $1, email_verfied = false WHERE guardian_id $2 AND role = 'guardian'
+`
+
+type UpdaEmailteGuardianParams struct {
+	EmailAddress pgtype.Text
+	Column2      interface{}
+}
+
+func (q *Queries) UpdaEmailteGuardian(ctx context.Context, arg UpdaEmailteGuardianParams) error {
+	_, err := q.db.Exec(ctx, updaEmailteGuardian, arg.EmailAddress, arg.Column2)
+	return err
+}
+
+const updateEmailStudent = `-- name: UpdateEmailStudent :exec
+UPDATE accounts SET email_address = $1, email_verified = false WHERE student_id = $2 AND role = 'student'
+`
+
+type UpdateEmailStudentParams struct {
+	EmailAddress pgtype.Text
+	StudentID    pgtype.Int4
+}
+
+func (q *Queries) UpdateEmailStudent(ctx context.Context, arg UpdateEmailStudentParams) error {
+	_, err := q.db.Exec(ctx, updateEmailStudent, arg.EmailAddress, arg.StudentID)
+	return err
+}
+
+const updateEmailTeacher = `-- name: UpdateEmailTeacher :exec
+UPDATE accounts SET email_address = $1, email_verfied = false WHERE teacher_id $2 AND role = 'teacher'
+`
+
+type UpdateEmailTeacherParams struct {
+	EmailAddress pgtype.Text
+	Column2      interface{}
+}
+
+func (q *Queries) UpdateEmailTeacher(ctx context.Context, arg UpdateEmailTeacherParams) error {
+	_, err := q.db.Exec(ctx, updateEmailTeacher, arg.EmailAddress, arg.Column2)
+	return err
+}

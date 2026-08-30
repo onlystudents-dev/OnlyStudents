@@ -113,6 +113,10 @@ func main() {
 		return meapi.ChangePassword(c, pool, &session_store, &cache_store)
 	})
 
+	me.Post("/change_email", func(c fiber.Ctx) error {
+		return meapi.ChangeEmail(c, pool, &session_store, &cache_store)
+	})
+
 	me.Get("/status", func(c fiber.Ctx) error {
 		return meapi.Status(c, pool, &session_store, &cache_store)
 	})

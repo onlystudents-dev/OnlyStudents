@@ -32,4 +32,13 @@ UPDATE accounts SET password_hash = $1 WHERE student_id = $2 AND role = 'student
 UPDATE  accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher';
 
 -- name: ChangePasswordGuardian :exec
-UPDATE  accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian';
+UPDATE  accounts SET password_hash = $1 WHERE  teacher_id = $2 AND role = 'guardian';
+
+-- name: UpdateEmailStudent :exec
+UPDATE accounts SET email_address = $1, email_verified = false WHERE student_id = $2 AND role = 'student';
+
+-- name: UpdaEmailteGuardian :exec
+UPDATE accounts SET email_address = $1, email_verfied = false WHERE guardian_id $2 AND role = 'guardian';
+
+-- name: UpdateEmailTeacher :exec
+UPDATE accounts SET email_address = $1, email_verfied = false WHERE teacher_id $2 AND role = 'teacher';
