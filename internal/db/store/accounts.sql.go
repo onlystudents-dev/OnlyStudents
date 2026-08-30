@@ -11,6 +11,48 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const changePasswordGuardian = `-- name: ChangePasswordGuardian :exec
+UPDATE  accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian'
+`
+
+type ChangePasswordGuardianParams struct {
+	PasswordHash string
+	GuardianID   pgtype.Int4
+}
+
+func (q *Queries) ChangePasswordGuardian(ctx context.Context, arg ChangePasswordGuardianParams) error {
+	_, err := q.db.Exec(ctx, changePasswordGuardian, arg.PasswordHash, arg.GuardianID)
+	return err
+}
+
+const changePasswordStudent = `-- name: ChangePasswordStudent :exec
+UPDATE accounts SET password_hash = $1 WHERE student_id = $2 AND role = 'student'
+`
+
+type ChangePasswordStudentParams struct {
+	PasswordHash string
+	StudentID    pgtype.Int4
+}
+
+func (q *Queries) ChangePasswordStudent(ctx context.Context, arg ChangePasswordStudentParams) error {
+	_, err := q.db.Exec(ctx, changePasswordStudent, arg.PasswordHash, arg.StudentID)
+	return err
+}
+
+const changePasswordTeacher = `-- name: ChangePasswordTeacher :exec
+UPDATE  accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher'
+`
+
+type ChangePasswordTeacherParams struct {
+	PasswordHash string
+	TeacherID    pgtype.Int4
+}
+
+func (q *Queries) ChangePasswordTeacher(ctx context.Context, arg ChangePasswordTeacherParams) error {
+	_, err := q.db.Exec(ctx, changePasswordTeacher, arg.PasswordHash, arg.TeacherID)
+	return err
+}
+
 const createGuardianAccount = `-- name: CreateGuardianAccount :exec
 INSERT INTO accounts (role, password_hash, guardian_id) VALUES ("guardian", $1, $2)
 `
