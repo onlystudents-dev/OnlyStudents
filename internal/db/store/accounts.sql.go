@@ -12,16 +12,16 @@ import (
 )
 
 const changePasswordGuardian = `-- name: ChangePasswordGuardian :exec
-UPDATE  accounts SET password_hash = $1 WHERE  teacher_id = $2 AND role = 'guardian'
+UPDATE  accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian'
 `
 
 type ChangePasswordGuardianParams struct {
 	PasswordHash string
-	TeacherID    pgtype.Int4
+	GuardianID   pgtype.Int4
 }
 
 func (q *Queries) ChangePasswordGuardian(ctx context.Context, arg ChangePasswordGuardianParams) error {
-	_, err := q.db.Exec(ctx, changePasswordGuardian, arg.PasswordHash, arg.TeacherID)
+	_, err := q.db.Exec(ctx, changePasswordGuardian, arg.PasswordHash, arg.GuardianID)
 	return err
 }
 
