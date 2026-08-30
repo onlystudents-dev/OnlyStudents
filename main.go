@@ -88,10 +88,6 @@ func main() {
 		return v1.Login(c, pool, &session_store, &cache_store)
 	})
 
-	api.Post("/logout", func(c fiber.Ctx) error {
-		return v1.Logout(c, pool, &session_store)
-	})
-
 	api.Post("/forget_password", func(c fiber.Ctx) error {
 		return v1.ForgetPassword(c, pool, &cache_store)
 	})
@@ -108,8 +104,12 @@ func main() {
 
 	me := api_v1.Group("/me")
 
-	me.Patch("/passowrd", func(c fiber.Ctx() error {
-	return meapi.ChangePassword(c, pool, &session_store, &cache_store)
+	me.Post("/logout", func(c fiber.Ctx) error {
+		return v1.Logout(c, pool, &session_store)
+	})
+
+	me.Post("/change_password", func(c fiber.Ctx) error {
+		return meapi.ChangePassword(c, pool, &session_store, &cache_store)
 	})
 
 	me.Get("/status", func(c fiber.Ctx) error {
