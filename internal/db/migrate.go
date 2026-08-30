@@ -23,8 +23,9 @@ func applyMigration(ctx context.Context, conn *pgxpool.Pool, name string) error 
 	if _, err := conn.Exec(ctx, string(content)); err != nil {
 		return fmt.Errorf("apply %s: %w", name, err)
 	}
-	if _, err := conn.Exec(ctx, "INSERT INTO schema_migrations (version, applied_at) VALUES ($1, now())", name); err != nil {
-		return fmt.Errorf("record %s: %w", name, err)
+	version := strings.TrimSuffix(name, ".sql")
+	if _, err := conn.Exec(ctx, "INSERT INTO schema_migrations (version, applied_at) VALUES ($1, now())", version); err != nil {
+		return fmt.Errorf("record %s: %w", version, err)
 	}
 	return nil
 }

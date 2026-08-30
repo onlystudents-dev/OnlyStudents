@@ -23,6 +23,14 @@ type loginRequest struct {
 	Role     string `json:"role"`
 }
 
+var dummyPasswordHash = func() string {
+	h, err := helpers.Argon2HashPassword("timing-equalization-dummy")
+	if err != nil {
+		panic(err)
+	}
+	return h
+}()
+
 func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
 	var req loginRequest
 	if err := c.Bind().Body(&req); err != nil {
@@ -37,8 +45,8 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore,
 	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
-		// run argon2verify to fix timing-based enumeration attacks, if the account does not exist, it would not verify with argon2, which would have a slight latency difference
-		helpers.Argon2Verify(req.Password, account.PasswordHash)
+		// run argon2verify on a dummy hash (if the hash isnt a dummy, you could still do enumeration because "" would fail instantly) to fix timing-based enumeration attacks, if the account does not exist, it would not verify with argon2, which would have a slight latency difference
+		helpers.Argon2Verify(req.Password, dummyPasswordHash)
 		return c.SendStatus(401)
 	}
 

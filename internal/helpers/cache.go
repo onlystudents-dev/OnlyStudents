@@ -30,10 +30,7 @@ func (cs *CacheStore) CacheAccount(ctx context.Context, queries db_queries.Queri
 	var account db_queries.Account
 	var err error
 
-	pg_user_id := pgtype.Int4{
-		Int32: account_id,
-		Valid: true,
-	}
+	pg_user_id := pgtype.Int4{Int32: account_id, Valid: true}
 
 	switch role {
 	case "student":
@@ -43,20 +40,18 @@ func (cs *CacheStore) CacheAccount(ctx context.Context, queries db_queries.Queri
 	case "teacher":
 		account, err = queries.GetAccountByTeacherID(ctx, pg_user_id)
 	default:
-		return db_queries.Account{}, errors.New("Role does not exist")
+		return db_queries.Account{}, errors.New("role does not exist")
+	}
+	if err != nil {
+		return db_queries.Account{}, err
 	}
 
 	account_value, err := json.Marshal(account)
-
 	if err != nil {
 		return db_queries.Account{}, err
 	}
 
-	if err := cs.RedisDB.Set(ctx, fmt.Sprintf("%s:%d", role, account_id), string(account_value), time.Duration(ttl)*time.Second).Err(); err != nil {
-		return db_queries.Account{}, err
-	}
-
-	if err != nil {
+	if err := cs.RedisDB.Set(ctx, fmt.Sprintf("%s_account:%d", role, account_id), string(account_value), time.Duration(ttl)*time.Second).Err(); err != nil {
 		return db_queries.Account{}, err
 	}
 
@@ -75,7 +70,7 @@ func (cs *CacheStore) GetAccount(ctx context.Context, role string, account_id in
 		return db_queries.Account{}, false
 	}
 
-	val, err := cs.RedisDB.Get(ctx, fmt.Sprintf("%s:%d", role, account_id)).Bytes()
+	val, err := cs.RedisDB.Get(ctx, fmt.Sprintf("%s_account:%d", role, account_id)).Bytes()
 	if errors.Is(err, redis.Nil) {
 		return db_queries.Account{}, false
 	}
@@ -104,7 +99,7 @@ func (cs *CacheStore) InvalidateCachedAccount(ctx context.Context, role string, 
 		return
 	}
 
-	cs.RedisDB.Del(ctx, fmt.Sprintf("%s:%d", role, account_id))
+	cs.RedisDB.Del(ctx, fmt.Sprintf("%s_account:%d", role, account_id))
 }
 
 // Student
