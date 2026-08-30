@@ -2,6 +2,7 @@ package timetable
 
 import (
 	db_queries "onlystudents/internal/db/store"
+	"onlystudents/internal/helpers"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -21,7 +22,7 @@ type DeleteBellScheduleTypeRequest struct {
 	Id int32 `json:"id"`
 }
 
-func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
+func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionStore) error {
 	var req CreateBellScheduleTypeRequest
 
 	token := c.Cookies("session_token")
@@ -43,6 +44,12 @@ func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 		return c.SendStatus(400)
 	}
 
+	has_permission := helpers.CheckPermission(c.Context(), pool, store, token, "MANAGE_BELL_SCHEDULE")
+
+	if has_permission == false {
+		return c.SendStatus(401)
+	}
+
 	queries := db_queries.New(pool)
 
 	params := db_queries.CreateBellScheduleTypeParams{
@@ -58,7 +65,7 @@ func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 	return c.SendStatus(200)
 }
 
-func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
+func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionStore) error {
 	var req DeleteBellScheduleTypeRequest
 
 	token := c.Cookies("session_token")
@@ -77,6 +84,12 @@ func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 		c.SendStatus(401)
 	}
 
+	has_permission := helpers.CheckPermission(c.Context(), pool, store, token, "MANAGE_BELL_SCHEDULE")
+
+	if has_permission == false {
+		return c.SendStatus(401)
+	}
+
 	queries := db_queries.New(pool)
 
 	params := db_queries.DeleteBellScheduleTypeParams{
@@ -93,7 +106,7 @@ func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 	return c.SendStatus(200)
 }
 
-func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
+func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionStore) error {
 	var req EditBellScheduleTypeRequest
 
 	token := c.Cookies("session_token")
@@ -110,6 +123,12 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 
 	if token == "" {
 		c.SendStatus(401)
+	}
+
+	has_permission := helpers.CheckPermission(c.Context(), pool, store, token, "MANAGE_BELL_SCHEDULE")
+
+	if has_permission == false {
+		return c.SendStatus(401)
 	}
 
 	queries := db_queries.New(pool)
@@ -129,7 +148,7 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 	return c.SendStatus(200)
 }
 
-func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
+func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionStore) error {
 
 	token := c.Cookies("session-token")
 
@@ -144,6 +163,12 @@ func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool) error {
 	}
 
 	if token == "" {
+		return c.SendStatus(401)
+	}
+
+	has_permission := helpers.CheckPermission(c.Context(), pool, store, token, "MANAGE_BELL_SCHEDULE")
+
+	if has_permission == false {
 		return c.SendStatus(401)
 	}
 
