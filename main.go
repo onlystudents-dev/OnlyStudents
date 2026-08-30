@@ -79,12 +79,15 @@ func main() {
 	apiRateWindow := helpers.GetInt64EnvFallback("API_RATELIMIT_WINDOW", 60, 1000000)
 
 	api := app.Group("/api")
-	api.Use([]string{"/login", "/forgot_password", "/forgot_password_confirm", "/"},
-		func(c fiber.Ctx) error {
-			return middlewares.RateLimitMiddleware(c, rdb, "auth", authRateMax, authRateWindow)
-		})
 
-	api.Post("/login", func(c fiber.Ctx) error {
+	authLimit := func(c fiber.Ctx) error {
+		return middlewares.RateLimitMiddleware(c, rdb, "auth", authRateMax, authRateWindow)
+	}
+	apiLimit := func(c fiber.Ctx) error {
+		return middlewares.RateLimitMiddleware(c, rdb, "api", apiRateMax, apiRateWindow)
+	}
+
+	api.Post("/login", authLimit, func(c fiber.Ctx) error {
 		return v1.Login(c, pool, &session_store, &cache_store)
 	})
 
@@ -92,13 +95,11 @@ func main() {
 		return v1.ForgetPassword(c, pool, &cache_store)
 	})
 
-	api.Post("/forget_password_confirm", func(c fiber.Ctx) error {
+	api.Post("/forget_password_confirm", authLimit, func(c fiber.Ctx) error {
 		return v1.ForgetPasswordConfirm(c, pool, &cache_store)
 	})
 
-	api_v1 := api.Group("/v1", func(c fiber.Ctx) error {
-		return middlewares.RateLimitMiddleware(c, rdb, "api", apiRateMax, apiRateWindow)
-	}, func(c fiber.Ctx) error {
+	api_v1 := api.Group("/v1", apiLimit, func(c fiber.Ctx) error {
 		return middlewares.AuthMiddleware(c, &session_store)
 	})
 
