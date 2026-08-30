@@ -23,6 +23,20 @@ func (q *Queries) CreateBellScheduleType(ctx context.Context, arg CreateBellSche
 	return err
 }
 
+const createCustomSubject = `-- name: CreateCustomSubject :exec
+INSERT INTO custom_subjects (school_id, subject_name) VALUES ($1, $2)
+`
+
+type CreateCustomSubjectParams struct {
+	SchoolID    int32
+	SubjectName string
+}
+
+func (q *Queries) CreateCustomSubject(ctx context.Context, arg CreateCustomSubjectParams) error {
+	_, err := q.db.Exec(ctx, createCustomSubject, arg.SchoolID, arg.SubjectName)
+	return err
+}
+
 const deleteBellScheduleType = `-- name: DeleteBellScheduleType :exec
 DELETE FROM bell_schedule_type WHERE school_id = $1 AND id = $2
 `
@@ -34,6 +48,20 @@ type DeleteBellScheduleTypeParams struct {
 
 func (q *Queries) DeleteBellScheduleType(ctx context.Context, arg DeleteBellScheduleTypeParams) error {
 	_, err := q.db.Exec(ctx, deleteBellScheduleType, arg.SchoolID, arg.ID)
+	return err
+}
+
+const deleteCustomSubject = `-- name: DeleteCustomSubject :exec
+DELETE FROM custom_subjects WHERE school_id = $1 AND id = $2
+`
+
+type DeleteCustomSubjectParams struct {
+	SchoolID int32
+	ID       int32
+}
+
+func (q *Queries) DeleteCustomSubject(ctx context.Context, arg DeleteCustomSubjectParams) error {
+	_, err := q.db.Exec(ctx, deleteCustomSubject, arg.SchoolID, arg.ID)
 	return err
 }
 
@@ -49,6 +77,21 @@ type EditBellScheduleTypeParams struct {
 
 func (q *Queries) EditBellScheduleType(ctx context.Context, arg EditBellScheduleTypeParams) error {
 	_, err := q.db.Exec(ctx, editBellScheduleType, arg.Name, arg.ID, arg.SchoolID)
+	return err
+}
+
+const editCustomSubject = `-- name: EditCustomSubject :exec
+UPDATE custom_subjects SET subject_name = $1 WHERE school_id = $2 AND id = $3
+`
+
+type EditCustomSubjectParams struct {
+	SubjectName string
+	SchoolID    int32
+	ID          int32
+}
+
+func (q *Queries) EditCustomSubject(ctx context.Context, arg EditCustomSubjectParams) error {
+	_, err := q.db.Exec(ctx, editCustomSubject, arg.SubjectName, arg.SchoolID, arg.ID)
 	return err
 }
 
@@ -71,6 +114,35 @@ func (q *Queries) ReadBellScheduleType(ctx context.Context, schoolID int32) ([]R
 	for rows.Next() {
 		var i ReadBellScheduleTypeRow
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const readCustomSubject = `-- name: ReadCustomSubject :many
+SELECT id, subject_name FROM custom_subjects WHERE school_id = $1
+`
+
+type ReadCustomSubjectRow struct {
+	ID          int32
+	SubjectName string
+}
+
+func (q *Queries) ReadCustomSubject(ctx context.Context, schoolID int32) ([]ReadCustomSubjectRow, error) {
+	rows, err := q.db.Query(ctx, readCustomSubject, schoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReadCustomSubjectRow
+	for rows.Next() {
+		var i ReadCustomSubjectRow
+		if err := rows.Scan(&i.ID, &i.SubjectName); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

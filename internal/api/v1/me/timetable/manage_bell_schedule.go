@@ -36,10 +36,6 @@ func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.Sess
 		return c.SendStatus(401)
 	}
 
-	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
-	}
-
 	if req.Name == "" {
 		return c.SendStatus(400)
 	}
