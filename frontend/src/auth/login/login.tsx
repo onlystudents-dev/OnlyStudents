@@ -1,6 +1,6 @@
 import "./login.css";
 import Button from "../../util/button/button.tsx";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight, faQuestion} from "@fortawesome/free-solid-svg-icons";
 import PasswordReset from "../pwr/pwr.tsx";
@@ -20,6 +20,26 @@ export default function Login() {
     const [password, setPassword] = useState("");
 
     const [waiting, setWaiting] = useState(false);
+    const [remaining, setRemaining] = useState("");
+
+    const timerRef = useRef<number | null>(null);
+
+    const updateRemaining = useCallback(function step(remaining: number) {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+        }
+
+        if (remaining <= 0) {
+            setRemaining("");
+            return;
+        }
+
+        setRemaining(String(remaining));
+
+        timerRef.current = setTimeout(() => {
+            step(remaining - 1);
+        }, 1000);
+    }, []);
 
     const login = useCallback(async () => {
         if (red) return
@@ -47,13 +67,19 @@ export default function Login() {
                     toast.error("The username doesn't pair with the password!")
                     setWrong(true)
                     break
+                case 429: {
+                    const seconds = response.headers.get("Retry-After")
+                    toast.error(`You've been rate limited! Try again in ${seconds} seconds`)
+                    updateRemaining(Number(seconds))
+                    break
+                }
                 default:
                     toast.error(await response.text() || response.statusText)
             }
         } finally {
             setWaiting(false)
         }
-    }, [red, wrong, id, password, role, setWaiting, setWrong])
+    }, [red, wrong, id, password, role, setWaiting, setWrong, updateRemaining])
 
     useEffect(() => {
         const handleKeyDown = async (e: KeyboardEvent) => {
@@ -85,9 +111,12 @@ export default function Login() {
                         <Button onClick={sPwr}>
                             <FontAwesomeIcon icon={faQuestion} /> Forgot password
                         </Button>
-                        <Button onClick={login}>
-                            Login <FontAwesomeIcon icon={faArrowRight} />
-                        </Button>
+                        <div className="flex flex-row items-center gap-4">
+                            <p className="text-(--wrong-color) text-3xl fredoka">{remaining}</p>
+                            <Button onClick={login}>
+                                Login <FontAwesomeIcon icon={faArrowRight} />
+                            </Button>
+                        </div>
                     </div>
                 </div>
                 {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} setWaiting={setWaiting} />}
