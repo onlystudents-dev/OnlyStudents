@@ -2,7 +2,7 @@ package helpers
 
 import (
 	// secure because over HTTPS and we are only sending the start of the hash
-	"crypto/sha1" // nosec G401
+	"crypto/sha1" // #nosec G401
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -16,7 +16,7 @@ import (
 )
 
 func HaveIBeenPwnedCheck(pw string) (bool, error) {
-	sum := sha1.Sum([]byte(pw))
+	sum := sha1.Sum([]byte(pw)) // #nosec G401
 	h := strings.ToUpper(hex.EncodeToString(sum[:]))
 
 	resp, err := http.Get("https://api.pwnedpasswords.com/range/" + h[:5])
