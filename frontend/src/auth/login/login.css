@@ -1,22 +1,23 @@
 @import "tailwindcss";
 
 .box {
-    @apply flex w-120 h-100 p-6 rounded-2xl z-149 flex-row justify-start items-center;
+    @apply flex w-120 p-6 rounded-2xl z-149 flex-row justify-start items-center;
     background-color: var(--bg-color);
     border: var(--txt-color) solid 4px;
 
-    transition: box-shadow 400ms ease-in-out;
+    transition: box-shadow 400ms ease-in-out, height 200ms ease-in-out;
 
     overflow: hidden;
 }
 
 .box:hover {
     box-shadow: 0 0 10px var(--txt-color);
-    transition: box-shadow 200ms ease-in-out;
+    transition: box-shadow 200ms ease-in-out, height 200ms ease-in-out;
 }
 
 .content {
-    @apply flex flex-col items-center absolute inset-6 w-106 h-86;
+    @apply flex flex-col items-center absolute inset-6 w-106;
+    transition: height 200ms ease-in-out;
 }
 
 .out {
@@ -64,7 +65,7 @@
 }
 
 .logbutton {
-    @apply flex flex-row justify-between items-center w-full mt-4;
+    @apply flex flex-row justify-between items-center w-full absolute left-0 bottom-0 right-0;
     .button {
         background-color: var(--hover-color);
         transition: box-shadow 400ms ease-in-out;
