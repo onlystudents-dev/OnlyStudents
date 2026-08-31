@@ -19,7 +19,8 @@
 }
 
 .pwrbutton {
-    @apply flex flex-row justify-between items-center w-full;
+    @apply flex flex-row justify-between items-center w-full absolute left-0 bottom-0 right-0;
+    transition: bottom 200ms ease-in-out;
     .button {
         background-color: var(--hover-color);
         transition: box-shadow 400ms ease-in-out;
@@ -35,15 +36,19 @@
     transition: transform 200ms ease-in-out;
 }
 
+.content.outback {
+    transition: height 200ms ease-in-out, transform 200ms ease-in-out;
+}
+
 .outback.hid {
     transform: translateX(480px);
 }
 
 .outbottom {
     transform: translateY(0);
-    transition: transform 200ms ease-in-out !important;
+    transition: transform 400ms ease-in-out !important;
 }
 
 .outbottom.hid {
-    transform: translateY(400px);
+    transform: translateY(600px);
 }

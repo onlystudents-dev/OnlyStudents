@@ -4,14 +4,17 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faPaperPlane, faPlane} from "@fortawesome/free-solid-svg-icons";
 import React, {useCallback, useEffect, useState} from "react";
 import {toast} from "react-toastify";
+import PasswordCheck from "../pwc.tsx";
 
-export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID, setWaiting }: { pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void, setWaiting: React.Dispatch<React.SetStateAction<boolean>> }) {
+export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID, setWaiting, setResetL }: {pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void, setWaiting: React.Dispatch<React.SetStateAction<boolean>>, setResetL:  React.Dispatch<React.SetStateAction<boolean>>}) {
     const [reset, setReset] = useState(false);
     const [resetA, setResetA] = useState(false);
 
     const [code, setCode] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+
+    const [passed, setPassed] = useState(false);
 
     const email = useCallback(async () => {
         if (red) return
@@ -31,18 +34,21 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
         switch (response.status) {
             case 200:
                 setResetA(true)
+                setResetL(true)
                 setTimeout(() => setReset(true), 200)
                 break
             default:
                 toast.error(await response.text() || response.statusText)
         }
         setWaiting(false)
-    }, [red, id, role, setWaiting])
+    }, [red, id, role, setResetL, setWaiting])
 
     const change = useCallback(async () => {
         if (!code) return
         if (!password) return
+        if (!passed) return
         if (password !== confirmPassword) return
+        setWaiting(true)
         const response = await fetch("/api/forget_password_confirm", {
             method: "POST",
             headers: {
@@ -63,7 +69,7 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
                 toast.error(await response.text() || response.statusText)
         }
         setWaiting(false)
-    }, [code, password, confirmPassword, setWaiting, unsPwr])
+    }, [code, password, confirmPassword, passed, setWaiting, unsPwr])
 
     useEffect(() => {
         const handleKeyDown = async (e: KeyboardEvent) => {
@@ -82,7 +88,7 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
 
     return (
         <>
-            <div className={`content in outback ${!pwrA && "hid"}`}>
+            <div className={`content in outback ${!pwrA && "hid"} ${resetA ? "h-144" : "h-86"}`}>
                 <h1 className="self-center text-5xl font-bold mb-8 rubik">Reset password</h1>
                 {!reset && <div className={`loginput fredoka out ${resetA && "hid"}`}>
                     <select value={role} onChange={(e) => setRole(e.target.value)}>
@@ -96,9 +102,10 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
                     <input type="text" placeholder="Code" onChange={(e) => setCode(e.target.value)} />
                     <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
                     <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder="Confirm password" onChange={(e) => setConfirmPassword(e.target.value)} />
+                    <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                 </div>}
 
-                <div className={`pwrbutton ${reset ? "mt-4" : "mt-20"}`}>
+                <div className="pwrbutton">
                     <Button onClick={unsPwr}>
                         <FontAwesomeIcon icon={faArrowLeft} /> Back
                     </Button>

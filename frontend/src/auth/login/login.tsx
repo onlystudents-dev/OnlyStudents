@@ -10,6 +10,7 @@ import Loading from "../../util/loading.tsx";
 export default function Login() {
     const [pwr, setPwr] = useState(false);
     const [pwrA, setPwrA] = useState(false);
+    const [reset, setReset] = useState(false)
 
     const [red, setRed] = useState(false);
     const [wrong, setWrong] = useState(false);
@@ -95,8 +96,8 @@ export default function Login() {
 
     return (
         <>
-            <div className="box cantar">
-                <div className={`content out ${pwrA && "hid"}`}>
+            <div className={`box cantar ${reset ? "h-158" : "h-100"}`}>
+                <div className={`content out ${pwrA && "hid"} h-86`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">Login</h1>
                     <div className="loginput fredoka">
                         <select value={role} onChange={(e) => setRole(e.target.value)}>
@@ -119,7 +120,7 @@ export default function Login() {
                         </div>
                     </div>
                 </div>
-                {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} setWaiting={setWaiting} />}
+                {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} setWaiting={setWaiting} setResetL={setReset} />}
             </div>
             {waiting && <Loading />}
         </>
@@ -139,6 +140,7 @@ export default function Login() {
     }
 
     function unsPwr() {
+        setReset(false)
         setPwrA(false)
         setTimeout(() => setPwr(false), 200)
     }
