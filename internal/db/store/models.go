@@ -20,13 +20,14 @@ type Absence struct {
 }
 
 type Account struct {
-	ID           pgtype.UUID
-	Role         string
-	PasswordHash string
-	StudentID    pgtype.Int4
-	TeacherID    pgtype.Int4
-	GuardianID   pgtype.Int4
-	EmailAddress pgtype.Text
+	ID            pgtype.UUID
+	Role          string
+	PasswordHash  string
+	StudentID     pgtype.Int4
+	TeacherID     pgtype.Int4
+	GuardianID    pgtype.Int4
+	EmailAddress  pgtype.Text
+	EmailVerified bool
 }
 
 type Announcement struct {

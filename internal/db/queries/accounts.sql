@@ -29,7 +29,25 @@ UPDATE accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardi
 UPDATE accounts SET password_hash = $1 WHERE student_id = $2 AND role = 'student';
 
 -- name: ChangePasswordTeacher :exec
-UPDATE  accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher';
+UPDATE accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher';
 
 -- name: ChangePasswordGuardian :exec
-UPDATE  accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian';
+UPDATE accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian';
+
+-- name: UpdateEmailStudent :exec
+UPDATE accounts SET email_address = $1, email_verified = false WHERE student_id = $2 AND role = 'student';
+
+-- name: UpdateEmailGuardian :exec
+UPDATE accounts SET email_address = $1, email_verfied = false WHERE guardian_id = $2 AND role = 'guardian';
+
+-- name: UpdateEmailTeacher :exec
+UPDATE accounts SET email_address = $1, email_verfied = false WHERE teacher_id = $2 AND role = 'teacher';
+
+-- name: VerifyEmailStudent :exec
+UPDATE accounts SET email_verified = true WHERE student_id = $1 AND role = 'student';
+
+-- name: VerifyEmailGuardian :exec
+UPDATE accounts SET email_verfied = true WHERE guardian_id = $1 AND role = 'guardian';
+
+-- name: VerifyEmailTeacher :exec
+UPDATE accounts SET email_verfied = true WHERE teacher_id = $1 AND role = 'teacher';
