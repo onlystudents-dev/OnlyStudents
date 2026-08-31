@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -46,12 +47,12 @@ type changePasswordRequest struct {
 	ConfirmNewPassword string `json:"confirm_new_password"`
 }
 
-func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
+func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_token := c.Cookies("session_token", "")
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
-	session_data, err := session_store.Get(c, session_token)
+	session_data, err := helpers.SessionGet(c, rdb, session_token)
 	if err != nil {
 		return c.SendStatus(401)
 	}
@@ -66,7 +67,7 @@ func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.Sess
 		return c.SendStatus(400)
 	}
 	queries := db_queries.New(pool)
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	if err != nil {
 		return c.SendStatus(401)
 	}
@@ -98,7 +99,7 @@ func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.Sess
 		return c.SendStatus(500)
 	}
 
-	cache_store.InvalidateCachedAccount(c.Context(), session_data.Role, session_data.AccountID)
+	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
 	return c.SendStatus(200)
 }
 
@@ -107,13 +108,13 @@ type changeEmailRequest struct {
 	NewEmail string `json:"new_email"`
 }
 
-func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
+func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_token := c.Cookies("session_token", "")
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
 
-	session_data, err := session_store.Get(c, session_token)
+	session_data, err := helpers.SessionGet(c, rdb, session_token)
 	if err != nil {
 		return c.SendStatus(401)
 	}
@@ -128,7 +129,7 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.Session
 	}
 
 	queries := db_queries.New(pool)
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	if err != nil {
 		return c.SendStatus(401)
 	}
@@ -158,7 +159,7 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.Session
 		return c.SendStatus(500)
 	}
 
-	cache_store.InvalidateCachedAccount(c.Context(), session_data.Role, session_data.AccountID)
+	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
 	return c.SendStatus(200)
 }
 
@@ -167,19 +168,19 @@ type VerifyEmailData struct {
 	Name       string
 }
 
-func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
+func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_token := c.Cookies("session_token", "")
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
 
-	session_data, err := session_store.Get(c, session_token)
+	session_data, err := helpers.SessionGet(c, rdb, session_token)
 	if err != nil {
 		return c.SendStatus(401)
 	}
 
 	queries := db_queries.New(pool)
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
 		return c.SendStatus(401)
@@ -206,7 +207,7 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.
 	}
 
 	ttl := time.Duration(helpers.GetInt64EnvFallback("EMAIL_VERIFY_CODE_TTL", 15, 1440)) * time.Minute
-	if e := cache_store.RedisDB.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
+	if e := rdb.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
 		return c.SendStatus(500)
 	}
 
@@ -234,13 +235,13 @@ type verifyEmailConfirmRequest struct {
 	Code string `json:"code"`
 }
 
-func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
+func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_token := c.Cookies("session_token", "")
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
 
-	session_data, err := session_store.Get(c, session_token)
+	session_data, err := helpers.SessionGet(c, rdb, session_token)
 	if err != nil {
 		return c.SendStatus(401)
 	}
@@ -255,7 +256,7 @@ func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.
 	}
 
 	cacheKey := fmt.Sprintf("pending_email_verify_%s", req.Code)
-	dataJSON, err := cache_store.RedisDB.GetDel(c.Context(), cacheKey).Result()
+	dataJSON, err := rdb.GetDel(c.Context(), cacheKey).Result()
 	if err != nil {
 		return c.Status(400).SendString("Invalid or expired verification code!")
 	}
@@ -288,6 +289,6 @@ func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.
 		return c.SendStatus(500)
 	}
 
-	cache_store.InvalidateCachedAccount(c.Context(), session_data.Role, session_data.AccountID)
+	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
 	return c.SendStatus(200)
 }

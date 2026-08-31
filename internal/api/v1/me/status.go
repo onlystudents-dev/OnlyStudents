@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type StatusData struct {
@@ -16,13 +17,13 @@ type StatusData struct {
 	PfpURL    string `json:"pfp_url"`
 }
 
-func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
+func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_token := c.Cookies("session_token", "")
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
 
-	session_data, err := session_store.Get(c, session_token)
+	session_data, err := helpers.SessionGet(c, rdb, session_token)
 	if err != nil {
 		return c.SendStatus(401)
 	}
@@ -31,11 +32,11 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 
 	var status_data StatusData
 
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 
 	switch session_data.Role {
 	case "student":
-		student, err := cache_store.CacheOrGetStudent(c.Context(), *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
+		student, err := helpers.CacheOrGetStudent(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
 			return c.SendStatus(401)
@@ -50,7 +51,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 		}
 
 	case "guardian":
-		guardian, err := cache_store.CacheOrGetGuardian(c.Context(), *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
+		guardian, err := helpers.CacheOrGetGuardian(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
 			return c.SendStatus(401)
@@ -65,7 +66,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 		}
 
 	case "teacher":
-		teacher, err := cache_store.CacheOrGetTeacher(c.Context(), *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
+		teacher, err := helpers.CacheOrGetTeacher(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
 			return c.SendStatus(401)

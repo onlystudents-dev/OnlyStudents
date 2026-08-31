@@ -36,14 +36,6 @@ func main() {
 	})
 	defer rdb.Close()
 
-	session_store := helpers.SessionStore{
-		RedisDB: rdb,
-	}
-
-	cache_store := helpers.CacheStore{
-		RedisDB: rdb,
-	}
-
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
@@ -56,8 +48,8 @@ func main() {
 	paths := []string{
 		"/",
 		"/me",
-	    "/timetable",
-	    "/grades",
+		"/timetable",
+		"/grades",
 		"/homeworks",
 		"/absences",
 	}
@@ -92,61 +84,61 @@ func main() {
 	}
 
 	api.Post("/login", authLimit, func(c fiber.Ctx) error {
-		return v1.Login(c, pool, &session_store, &cache_store)
+		return v1.Login(c, pool, rdb)
 	})
 
 	api.Post("/forget_password", func(c fiber.Ctx) error {
-		return v1.ForgetPassword(c, pool, &cache_store)
+		return v1.ForgetPassword(c, pool, rdb)
 	})
 
 	api.Post("/forget_password_confirm", authLimit, func(c fiber.Ctx) error {
-		return v1.ForgetPasswordConfirm(c, pool, &cache_store)
+		return v1.ForgetPasswordConfirm(c, pool, rdb)
 	})
 
 	api_v1 := api.Group("/v1", apiLimit, func(c fiber.Ctx) error {
-		return middlewares.AuthMiddleware(c, &session_store)
+		return middlewares.AuthMiddleware(c, rdb)
 	})
 
 	me := api_v1.Group("/me")
 
 	me.Post("/logout", func(c fiber.Ctx) error {
-		return v1.Logout(c, pool, &session_store)
+		return v1.Logout(c, pool, rdb)
 	})
 
 	me.Post("/change_password", func(c fiber.Ctx) error {
-		return meapi.ChangePassword(c, pool, &session_store, &cache_store)
+		return meapi.ChangePassword(c, pool, rdb)
 	})
 
 	me.Post("/change_email", func(c fiber.Ctx) error {
-		return meapi.ChangeEmail(c, pool, &session_store, &cache_store)
+		return meapi.ChangeEmail(c, pool, rdb)
 	})
 
 	me.Get("/status", func(c fiber.Ctx) error {
-		return meapi.Status(c, pool, &session_store, &cache_store)
+		return meapi.Status(c, pool, rdb)
 	})
 
 	me.Get("/timetable", func(c fiber.Ctx) error {
-		return meapi.TimeTable(c, pool, &session_store)
+		return meapi.TimeTable(c, pool, rdb)
 	})
 
 	me.Get("/subjects", func(c fiber.Ctx) error {
-		return meapi.Subjects(c, pool, &session_store)
+		return meapi.Subjects(c, pool, rdb)
 	})
 
 	me.Get("/grades", func(c fiber.Ctx) error {
-		return meapi.Grades(c, pool, &session_store)
+		return meapi.Grades(c, pool, rdb)
 	})
 
 	me.Get("/absences", func(c fiber.Ctx) error {
-		return meapi.Absences(c, pool, &session_store)
+		return meapi.Absences(c, pool, rdb)
 	})
 
 	me.Get("/exams", func(c fiber.Ctx) error {
-		return meapi.Exams(c, pool, &session_store)
+		return meapi.Exams(c, pool, rdb)
 	})
 
 	me.Get("/homework", func(c fiber.Ctx) error {
-		return meapi.Homework(c, pool, &session_store)
+		return meapi.Homework(c, pool, rdb)
 	})
 
 	log.Fatal(app.Listen(":8080", fiber.ListenConfig{

@@ -18,9 +18,9 @@ func Argon2HashPassword(password string) (string, error) {
 		return "", err
 	}
 
-	argon2_time := GetUint32EnvFallback("ARGON2_TIME", 1, 100)
+	argon2_time := GetUint32EnvFallback("ARGON2_TIME", 2, 100)
 	argon2_mem := GetUint32EnvFallback("ARGON2_MEMORY", 64*1024, 1<<24)
-	argon2_threads := GetUint8EnvFallback("ARGON2_THREADS", 4, 32)
+	argon2_threads := GetUint8EnvFallback("ARGON2_THREADS", 1, 32)
 	argon2_len := GetUint32EnvFallback("ARGON2_KEYLEN", 32, 1024)
 
 	hash := argon2.IDKey(
