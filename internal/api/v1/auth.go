@@ -184,8 +184,10 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(400)
 	}
 
-	if req.Password != req.ConfirmPassword {
-		return c.SendStatus(401)
+	is_password_good, err := helpers.PasswordChecks(c, req.Password, req.ConfirmPassword)
+
+	if !is_password_good {
+		return err
 	}
 
 	cacheKey := fmt.Sprintf("pending_password_reset_%s", req.PendingPassword)
