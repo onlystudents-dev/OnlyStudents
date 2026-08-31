@@ -68,7 +68,7 @@ func RunMigrations(conn *pgxpool.Pool) error {
 			return err
 		}
 
-		fmt.Fprintf(os.Stderr, "applied migration: %s", migration_name)
+		fmt.Fprintf(os.Stderr, "applied migration: %s\n", migration_name)
 	}
 
 	return nil

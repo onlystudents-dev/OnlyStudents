@@ -49,23 +49,31 @@ type changePasswordRequest struct {
 
 func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_token := c.Cookies("session_token", "")
+
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
+
 	session_data, err := helpers.SessionGet(c, rdb, session_token)
 	if err != nil {
 		return c.SendStatus(401)
 	}
+
 	var req changePasswordRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
 	}
+
 	if req.CurrentPassword == "" || req.NewPassword == "" || req.ConfirmNewPassword == "" {
 		return c.SendStatus(400)
 	}
-	if req.NewPassword != req.ConfirmNewPassword {
-		return c.SendStatus(400)
+
+	is_password_good, err := helpers.PasswordChecks(c, req.NewPassword, req.ConfirmNewPassword)
+
+	if !is_password_good {
+		return err
 	}
+
 	queries := db_queries.New(pool)
 	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	if err != nil {
@@ -75,6 +83,7 @@ func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	if !helpers.Argon2Verify(req.CurrentPassword, account.PasswordHash) {
 		return c.SendStatus(401)
 	}
+
 	hashedPassword, err := helpers.Argon2HashPassword(req.NewPassword)
 	if err != nil {
 		slog.Error("password hashing error", "err", err)

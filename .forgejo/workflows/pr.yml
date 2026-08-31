@@ -41,15 +41,12 @@ jobs:
 
       - name: govulncheck
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
           $(go env GOPATH)/bin/govulncheck -show verbose ./...
       - name: gosec
         run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@latest
           $(go env GOPATH)/bin/gosec -exclude=G104 --exclude-dir frontend --exclude-dir internal/db/store ./...
       - name: gitleaks
         run: |
-          go install github.com/zricethezav/gitleaks/v8@latest
           $(go env GOPATH)/bin/gitleaks detect --source=. --redact --exit-code=1
       - name: go vet
         run: |

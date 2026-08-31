@@ -63,7 +63,7 @@ func main() {
 		err := pool.Ping(c.Context())
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to ping database: %s", err)
+			fmt.Fprintf(os.Stderr, "Failed to ping database: %s\n", err)
 		}
 
 		return c.SendString("Pong!")
