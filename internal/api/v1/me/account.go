@@ -45,7 +45,8 @@ type changePasswordRequest struct {
 	NewPassword        string `json:"new_password"`
 	ConfirmNewPassword string `json:"confirm_new_password"`
 }
-++func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
+
+func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
 	session_token := c.Cookies("session_token", "")
 	if session_token == "" {
 		return c.SendStatus(401)
@@ -69,15 +70,18 @@ type changePasswordRequest struct {
 	if err != nil {
 		return c.SendStatus(401)
 	}
+
 	if !helpers.Argon2Verify(req.CurrentPassword, account.PasswordHash) {
 		return c.SendStatus(401)
-}
+	}
 	hashedPassword, err := helpers.Argon2HashPassword(req.NewPassword)
 	if err != nil {
 		slog.Error("password hashing error", "err", err)
 		return c.SendStatus(500)
 	}
+
 	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
+
 	switch session_data.Role {
 	case "student":
 		err = queries.ResetPasswordStudent(c.Context(), db_queries.ResetPasswordStudentParams{PasswordHash: hashedPassword, StudentID: pgAccountID})
@@ -88,13 +92,16 @@ type changePasswordRequest struct {
 	default:
 		return c.SendStatus(400)
 	}
+
 	if err != nil {
 		slog.Error("change password error", "err", err)
 		return c.SendStatus(500)
 	}
+
 	cache_store.InvalidateCachedAccount(c.Context(), session_data.Role, session_data.AccountID)
-	return c.SendStatus(200)ű
+	return c.SendStatus(200)
 }
+
 type changeEmailRequest struct {
 	Password string `json:"password"`
 	NewEmail string `json:"new_email"`
@@ -105,25 +112,31 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.Session
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
+
 	session_data, err := session_store.Get(c, session_token)
 	if err != nil {
 		return c.SendStatus(401)
 	}
+
 	var req changeEmailRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
 	}
+
 	if req.Password == "" || req.NewEmail == "" {
 		return c.SendStatus(400)
 	}
+
 	queries := db_queries.New(pool)
 	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	if err != nil {
 		return c.SendStatus(401)
 	}
+
 	if !helpers.Argon2Verify(req.Password, account.PasswordHash) {
 		return c.SendStatus(401)
 	}
+
 	pgEmail := pgtype.Text{String: req.NewEmail, Valid: true}
 	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
 	switch session_data.Role {
@@ -136,6 +149,7 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.Session
 	default:
 		return c.SendStatus(400)
 	}
+
 	if err != nil {
 		if isUniqueViolation(err) {
 			return c.Status(409).SendString("That email address is already in use")
@@ -143,11 +157,10 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.Session
 		slog.Error("change email error", "err", err)
 		return c.SendStatus(500)
 	}
+
 	cache_store.InvalidateCachedAccount(c.Context(), session_data.Role, session_data.AccountID)
 	return c.SendStatus(200)
 }
-
-
 
 type VerifyEmailData struct {
 	VerifyCode string
@@ -159,36 +172,46 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
+
 	session_data, err := session_store.Get(c, session_token)
-	if err != nil {
-	return c.SendStatus(401)
-	}
-	queries := db_queries.New(pool)
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	if err != nil {
 		return c.SendStatus(401)
 	}
+
+	queries := db_queries.New(pool)
+	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+
+	if err != nil {
+		return c.SendStatus(401)
+	}
+
 	if !account.EmailAddress.Valid || account.EmailAddress.String == "" {
 		return c.Status(400).SendString("No email address set on this account")
 	}
+
 	if account.EmailVerified {
 		return c.SendStatus(200)
 	}
+
 	code, e := generateCode(helpers.GetIntEnvFallback("EMAIL_VERIFY_CODE_LEN", 10, 64))
 	if e != nil {
-	return c.SendStatus(500)
+		return c.SendStatus(500)
 	}
+
 	cacheKey := fmt.Sprintf("pending_email_verify_%s", code)
 	pending := helpers.SessionData{AccountID: session_data.AccountID, Role: session_data.Role}
 	dataJSON, e := json.Marshal(pending)
 	if e != nil {
 		return c.SendStatus(500)
 	}
+
 	ttl := time.Duration(helpers.GetInt64EnvFallback("EMAIL_VERIFY_CODE_TTL", 15, 1440)) * time.Minute
 	if e := cache_store.RedisDB.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
 		return c.SendStatus(500)
 	}
+
 	email := account.EmailAddress.String
+
 	go func() {
 		bg, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -201,6 +224,7 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.
 			slog.Error("email verify email failed", "account", email, "err", e)
 		}
 	}()
+
 	return c.SendStatus(200)
 }
 
@@ -213,30 +237,37 @@ func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.
 	if session_token == "" {
 		return c.SendStatus(401)
 	}
+
 	session_data, err := session_store.Get(c, session_token)
 	if err != nil {
 		return c.SendStatus(401)
 	}
+
 	var req verifyEmailConfirmRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
 	}
-if req.Code == "" {
+
+	if req.Code == "" {
 		return c.SendStatus(400)
 	}
+
 	cacheKey := fmt.Sprintf("pending_email_verify_%s", req.Code)
 	dataJSON, err := cache_store.RedisDB.GetDel(c.Context(), cacheKey).Result()
 	if err != nil {
 		return c.Status(400).SendString("Invalid or expired verification code!")
 	}
+
 	var pending helpers.SessionData
 	if err := json.Unmarshal([]byte(dataJSON), &pending); err != nil {
 		slog.Error("json unmarshal error", "err", err)
 		return c.SendStatus(500)
 	}
+
 	if pending.AccountID != session_data.AccountID || pending.Role != session_data.Role {
 		return c.SendStatus(401)
 	}
+
 	queries := db_queries.New(pool)
 	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
 	switch session_data.Role {
@@ -246,13 +277,15 @@ if req.Code == "" {
 		err = queries.VerifyEmailTeacher(c.Context(), pgAccountID)
 	case "guardian":
 		err = queries.VerifyEmailGuardian(c.Context(), pgAccountID)
- 	default:
-	return c.SendStatus(400)
-}
-	 if err != nil {
+	default:
+		return c.SendStatus(400)
+	}
+
+	if err != nil {
 		slog.Error("verify email error", "err", err)
 		return c.SendStatus(500)
 	}
+
 	cache_store.InvalidateCachedAccount(c.Context(), session_data.Role, session_data.AccountID)
 	return c.SendStatus(200)
 }
