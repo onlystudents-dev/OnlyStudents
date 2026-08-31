@@ -164,4 +164,12 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionSt
 	}
 
 	queries := db_queries.New(pool)
+
+	listofcustomsubject, err := queries.ReadCustomSubject(c.Context(), int32(school_id))
+
+	if err != nil {
+		c.SendStatus(500)
+	}
+
+	return c.JSON(listofcustomsubject)
 }
