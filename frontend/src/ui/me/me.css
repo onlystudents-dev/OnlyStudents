@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+.sidebar {
+    @apply absolute w-90 left-0 bottom-0 h-full p-4;
+    border-right: 2px solid var(--border-color);
+
+    .buttons {
+        @apply relative flex flex-col gap-1;
+        button {
+            @apply relative z-10 w-full text-start p-2 rounded-lg cursor-pointer h-10;
+            background: transparent;
+        }
+        .sbutton {
+            @apply absolute z-0 w-full h-10 rounded-lg top-0;
+            pointer-events: none;
+            transition: opacity 200ms ease-in-out, top 100ms ease-in-out;
+            background-color: var(--hover-color);
+        }
+        .hid {
+            opacity: 0;
+        }
+        .ssbutton {
+            background-color: var(--border-color);
+            transition: top 300ms ease-in-out;
+        }
+    }
+}
+
+.main {
+    @apply absolute bottom-0 right-0 h-full p-4;
+    width: calc(100% - 22.5rem);
+}

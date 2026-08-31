@@ -5,12 +5,14 @@ import {useEffect, useState} from "react";
 import Login from "./auth/login/login.tsx";
 import Loading from "./util/loading.tsx";
 import GuardianHomeworks from "./ui/guardian/homeworks.tsx";
+import Me from "./ui/me/me.tsx";
 
 export type Me = {
     role: string,
     account_id: number,
     first_name: string,
     last_name: string,
+    pfp_url: string,
 }
 
 export default function App() {
@@ -35,6 +37,7 @@ export default function App() {
                 <BrowserRouter>
                     <Routes>
                         <Route path="/" element={<Home me={me} />} />
+                        <Route path="/me" element={<Me me={me} />} />
                         <Route path="/homeworks" element={(() => {
                             switch (me.role) {
                                 case "guardian":

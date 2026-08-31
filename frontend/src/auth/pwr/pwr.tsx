@@ -2,7 +2,7 @@ import "./pwr.css";
 import Button from "../../util/button/button.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faPaperPlane, faPlane} from "@fortawesome/free-solid-svg-icons";
-import React, {useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {toast} from "react-toastify";
 
 export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID, setWaiting }: { pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void, setWaiting: React.Dispatch<React.SetStateAction<boolean>> }) {
@@ -12,6 +12,73 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
     const [code, setCode] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+
+    const email = useCallback(async () => {
+        if (red) return
+        if (!id) return
+        setWaiting(true)
+        const response = await fetch("/api/forget_password", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user: Number(id),
+                role: role,
+            })
+        })
+
+        switch (response.status) {
+            case 200:
+                setResetA(true)
+                setTimeout(() => setReset(true), 200)
+                break
+            default:
+                toast.error(await response.text() || response.statusText)
+        }
+        setWaiting(false)
+    }, [red, id, role, setWaiting])
+
+    const change = useCallback(async () => {
+        if (!code) return
+        if (!password) return
+        if (password !== confirmPassword) return
+        const response = await fetch("/api/forget_password_confirm", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                password,
+                confirm_password: confirmPassword,
+                pending_password: code
+            })
+        })
+
+        switch (response.status) {
+            case 200:
+                unsPwr()
+                break
+            default:
+                toast.error(await response.text() || response.statusText)
+        }
+        setWaiting(false)
+    }, [code, password, confirmPassword, setWaiting, unsPwr])
+
+    useEffect(() => {
+        const handleKeyDown = async (e: KeyboardEvent) => {
+            if (e.key === "Enter") {
+                if (!reset) await email()
+                else await change()
+            }
+        }
+
+        window.addEventListener("keydown", handleKeyDown)
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown)
+        }
+    }, [reset, email, change])
 
     return (
         <>
@@ -45,56 +112,4 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
             </div>
         </>
     )
-
-    async function email() {
-        if (red) return
-        if (!id) return
-        setWaiting(true)
-        const response = await fetch("/api/forget_password", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                user: Number(id),
-                role: role,
-            })
-        })
-
-        switch (response.status) {
-            case 200:
-                setResetA(true)
-                setTimeout(() => setReset(true), 200)
-                break
-            default:
-                toast.error(response.statusText)
-        }
-        setWaiting(false)
-    }
-
-    async function change() {
-        if (!code) return
-        if (!password) return
-        if (password !== confirmPassword) return
-        const response = await fetch("/api/forget_password_confirm", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                password,
-                confirm_password: confirmPassword,
-                pending_password: code
-            })
-        })
-
-        switch (response.status) {
-            case 200:
-                unsPwr()
-                break
-            default:
-                toast.error(await response.text() || response.statusText)
-        }
-        setWaiting(false)
-    }
 }

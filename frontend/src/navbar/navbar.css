@@ -3,6 +3,7 @@
 body {
     margin-top: 62px !important;
     min-height: calc(100vh - 62px) !important;
+    position: relative;
 }
 
 .full-height {

@@ -1,6 +1,6 @@
 import "./login.css";
 import Button from "../../util/button/button.tsx";
-import {useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight, faQuestion} from "@fortawesome/free-solid-svg-icons";
 import PasswordReset from "../pwr/pwr.tsx";
@@ -20,6 +20,52 @@ export default function Login() {
     const [password, setPassword] = useState("");
 
     const [waiting, setWaiting] = useState(false);
+
+    const login = useCallback(async () => {
+        if (red) return
+        if (wrong) return
+        if (!id) return
+        if (!password) return
+        setWaiting(true)
+        try {
+            const response = await fetch("/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    user: Number(id),
+                    password: password,
+                    role: role,
+                })
+            })
+            switch (response.status) {
+                case 200:
+                    location.reload()
+                    break
+                case 401:
+                    toast.error("The username doesn't pair with the password!")
+                    setWrong(true)
+                    break
+                default:
+                    toast.error(await response.text() || response.statusText)
+            }
+        } finally {
+            setWaiting(false)
+        }
+    }, [red, wrong, id, password, role, setWaiting, setWrong])
+
+    useEffect(() => {
+        const handleKeyDown = async (e: KeyboardEvent) => {
+            if (e.key === "Enter") await login()
+        }
+
+        window.addEventListener("keydown", handleKeyDown)
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown)
+        }
+    }, [login])
 
     return (
         <>
@@ -66,39 +112,5 @@ export default function Login() {
     function unsPwr() {
         setPwrA(false)
         setTimeout(() => setPwr(false), 200)
-    }
-
-    async function login() {
-        if (red) return
-        if (wrong) return
-        if (!id) return
-        if (!password) return
-        setWaiting(true)
-        try {
-            const response = await fetch("/api/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    user: Number(id),
-                    password: password,
-                    role: role,
-                })
-            })
-            switch (response.status) {
-                case 200:
-                    location.reload()
-                    break
-                case 401:
-                    toast.error("The username doesn't pair with the password!")
-                    setWrong(true)
-                    break
-                default:
-                    toast.error(response.statusText)
-            }
-        } finally {
-            setWaiting(false)
-        }
     }
 }

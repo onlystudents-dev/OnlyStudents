@@ -55,7 +55,11 @@ func main() {
 	app.Use("/assets", static.New("frontend/dist/assets"))
 	paths := []string{
 		"/",
+		"/me",
+	    "/timetable",
+	    "/grades",
 		"/homeworks",
+		"/absences",
 	}
 	for _, path := range paths {
 		app.Get(path, func(c fiber.Ctx) error {
