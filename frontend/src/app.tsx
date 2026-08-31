@@ -6,6 +6,17 @@ import Login from "./auth/login/login.tsx";
 import Loading from "./util/loading.tsx";
 import GuardianHomeworks from "./ui/guardian/homeworks.tsx";
 import Me from "./ui/me/me.tsx";
+import TeacherHomeworks from "./ui/teacher/homeworks.tsx";
+import StudentHomeworks from "./ui/student/homeworks.tsx";
+import GuardianTimetable from "./ui/guardian/timetable.tsx";
+import StudentTimetable from "./ui/student/timetable.tsx";
+import TeacherTimetable from "./ui/teacher/timetable.tsx";
+import GuardianAbsences from "./ui/guardian/absences.tsx";
+import StudentAbsences from "./ui/student/absences.tsx";
+import TeacherAbsences from "./ui/teacher/absences.tsx";
+import GuardianGrades from "./ui/guardian/grades.tsx";
+import StudentGrades from "./ui/student/grades.tsx";
+import TeacherGrades from "./ui/teacher/grades.tsx";
 
 export type Me = {
     role: string,
@@ -43,9 +54,45 @@ export default function App() {
                                 case "guardian":
                                     return <GuardianHomeworks me={me} />
                                 case "student":
-                                    return null
+                                    return <StudentHomeworks me={me} />
                                 case "teacher":
-                                    return null
+                                    return <TeacherHomeworks me={me} />
+                                default:
+                                    return <Loading />
+                            }
+                        })()} />
+                        <Route path="/timetable" element={(() => {
+                            switch (me.role) {
+                                case "guardian":
+                                    return <GuardianTimetable me={me} />
+                                case "student":
+                                    return <StudentTimetable me={me} />
+                                case "teacher":
+                                    return <TeacherTimetable me={me} />
+                                default:
+                                    return <Loading />
+                            }
+                        })()} />
+                        <Route path="/absences" element={(() => {
+                            switch (me.role) {
+                                case "guardian":
+                                    return <GuardianAbsences me={me} />
+                                case "student":
+                                    return <StudentAbsences me={me} />
+                                case "teacher":
+                                    return <TeacherAbsences me={me} />
+                                default:
+                                    return <Loading />
+                            }
+                        })()} />
+                        <Route path="/grades" element={(() => {
+                            switch (me.role) {
+                                case "guardian":
+                                    return <GuardianGrades me={me} />
+                                case "student":
+                                    return <StudentGrades me={me} />
+                                case "teacher":
+                                    return <TeacherGrades me={me} />
                                 default:
                                     return <Loading />
                             }
