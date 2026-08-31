@@ -212,7 +212,9 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.
 
 	email := account.EmailAddress.String
 
+	// #nosec G118
 	go func() {
+		// intentionally detached to avoid timing-based user enumeration
 		bg, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		mailer, e := mail.NewFromEnv()
