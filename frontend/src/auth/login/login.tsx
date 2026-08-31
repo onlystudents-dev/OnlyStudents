@@ -26,20 +26,20 @@ export default function Login() {
 
     const updateRemaining = useCallback(function step(remaining: number) {
         if (timerRef.current) {
-            clearTimeout(timerRef.current);
+            clearTimeout(timerRef.current)
         }
 
         if (remaining <= 0) {
-            setRemaining("");
-            return;
+            setRemaining("")
+            return
         }
 
-        setRemaining(String(remaining));
+        setRemaining(String(remaining))
 
         timerRef.current = setTimeout(() => {
-            step(remaining - 1);
-        }, 1000);
-    }, []);
+            step(remaining - 1)
+        }, 1000)
+    }, [])
 
     const login = useCallback(async () => {
         if (red) return
