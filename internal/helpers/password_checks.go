@@ -1,7 +1,8 @@
 package helpers
 
 import (
-	"crypto/sha1"
+	// secure because over HTTPS and we are only sending the start of the hash
+	"crypto/sha1" // nosec G401
 	"encoding/hex"
 	"fmt"
 	"io"
