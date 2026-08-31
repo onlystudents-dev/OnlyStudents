@@ -28,6 +28,7 @@ type Account struct {
 	GuardianID    pgtype.Int4
 	EmailAddress  pgtype.Text
 	EmailVerified bool
+	PfpUrl        string
 }
 
 type Announcement struct {

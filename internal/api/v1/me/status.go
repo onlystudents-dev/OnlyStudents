@@ -13,6 +13,7 @@ type StatusData struct {
 	AccountID int32  `json:"account_id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
+	PfpURL    string `json:"pfp_url"`
 }
 
 func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
@@ -30,6 +31,8 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 
 	var status_data StatusData
 
+	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+
 	switch session_data.Role {
 	case "student":
 		student, err := cache_store.CacheOrGetStudent(c.Context(), *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
@@ -43,6 +46,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 			AccountID: session_data.AccountID,
 			FirstName: student.FirstName,
 			LastName:  student.LastName,
+			PfpURL:    account.PfpUrl,
 		}
 
 	case "guardian":
@@ -57,6 +61,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 			AccountID: session_data.AccountID,
 			FirstName: guardian.FirstName,
 			LastName:  guardian.LastName,
+			PfpURL:    account.PfpUrl,
 		}
 
 	case "teacher":
@@ -71,7 +76,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore
 			AccountID: session_data.AccountID,
 			FirstName: teacher.FirstName,
 			LastName:  teacher.LastName,
-		}
+			PfpURL:    account.PfpUrl}
 
 	default:
 		return c.SendStatus(400)
