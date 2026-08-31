@@ -15,6 +15,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type loginRequest struct {
@@ -31,7 +32,7 @@ var dummyPasswordHash = func() string {
 	return h
 }()
 
-func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore, cache_store *helpers.CacheStore) error {
+func Login(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req loginRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
@@ -42,7 +43,7 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore,
 	}
 
 	queries := db_queries.New(pool)
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
 		// run argon2verify on a dummy hash (if the hash isnt a dummy, you could still do enumeration because "" would fail instantly) to fix timing-based enumeration attacks, if the account does not exist, it would not verify with argon2, which would have a slight latency difference
@@ -54,7 +55,7 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore,
 		return c.SendStatus(401)
 	}
 
-	session_token, err := session_store.Create(c.Context(), req.User, req.Role)
+	session_token, err := helpers.SessionCreate(c.Context(), rdb, req.User, req.Role)
 	if err != nil {
 		return c.SendStatus(500)
 	}
@@ -76,14 +77,14 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore,
 	})
 }
 
-func Logout(c fiber.Ctx, pool *pgxpool.Pool, session_store *helpers.SessionStore) error {
+func Logout(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	token := c.Cookies("session_token", "")
 
 	if token == "" {
 		return c.SendStatus(401)
 	}
 
-	err := session_store.Delete(c.Context(), token)
+	err := helpers.SessionDelete(c.Context(), rdb, token)
 
 	if err != nil {
 		return c.SendStatus(401)
@@ -114,7 +115,7 @@ func generateResetCode(length int) (string, error) {
 	return string(code), nil
 }
 
-func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheStore) error {
+func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req loginRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(200)
@@ -126,7 +127,7 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheS
 
 	queries := db_queries.New(pool)
 
-	account, err := cache_store.CacheOrGetAccount(c.Context(), *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	sendMail := err == nil && account.EmailAddress.Valid && account.EmailAddress.String != ""
 
 	code, e := generateResetCode(helpers.GetIntEnvFallback("PASSWORD_RESET_CODE_LEN", 10, 64))
@@ -140,7 +141,7 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheS
 		return c.SendStatus(500)
 	}
 	ttl := time.Duration(helpers.GetInt64EnvFallback("PASSWORD_RESET_CODE_TTL", 15, 1440)) * time.Minute
-	if e := cache_store.RedisDB.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
+	if e := rdb.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
 		return c.SendStatus(500)
 	}
 
@@ -172,7 +173,7 @@ type ResetPasswordConfirmType struct {
 	PendingPassword string `json:"pending_password"`
 }
 
-func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers.CacheStore) error {
+func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req ResetPasswordConfirmType
 
 	if err := c.Bind().Body(&req); err != nil {
@@ -189,7 +190,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 
 	cacheKey := fmt.Sprintf("pending_password_reset_%s", req.PendingPassword)
 
-	dataJSON, err := cache_store.RedisDB.GetDel(c.Context(), cacheKey).Result()
+	dataJSON, err := rdb.GetDel(c.Context(), cacheKey).Result()
 	if err != nil {
 		return c.Status(400).SendString("Invalid password reset token!")
 	}
@@ -236,7 +237,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, cache_store *helpers
 	}
 
 	// invalidate cached account object which has the old password hash
-	cache_store.InvalidateCachedAccount(c.Context(), sessionData.Role, sessionData.AccountID)
+	helpers.InvalidateCachedAccount(c.Context(), rdb, sessionData.Role, sessionData.AccountID)
 
 	return c.SendStatus(200)
 }
