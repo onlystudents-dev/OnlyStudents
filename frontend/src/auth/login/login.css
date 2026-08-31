@@ -52,6 +52,12 @@
         transition: box-shadow 200ms ease-in-out;
     }
 
+    select:focus {
+        outline: none;
+        box-shadow: 0 0 15px var(--hover-color);
+        transition: box-shadow 200ms ease-in-out;
+    }
+
     .wrong {
         box-shadow: 0 0 15px var(--wrong-color) !important;
     }
