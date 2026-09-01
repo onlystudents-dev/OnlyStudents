@@ -11,7 +11,11 @@
         .breset:hover {
             background-color: var(--wrong-color);
         }
+        .bsave {
+            transition: background-color 300ms ease, color 300ms ease;
+        }
         .bsave:hover {
+            transition: background-color 200ms ease, color 200ms ease;
             background-color: var(--right-color);
             color: var(--hover-color);
         }
