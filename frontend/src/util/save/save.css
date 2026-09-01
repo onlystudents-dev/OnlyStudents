@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+.save {
+    @apply fixed flex flex-row items-center justify-between bg-(--hover-color) left-1/2 -translate-x-1/2 p-2 rounded-lg;
+    bottom: 20px;
+    width: 50vw;
+    min-width: 440px;
+    transition: bottom 300ms ease-in-out;
+    .buttons {
+        @apply flex flex-row items-center gap-2;
+        .breset:hover {
+            background-color: var(--wrong-color);
+        }
+        .bsave:hover {
+            background-color: var(--right-color);
+            color: var(--hover-color);
+        }
+    }
+}
+
+.save.hid {
+    bottom: -100%;
+}
