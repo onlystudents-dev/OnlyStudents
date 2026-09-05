@@ -48,11 +48,15 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	if err != nil {
 		// run argon2verify on a dummy hash (if the hash isnt a dummy, you could still do enumeration because "" would fail instantly) to fix timing-based enumeration attacks, if the account does not exist, it would not verify with argon2, which would have a slight latency difference
 		helpers.Argon2Verify(req.Password, dummyPasswordHash)
-		return c.SendStatus(401)
+		return c.Status(401).JSON(fiber.Map{
+			"error": "WRONG_CREDENTIALS",
+		})
 	}
 
 	if !helpers.Argon2Verify(req.Password, account.PasswordHash) {
-		return c.SendStatus(401)
+		return c.Status(401).JSON(fiber.Map{
+			"error": "WRONG_CREDENTIALS",
+		})
 	}
 
 	session_token, err := helpers.SessionCreate(c.Context(), rdb, req.User, req.Role)
@@ -194,7 +198,9 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 
 	dataJSON, err := rdb.GetDel(c.Context(), cacheKey).Result()
 	if err != nil {
-		return c.Status(400).SendString("Invalid password reset token!")
+		return c.Status(400).JSON(fiber.Map{
+			"error": "INVALID_PASSWORD_RESET_TOKEN",
+		})
 	}
 
 	var sessionData helpers.SessionData

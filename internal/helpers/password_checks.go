@@ -45,15 +45,21 @@ func HaveIBeenPwnedCheck(pw string) (bool, error) {
 
 func PasswordChecks(c fiber.Ctx, password string, confirm_password string) (bool, error) {
 	if password != confirm_password {
-		return false, c.SendStatus(401)
+		return false, c.Status(401).JSON(fiber.Map{
+			"error": "PASSWORD_DOES_NOT_MATCH",
+		})
 	}
 
 	if utf8.RuneCountInString(password) < GetIntEnvFallback("PASSWORD_MIN_LEN", 12, 128) {
-		return false, c.Status(400).SendString(fmt.Sprintf("Your password is too weak: password must be atleast %d characters", GetIntEnvFallback("PASSWORD_MIN_LEN", 12, 128)))
+		return false, c.Status(400).JSON(fiber.Map{
+			"error": "PASSWORD_WEAK",
+		})
 	}
 
 	if utf8.RuneCountInString(password) > GetIntEnvFallback("PASSWORD_MAX_LEN", 128, 256) {
-		return false, c.Status(400).SendString(fmt.Sprintf("Your password is too weak: password must not exceed %d characters", GetIntEnvFallback("PASSWORD_MAX_LEN", 128, 256)))
+		return false, c.Status(400).JSON(fiber.Map{
+			"error": "PASSWORD_WEAK",
+		})
 	}
 
 	var hasUpper, hasLower, hasDigit, hasSymbol bool
@@ -71,16 +77,24 @@ func PasswordChecks(c fiber.Ctx, password string, confirm_password string) (bool
 	}
 
 	if !hasUpper {
-		return false, c.Status(400).SendString("Your password is too weak: password must contain an uppercase letter")
+		return false, c.Status(400).JSON(fiber.Map{
+			"error": "PASSWORD_WEAK",
+		})
 	}
 	if !hasLower {
-		return false, c.Status(400).SendString("Your password is too weak: password must contain a lowercase letter")
+		return false, c.Status(400).JSON(fiber.Map{
+			"error": "PASSWORD_WEAK",
+		})
 	}
 	if !hasDigit {
-		return false, c.Status(400).SendString("Your password is too weak: password must contain a digit")
+		return false, c.Status(400).JSON(fiber.Map{
+			"error": "PASSWORD_WEAK",
+		})
 	}
 	if !hasSymbol {
-		return false, c.Status(400).SendString("Your password is too weak: password must contain a symbol")
+		return false, c.Status(400).JSON(fiber.Map{
+			"error": "PASSWORD_WEAK",
+		})
 	}
 
 	breached, err := HaveIBeenPwnedCheck(password)
@@ -91,7 +105,9 @@ func PasswordChecks(c fiber.Ctx, password string, confirm_password string) (bool
 	}
 
 	if breached {
-		return false, c.Status(400).SendString("Your password has previously been exposed in a data breach!")
+		return false, c.Status(400).JSON(fiber.Map{
+			"error": "PASSWORD_EXPOSED",
+		})
 	}
 
 	return true, nil

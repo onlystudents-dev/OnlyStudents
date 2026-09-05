@@ -1,17 +1,18 @@
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faCheck, faXmark} from "@fortawesome/free-solid-svg-icons";
 import React, {useEffect} from "react";
+import {getKey} from "../util/language.ts";
 
 export default function PasswordCheck({ password, confirmPassword, setPassed }: {password: string, confirmPassword?: string, setPassed: React.Dispatch<React.SetStateAction<boolean>>}) {
     const checks = [
-        { label: "At least 12 characters",    ok: password.length >= 12 },
-        { label: "Contains lowercase letters", ok: /[a-z]/.test(password) },
-        { label: "Contains uppercase letters", ok: /[A-Z]/.test(password) },
-        { label: "Contains numbers",           ok: /[0-9]/.test(password) },
-        { label: "Contains special characters", ok: /[^a-zA-Z0-9]/.test(password) },
+        { label: getKey("CONDITION.CHARS"),    ok: password.length >= 12 },
+        { label: getKey("CONDITION.LOWER"), ok: /[a-z]/.test(password) },
+        { label: getKey("CONDITION.UPPER"), ok: /[A-Z]/.test(password) },
+        { label: getKey("CONDITION.NUMBERS"), ok: /[0-9]/.test(password) },
+        { label: getKey("CONDITION.SPECIAL"), ok: /[^a-zA-Z0-9]/.test(password) },
     ];
     if (confirmPassword !== undefined) {
-        checks.push({ label: "The two passwords match", ok: password === confirmPassword })
+        checks.push({ label: getKey("CONDITION.MATCH"), ok: password === confirmPassword })
     }
 
     const passed = checks.filter(c => c.ok).length

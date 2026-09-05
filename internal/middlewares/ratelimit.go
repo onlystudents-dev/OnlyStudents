@@ -32,7 +32,7 @@ func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client, scope string, max, wind
 			c.Set("Retry-After", strconv.Itoa(int(ttl.Seconds())))
 		}
 		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-			"error": "too many requests, please try again later",
+			"error": "TOO_MANY_REQUESTS",
 		})
 	}
 

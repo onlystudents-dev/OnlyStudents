@@ -6,6 +6,7 @@ import {faArrowRight, faQuestion} from "@fortawesome/free-solid-svg-icons";
 import PasswordReset from "../pwr/pwr.tsx";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
+import {fromResponse, getKey} from "../../util/language.ts";
 
 export default function Login() {
     const [pwr, setPwr] = useState(false);
@@ -30,7 +31,7 @@ export default function Login() {
             clearTimeout(timerRef.current)
         }
 
-        if (remaining <= 0) {
+        if (remaining < 0) {
             setRemaining("")
             return
         }
@@ -45,6 +46,7 @@ export default function Login() {
     const login = useCallback(async () => {
         if (red) return
         if (wrong) return
+        if (remaining) return
         if (!id) return
         if (!password) return
         setWaiting(true)
@@ -64,23 +66,21 @@ export default function Login() {
                 case 200:
                     location.reload()
                     break
-                case 401:
-                    toast.error("The username doesn't pair with the password!")
-                    setWrong(true)
-                    break
                 case 429: {
-                    const seconds = response.headers.get("Retry-After")
-                    toast.error(`You've been rate limited! Try again in ${seconds} seconds`)
+                    let seconds = response.headers.get("Retry-After")
+                    if (!seconds) seconds = "-1"
+                    toast.error(await fromResponse(response, seconds))
                     updateRemaining(Number(seconds))
                     break
                 }
                 default:
-                    toast.error(await response.text() || response.statusText)
+                    toast.error(await fromResponse(response))
+                    setWrong(true)
             }
         } finally {
             setWaiting(false)
         }
-    }, [red, wrong, id, password, role, setWaiting, setWrong, updateRemaining])
+    }, [red, wrong, remaining, id, password, role, setWaiting, setWrong, updateRemaining])
 
     useEffect(() => {
         const handleKeyDown = async (e: KeyboardEvent) => {
@@ -98,24 +98,24 @@ export default function Login() {
         <>
             <div className={`box cantar ${reset ? "h-158" : "h-100"}`}>
                 <div className={`content out ${pwrA && "hid"} h-86`}>
-                    <h1 className="self-center text-5xl font-bold mb-8 rubik">Login</h1>
+                    <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">
-                        <select value={role} onChange={(e) => setRole(e.target.value)}>
-                            <option value="guardian">Guardian</option>
-                            <option value="student">Student</option>
-                            <option value="teacher">Teacher</option>
+                        <select className="poppins" value={role} onChange={(e) => setRole(e.target.value)}>
+                            <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
+                            <option value="student">{getKey("ROLE.STUDENT")}</option>
+                            <option value="teacher">{getKey("ROLE.TEACHER")}</option>
                         </select>
-                        <input className={`${(red || wrong) && "wrong"}`} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.target.value); checkUserID(e.target.value); setWrong(false)}} />
-                        <input className={`${wrong && "wrong"}`} type="password" placeholder="Password" value={password} onChange={(e) => {setPassword(e.target.value); setWrong(false)}} />
+                        <input className={`${(red || wrong) && "wrong"}`} type="text" placeholder={getKey("USER_ID")} value={id} onChange={(e) => {setId(e.target.value); checkUserID(e.target.value); setWrong(false)}} />
+                        <input className={`${wrong && "wrong"}`} type="password" placeholder={getKey("PASSWORD")} value={password} onChange={(e) => {setPassword(e.target.value); setWrong(false)}} />
                     </div>
                     <div className="logbutton">
                         <Button onClick={sPwr}>
-                            <FontAwesomeIcon icon={faQuestion} /> Forgot password
+                            <FontAwesomeIcon icon={faQuestion} /> {getKey("FORGOT_PASSWORD")}
                         </Button>
                         <div className="flex flex-row items-center gap-4">
                             <p className="text-(--wrong-color) text-3xl fredoka">{remaining}</p>
                             <Button onClick={login}>
-                                Login <FontAwesomeIcon icon={faArrowRight} />
+                                {getKey("LOGIN")} <FontAwesomeIcon icon={faArrowRight} />
                             </Button>
                         </div>
                     </div>

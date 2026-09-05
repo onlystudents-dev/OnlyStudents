@@ -18,6 +18,7 @@ import GuardianGrades from "./ui/guardian/grades.tsx";
 import StudentGrades from "./ui/student/grades.tsx";
 import TeacherGrades from "./ui/teacher/grades.tsx";
 import RateLimit from "./util/ratelimit.tsx";
+import {fetchLanguage} from "./util/language.ts";
 
 export type Me = {
     role: string,
@@ -47,8 +48,8 @@ export default function App() {
             } catch {/* empty */}
         }
 
-        Fetch().then(() => setLoading(false));
-    }, []);
+        fetchLanguage().then(() => Fetch().then(() => setLoading(false)))
+    }, [])
 
     return (
         <>

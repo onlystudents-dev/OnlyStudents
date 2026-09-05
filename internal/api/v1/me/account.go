@@ -162,7 +162,7 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	if err != nil {
 		if isUniqueViolation(err) {
-			return c.Status(409).SendString("That email address is already in use")
+			return c.SendStatus(400)
 		}
 		slog.Error("change email error", "err", err)
 		return c.SendStatus(500)
@@ -196,7 +196,7 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	}
 
 	if !account.EmailAddress.Valid || account.EmailAddress.String == "" {
-		return c.Status(400).SendString("No email address set on this account")
+		return c.SendStatus(500)
 	}
 
 	if account.EmailVerified {
@@ -267,7 +267,9 @@ func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	cacheKey := fmt.Sprintf("pending_email_verify_%s", req.Code)
 	dataJSON, err := rdb.GetDel(c.Context(), cacheKey).Result()
 	if err != nil {
-		return c.Status(400).SendString("Invalid or expired verification code!")
+		return c.Status(400).JSON(fiber.Map{
+			"error": "INVALID_VERIFICATION_CODE",
+		})
 	}
 
 	var pending helpers.SessionData

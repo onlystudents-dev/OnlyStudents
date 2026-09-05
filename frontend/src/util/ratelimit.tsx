@@ -2,6 +2,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTriangleExclamation} from "@fortawesome/free-solid-svg-icons";
 import {useCallback, useEffect, useRef, useState} from "react";
 import Overlay from "./overlay/overlay.tsx";
+import {getKey} from "./language.ts";
 
 export default function RateLimit({ retry }: {retry: number}) {
     const [remaining, setRemaining] = useState("");
@@ -31,10 +32,10 @@ export default function RateLimit({ retry }: {retry: number}) {
 
     return (
         <>
-            <div className="fixed inset-0 flex flex-col gap-4 justify-center items-center z-151 border-4 border-(--border-color) bg-(--bg-color)">
+            <div className="fixed inset-0 flex flex-col gap-4 justify-center items-center z-151 bg-(--bg-color)">
                 <FontAwesomeIcon icon={faTriangleExclamation} size="7x" color="var(--wrong-color)" />
-                <h1 className="text-3xl text-(--wrong-color) rubik font-bold">You've been rate limited!</h1>
-                <p className="text-(--wrong-color) rubik font-bold">Will auto-refresh in {remaining} seconds</p>
+                <h1 className="text-3xl text-(--wrong-color) rubik font-bold">{getKey("RATE_LIMITED")}</h1>
+                <p className="text-(--wrong-color) rubik font-bold">{getKey("AUTO_REFRESH", remaining)}</p>
             </div>
             <Overlay />
         </>
