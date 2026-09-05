@@ -54,8 +54,8 @@ type BaseSchedule struct {
 
 type BellSchedule struct {
 	ID           int32
+	SchoolID     int32
 	TypeID       int32
-	IsLesson     bool
 	LessonNumber pgtype.Int4
 	AtStart      pgtype.Time
 	AtEnd        pgtype.Time

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type CreateCustomSubjectRequest struct {
@@ -22,7 +23,7 @@ type DeleteCustomSubjectRequest struct {
 	Id int32 `json:"id"`
 }
 
-func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionStore) error {
+func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateCustomSubjectRequest
 
 	token := c.Cookies("session-token")
@@ -41,7 +42,7 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.Session
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, store, token, "MANAGE_CUSTOM_SUBJECT")
+	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -63,7 +64,7 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.Session
 	return c.SendStatus(200)
 }
 
-func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionStore) error {
+func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditCustomSubjectRequest
 
 	token := c.Cookies("session-token")
@@ -81,7 +82,7 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionSt
 		c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, store, token, "MANAGE_CUSTOM_SUBJECT")
+	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -104,7 +105,7 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionSt
 	return c.SendStatus(200)
 }
 
-func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionStore) error {
+func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteCustomSubjectRequest
 
 	token := c.Cookies("session-token")
@@ -122,7 +123,7 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.Session
 		c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, store, token, "MANAGE_CUSTOM_SUBJECT")
+	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if has_permission == false {
 		c.SendStatus(401)
@@ -144,7 +145,7 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.Session
 	return c.SendStatus(200)
 }
 
-func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionStore) error {
+func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
@@ -157,7 +158,7 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, store *helpers.SessionSt
 		c.SendStatus(401)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, store, token, "MANAGE_CUSTOM_SUBJECT")
+	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if has_permission == false {
 		c.SendStatus(401)

@@ -7,6 +7,8 @@ package db_queries
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBellScheduleType = `-- name: CreateBellScheduleType :exec
@@ -34,6 +36,44 @@ type CreateCustomSubjectParams struct {
 
 func (q *Queries) CreateCustomSubject(ctx context.Context, arg CreateCustomSubjectParams) error {
 	_, err := q.db.Exec(ctx, createCustomSubject, arg.SchoolID, arg.SubjectName)
+	return err
+}
+
+const createLessonTime = `-- name: CreateLessonTime :exec
+INSERT INTO bell_schedule (school_id, type_id, lesson_number, at_start, at_end) VALUES ($1, $2, $3, $4, $5)
+`
+
+type CreateLessonTimeParams struct {
+	SchoolID     int32
+	TypeID       int32
+	LessonNumber pgtype.Int4
+	AtStart      pgtype.Time
+	AtEnd        pgtype.Time
+}
+
+func (q *Queries) CreateLessonTime(ctx context.Context, arg CreateLessonTimeParams) error {
+	_, err := q.db.Exec(ctx, createLessonTime,
+		arg.SchoolID,
+		arg.TypeID,
+		arg.LessonNumber,
+		arg.AtStart,
+		arg.AtEnd,
+	)
+	return err
+}
+
+const createRoom = `-- name: CreateRoom :exec
+INSERT INTO rooms (school_id, name, capacity) VALUES ($1, $2, $3)
+`
+
+type CreateRoomParams struct {
+	SchoolID int32
+	Name     string
+	Capacity int32
+}
+
+func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
+	_, err := q.db.Exec(ctx, createRoom, arg.SchoolID, arg.Name, arg.Capacity)
 	return err
 }
 
@@ -65,6 +105,34 @@ func (q *Queries) DeleteCustomSubject(ctx context.Context, arg DeleteCustomSubje
 	return err
 }
 
+const deleteLessonTime = `-- name: DeleteLessonTime :exec
+DELETE FROM bell_schedule WHERE school_id = $1 AND id = $2
+`
+
+type DeleteLessonTimeParams struct {
+	SchoolID int32
+	ID       int32
+}
+
+func (q *Queries) DeleteLessonTime(ctx context.Context, arg DeleteLessonTimeParams) error {
+	_, err := q.db.Exec(ctx, deleteLessonTime, arg.SchoolID, arg.ID)
+	return err
+}
+
+const deleteRoom = `-- name: DeleteRoom :exec
+DELETE FROM rooms WHERE school_id = $1 AND id = $2
+`
+
+type DeleteRoomParams struct {
+	SchoolID int32
+	ID       int32
+}
+
+func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) error {
+	_, err := q.db.Exec(ctx, deleteRoom, arg.SchoolID, arg.ID)
+	return err
+}
+
 const editBellScheduleType = `-- name: EditBellScheduleType :exec
 UPDATE bell_schedule_type SET name = $1 WHERE id = $2 AND school_id = $3
 `
@@ -92,6 +160,50 @@ type EditCustomSubjectParams struct {
 
 func (q *Queries) EditCustomSubject(ctx context.Context, arg EditCustomSubjectParams) error {
 	_, err := q.db.Exec(ctx, editCustomSubject, arg.SubjectName, arg.SchoolID, arg.ID)
+	return err
+}
+
+const editLessonTime = `-- name: EditLessonTime :exec
+UPDATE bell_schedule set lesson_number = $1, at_start = $2, at_end = $3 WHERE id = $4 AND school_id = $5
+`
+
+type EditLessonTimeParams struct {
+	LessonNumber pgtype.Int4
+	AtStart      pgtype.Time
+	AtEnd        pgtype.Time
+	ID           int32
+	SchoolID     int32
+}
+
+func (q *Queries) EditLessonTime(ctx context.Context, arg EditLessonTimeParams) error {
+	_, err := q.db.Exec(ctx, editLessonTime,
+		arg.LessonNumber,
+		arg.AtStart,
+		arg.AtEnd,
+		arg.ID,
+		arg.SchoolID,
+	)
+	return err
+}
+
+const editRoom = `-- name: EditRoom :exec
+UPDATE rooms SET name = $1, capacity = $2 WHERE school_id = $3 AND id = $4
+`
+
+type EditRoomParams struct {
+	Name     string
+	Capacity int32
+	SchoolID int32
+	ID       int32
+}
+
+func (q *Queries) EditRoom(ctx context.Context, arg EditRoomParams) error {
+	_, err := q.db.Exec(ctx, editRoom,
+		arg.Name,
+		arg.Capacity,
+		arg.SchoolID,
+		arg.ID,
+	)
 	return err
 }
 
@@ -143,6 +255,72 @@ func (q *Queries) ReadCustomSubject(ctx context.Context, schoolID int32) ([]Read
 	for rows.Next() {
 		var i ReadCustomSubjectRow
 		if err := rows.Scan(&i.ID, &i.SubjectName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const readLessonTime = `-- name: ReadLessonTime :many
+SELECT id, school_id, type_id, lesson_number, at_start, at_end FROM bell_schedule WHERE school_id = $1 AND type_id = $2
+`
+
+type ReadLessonTimeParams struct {
+	SchoolID int32
+	TypeID   int32
+}
+
+func (q *Queries) ReadLessonTime(ctx context.Context, arg ReadLessonTimeParams) ([]BellSchedule, error) {
+	rows, err := q.db.Query(ctx, readLessonTime, arg.SchoolID, arg.TypeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BellSchedule
+	for rows.Next() {
+		var i BellSchedule
+		if err := rows.Scan(
+			&i.ID,
+			&i.SchoolID,
+			&i.TypeID,
+			&i.LessonNumber,
+			&i.AtStart,
+			&i.AtEnd,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const readRoom = `-- name: ReadRoom :many
+SELECT id, name, capacity FROM rooms WHERE school_id = $1
+`
+
+type ReadRoomRow struct {
+	ID       int32
+	Name     string
+	Capacity int32
+}
+
+func (q *Queries) ReadRoom(ctx context.Context, schoolID int32) ([]ReadRoomRow, error) {
+	rows, err := q.db.Query(ctx, readRoom, schoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReadRoomRow
+	for rows.Next() {
+		var i ReadRoomRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Capacity); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

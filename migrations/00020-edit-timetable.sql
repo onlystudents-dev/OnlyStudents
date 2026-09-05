@@ -13,12 +13,11 @@ CREATE TABLE bell_schedule_type (
 
 CREATE TABLE bell_schedule (
     id SERIAL PRIMARY KEY,
+    school_id INT NOT NULL REFERENCES schools(id),
     type_id INT NOT NULL REFERENCES bell_schedule_type(id),
-    is_lesson bool NOT NULL DEFAULT(true),
     lesson_number INT,
     at_start TIME NOT NULL,
-    at_end TIME NOT NULL,
-    CONSTRAINT chk_is_lesson CHECK (is_lesson = TRUE OR lesson_number IS NULL)
+    at_end TIME NOT NULL
 );
 
 CREATE TABLE subjects (
