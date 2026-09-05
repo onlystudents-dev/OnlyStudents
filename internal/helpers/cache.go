@@ -102,14 +102,14 @@ func CacheOrGetGuardianGrades(ctx context.Context, rdb *redis.Client, queries db
 }
 
 func CacheOrGetStudentFinalGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentFinalGradesRow, error) {
-	key := fmt.Sprintf("student_grades:%d", accountID)
+	key := fmt.Sprintf("student_final_grades:%d", accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentFinalGradesRow, error) {
 		return queries.GetStudentFinalGrades(ctx, accountID)
 	})
 }
 
 func CacheOrGetGuardianFinalGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetGuardianFinalGradesRow, error) {
-	key := fmt.Sprintf("guardian_grades:%d", accountID)
+	key := fmt.Sprintf("guardian_final_grades:%d", accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetGuardianFinalGradesRow, error) {
 		return queries.GetGuardianFinalGrades(ctx, accountID)
 	})

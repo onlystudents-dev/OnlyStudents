@@ -113,6 +113,14 @@ func main() {
 		return meapi.ChangeEmail(c, pool, rdb)
 	})
 
+	me.Post("/verify_email", authLimit, func(c fiber.Ctx) error {
+		return meapi.VerifyEmailRequest(c, pool, rdb)
+	})
+
+	me.Post("/verify_email_confirm", authLimit, func(c fiber.Ctx) error {
+		return meapi.VerifyEmailConfirm(c, pool, rdb)
+	})
+
 	me.Get("/status", func(c fiber.Ctx) error {
 		return meapi.Status(c, pool, rdb)
 	})

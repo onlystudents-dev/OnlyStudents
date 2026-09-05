@@ -156,7 +156,6 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			// intentionally detached to avoid timing-based user enumeration
 			bg, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
-			defer cancel()
 			mailer, e := mail.NewFromEnv()
 			if e != nil {
 				slog.Error("password reset mailer init failed", "err", e)

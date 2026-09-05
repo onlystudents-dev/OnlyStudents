@@ -240,7 +240,7 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	return c.SendStatus(200)
 }
 
-type verifyEmailConfirmRequest struct {
+type VerifyEmailConfirmRequest struct {
 	Code string `json:"code"`
 }
 
@@ -255,7 +255,7 @@ func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(401)
 	}
 
-	var req verifyEmailConfirmRequest
+	var req VerifyEmailConfirmRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
 	}
