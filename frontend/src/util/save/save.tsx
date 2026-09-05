@@ -1,6 +1,7 @@
 import "./save.css";
 import React from "react";
 import Button from "../button/button.tsx";
+import {getKey} from "../language.ts";
 
 function isObject(v: unknown): v is Record<string, unknown> {
     return v !== null && typeof v === "object" && !Array.isArray(v);
@@ -42,10 +43,10 @@ export default function Save({ options, setOptions, save }: {options: Record<str
                 <p className="ml-2">You have {count} unsaved change{count !== 1 ? "s" : ""}.</p>
                 <div className="buttons rubik">
                     <Button onClick={() => setOptions({ ...defaults })} className="breset">
-                        Reset
+                        {getKey("RESET")}
                     </Button>
                     <Button onClick={() => {save(differences); setDefaults({ ...options })}} className="bsave">
-                        Save
+                        {getKey("SAVE")}
                     </Button>
                 </div>
             </div>

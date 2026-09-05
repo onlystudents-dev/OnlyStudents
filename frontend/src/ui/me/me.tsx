@@ -6,6 +6,7 @@ import {faLock, faRightFromBracket, faUser} from "@fortawesome/free-solid-svg-ic
 import {useRef, useState} from "react";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
+import {getKey} from "../../util/language.ts";
 
 export default function Me({ me }: {me: Me}) {
     const ref = useRef<HTMLDivElement>(null);
@@ -46,16 +47,16 @@ export default function Me({ me }: {me: Me}) {
                         <h1 className="text-2xl truncate">
                             {me.first_name} {me.last_name}
                         </h1>
-                        <p>Settings</p>
+                        <p>{getKey("SETTINGS")}</p>
                     </div>
                 </div>
                 <br />
                 <div className="buttons" onMouseLeave={() => setHidden(true)}>
                     <div ref={ref} className={`sbutton ${hidden && "hid"}`}></div>
                     <div ref={sref} className={`sbutton ssbutton`}></div>
-                    <Button onClick={button => {setActive("user"); sreposition(button)}} onMouseEnter={reposition} icon={faUser} text="User settings" />
-                    <Button onClick={button => {setActive("security"); sreposition(button)}} onMouseEnter={reposition} icon={faLock} text="Security" />
-                    <Button onClick={async (button) => {await logout(); sreposition(button)}} onMouseEnter={reposition} className="text-(--wrong-color)" icon={faRightFromBracket} text="Logout" />
+                    <Button onClick={button => {setActive("user"); sreposition(button)}} onMouseEnter={reposition} icon={faUser} text={getKey("USER_SETTINGS")} />
+                    <Button onClick={button => {setActive("security"); sreposition(button)}} onMouseEnter={reposition} icon={faLock} text={getKey("SECURITY")} />
+                    <Button onClick={async (button) => {await logout(); sreposition(button)}} onMouseEnter={reposition} className="text-(--wrong-color)" icon={faRightFromBracket} text={getKey("LOGOUT")} />
                 </div>
             </div>
             {waiting && <Loading />}

@@ -3,6 +3,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faHouseChimney, faStar, faStopwatch, faTable} from "@fortawesome/free-solid-svg-icons";
 import Button from "../util/button/button.tsx";
 import type {Me} from "../app.tsx";
+import {getKey} from "../util/language.ts";
 
 export default function Navbar({ me }: {me: Me}) {
     return (
@@ -10,19 +11,19 @@ export default function Navbar({ me }: {me: Me}) {
             <nav>
                 <div className="flex flex-row items-center gap-2">
                     <Button href="/">
-                        <FontAwesomeIcon icon={faHouseChimney} /> Home
+                        <FontAwesomeIcon icon={faHouseChimney} /> {getKey("HOME")}
                     </Button>
                     <Button href="/timetable">
-                        <FontAwesomeIcon icon={faTable} /> Timetable
+                        <FontAwesomeIcon icon={faTable} /> {getKey("TIMETABLE")}
                     </Button>
                     <Button href="/grades">
-                        <FontAwesomeIcon icon={faStar} /> Grades
+                        <FontAwesomeIcon icon={faStar} /> {getKey("GRADES")}
                     </Button>
                     <Button href="/homeworks">
-                        <FontAwesomeIcon icon={faHouseChimney} /> Homeworks
+                        <FontAwesomeIcon icon={faHouseChimney} /> {getKey("HOMEWORKS")}
                     </Button>
                     <Button href="/absences">
-                        <FontAwesomeIcon icon={faStopwatch} /> Absences
+                        <FontAwesomeIcon icon={faStopwatch} /> {getKey("ABSENCES")}
                     </Button>
                 </div>
                 <div className="flex flex-row-reverse items-center gap-2">
