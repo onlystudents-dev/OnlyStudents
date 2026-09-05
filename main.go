@@ -137,6 +137,10 @@ func main() {
 		return meapi.Grades(c, pool, rdb)
 	})
 
+	me.Get("/final_grades", func(c fiber.Ctx) error {
+		return meapi.FinalGrades(c, pool, rdb)
+	})
+
 	me.Get("/absences", func(c fiber.Ctx) error {
 		return meapi.Absences(c, pool, rdb)
 	})

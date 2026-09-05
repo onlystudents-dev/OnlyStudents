@@ -107,3 +107,62 @@ func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	return c.JSON(grade_summaries)
 }
+
+func FinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	session_token := c.Cookies("session_token", "")
+	if session_token == "" {
+		return c.SendStatus(401)
+	}
+
+	session_data, err := helpers.SessionGet(c, rdb, session_token)
+	if err != nil {
+		return c.SendStatus(401)
+	}
+
+	queries := db_queries.New(pool)
+
+	var grade_summaries []GradeSummary
+
+	switch session_data.Role {
+	case "student":
+		grades, err := helpers.CacheOrGetStudentFinalGrades(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("GRADES_CACHE_TTL", 5*60, 604800))
+
+		if err != nil {
+			return c.SendStatus(500)
+		}
+
+		for _, grade_row := range grades {
+			grade_summaries = append(grade_summaries, GradeSummary{
+				ID:          grade_row.ID,
+				Subject:     grade_row.Subject,
+				SubjectCode: grade_row.SubjectCode,
+				Teacher:     grade_row.Teacher,
+				Term:        grade_row.Term,
+				Value:       grade_row.Value,
+			})
+		}
+
+	case "guardian":
+		grades, err := helpers.CacheOrGetGuardianFinalGrades(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("GRADES_CACHE_TTL", 5*60, 604800))
+
+		if err != nil {
+			return c.SendStatus(500)
+		}
+
+		for _, grade_row := range grades {
+			grade_summaries = append(grade_summaries, GradeSummary{
+				ID:          grade_row.ID,
+				Subject:     grade_row.Subject,
+				SubjectCode: grade_row.SubjectCode,
+				Teacher:     grade_row.Teacher,
+				Term:        grade_row.Term,
+				Value:       grade_row.Value,
+			})
+		}
+
+	default:
+		return c.SendStatus(400)
+	}
+
+	return c.JSON(grade_summaries)
+}
