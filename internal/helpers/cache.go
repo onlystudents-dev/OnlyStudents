@@ -80,6 +80,40 @@ func CacheOrGetGuardian(ctx context.Context, rdb *redis.Client, queries db_queri
 	})
 }
 
+func CacheOrGetStudentGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentGradesRow, error) {
+	key := fmt.Sprintf("student_grades:%d", accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentGradesRow, error) {
+		return queries.GetStudentGrades(ctx, accountID)
+	})
+}
+
+func CacheOrGetTeacherGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetTeacherGradesRow, error) {
+	key := fmt.Sprintf("teacher_grades:%d", accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherGradesRow, error) {
+		return queries.GetTeacherGrades(ctx, accountID)
+	})
+}
+
+func CacheOrGetGuardianGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetGuardianGradesRow, error) {
+	key := fmt.Sprintf("guardian_grades:%d", accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetGuardianGradesRow, error) {
+		return queries.GetGuardianGrades(ctx, accountID)
+	})
+}
+
+func CacheOrGetStudentFinalGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentFinalGradesRow, error) {
+	key := fmt.Sprintf("student_grades:%d", accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentFinalGradesRow, error) {
+		return queries.GetStudentFinalGrades(ctx, accountID)
+	})
+}
+
+func CacheOrGetGuardianFinalGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetGuardianFinalGradesRow, error) {
+	key := fmt.Sprintf("guardian_grades:%d", accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetGuardianFinalGradesRow, error) {
+		return queries.GetGuardianFinalGrades(ctx, accountID)
+	})
+}
 func InvalidateCachedAccount(ctx context.Context, rdb *redis.Client, role string, account_id int32) {
 	switch role {
 	case "student":
