@@ -6,7 +6,9 @@ import (
 	"os"
 
 	v1 "onlystudents/internal/api/v1"
+	adminapi "onlystudents/internal/api/v1/admin"
 	meapi "onlystudents/internal/api/v1/me"
+	manageapi "onlystudents/internal/api/v1/me/manage"
 	"onlystudents/internal/db"
 	"onlystudents/internal/helpers"
 	env "onlystudents/internal/helpers"
@@ -95,62 +97,90 @@ func main() {
 		return v1.ForgetPasswordConfirm(c, pool, rdb)
 	})
 
-	api_v1 := api.Group("/v1", apiLimit, func(c fiber.Ctx) error {
+	api_v1 := api.Group("/v1")
+
+	admin_group := api_v1.Group("/admin", apiLimit)
+
+	admin_group.Post("/login", authLimit, func(c fiber.Ctx) error {
+		return adminapi.AdminLogin(c, pool, rdb)
+	})
+
+	admin_group.Post("/debug", authLimit, func(c fiber.Ctx) error {
+		return adminapi.AdminDebug(c, pool, rdb)
+	})
+
+	me_group := api_v1.Group("/me", apiLimit, func(c fiber.Ctx) error {
 		return middlewares.AuthMiddleware(c, rdb)
 	})
 
-	me := api_v1.Group("/me")
-
-	me.Post("/logout", func(c fiber.Ctx) error {
+	me_group.Post("/logout", func(c fiber.Ctx) error {
 		return v1.Logout(c, pool, rdb)
 	})
 
-	me.Post("/change_password", func(c fiber.Ctx) error {
+	me_group.Post("/change_password", func(c fiber.Ctx) error {
 		return meapi.ChangePassword(c, pool, rdb)
 	})
 
-	me.Post("/change_email", func(c fiber.Ctx) error {
+	me_group.Post("/change_email", func(c fiber.Ctx) error {
 		return meapi.ChangeEmail(c, pool, rdb)
 	})
 
-	me.Post("/verify_email", authLimit, func(c fiber.Ctx) error {
+	me_group.Post("/verify_email", authLimit, func(c fiber.Ctx) error {
 		return meapi.VerifyEmailRequest(c, pool, rdb)
 	})
 
-	me.Post("/verify_email_confirm", authLimit, func(c fiber.Ctx) error {
+	me_group.Post("/verify_email_confirm", authLimit, func(c fiber.Ctx) error {
 		return meapi.VerifyEmailConfirm(c, pool, rdb)
 	})
 
-	me.Get("/status", func(c fiber.Ctx) error {
+	me_group.Get("/status", func(c fiber.Ctx) error {
 		return meapi.Status(c, pool, rdb)
 	})
 
-	me.Get("/timetable", func(c fiber.Ctx) error {
+	me_group.Get("/timetable", func(c fiber.Ctx) error {
 		return meapi.TimeTable(c, pool, rdb)
 	})
 
-	me.Get("/subjects", func(c fiber.Ctx) error {
+	me_group.Get("/subjects", func(c fiber.Ctx) error {
 		return meapi.Subjects(c, pool, rdb)
 	})
 
-	me.Get("/grades", func(c fiber.Ctx) error {
+	me_group.Get("/grades", func(c fiber.Ctx) error {
 		return meapi.Grades(c, pool, rdb)
 	})
 
-	me.Get("/final_grades", func(c fiber.Ctx) error {
+	me_group.Get("/final_grades", func(c fiber.Ctx) error {
 		return meapi.FinalGrades(c, pool, rdb)
 	})
 
-	me.Get("/absences", func(c fiber.Ctx) error {
+	me_group.Get("/absences", func(c fiber.Ctx) error {
 		return meapi.Absences(c, pool, rdb)
 	})
 
-	me.Get("/exams", func(c fiber.Ctx) error {
+	me_group.Get("/exams", func(c fiber.Ctx) error {
 		return meapi.Exams(c, pool, rdb)
 	})
 
-	me.Get("/homework", func(c fiber.Ctx) error {
+	me_group.Get("/homework", func(c fiber.Ctx) error {
 		return meapi.Homework(c, pool, rdb)
+	})
+
+	manage_group := me_group.Group("/manage")
+
+	manage_group.Get("/absences", func(c fiber.Ctx) error {
+		return manageapi.ManageAbsences(c, pool, rdb)
+	})
+
+	manage_group.Get("/exams", func(c fiber.Ctx) error {
+		return manageapi.ManageExams(c, pool, rdb)
+	})
+
+	manage_group.Get("/grades", func(c fiber.Ctx) error {
+		return manageapi.ManageAbsences(c, pool, rdb)
+	})
+
+	manage_group.Get("/timetables", func(c fiber.Ctx) error {
+		return manageapi.ManageExams(c, pool, rdb)
 	})
 
 	log.Fatal(app.Listen(":8080", fiber.ListenConfig{
