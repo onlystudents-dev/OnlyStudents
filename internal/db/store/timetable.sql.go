@@ -39,6 +39,21 @@ func (q *Queries) CreateCustomSubject(ctx context.Context, arg CreateCustomSubje
 	return err
 }
 
+const createGroup = `-- name: CreateGroup :exec
+INSERT INTO groups (school_id, bell_id, group_name) VALUES ($1, $2, $3)
+`
+
+type CreateGroupParams struct {
+	SchoolID  int32
+	BellID    int32
+	GroupName string
+}
+
+func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) error {
+	_, err := q.db.Exec(ctx, createGroup, arg.SchoolID, arg.BellID, arg.GroupName)
+	return err
+}
+
 const createLessonTime = `-- name: CreateLessonTime :exec
 INSERT INTO bell_schedule (school_id, type_id, lesson_number, at_start, at_end) VALUES ($1, $2, $3, $4, $5)
 `
@@ -105,6 +120,20 @@ func (q *Queries) DeleteCustomSubject(ctx context.Context, arg DeleteCustomSubje
 	return err
 }
 
+const deleteGroup = `-- name: DeleteGroup :exec
+DELETE FROM groups WHERE school_id = $1 AND id = $2
+`
+
+type DeleteGroupParams struct {
+	SchoolID int32
+	ID       int32
+}
+
+func (q *Queries) DeleteGroup(ctx context.Context, arg DeleteGroupParams) error {
+	_, err := q.db.Exec(ctx, deleteGroup, arg.SchoolID, arg.ID)
+	return err
+}
+
 const deleteLessonTime = `-- name: DeleteLessonTime :exec
 DELETE FROM bell_schedule WHERE school_id = $1 AND id = $2
 `
@@ -160,6 +189,21 @@ type EditCustomSubjectParams struct {
 
 func (q *Queries) EditCustomSubject(ctx context.Context, arg EditCustomSubjectParams) error {
 	_, err := q.db.Exec(ctx, editCustomSubject, arg.SubjectName, arg.SchoolID, arg.ID)
+	return err
+}
+
+const editGroup = `-- name: EditGroup :exec
+UPDATE groups SET group_name = $1 WHERE school_id = $2 AND id = $3
+`
+
+type EditGroupParams struct {
+	GroupName string
+	SchoolID  int32
+	ID        int32
+}
+
+func (q *Queries) EditGroup(ctx context.Context, arg EditGroupParams) error {
+	_, err := q.db.Exec(ctx, editGroup, arg.GroupName, arg.SchoolID, arg.ID)
 	return err
 }
 
@@ -255,6 +299,35 @@ func (q *Queries) ReadCustomSubject(ctx context.Context, schoolID int32) ([]Read
 	for rows.Next() {
 		var i ReadCustomSubjectRow
 		if err := rows.Scan(&i.ID, &i.SubjectName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const readGroup = `-- name: ReadGroup :many
+SELECT id, school_id, bell_id, group_name FROM groups WHERE school_id = $1
+`
+
+func (q *Queries) ReadGroup(ctx context.Context, schoolID int32) ([]Group, error) {
+	rows, err := q.db.Query(ctx, readGroup, schoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Group
+	for rows.Next() {
+		var i Group
+		if err := rows.Scan(
+			&i.ID,
+			&i.SchoolID,
+			&i.BellID,
+			&i.GroupName,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

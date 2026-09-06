@@ -45,3 +45,15 @@ DELETE FROM rooms WHERE school_id = $1 AND id = $2;
 
 -- name: ReadRoom :many
 SELECT id, name, capacity FROM rooms WHERE school_id = $1;
+
+-- name: CreateGroup :exec
+INSERT INTO groups (school_id, bell_id, group_name) VALUES ($1, $2, $3);
+
+-- name: EditGroup :exec
+UPDATE groups SET group_name = $1 WHERE school_id = $2 AND id = $3;
+
+-- name: DeleteGroup :exec
+DELETE FROM groups WHERE school_id = $1 AND id = $2;
+
+-- name: ReadGroup :many
+SELECT * FROM groups WHERE school_id = $1;
