@@ -57,3 +57,12 @@ DELETE FROM groups WHERE school_id = $1 AND id = $2;
 
 -- name: ReadGroup :many
 SELECT * FROM groups WHERE school_id = $1;
+
+-- name: InsertStudentToGroup :exec
+INSERT INTO group_members (school_id, group_id, student_id) VALUES ($1, $2, $3);
+
+-- name: DeleteStudentFromGroup :exec
+DELETE FROM group_members WHERE group_id = $1 AND student_id = $2 AND school_id = $3;
+
+-- name: ReadListOfStudents :many
+SELECT s.id, s.first_name, s.last_name FROM students AS s INNER JOIN group_members AS g_m ON g_m.student_id = s.id WHERE g_m.group_id = $1 AND g_m.school_id = $2;

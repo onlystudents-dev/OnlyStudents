@@ -131,6 +131,7 @@ type Group struct {
 
 type GroupMember struct {
 	ID        int32
+	SchoolID  int32
 	GroupID   int32
 	StudentID int32
 }

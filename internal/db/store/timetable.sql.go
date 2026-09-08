@@ -162,6 +162,21 @@ func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) error {
 	return err
 }
 
+const deleteStudentFromGroup = `-- name: DeleteStudentFromGroup :exec
+DELETE FROM group_members WHERE group_id = $1 AND student_id = $2 AND school_id = $3
+`
+
+type DeleteStudentFromGroupParams struct {
+	GroupID   int32
+	StudentID int32
+	SchoolID  int32
+}
+
+func (q *Queries) DeleteStudentFromGroup(ctx context.Context, arg DeleteStudentFromGroupParams) error {
+	_, err := q.db.Exec(ctx, deleteStudentFromGroup, arg.GroupID, arg.StudentID, arg.SchoolID)
+	return err
+}
+
 const editBellScheduleType = `-- name: EditBellScheduleType :exec
 UPDATE bell_schedule_type SET name = $1 WHERE id = $2 AND school_id = $3
 `
@@ -248,6 +263,21 @@ func (q *Queries) EditRoom(ctx context.Context, arg EditRoomParams) error {
 		arg.SchoolID,
 		arg.ID,
 	)
+	return err
+}
+
+const insertStudentToGroup = `-- name: InsertStudentToGroup :exec
+INSERT INTO group_members (school_id, group_id, student_id) VALUES ($1, $2, $3)
+`
+
+type InsertStudentToGroupParams struct {
+	SchoolID  int32
+	GroupID   int32
+	StudentID int32
+}
+
+func (q *Queries) InsertStudentToGroup(ctx context.Context, arg InsertStudentToGroupParams) error {
+	_, err := q.db.Exec(ctx, insertStudentToGroup, arg.SchoolID, arg.GroupID, arg.StudentID)
 	return err
 }
 
@@ -364,6 +394,41 @@ func (q *Queries) ReadLessonTime(ctx context.Context, arg ReadLessonTimeParams) 
 			&i.AtStart,
 			&i.AtEnd,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const readListOfStudents = `-- name: ReadListOfStudents :many
+SELECT s.id, s.first_name, s.last_name FROM students AS s INNER JOIN group_members AS g_m ON g_m.student_id = s.id WHERE g_m.group_id = $1 AND g_m.school_id = $2
+`
+
+type ReadListOfStudentsParams struct {
+	GroupID  int32
+	SchoolID int32
+}
+
+type ReadListOfStudentsRow struct {
+	ID        int32
+	FirstName string
+	LastName  string
+}
+
+func (q *Queries) ReadListOfStudents(ctx context.Context, arg ReadListOfStudentsParams) ([]ReadListOfStudentsRow, error) {
+	rows, err := q.db.Query(ctx, readListOfStudents, arg.GroupID, arg.SchoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReadListOfStudentsRow
+	for rows.Next() {
+		var i ReadListOfStudentsRow
+		if err := rows.Scan(&i.ID, &i.FirstName, &i.LastName); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

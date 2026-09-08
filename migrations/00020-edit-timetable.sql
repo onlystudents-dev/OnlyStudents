@@ -40,6 +40,7 @@ CREATE TABLE groups (
 
 CREATE TABLE group_members (
     id SERIAL PRIMARY KEY,
+    school_id INT NOT NULL REFERENCES schools(id),
     group_id INT NOT NULL REFERENCES groups(id),
     student_id INT NOT NULL REFERENCES students(id)
 );
