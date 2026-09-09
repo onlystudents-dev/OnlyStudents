@@ -2,11 +2,18 @@ import "./me.css";
 import Navbar from "../../navbar/navbar.tsx";
 import type {Me} from "../../app.tsx";
 import Button from "./button.tsx";
-import {faLock, faRightFromBracket, faUser} from "@fortawesome/free-solid-svg-icons";
+import {
+    faAddressCard,
+    faEnvelope,
+    faLock,
+    faRightFromBracket,
+    faUser,
+    faUserLock
+} from "@fortawesome/free-solid-svg-icons";
 import {useRef, useState} from "react";
-import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
 import {getKey} from "../../util/language.ts";
+import Config from "./config.tsx";
 
 export default function Me({ me }: {me: Me}) {
     const ref = useRef<HTMLDivElement>(null);
@@ -17,28 +24,43 @@ export default function Me({ me }: {me: Me}) {
 
     const [active, setActive] = useState<"user" | "security">("user");
 
+    const [options, setOptions] = useState<Record<string, string>>({
+        email: me.email,
+        nickname: me.nickname,
+        password: "",
+    });
+
     return (
         <>
             <Navbar me={me} />
             <div className="main">
+                <div className="configs border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2">
                 {(() => {
                    switch(active) {
                        case "user":
                            return (
                                <>
-                                   cica
+                                   <Config text={getKey("EMAIL")} icon={faEnvelope} value={options.email}>
+                                       cica
+                                   </Config>
+                                   <Config text={getKey("NICKNAME")} icon={faAddressCard} value={options.nickname}>
+                                       cicamica
+                                   </Config>
                                </>
                            )
                        case "security":
                            return (
                                <>
-                                   secure cica
+                                   <Config text={getKey("PASSWORD")} icon={faUserLock} value={""}>
+                                       jelszocica
+                                   </Config>
                                </>
                            )
                        default:
                            return null
                    }
                 })()}
+                </div>
             </div>
             <div className="sidebar">
                 <div className="flex flex-row gap-4">

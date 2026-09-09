@@ -31,7 +31,9 @@
     "SECURITY": "Security",
     "LOGOUT": "Log out",
     "RATE_LIMITED": "You've been rate limited!",
-    "AUTO_REFRESH": "Will auto-refresh in %1 seconds"
+    "AUTO_REFRESH": "Will auto-refresh in %1 seconds",
+    "EMAIL": "Email",
+    "NICKNAME": "Nickname"
   },
   "errors": {
     "WRONG_CREDENTIALS": "The username doesn't pair with the password!",

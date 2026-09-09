@@ -29,4 +29,28 @@
 .main {
     @apply absolute bottom-0 right-0 h-full p-4;
     width: calc(100% - 22.5rem);
+
+    .configs {
+        transition: box-shadow 400ms ease-in-out, height 400ms ease-in-out;
+    }
+
+    .configs:hover {
+        box-shadow: 0 0 10px var(--txt-color);
+        transition: box-shadow 200ms ease-in-out;
+    }
+
+    .config {
+        @apply flex flex-row justify-between items-center w-full rounded-lg p-2 cursor-pointer;
+
+        transition: background-color 300ms ease;
+    }
+
+    .config:hover {
+        background-color: var(--hover-color);
+        transition: background-color 200ms ease;
+    }
+
+    .configure {
+        @apply flex flex-col w-120 z-151;
+    }
 }
