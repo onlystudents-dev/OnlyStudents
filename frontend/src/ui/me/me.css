@@ -51,6 +51,66 @@
     }
 
     .configure {
-        @apply flex flex-col w-120 z-151;
+        @apply flex flex-col w-120 h-80 z-151 rounded-2xl p-7 overflow-hidden;
+        border: var(--txt-color) solid 4px;
+        background-color: var(--bg-color);
+
+        input {
+            @apply h-12 w-full rounded-lg p-3;
+            background-color: var(--hover-color);
+            transition: box-shadow 400ms ease-in-out;
+        }
+        input:focus, input:hover {
+            @apply outline-none;
+            box-shadow: 0 0 15px var(--hover-color);
+            transition: box-shadow 200ms ease-in-out;
+        }
+
+        button {
+            @apply p-2 text-center rounded-lg cursor-pointer;
+            background-color: var(--hover-color);
+            transition: box-shadow 400ms ease-in-out;
+        }
+
+        button:hover {
+            box-shadow: 0 0 15px var(--hover-color);
+            transition: box-shadow 200ms ease-in-out;
+        }
+
+        .moving {
+            @apply flex flex-row relative;
+            width: 100%;
+            height: calc(20rem - 48px - 2rem);
+            .moving-content {
+                @apply flex flex-col gap-4 w-full;
+            }
+            .first {
+                animation: out 500ms ease-in-out;
+                transform: translateX(-480px);
+            }
+            .second {
+                animation: in 500ms ease-in-out;
+            }
+        }
+    }
+}
+
+@keyframes out {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-480px);
+    }
+}
+
+@keyframes in {
+    0% {
+        transform: translateX(480px);
+    }
+
+    100% {
+        transform: translateX(0);
     }
 }

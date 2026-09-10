@@ -3,15 +3,15 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import React, {useState} from "react";
 import Overlay from "../../util/overlay/overlay.tsx";
 
-export default function Config({ icon, text, value, children }: {icon: IconDefinition, text: string, value: string, children: React.ReactNode}) {
+export default function Config({ icon, text, value, children, className }: {icon: IconDefinition, text: string, value: string, children: React.ReactNode, className?: string}) {
     const [open, setOpen] = useState(false)
 
     return (
         <>
-            <div className="config">
-                <button onClick={() => setOpen(true)}>
+            <div className={`config ${className}`} onClick={() => setOpen(true)}>
+                <p>
                     <FontAwesomeIcon icon={icon} /> {text}
-                </button>
+                </p>
                 <p>
                     {value}
                 </p>

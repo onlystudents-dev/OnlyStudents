@@ -31,7 +31,13 @@
     "SECURITY": "Biztonság",
     "LOGOUT": "Kilépés",
     "RATE_LIMITED": "Le lettél korlátozva!",
-    "AUTO_REFRESH": "Automatikus újratöltés %1 másodpercen belül"
+    "AUTO_REFRESH": "Automatikus újratöltés %1 másodpercen belül",
+    "EMAIL": "E-mail",
+    "NICKNAME": "Becenév",
+    "CHANGE_EMAIL": "E-mail megváltoztatása",
+    "NEW_EMAIL": "Új e-mail cím",
+    "OLD_EMAIL_CODE": "Köd elküldve a régi e-mail címedre",
+    "NEW_EMAIL_CODE": "Kód elküldve az új e-mail címedre"
   },
   "errors": {
     "WRONG_CREDENTIALS": "A belépési adatok helytelenek!",

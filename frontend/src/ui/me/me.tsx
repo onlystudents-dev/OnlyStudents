@@ -4,8 +4,8 @@ import type {Me} from "../../app.tsx";
 import Button from "./button.tsx";
 import {
     faAddressCard,
-    faEnvelope,
-    faLock,
+    faEnvelope, faFloppyDisk,
+    faLock, faPaperPlane,
     faRightFromBracket,
     faUser,
     faUserLock
@@ -14,21 +14,27 @@ import {useRef, useState} from "react";
 import Loading from "../../util/loading.tsx";
 import {getKey} from "../../util/language.ts";
 import Config from "./config.tsx";
+import {toast} from "react-toastify";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
 export default function Me({ me }: {me: Me}) {
-    const ref = useRef<HTMLDivElement>(null);
-    const sref = useRef<HTMLDivElement>(null);
+    const ref = useRef<HTMLDivElement>(null)
+    const sref = useRef<HTMLDivElement>(null)
 
-    const [waiting, setWaiting] = useState(false);
-    const [hidden, setHidden] = useState(true);
+    const [waiting, setWaiting] = useState(false)
+    const [hidden, setHidden] = useState(true)
 
-    const [active, setActive] = useState<"user" | "security">("user");
+    const [active, setActive] = useState<"user" | "security">("user")
 
-    const [options, setOptions] = useState<Record<string, string>>({
-        email: me.email,
-        nickname: me.nickname,
-        password: "",
-    });
+    const [email, setEmail] = useState(me.email)
+    const [settingEmail, setSettingEmail] = useState(false)
+    const [settingEmailA, setSettingEmailA] = useState(false)
+    const newEmail = useRef(null)
+    const oldEmailCode = useRef(null)
+    const newEmailCode = useRef(null)
+
+    const [nickname, setNickname] = useState(me.nickname)
+    const [password, setPassword] = useState("")
 
     return (
         <>
@@ -40,10 +46,26 @@ export default function Me({ me }: {me: Me}) {
                        case "user":
                            return (
                                <>
-                                   <Config text={getKey("EMAIL")} icon={faEnvelope} value={options.email}>
-                                       cica
+                                   <Config text={getKey("EMAIL")} icon={faEnvelope} value={email}>
+                                       <h1 className="text-center text-5xl font-bold mb-8 rubik">{getKey("CHANGE_EMAIL")}</h1>
+                                       <div className="moving">
+                                           {settingEmail ? (<div className="moving-content second">
+                                               <input type="text" placeholder={getKey("OLD_EMAIL_CODE")} ref={oldEmailCode} />
+                                               <input type="text" placeholder={getKey("NEW_EMAIL_CODE")} ref={newEmailCode} />
+
+                                               <button className="absolute bottom-0 right-0">
+                                                   <FontAwesomeIcon icon={faFloppyDisk} /> {getKey("SAVE")}
+                                               </button>
+                                           </div>) : (<div className={`moving-content ${settingEmailA && "first"}`}>
+                                               <input type="email" placeholder={getKey("NEW_EMAIL")} ref={newEmail} />
+
+                                               <button className="absolute bottom-0 right-0" onClick={sendEmail}>
+                                                   <FontAwesomeIcon icon={faPaperPlane} /> {getKey("SEND_EMAIL")}
+                                               </button>
+                                           </div>)}
+                                       </div>
                                    </Config>
-                                   <Config text={getKey("NICKNAME")} icon={faAddressCard} value={options.nickname}>
+                                   <Config text={getKey("NICKNAME")} icon={faAddressCard} value={nickname}>
                                        cicamica
                                    </Config>
                                </>
@@ -84,6 +106,11 @@ export default function Me({ me }: {me: Me}) {
             {waiting && <Loading />}
         </>
     )
+
+    async function sendEmail() {
+        setSettingEmailA(true)
+        setTimeout(() => setSettingEmail(true), 500)
+    }
 
     async function logout() {
         setWaiting(true)

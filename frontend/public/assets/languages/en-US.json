@@ -33,7 +33,11 @@
     "RATE_LIMITED": "You've been rate limited!",
     "AUTO_REFRESH": "Will auto-refresh in %1 seconds",
     "EMAIL": "Email",
-    "NICKNAME": "Nickname"
+    "NICKNAME": "Nickname",
+    "CHANGE_EMAIL": "Change Email",
+    "NEW_EMAIL": "New email address",
+    "OLD_EMAIL_CODE": "Code sent to your old email",
+    "NEW_EMAIL_CODE": "Code sent to your new email"
   },
   "errors": {
     "WRONG_CREDENTIALS": "The username doesn't pair with the password!",
