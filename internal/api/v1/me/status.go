@@ -9,22 +9,31 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type ChildrenData struct {
+	AccountID  int32  `json:"account_id"`
+	SchoolName string `json:"school_name"`
+	SchoolID   string `json:"school_id"`
+	ClassID    string `json:"class_id"`
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+}
+
 type StatusData struct {
-	Role      string `json:"role"`
-	AccountID int32  `json:"account_id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	PfpURL    string `json:"pfp_url"`
+	Role       string         `json:"role"`
+	AccountID  int32          `json:"account_id"`
+	SchoolName string         `json:"school_name"`
+	SchoolID   string         `json:"school_id"`
+	ClassID    string         `json:"class_id"`
+	FirstName  string         `json:"first_name"`
+	LastName   string         `json:"last_name"`
+	PfpURL     string         `json:"pfp_url"`
+	Children   []ChildrenData `json:"children"`
 }
 
 func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_token := c.Cookies("session_token", "")
-	if session_token == "" {
-		return c.SendStatus(401)
-	}
+	session_data, ok := c.Locals("session").(helpers.SessionData)
 
-	session_data, err := helpers.SessionGet(c, rdb, session_token)
-	if err != nil {
+	if !ok {
 		return c.SendStatus(401)
 	}
 
@@ -33,6 +42,10 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var status_data StatusData
 
 	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+
+	if err != nil {
+		return c.SendStatus(401)
+	}
 
 	switch session_data.Role {
 	case "student":

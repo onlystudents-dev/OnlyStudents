@@ -1,4 +1,4 @@
-package meapi
+package adminapi
 
 import (
 	"onlystudents/internal/helpers"
@@ -8,8 +8,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// TODO: implement this and add redis caching
-func Subjects(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+// TODO: implement this
+func AdminDebug(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {

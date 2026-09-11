@@ -201,7 +201,7 @@ func (q *Queries) ResetPasswordTeacher(ctx context.Context, arg ResetPasswordTea
 }
 
 const updateEmailGuardian = `-- name: UpdateEmailGuardian :exec
-UPDATE accounts SET email_address = $1, email_verfied = false WHERE guardian_id = $2 AND role = 'guardian'
+UPDATE accounts SET email_address = $1, email_verified = false WHERE guardian_id = $2 AND role = 'guardian'
 `
 
 type UpdateEmailGuardianParams struct {
@@ -229,7 +229,7 @@ func (q *Queries) UpdateEmailStudent(ctx context.Context, arg UpdateEmailStudent
 }
 
 const updateEmailTeacher = `-- name: UpdateEmailTeacher :exec
-UPDATE accounts SET email_address = $1, email_verfied = false WHERE teacher_id = $2 AND role = 'teacher'
+UPDATE accounts SET email_address = $1, email_verified = false WHERE teacher_id = $2 AND role = 'teacher'
 `
 
 type UpdateEmailTeacherParams struct {
@@ -243,7 +243,7 @@ func (q *Queries) UpdateEmailTeacher(ctx context.Context, arg UpdateEmailTeacher
 }
 
 const verifyEmailGuardian = `-- name: VerifyEmailGuardian :exec
-UPDATE accounts SET email_verfied = true WHERE guardian_id = $1 AND role = 'guardian'
+UPDATE accounts SET email_verified = true WHERE guardian_id = $1 AND role = 'guardian'
 `
 
 func (q *Queries) VerifyEmailGuardian(ctx context.Context, guardianID pgtype.Int4) error {
@@ -261,7 +261,7 @@ func (q *Queries) VerifyEmailStudent(ctx context.Context, studentID pgtype.Int4)
 }
 
 const verifyEmailTeacher = `-- name: VerifyEmailTeacher :exec
-UPDATE accounts SET email_verfied = true WHERE teacher_id = $1 AND role = 'teacher'
+UPDATE accounts SET email_verified = true WHERE teacher_id = $1 AND role = 'teacher'
 `
 
 func (q *Queries) VerifyEmailTeacher(ctx context.Context, teacherID pgtype.Int4) error {

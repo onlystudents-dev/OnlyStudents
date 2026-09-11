@@ -82,15 +82,9 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func Logout(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	token := c.Cookies("session_token", "")
+	_, ok := c.Locals("session").(helpers.SessionData)
 
-	if token == "" {
-		return c.SendStatus(401)
-	}
-
-	err := helpers.SessionDelete(c.Context(), rdb, token)
-
-	if err != nil {
+	if !ok {
 		return c.SendStatus(401)
 	}
 
@@ -155,7 +149,6 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		go func() {
 			// intentionally detached to avoid timing-based user enumeration
 			bg, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
 			defer cancel()
 			mailer, e := mail.NewFromEnv()
 			if e != nil {

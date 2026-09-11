@@ -14,11 +14,13 @@ func AuthMiddleware(c fiber.Ctx, rdb *redis.Client) error {
 		return c.SendStatus(401)
 	}
 
-	_, err := helpers.SessionGet(c, rdb, session_token)
+	session_data, err := helpers.SessionGet(c, rdb, session_token)
 
 	if err != nil {
 		return c.SendStatus(401)
 	}
+
+	c.Locals("session", session_data)
 
 	return c.Next()
 }
