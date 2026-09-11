@@ -10,15 +10,10 @@ import (
 
 // TODO: implement this
 func AdminLogin(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_token := c.Cookies("session_token", "")
-	if session_token == "" {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
 		return c.SendStatus(401)
 	}
-
-	_, err := helpers.SessionGet(c, rdb, session_token)
-	if err != nil {
-		return c.SendStatus(401)
-	}
-
 	return c.SendStatus(501)
 }

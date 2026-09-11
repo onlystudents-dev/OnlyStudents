@@ -99,7 +99,9 @@ func main() {
 
 	api_v1 := api.Group("/v1")
 
-	admin_group := api_v1.Group("/admin", apiLimit)
+	admin_group := api_v1.Group("/admin", apiLimit, func(c fiber.Ctx) error {
+		return middlewares.RequireRoleMiddleware(c, rdb, []string{"admin"})
+	})
 
 	admin_group.Post("/login", authLimit, func(c fiber.Ctx) error {
 		return adminapi.AdminLogin(c, pool, rdb)
@@ -138,7 +140,7 @@ func main() {
 	})
 
 	me_group.Get("/timetable", func(c fiber.Ctx) error {
-		return meapi.TimeTable(c, pool, rdb)
+		return c.SendStatus(501) // NOTE: Future codebase update for timetable should replace this
 	})
 
 	me_group.Get("/subjects", func(c fiber.Ctx) error {
@@ -165,7 +167,9 @@ func main() {
 		return meapi.Homework(c, pool, rdb)
 	})
 
-	manage_group := me_group.Group("/manage")
+	manage_group := me_group.Group("/manage", func(c fiber.Ctx) error {
+		return middlewares.RequireRoleMiddleware(c, rdb, []string{"teacher"})
+	})
 
 	manage_group.Get("/absences", func(c fiber.Ctx) error {
 		return manageapi.ManageAbsences(c, pool, rdb)
@@ -176,11 +180,11 @@ func main() {
 	})
 
 	manage_group.Get("/grades", func(c fiber.Ctx) error {
-		return manageapi.ManageAbsences(c, pool, rdb)
+		return manageapi.ManageGrades(c, pool, rdb)
 	})
 
-	manage_group.Get("/timetables", func(c fiber.Ctx) error {
-		return manageapi.ManageExams(c, pool, rdb)
+	manage_group.Get("/timetable", func(c fiber.Ctx) error {
+		return manageapi.ManageTimeTable(c, pool, rdb)
 	})
 
 	log.Fatal(app.Listen(":8080", fiber.ListenConfig{

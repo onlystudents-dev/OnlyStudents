@@ -48,14 +48,9 @@ type changePasswordRequest struct {
 }
 
 func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_token := c.Cookies("session_token", "")
+	session_data, ok := c.Locals("session").(helpers.SessionData)
 
-	if session_token == "" {
-		return c.SendStatus(401)
-	}
-
-	session_data, err := helpers.SessionGet(c, rdb, session_token)
-	if err != nil {
+	if !ok {
 		return c.SendStatus(401)
 	}
 
@@ -118,13 +113,9 @@ type changeEmailRequest struct {
 }
 
 func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_token := c.Cookies("session_token", "")
-	if session_token == "" {
-		return c.SendStatus(401)
-	}
+	session_data, ok := c.Locals("session").(helpers.SessionData)
 
-	session_data, err := helpers.SessionGet(c, rdb, session_token)
-	if err != nil {
+	if !ok {
 		return c.SendStatus(401)
 	}
 
@@ -178,13 +169,9 @@ type VerifyEmailData struct {
 }
 
 func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_token := c.Cookies("session_token", "")
-	if session_token == "" {
-		return c.SendStatus(401)
-	}
+	session_data, ok := c.Locals("session").(helpers.SessionData)
 
-	session_data, err := helpers.SessionGet(c, rdb, session_token)
-	if err != nil {
+	if !ok {
 		return c.SendStatus(401)
 	}
 
@@ -245,13 +232,9 @@ type VerifyEmailConfirmRequest struct {
 }
 
 func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_token := c.Cookies("session_token", "")
-	if session_token == "" {
-		return c.SendStatus(401)
-	}
+	session_data, ok := c.Locals("session").(helpers.SessionData)
 
-	session_data, err := helpers.SessionGet(c, rdb, session_token)
-	if err != nil {
+	if !ok {
 		return c.SendStatus(401)
 	}
 
