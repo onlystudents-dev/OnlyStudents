@@ -127,6 +127,10 @@ func main() {
 		return meapi.ChangeEmail(c, pool, rdb)
 	})
 
+	me_group.Post("/change_nickname", func(c fiber.Ctx) error {
+		return meapi.ChangeNickname(c, pool, rdb)
+	})
+
 	me_group.Post("/verify_email", authLimit, func(c fiber.Ctx) error {
 		return meapi.VerifyEmailRequest(c, pool, rdb)
 	})
@@ -141,10 +145,6 @@ func main() {
 
 	me_group.Get("/timetable", func(c fiber.Ctx) error {
 		return c.SendStatus(501) // NOTE: Future codebase update for timetable should replace this
-	})
-
-	me_group.Get("/subjects", func(c fiber.Ctx) error {
-		return meapi.Subjects(c, pool, rdb)
 	})
 
 	me_group.Get("/grades", func(c fiber.Ctx) error {
