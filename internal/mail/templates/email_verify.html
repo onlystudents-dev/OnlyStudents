@@ -1,4 +1,4 @@
-<!doc<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -25,29 +25,33 @@
                 <tr>
                     <td>
                         <h1 style="margin:0 0 16px;font-size:20px;color:#111827;">Hi {{.Name}},</h1>
-                <p style="max-resolution: 0 0 16px;font-size: 14px;line-height: 1.6;color:#374151">
-                    We received a request to verify the email adders on your OnlyStudents account. Enter this code to confirm its you:
-                </p>
+                        <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#374151;">
+                            We received a request to verify the email address on your OnlyStudents account. Enter this code to confirm it's you:
+                        </p>
+                        <p style="margin:0 0 24px;font-size:22px;font-weight:700;letter-spacing:4px;color:#111827;">
+                            {{.VerifyCode}}
+                        </p>
+                        {{if .ExpiresInMinutes}}
+                        <p style="margin:0 0 24px;font-size:13px;line-height:1.6;color:#6b7280;">
+                            This code expires in {{.ExpiresInMinutes}} minutes.
+                        </p>
+                        {{end}}
+                        <p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">
+                            If you didn't request this, you can safely ignore this email; no changes have been made to your account. Never share this code with anyone, including someone claiming to be OnlyStudents.
+                        </p>
                     </td>
                 </tr>
             </table>
-    {{if.ExpiresInMinutes}} minutes.
-    <p style="margin: 0 0 24px;font-size:13px;line-height: 1.6;color:#6b7280">
-    This code expires in {{.ExpiresInMinute}} minutes.
-    </p>
-    {{end}}
-    <p style="margin:16px 0 0;font-size:12px;line-height;color:#6b7280;">
-    If you didn't request this, you can safely ignore this email no changes have been made to your account. Never share this code with anyone, including someone claiming to be OnlyStudents.
-    </p>
         </td>
     </tr>
 </table>
 
-<table role="presentation" width="500" cellpadding="0" style="max-width: 500px; width:100%"
-       <tr>
-           <tld align="center" style="padding-top:16px">
-               <span style="font-size: 12px; color:#9ca3af">OnlyStudents</span>
-           </tld>
-       </tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:500px;width:100%;">
+    <tr>
+        <td align="center" style="padding-top:16px">
+            <span style="font-size:12px;color:#9ca3af;">OnlyStudents</span>
+        </td>
+    </tr>
+</table>
 </body>
 </html>

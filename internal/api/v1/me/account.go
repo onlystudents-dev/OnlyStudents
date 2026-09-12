@@ -215,8 +215,9 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 type VerifyEmailData struct {
-	VerifyCode string
-	Name       string
+	VerifyCode       string
+	Name             string
+	ExpiresInMinutes int
 }
 
 func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -253,7 +254,8 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(500)
 	}
 
-	ttl := time.Duration(helpers.GetInt64EnvFallback("EMAIL_VERIFY_CODE_TTL", 15, 1440)) * time.Minute
+	expiresInMinutes := helpers.GetInt64EnvFallback("EMAIL_VERIFY_CODE_TTL", 15, 1440)
+	ttl := time.Duration(expiresInMinutes) * time.Minute
 	if e := rdb.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
 		return c.SendStatus(500)
 	}
@@ -270,7 +272,7 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 			slog.Error("email verify mailer init failed", "err", e)
 			return
 		}
-		if e := mailer.SendTemplateContext(bg, email, "Verify your email", "email_verify.html", VerifyEmailData{VerifyCode: code, Name: account.Role}); e != nil {
+		if e := mailer.SendTemplateContext(bg, email, "Verify your email", "email_verify.html", VerifyEmailData{VerifyCode: code, Name: account.Role, ExpiresInMinutes: int(expiresInMinutes)}); e != nil {
 			slog.Error("email verify email failed", "account", email, "err", e)
 		}
 	}()
