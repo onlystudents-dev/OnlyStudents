@@ -57,16 +57,16 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 		status_data = StatusData{
-			Role:         session_data.Role,
-			AccountID:    session_data.AccountID,
-			SchoolID:     student.SchoolID,
-			FirstName:    student.FirstName,
-			LastName:     student.LastName,
-			PfpURL:       account.PfpUrl,
-			Nickname:     account.Nickname,
-			EmailAddress: account.EmailAddress.String,
+			Role:          session_data.Role,
+			AccountID:     session_data.AccountID,
+			SchoolID:      student.SchoolID,
+			FirstName:     student.FirstName,
+			LastName:      student.LastName,
+			PfpURL:        account.PfpUrl,
+			Nickname:      account.Nickname,
+			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
-			Children:     []ChildrenData{},
+			Children:      []ChildrenData{},
 		}
 
 	case "guardian":
@@ -90,15 +90,15 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 		status_data = StatusData{
-			Role:         session_data.Role,
-			AccountID:    session_data.AccountID,
-			FirstName:    guardian.FirstName,
-			LastName:     guardian.LastName,
-			PfpURL:       account.PfpUrl,
-			Nickname:     account.Nickname,
-			EmailAddress: account.EmailAddress.String,
+			Role:          session_data.Role,
+			AccountID:     session_data.AccountID,
+			FirstName:     guardian.FirstName,
+			LastName:      guardian.LastName,
+			PfpURL:        account.PfpUrl,
+			Nickname:      account.Nickname,
+			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
-			Children:     guardian_children_data,
+			Children:      guardian_children_data,
 		}
 
 	case "teacher":
@@ -109,15 +109,15 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 		status_data = StatusData{
-			Role:         session_data.Role,
-			AccountID:    session_data.AccountID,
-			FirstName:    teacher.FirstName,
-			LastName:     teacher.LastName,
-			PfpURL:       account.PfpUrl,
-			Nickname:     account.Nickname,
-			EmailAddress: account.EmailAddress.String,
+			Role:          session_data.Role,
+			AccountID:     session_data.AccountID,
+			FirstName:     teacher.FirstName,
+			LastName:      teacher.LastName,
+			PfpURL:        account.PfpUrl,
+			Nickname:      account.Nickname,
+			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
-			Children:     []ChildrenData{},
+			Children:      []ChildrenData{},
 		}
 
 	default:

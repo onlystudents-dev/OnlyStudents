@@ -127,7 +127,7 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	queries := db_queries.New(pool)
 
 	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
-	sendMail := err == nil && account.EmailAddress.Valid && account.EmailAddress.String != ""
+	sendMail := err == nil && account.EmailAddress.Valid && account.EmailAddress.String != "" && account.EmailVerified
 
 	code, e := generateResetCode(helpers.GetIntEnvFallback("PASSWORD_RESET_CODE_LEN", 10, 64))
 	if e != nil {

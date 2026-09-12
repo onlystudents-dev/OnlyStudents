@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	v1 "onlystudents/internal/api/v1"
 	adminapi "onlystudents/internal/api/v1/admin"
@@ -43,10 +44,20 @@ func main() {
 		JSONDecoder: json.Unmarshal,
 		AppName:     "OnlyStudents",
 		BodyLimit:   1 << 20,
+		TrustProxy:  helpers.GetEnvFallback("TRUST_PROXY", "false") == "true",
+		ProxyHeader: fiber.HeaderXForwardedFor,
+		TrustProxyConfig: fiber.TrustProxyConfig{
+			Proxies: strings.Split(helpers.GetEnvFallback("TRUSTED_PROXIES", "127.0.0.1/32"), ","),
+		},
+	})
+
+	app.Use(func(c fiber.Ctx) error {
+		return middlewares.SecurityHeadersMiddleware(c)
 	})
 
 	// frontend
-	app.Use("/assets", static.New("frontend/dist/assets"))
+	app.Use("/assets/fonts", static.New("frontend/dist/assets/fonts", static.Config{MaxAge: 31536000}))
+	app.Use("/assets", static.New("frontend/dist/assets", static.Config{MaxAge: 3600}))
 	paths := []string{
 		"/",
 		"/me",
@@ -75,6 +86,8 @@ func main() {
 	authRateWindow := helpers.GetInt64EnvFallback("AUTH_RATELIMIT_WINDOW", 60, 1000000)
 	apiRateMax := helpers.GetInt64EnvFallback("API_RATE_MAX", 60, 1000000)
 	apiRateWindow := helpers.GetInt64EnvFallback("API_RATELIMIT_WINDOW", 60, 1000000)
+	forgetRateMax := helpers.GetInt64EnvFallback("FORGET_RATE_MAX", 1, 1000000)
+	forgetRateWindow := helpers.GetInt64EnvFallback("FORGET_RATELIMIT_WINDOW", 120, 1000000)
 
 	api := app.Group("/api")
 
@@ -84,16 +97,19 @@ func main() {
 	apiLimit := func(c fiber.Ctx) error {
 		return middlewares.RateLimitMiddleware(c, rdb, "api", apiRateMax, apiRateWindow)
 	}
+	forgetLimit := func(c fiber.Ctx) error {
+		return middlewares.RateLimitMiddleware(c, rdb, "forget", forgetRateMax, forgetRateWindow)
+	}
 
 	api.Post("/login", authLimit, func(c fiber.Ctx) error {
 		return v1.Login(c, pool, rdb)
 	})
 
-	api.Post("/forget_password", func(c fiber.Ctx) error {
+	api.Post("/forget_password", forgetLimit, func(c fiber.Ctx) error {
 		return v1.ForgetPassword(c, pool, rdb)
 	})
 
-	api.Post("/forget_password_confirm", authLimit, func(c fiber.Ctx) error {
+	api.Post("/forget_password_confirm", forgetLimit, func(c fiber.Ctx) error {
 		return v1.ForgetPasswordConfirm(c, pool, rdb)
 	})
 
@@ -104,7 +120,7 @@ func main() {
 	})
 
 	admin_group.Post("/login", authLimit, func(c fiber.Ctx) error {
-		return adminapi.AdminLogin(c, pool, rdb)
+		return v1.Login(c, pool, rdb)
 	})
 
 	admin_group.Post("/debug", authLimit, func(c fiber.Ctx) error {
@@ -171,24 +187,33 @@ func main() {
 		return middlewares.RequireRoleMiddleware(c, rdb, []string{"teacher"})
 	})
 
-	manage_group.Get("/absences", func(c fiber.Ctx) error {
-		return manageapi.ManageAbsences(c, pool, rdb)
+	manage_group.Get("/add_exam", func(c fiber.Ctx) error {
+		return manageapi.AddExam(c, pool, rdb)
 	})
 
-	manage_group.Get("/exams", func(c fiber.Ctx) error {
-		return manageapi.ManageExams(c, pool, rdb)
+	manage_group.Get("/remove_exam", func(c fiber.Ctx) error {
+		return manageapi.RemoveExam(c, pool, rdb)
 	})
 
-	manage_group.Get("/grades", func(c fiber.Ctx) error {
-		return manageapi.ManageGrades(c, pool, rdb)
+	manage_group.Get("/edit_exam", func(c fiber.Ctx) error {
+		return manageapi.EditExam(c, pool, rdb)
 	})
 
-	manage_group.Get("/timetable", func(c fiber.Ctx) error {
-		return manageapi.ManageTimeTable(c, pool, rdb)
+	manage_group.Get("/add_grades", func(c fiber.Ctx) error {
+		return manageapi.AddGrade(c, pool, rdb)
 	})
 
-	log.Fatal(app.Listen(":8080", fiber.ListenConfig{
-		EnablePrefork:         true,
-		DisableStartupMessage: env.GetEnvFallback("APP_ENV", "development") == "production",
-	}))
+	manage_group.Get("/remove_grades", func(c fiber.Ctx) error {
+		return manageapi.RemoveGrade(c, pool, rdb)
+	})
+
+	manage_group.Get("/edit_grades", func(c fiber.Ctx) error {
+		return manageapi.EditGrade(c, pool, rdb)
+	})
+
+	log.Fatal(app.Listen(":8080",
+		fiber.ListenConfig{
+			EnablePrefork:         true,
+			DisableStartupMessage: env.GetEnvFallback("APP_ENV", "development") == "production",
+		}))
 }

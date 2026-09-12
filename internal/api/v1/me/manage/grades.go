@@ -9,7 +9,7 @@ import (
 )
 
 // TODO: implement this
-func ManageGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func GetGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
@@ -19,7 +19,67 @@ func ManageGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 // TODO: implement this
-func ManageFinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+	return c.SendStatus(501)
+}
+
+// TODO: implement this
+func RemoveGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+	return c.SendStatus(501)
+}
+
+// TODO: implement this
+func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+	return c.SendStatus(501)
+}
+
+// TODO: implement this
+func GetFinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+	return c.SendStatus(501)
+}
+
+// TODO: implement this
+func AddFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+	return c.SendStatus(501)
+}
+
+// TODO: implement this
+func RemoveFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+	return c.SendStatus(501)
+}
+
+// TODO: implement this
+func EditFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
