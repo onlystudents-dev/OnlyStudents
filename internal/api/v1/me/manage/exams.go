@@ -9,7 +9,27 @@ import (
 )
 
 // TODO: implement this
-func ManageExams(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+	return c.SendStatus(501)
+}
+
+// TODO: implement this
+func RemoveExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+	return c.SendStatus(501)
+}
+
+// TODO: implement this
+func EditExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
