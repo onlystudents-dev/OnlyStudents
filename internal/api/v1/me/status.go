@@ -25,6 +25,7 @@ type StatusData struct {
 	FirstName string         `json:"first_name"`
 	LastName  string         `json:"last_name"`
 	PfpURL    string         `json:"pfp_url"`
+	Nickname  string         `json:"nickname"`
 	Children  []ChildrenData `json:"children"`
 }
 
@@ -60,6 +61,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			FirstName: student.FirstName,
 			LastName:  student.LastName,
 			PfpURL:    account.PfpUrl,
+			Nickname:  account.Nickname,
 			Children:  []ChildrenData{},
 		}
 
@@ -89,6 +91,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			FirstName: guardian.FirstName,
 			LastName:  guardian.LastName,
 			PfpURL:    account.PfpUrl,
+			Nickname:  account.Nickname,
 			Children:  guardian_children_data,
 		}
 
@@ -105,6 +108,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			FirstName: teacher.FirstName,
 			LastName:  teacher.LastName,
 			PfpURL:    account.PfpUrl,
+			Nickname:  account.Nickname,
 			Children:  []ChildrenData{},
 		}
 

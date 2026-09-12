@@ -29,6 +29,7 @@ type Account struct {
 	EmailAddress  pgtype.Text
 	EmailVerified bool
 	PfpUrl        string
+	Nickname      string
 }
 
 type Announcement struct {

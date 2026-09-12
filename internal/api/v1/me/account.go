@@ -107,9 +107,60 @@ func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return c.SendStatus(200)
 }
 
+type changeNicknameRequest struct {
+	Password string `json:"password"`
+	Nickname string `json:"nickname"`
+}
+
 type changeEmailRequest struct {
 	Password string `json:"password"`
 	NewEmail string `json:"new_email"`
+}
+
+func ChangeNickname(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	session_data, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+
+	var req changeNicknameRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	queries := db_queries.New(pool)
+	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
+	if err != nil {
+		return c.SendStatus(401)
+	}
+
+	if !helpers.Argon2Verify(req.Password, account.PasswordHash) {
+		return c.SendStatus(401)
+	}
+
+	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
+	switch session_data.Role {
+	case "student":
+		err = queries.UpdateNicknameStudent(c.Context(), db_queries.UpdateNicknameStudentParams{Nickname: req.Nickname, StudentID: pgAccountID})
+	case "teacher":
+		err = queries.UpdateNicknameTeacher(c.Context(), db_queries.UpdateNicknameTeacherParams{Nickname: req.Nickname, TeacherID: pgAccountID})
+	case "guardian":
+		err = queries.UpdateNicknameGuardian(c.Context(), db_queries.UpdateNicknameGuardianParams{Nickname: req.Nickname, GuardianID: pgAccountID})
+	default:
+		return c.SendStatus(400)
+	}
+
+	if err != nil {
+		if isUniqueViolation(err) {
+			return c.SendStatus(400)
+		}
+		slog.Error("change email error", "err", err)
+		return c.SendStatus(500)
+	}
+
+	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
+	return c.SendStatus(200)
 }
 
 func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {

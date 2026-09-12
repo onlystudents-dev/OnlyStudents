@@ -96,7 +96,7 @@ func (q *Queries) CreateTeacherAccount(ctx context.Context, arg CreateTeacherAcc
 }
 
 const getAccountByGuardianID = `-- name: GetAccountByGuardianID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, pfp_url FROM accounts WHERE guardian_id = $1 AND role = 'guardian'
+SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, pfp_url, nickname FROM accounts WHERE guardian_id = $1 AND role = 'guardian'
 `
 
 func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.Int4) (Account, error) {
@@ -112,12 +112,13 @@ func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.
 		&i.EmailAddress,
 		&i.EmailVerified,
 		&i.PfpUrl,
+		&i.Nickname,
 	)
 	return i, err
 }
 
 const getAccountByStudentID = `-- name: GetAccountByStudentID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, pfp_url FROM accounts WHERE student_id = $1 AND role = 'student'
+SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, pfp_url, nickname FROM accounts WHERE student_id = $1 AND role = 'student'
 `
 
 func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.Int4) (Account, error) {
@@ -133,12 +134,13 @@ func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.In
 		&i.EmailAddress,
 		&i.EmailVerified,
 		&i.PfpUrl,
+		&i.Nickname,
 	)
 	return i, err
 }
 
 const getAccountByTeacherID = `-- name: GetAccountByTeacherID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, pfp_url FROM accounts WHERE teacher_id = $1 AND role = 'teacher'
+SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, pfp_url, nickname FROM accounts WHERE teacher_id = $1 AND role = 'teacher'
 `
 
 func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.Int4) (Account, error) {
@@ -154,6 +156,7 @@ func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.In
 		&i.EmailAddress,
 		&i.EmailVerified,
 		&i.PfpUrl,
+		&i.Nickname,
 	)
 	return i, err
 }
@@ -239,6 +242,48 @@ type UpdateEmailTeacherParams struct {
 
 func (q *Queries) UpdateEmailTeacher(ctx context.Context, arg UpdateEmailTeacherParams) error {
 	_, err := q.db.Exec(ctx, updateEmailTeacher, arg.EmailAddress, arg.TeacherID)
+	return err
+}
+
+const updateNicknameGuardian = `-- name: UpdateNicknameGuardian :exec
+UPDATE accounts SET nickname = $1 WHERE guardian_id = $2 AND role = 'guardian'
+`
+
+type UpdateNicknameGuardianParams struct {
+	Nickname   string
+	GuardianID pgtype.Int4
+}
+
+func (q *Queries) UpdateNicknameGuardian(ctx context.Context, arg UpdateNicknameGuardianParams) error {
+	_, err := q.db.Exec(ctx, updateNicknameGuardian, arg.Nickname, arg.GuardianID)
+	return err
+}
+
+const updateNicknameStudent = `-- name: UpdateNicknameStudent :exec
+UPDATE accounts SET nickname = $1 WHERE student_id = $2 AND role = 'student'
+`
+
+type UpdateNicknameStudentParams struct {
+	Nickname  string
+	StudentID pgtype.Int4
+}
+
+func (q *Queries) UpdateNicknameStudent(ctx context.Context, arg UpdateNicknameStudentParams) error {
+	_, err := q.db.Exec(ctx, updateNicknameStudent, arg.Nickname, arg.StudentID)
+	return err
+}
+
+const updateNicknameTeacher = `-- name: UpdateNicknameTeacher :exec
+UPDATE accounts SET nickname = $1 WHERE teacher_id = $2 AND role = 'teacher'
+`
+
+type UpdateNicknameTeacherParams struct {
+	Nickname  string
+	TeacherID pgtype.Int4
+}
+
+func (q *Queries) UpdateNicknameTeacher(ctx context.Context, arg UpdateNicknameTeacherParams) error {
+	_, err := q.db.Exec(ctx, updateNicknameTeacher, arg.Nickname, arg.TeacherID)
 	return err
 }
 
