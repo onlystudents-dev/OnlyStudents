@@ -28,7 +28,8 @@ func (q *Queries) CanViewStudent(ctx context.Context, arg CanViewStudentParams) 
 const getGuardianChildren = `-- name: GetGuardianChildren :many
 SELECT
     s.id,
-    CONCAT(s.first_name, ' ', s.last_name) AS name,
+    s.first_name,
+    s.last_name,
     s.school_id,
     s.classes_id AS class_id
 FROM guardians_access ga
@@ -38,10 +39,11 @@ ORDER BY s.last_name, s.first_name
 `
 
 type GetGuardianChildrenRow struct {
-	ID       int32
-	Name     interface{}
-	SchoolID int32
-	ClassID  int32
+	ID        int32
+	FirstName string
+	LastName  string
+	SchoolID  int32
+	ClassID   int32
 }
 
 func (q *Queries) GetGuardianChildren(ctx context.Context, guardianID int32) ([]GetGuardianChildrenRow, error) {
@@ -55,7 +57,8 @@ func (q *Queries) GetGuardianChildren(ctx context.Context, guardianID int32) ([]
 		var i GetGuardianChildrenRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.Name,
+			&i.FirstName,
+			&i.LastName,
 			&i.SchoolID,
 			&i.ClassID,
 		); err != nil {

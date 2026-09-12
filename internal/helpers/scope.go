@@ -34,11 +34,11 @@ func ResolvePerson(c fiber.Ctx, queries db_queries.Queries, session_data Session
 			return 0, errors.New("No access")
 		}
 
+		return int32(requested_student_id), nil
+
 	case "teacher":
 		return 0, errors.New("teacher cannot access this")
 	default:
 		return 0, errors.New("role doesn't exist")
 	}
-
-	return 0, errors.New("HUH???")
 }

@@ -82,12 +82,13 @@ func Login(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func Logout(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	_, ok := c.Locals("session").(helpers.SessionData)
+	session_token := c.Cookies("session_token", "")
 
-	if !ok {
+	if session_token == "" {
 		return c.SendStatus(401)
 	}
 
+	helpers.SessionDelete(c, rdb, session_token)
 	c.ClearCookie("session_token")
 
 	return c.SendStatus(200)
