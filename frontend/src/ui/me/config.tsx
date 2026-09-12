@@ -3,7 +3,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import React, {useState} from "react";
 import Overlay from "../../util/overlay/overlay.tsx";
 
-export default function Config({ icon, text, value, children, className }: {icon: IconDefinition, text: string, value: string, children: React.ReactNode, className?: string}) {
+export default function Config({ icon, text, value, children, className}: {icon: IconDefinition, text: string, value: string, children: React.ReactNode, className?: string}) {
     const [open, setOpen] = useState(false)
 
     return (

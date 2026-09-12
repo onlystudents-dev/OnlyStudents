@@ -108,7 +108,6 @@ func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 type changeNicknameRequest struct {
-	Password string `json:"password"`
 	Nickname string `json:"nickname"`
 }
 
@@ -130,16 +129,9 @@ func ChangeNickname(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	}
 
 	queries := db_queries.New(pool)
-	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
-	if err != nil {
-		return c.SendStatus(401)
-	}
-
-	if !helpers.Argon2Verify(req.Password, account.PasswordHash) {
-		return c.SendStatus(401)
-	}
 
 	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
+	var err error
 	switch session_data.Role {
 	case "student":
 		err = queries.UpdateNicknameStudent(c.Context(), db_queries.UpdateNicknameStudentParams{Nickname: req.Nickname, StudentID: pgAccountID})
@@ -155,7 +147,7 @@ func ChangeNickname(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		if isUniqueViolation(err) {
 			return c.SendStatus(400)
 		}
-		slog.Error("change email error", "err", err)
+		slog.Error("change nickname error", "err", err)
 		return c.SendStatus(500)
 	}
 

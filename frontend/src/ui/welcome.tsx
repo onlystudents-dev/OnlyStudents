@@ -7,7 +7,7 @@ export default function Welcome({ me }: {me: Me}) {
         <>
             <Navbar me={me} />
             <div className="w-full full-height flex justify-center items-center relative">
-                <h1 className="hello fredoka">Hello, {me.last_name}!</h1>
+                <h1 className="hello fredoka">Hello, {me.nickname || me.last_name}!</h1>
             </div>
         </>
     )

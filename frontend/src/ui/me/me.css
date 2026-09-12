@@ -51,7 +51,7 @@
     }
 
     .configure {
-        @apply flex flex-col w-120 h-80 z-151 rounded-2xl p-7 overflow-hidden;
+        @apply flex flex-col min-w-120 min-h-80 z-151 rounded-2xl p-7 overflow-hidden;
         border: var(--txt-color) solid 4px;
         background-color: var(--bg-color);
 
@@ -78,8 +78,7 @@
         }
 
         .moving {
-            @apply flex flex-row relative;
-            width: 100%;
+            @apply flex flex-row relative w-120;
             height: calc(20rem - 48px - 2rem);
             .moving-content {
                 @apply flex flex-col gap-4 w-full;
@@ -95,19 +94,23 @@
     }
 }
 
+.wrong {
+    box-shadow: 0 0 15px var(--wrong-color) !important;
+}
+
 @keyframes out {
     0% {
         transform: translateX(0);
     }
 
     100% {
-        transform: translateX(-480px);
+        transform: translateX(-20cqw);
     }
 }
 
 @keyframes in {
     0% {
-        transform: translateX(480px);
+        transform: translateX(20cqw);
     }
 
     100% {
