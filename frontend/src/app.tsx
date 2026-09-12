@@ -26,6 +26,9 @@ export type Me = {
     first_name: string,
     last_name: string,
     pfp_url: string,
+    email_address: string,
+    email_verified: boolean,
+    nickname: string,
 }
 
 export default function App() {

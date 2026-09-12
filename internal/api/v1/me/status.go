@@ -18,15 +18,17 @@ type ChildrenData struct {
 }
 
 type StatusData struct {
-	Role      string         `json:"role"`
-	AccountID int32          `json:"account_id"`
-	SchoolID  int32          `json:"school_id"`
-	ClassID   int32          `json:"class_id"`
-	FirstName string         `json:"first_name"`
-	LastName  string         `json:"last_name"`
-	PfpURL    string         `json:"pfp_url"`
-	Nickname  string         `json:"nickname"`
-	Children  []ChildrenData `json:"children"`
+	Role          string         `json:"role"`
+	AccountID     int32          `json:"account_id"`
+	SchoolID      int32          `json:"school_id"`
+	ClassID       int32          `json:"class_id"`
+	FirstName     string         `json:"first_name"`
+	LastName      string         `json:"last_name"`
+	PfpURL        string         `json:"pfp_url"`
+	Nickname      string         `json:"nickname"`
+	EmailAddress  string         `json:"email_address"`
+	EmailVerified bool           `json:"email_verified"`
+	Children      []ChildrenData `json:"children"`
 }
 
 func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -55,14 +57,16 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 		status_data = StatusData{
-			Role:      session_data.Role,
-			AccountID: session_data.AccountID,
-			SchoolID:  student.SchoolID,
-			FirstName: student.FirstName,
-			LastName:  student.LastName,
-			PfpURL:    account.PfpUrl,
-			Nickname:  account.Nickname,
-			Children:  []ChildrenData{},
+			Role:         session_data.Role,
+			AccountID:    session_data.AccountID,
+			SchoolID:     student.SchoolID,
+			FirstName:    student.FirstName,
+			LastName:     student.LastName,
+			PfpURL:       account.PfpUrl,
+			Nickname:     account.Nickname,
+			EmailAddress: account.EmailAddress.String,
+			EmailVerified: account.EmailVerified,
+			Children:     []ChildrenData{},
 		}
 
 	case "guardian":
@@ -86,13 +90,15 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 		status_data = StatusData{
-			Role:      session_data.Role,
-			AccountID: session_data.AccountID,
-			FirstName: guardian.FirstName,
-			LastName:  guardian.LastName,
-			PfpURL:    account.PfpUrl,
-			Nickname:  account.Nickname,
-			Children:  guardian_children_data,
+			Role:         session_data.Role,
+			AccountID:    session_data.AccountID,
+			FirstName:    guardian.FirstName,
+			LastName:     guardian.LastName,
+			PfpURL:       account.PfpUrl,
+			Nickname:     account.Nickname,
+			EmailAddress: account.EmailAddress.String,
+			EmailVerified: account.EmailVerified,
+			Children:     guardian_children_data,
 		}
 
 	case "teacher":
@@ -103,13 +109,15 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 		status_data = StatusData{
-			Role:      session_data.Role,
-			AccountID: session_data.AccountID,
-			FirstName: teacher.FirstName,
-			LastName:  teacher.LastName,
-			PfpURL:    account.PfpUrl,
-			Nickname:  account.Nickname,
-			Children:  []ChildrenData{},
+			Role:         session_data.Role,
+			AccountID:    session_data.AccountID,
+			FirstName:    teacher.FirstName,
+			LastName:     teacher.LastName,
+			PfpURL:       account.PfpUrl,
+			Nickname:     account.Nickname,
+			EmailAddress: account.EmailAddress.String,
+			EmailVerified: account.EmailVerified,
+			Children:     []ChildrenData{},
 		}
 
 	default:
