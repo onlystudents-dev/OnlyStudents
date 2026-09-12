@@ -10,24 +10,22 @@ import (
 )
 
 type ChildrenData struct {
-	AccountID  int32  `json:"account_id"`
-	SchoolName string `json:"school_name"`
-	SchoolID   string `json:"school_id"`
-	ClassID    string `json:"class_id"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
+	AccountID int32  `json:"account_id"`
+	SchoolID  int32  `json:"school_id"`
+	ClassID   int32  `json:"class_id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 type StatusData struct {
-	Role       string         `json:"role"`
-	AccountID  int32          `json:"account_id"`
-	SchoolName string         `json:"school_name"`
-	SchoolID   string         `json:"school_id"`
-	ClassID    string         `json:"class_id"`
-	FirstName  string         `json:"first_name"`
-	LastName   string         `json:"last_name"`
-	PfpURL     string         `json:"pfp_url"`
-	Children   []ChildrenData `json:"children"`
+	Role      string         `json:"role"`
+	AccountID int32          `json:"account_id"`
+	SchoolID  int32          `json:"school_id"`
+	ClassID   int32          `json:"class_id"`
+	FirstName string         `json:"first_name"`
+	LastName  string         `json:"last_name"`
+	PfpURL    string         `json:"pfp_url"`
+	Children  []ChildrenData `json:"children"`
 }
 
 func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -58,13 +56,28 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		status_data = StatusData{
 			Role:      session_data.Role,
 			AccountID: session_data.AccountID,
+			SchoolID:  student.SchoolID,
 			FirstName: student.FirstName,
 			LastName:  student.LastName,
 			PfpURL:    account.PfpUrl,
+			Children:  []ChildrenData{},
 		}
 
 	case "guardian":
 		guardian, err := helpers.CacheOrGetGuardian(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
+		guardian_children, err := helpers.CacheOrGetGuardianChildren(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
+
+		guardian_children_data := []ChildrenData{}
+
+		for _, children := range guardian_children {
+			guardian_children_data = append(guardian_children_data, ChildrenData{
+				AccountID: children.ID,
+				SchoolID:  children.SchoolID,
+				ClassID:   children.ClassID,
+				FirstName: children.FirstName,
+				LastName:  children.LastName,
+			})
+		}
 
 		if err != nil {
 			return c.SendStatus(401)
@@ -76,6 +89,7 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			FirstName: guardian.FirstName,
 			LastName:  guardian.LastName,
 			PfpURL:    account.PfpUrl,
+			Children:  guardian_children_data,
 		}
 
 	case "teacher":
@@ -90,7 +104,9 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			AccountID: session_data.AccountID,
 			FirstName: teacher.FirstName,
 			LastName:  teacher.LastName,
-			PfpURL:    account.PfpUrl}
+			PfpURL:    account.PfpUrl,
+			Children:  []ChildrenData{},
+		}
 
 	default:
 		return c.SendStatus(400)

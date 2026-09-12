@@ -80,6 +80,13 @@ func CacheOrGetGuardian(ctx context.Context, rdb *redis.Client, queries db_queri
 	})
 }
 
+func CacheOrGetGuardianChildren(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetGuardianChildrenRow, error) {
+	key := fmt.Sprintf("guardian_children:%d", accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetGuardianChildrenRow, error) {
+		return queries.GetGuardianChildren(ctx, accountID)
+	})
+}
+
 func CacheOrGetStudentGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentGradesRow, error) {
 	key := fmt.Sprintf("student_grades:%d", accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentGradesRow, error) {

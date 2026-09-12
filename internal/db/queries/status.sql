@@ -1,7 +1,8 @@
 -- name: GetGuardianChildren :many
 SELECT
     s.id,
-    CONCAT(s.first_name, ' ', s.last_name) AS name,
+    s.first_name,
+    s.last_name,
     s.school_id,
     s.classes_id AS class_id
 FROM guardians_access ga
