@@ -66,3 +66,21 @@ DELETE FROM group_members WHERE group_id = $1 AND student_id = $2 AND school_id 
 
 -- name: ReadListOfStudents :many
 SELECT s.id, s.first_name, s.last_name FROM students AS s INNER JOIN group_members AS g_m ON g_m.student_id = s.id WHERE g_m.group_id = $1 AND g_m.school_id = $2;
+
+-- name: CreateBaseSchedule :exec
+INSERT INTO base_schedule (school_id, teacher_id, room_id, day_of_week, lesson_num, group_id, custom_subject, subject_id, custom_subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+
+-- name: DeleteBaseSchedule :exec
+DELETE FROM base_schedule WHERE id = $1 AND school_id = $2;
+
+-- name: UpdateBaseSchedule :exec
+UPDATE base_schedule SET teacher_id = $1, day_of_week = $2, lesson_num = $3, room_id = $4, group_id = $5, custom_subject = $6, subject_id = $7, custom_subject_id = $8 WHERE id = $9 AND school_id = $10;
+
+-- name: ReadBaseScheduleClass :many
+SELECT DISTINCT bs.* FROM base_schedule bs JOIN groups g ON bs.group_id = g.id JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $1 AND s.school_id = $2;
+
+-- name: ReadBaseScheduleGroup :many
+SELECT * FROM base_schedule WHERE group_id = $1 AND school_id = $2;
+
+-- name: ReadRealTimeTable :many
+SELECT  COALESCE(t.room_id, b.room_id) AS room_id, COALESCE(t.lesson_num, b.lesson_num) AS lesson_num, COALESCE(t.day_of_week, b.day_of_week) AS day_of_week, COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) AS effective_teacher_id, COALESCE(t.group_id, b.group_id) AS group_id, COALESCE(t.school_id, b.school_id) AS school_id, COALESCE(t.custom_subject, b.custom_subject) AS custom_subject, COALESCE(t.subject_id, b.subject_id) AS subject_id, COALESCE(t.custom_subject_id, b.custom_subject_id) AS custom_subject_id, COALESCE(t.is_substitution, FALSE) AS is_substitution, COALESCE(t.canceled, FALSE) AS canceled FROM base_schedule b LEFT JOIN time_table t ON b.day_of_week = t.day_of_week AND b.lesson_num = t.lesson_num AND t.actual_date BETWEEN $1 AND $2 WHERE b.group_id IN ( SELECT g.id FROM groups g JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $3 AND s.school_id = $4);

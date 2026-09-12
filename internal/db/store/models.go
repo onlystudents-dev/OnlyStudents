@@ -44,12 +44,16 @@ type Announcement struct {
 }
 
 type BaseSchedule struct {
-	ID        int32
-	SchoolID  int32
-	ClassID   int32
-	DayOfWeek int32
-	LessonNum int32
-	LessonID  int32
+	ID              int32
+	SchoolID        int32
+	TeacherID       int32
+	RoomID          int32
+	DayOfWeek       int32
+	LessonNum       int32
+	GroupID         int32
+	CustomSubject   bool
+	SubjectID       pgtype.Int4
+	CustomSubjectID pgtype.Int4
 }
 
 type BellSchedule struct {
@@ -181,17 +185,6 @@ type HomeworkSubmission struct {
 	Content     pgtype.Text
 	SubmittedAt pgtype.Timestamptz
 	GradedValue pgtype.Int2
-}
-
-type Lesson struct {
-	ID              int32
-	SchoolID        int32
-	TeacherID       int32
-	RoomID          int32
-	GroupID         int32
-	CustomSubject   bool
-	SubjectID       pgtype.Int4
-	CustomSubjectID pgtype.Int4
 }
 
 type LessonLog struct {
@@ -335,9 +328,15 @@ type Term struct {
 type TimeTable struct {
 	ID                    int32
 	SchoolID              int32
+	TeacherID             int32
+	RoomID                int32
+	DayOfWeek             int32
+	GroupID               int32
+	CustomSubject         bool
+	SubjectID             pgtype.Int4
+	CustomSubjectID       pgtype.Int4
 	ActualDate            pgtype.Date
 	LessonNum             int32
-	LessonID              int32
 	IsSubstitution        bool
 	SubstitutionTeacherID pgtype.Int4
 	Canceled              pgtype.Bool

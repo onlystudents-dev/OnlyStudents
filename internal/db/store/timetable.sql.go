@@ -11,6 +11,37 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createBaseSchedule = `-- name: CreateBaseSchedule :exec
+INSERT INTO base_schedule (school_id, teacher_id, room_id, day_of_week, lesson_num, group_id, custom_subject, subject_id, custom_subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`
+
+type CreateBaseScheduleParams struct {
+	SchoolID        int32
+	TeacherID       int32
+	RoomID          int32
+	DayOfWeek       int32
+	LessonNum       int32
+	GroupID         int32
+	CustomSubject   bool
+	SubjectID       pgtype.Int4
+	CustomSubjectID pgtype.Int4
+}
+
+func (q *Queries) CreateBaseSchedule(ctx context.Context, arg CreateBaseScheduleParams) error {
+	_, err := q.db.Exec(ctx, createBaseSchedule,
+		arg.SchoolID,
+		arg.TeacherID,
+		arg.RoomID,
+		arg.DayOfWeek,
+		arg.LessonNum,
+		arg.GroupID,
+		arg.CustomSubject,
+		arg.SubjectID,
+		arg.CustomSubjectID,
+	)
+	return err
+}
+
 const createBellScheduleType = `-- name: CreateBellScheduleType :exec
 INSERT INTO bell_schedule_type (school_id, name) VALUES ($1, $2)
 `
@@ -89,6 +120,20 @@ type CreateRoomParams struct {
 
 func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
 	_, err := q.db.Exec(ctx, createRoom, arg.SchoolID, arg.Name, arg.Capacity)
+	return err
+}
+
+const deleteBaseSchedule = `-- name: DeleteBaseSchedule :exec
+DELETE FROM base_schedule WHERE id = $1 AND school_id = $2
+`
+
+type DeleteBaseScheduleParams struct {
+	ID       int32
+	SchoolID int32
+}
+
+func (q *Queries) DeleteBaseSchedule(ctx context.Context, arg DeleteBaseScheduleParams) error {
+	_, err := q.db.Exec(ctx, deleteBaseSchedule, arg.ID, arg.SchoolID)
 	return err
 }
 
@@ -281,6 +326,86 @@ func (q *Queries) InsertStudentToGroup(ctx context.Context, arg InsertStudentToG
 	return err
 }
 
+const readBaseScheduleClass = `-- name: ReadBaseScheduleClass :many
+SELECT DISTINCT bs.id, bs.school_id, bs.teacher_id, bs.room_id, bs.day_of_week, bs.lesson_num, bs.group_id, bs.custom_subject, bs.subject_id, bs.custom_subject_id FROM base_schedule bs JOIN groups g ON bs.group_id = g.id JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $1 AND s.school_id = $2
+`
+
+type ReadBaseScheduleClassParams struct {
+	ClassesID int32
+	SchoolID  int32
+}
+
+func (q *Queries) ReadBaseScheduleClass(ctx context.Context, arg ReadBaseScheduleClassParams) ([]BaseSchedule, error) {
+	rows, err := q.db.Query(ctx, readBaseScheduleClass, arg.ClassesID, arg.SchoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BaseSchedule
+	for rows.Next() {
+		var i BaseSchedule
+		if err := rows.Scan(
+			&i.ID,
+			&i.SchoolID,
+			&i.TeacherID,
+			&i.RoomID,
+			&i.DayOfWeek,
+			&i.LessonNum,
+			&i.GroupID,
+			&i.CustomSubject,
+			&i.SubjectID,
+			&i.CustomSubjectID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const readBaseScheduleGroup = `-- name: ReadBaseScheduleGroup :many
+SELECT id, school_id, teacher_id, room_id, day_of_week, lesson_num, group_id, custom_subject, subject_id, custom_subject_id FROM base_schedule WHERE group_id = $1 AND school_id = $2
+`
+
+type ReadBaseScheduleGroupParams struct {
+	GroupID  int32
+	SchoolID int32
+}
+
+func (q *Queries) ReadBaseScheduleGroup(ctx context.Context, arg ReadBaseScheduleGroupParams) ([]BaseSchedule, error) {
+	rows, err := q.db.Query(ctx, readBaseScheduleGroup, arg.GroupID, arg.SchoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BaseSchedule
+	for rows.Next() {
+		var i BaseSchedule
+		if err := rows.Scan(
+			&i.ID,
+			&i.SchoolID,
+			&i.TeacherID,
+			&i.RoomID,
+			&i.DayOfWeek,
+			&i.LessonNum,
+			&i.GroupID,
+			&i.CustomSubject,
+			&i.SubjectID,
+			&i.CustomSubjectID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const readBellScheduleType = `-- name: ReadBellScheduleType :many
 SELECT id, name FROM bell_schedule_type WHERE school_id = $1
 `
@@ -439,6 +564,68 @@ func (q *Queries) ReadListOfStudents(ctx context.Context, arg ReadListOfStudents
 	return items, nil
 }
 
+const readRealTimeTable = `-- name: ReadRealTimeTable :many
+SELECT  COALESCE(t.room_id, b.room_id) AS room_id, COALESCE(t.lesson_num, b.lesson_num) AS lesson_num, COALESCE(t.day_of_week, b.day_of_week) AS day_of_week, COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) AS effective_teacher_id, COALESCE(t.group_id, b.group_id) AS group_id, COALESCE(t.school_id, b.school_id) AS school_id, COALESCE(t.custom_subject, b.custom_subject) AS custom_subject, COALESCE(t.subject_id, b.subject_id) AS subject_id, COALESCE(t.custom_subject_id, b.custom_subject_id) AS custom_subject_id, COALESCE(t.is_substitution, FALSE) AS is_substitution, COALESCE(t.canceled, FALSE) AS canceled FROM base_schedule b LEFT JOIN time_table t ON b.day_of_week = t.day_of_week AND b.lesson_num = t.lesson_num AND t.actual_date BETWEEN $1 AND $2 WHERE b.group_id IN ( SELECT g.id FROM groups g JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $3 AND s.school_id = $4)
+`
+
+type ReadRealTimeTableParams struct {
+	ActualDate   pgtype.Date
+	ActualDate_2 pgtype.Date
+	ClassesID    int32
+	SchoolID     int32
+}
+
+type ReadRealTimeTableRow struct {
+	RoomID             int32
+	LessonNum          int32
+	DayOfWeek          int32
+	EffectiveTeacherID int32
+	GroupID            int32
+	SchoolID           int32
+	CustomSubject      bool
+	SubjectID          pgtype.Int4
+	CustomSubjectID    pgtype.Int4
+	IsSubstitution     bool
+	Canceled           bool
+}
+
+func (q *Queries) ReadRealTimeTable(ctx context.Context, arg ReadRealTimeTableParams) ([]ReadRealTimeTableRow, error) {
+	rows, err := q.db.Query(ctx, readRealTimeTable,
+		arg.ActualDate,
+		arg.ActualDate_2,
+		arg.ClassesID,
+		arg.SchoolID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReadRealTimeTableRow
+	for rows.Next() {
+		var i ReadRealTimeTableRow
+		if err := rows.Scan(
+			&i.RoomID,
+			&i.LessonNum,
+			&i.DayOfWeek,
+			&i.EffectiveTeacherID,
+			&i.GroupID,
+			&i.SchoolID,
+			&i.CustomSubject,
+			&i.SubjectID,
+			&i.CustomSubjectID,
+			&i.IsSubstitution,
+			&i.Canceled,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const readRoom = `-- name: ReadRoom :many
 SELECT id, name, capacity FROM rooms WHERE school_id = $1
 `
@@ -467,4 +654,37 @@ func (q *Queries) ReadRoom(ctx context.Context, schoolID int32) ([]ReadRoomRow, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateBaseSchedule = `-- name: UpdateBaseSchedule :exec
+UPDATE base_schedule SET teacher_id = $1, day_of_week = $2, lesson_num = $3, room_id = $4, group_id = $5, custom_subject = $6, subject_id = $7, custom_subject_id = $8 WHERE id = $9 AND school_id = $10
+`
+
+type UpdateBaseScheduleParams struct {
+	TeacherID       int32
+	DayOfWeek       int32
+	LessonNum       int32
+	RoomID          int32
+	GroupID         int32
+	CustomSubject   bool
+	SubjectID       pgtype.Int4
+	CustomSubjectID pgtype.Int4
+	ID              int32
+	SchoolID        int32
+}
+
+func (q *Queries) UpdateBaseSchedule(ctx context.Context, arg UpdateBaseScheduleParams) error {
+	_, err := q.db.Exec(ctx, updateBaseSchedule,
+		arg.TeacherID,
+		arg.DayOfWeek,
+		arg.LessonNum,
+		arg.RoomID,
+		arg.GroupID,
+		arg.CustomSubject,
+		arg.SubjectID,
+		arg.CustomSubjectID,
+		arg.ID,
+		arg.SchoolID,
+	)
+	return err
 }

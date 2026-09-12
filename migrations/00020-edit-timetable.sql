@@ -45,25 +45,18 @@ CREATE TABLE group_members (
     student_id INT NOT NULL REFERENCES students(id)
 );
 
-CREATE TABLE lessons (
+CREATE TABLE base_schedule (
     id SERIAL PRIMARY KEY,
     school_id INT NOT NULL REFERENCES schools(id),
-    teacher_id INT NOT NULL REFERENCES teachers(id), 
+    teacher_id INT NOT NULL REFERENCES teachers(id),
     room_id INT NOT NULL REFERENCES rooms(id),
+    day_of_week INT NOT NULL,
+    lesson_num INT NOT NULL,
     group_id INT NOT NULL REFERENCES groups(id),
     custom_subject bool NOT NULL DEFAULT(false),
     subject_id INT REFERENCES subjects(id),
     custom_subject_id INT REFERENCES custom_subjects(id),
-    CONSTRAINT chk_subject CHECK ( (custom_subject = FALSE AND subject_id IS NOT NULL AND custom_subject_id IS NULL) OR (custom_subject = TRUE AND custom_subject_id IS NOT NULL AND subject_id IS NULL) )
-);
-
-CREATE TABLE base_schedule (
-    id SERIAL PRIMARY KEY,
-    school_id INT NOT NULL REFERENCES schools(id),
-    class_id INT NOT NULL REFERENCES classes(id),
-    day_of_week INT NOT NULL,
-    lesson_num INT NOT NULL,
-    lesson_id INT NOT NULL REFERENCES lessons(id),
+    CONSTRAINT chk_subject CHECK ( (custom_subject = FALSE AND subject_id IS NOT NULL AND custom_subject_id IS NULL) OR (custom_subject = TRUE AND custom_subject_id IS NOT NULL AND subject_id IS NULL) ),
     CONSTRAINT chk_day CHECK (day_of_week BETWEEN 1 AND 7),
     UNIQUE(day_of_week, lesson_num, room_id)
 );
@@ -71,9 +64,15 @@ CREATE TABLE base_schedule (
 CREATE TABLE time_table (
     id SERIAL PRIMARY KEY,
     school_id INT NOT NULL REFERENCES schools(id),
+    teacher_id INT NOT NULL REFERENCES teachers(id), 
+    room_id INT NOT NULL REFERENCES rooms(id),
+    day_of_week INT NOT NULL,
+    group_id INT NOT NULL REFERENCES groups(id),
+    custom_subject bool NOT NULL DEFAULT(false),
+    subject_id INT REFERENCES subjects(id),
+    custom_subject_id INT REFERENCES custom_subjects(id),
     actual_date DATE NOT NULL,
     lesson_num INT NOT NULL,
-    lesson_id INT NOT NULL REFERENCES lessons(id),
     is_substitution bool NOT NULL DEFAULT(false),
     substitution_teacher_id INT REFERENCES teachers(id),
     canceled bool DEFAULT(false),
