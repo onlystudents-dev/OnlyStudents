@@ -47,9 +47,9 @@ type ReadBaseScheduleGroupRequest struct {
 }
 
 type ReadRealTimetableRequest struct {
-	ClassId int32     `json:"class_id"`
-	Start   Time.time `json:"Start_date"`
-	End     Time.time `json:"End_date"`
+	ClassId int32       `json:"class_id"`
+	Start   pgtype.Date `json:"Start_date"`
+	End     pgtype.Date `json:"End_date"`
 }
 
 func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
