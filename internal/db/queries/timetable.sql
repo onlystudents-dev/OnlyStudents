@@ -90,3 +90,6 @@ INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, c
 
 -- name: RemoveCanceledLesson :exec
 INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET canceled = false;
+
+-- name: ManageSubsitutionLesson :exec
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, is_substitution, substitution_teacher_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET is_substitution = $11, substitution_teacher_id = $12;

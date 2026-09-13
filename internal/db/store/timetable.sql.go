@@ -359,6 +359,43 @@ func (q *Queries) InsertStudentToGroup(ctx context.Context, arg InsertStudentToG
 	return err
 }
 
+const manageSubsitutionLesson = `-- name: ManageSubsitutionLesson :exec
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, is_substitution, substitution_teacher_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET is_substitution = $11, substitution_teacher_id = $12
+`
+
+type ManageSubsitutionLessonParams struct {
+	SchoolID              int32
+	TeacherID             int32
+	RoomID                int32
+	DayOfWeek             int32
+	GroupID               int32
+	CustomSubject         bool
+	CustomSubjectID       pgtype.Int4
+	SubjectID             pgtype.Int4
+	ActualDate            pgtype.Date
+	LessonNum             int32
+	IsSubstitution        bool
+	SubstitutionTeacherID pgtype.Int4
+}
+
+func (q *Queries) ManageSubsitutionLesson(ctx context.Context, arg ManageSubsitutionLessonParams) error {
+	_, err := q.db.Exec(ctx, manageSubsitutionLesson,
+		arg.SchoolID,
+		arg.TeacherID,
+		arg.RoomID,
+		arg.DayOfWeek,
+		arg.GroupID,
+		arg.CustomSubject,
+		arg.CustomSubjectID,
+		arg.SubjectID,
+		arg.ActualDate,
+		arg.LessonNum,
+		arg.IsSubstitution,
+		arg.SubstitutionTeacherID,
+	)
+	return err
+}
+
 const readBaseScheduleClass = `-- name: ReadBaseScheduleClass :many
 SELECT DISTINCT bs.id, bs.school_id, bs.teacher_id, bs.room_id, bs.day_of_week, bs.lesson_num, bs.group_id, bs.custom_subject, bs.subject_id, bs.custom_subject_id FROM base_schedule bs JOIN groups g ON bs.group_id = g.id JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $1 AND s.school_id = $2
 `
