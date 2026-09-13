@@ -79,7 +79,7 @@ CREATE TABLE time_table (
     canceled bool DEFAULT(false),
     CONSTRAINT chk_day CHECK (day_of_week BETWEEN 1 AND 7),
     CONSTRAINT chk_substitution CHECK (is_substitution = TRUE or substitution_teacher_id IS NULL),
-    UNIQUE(day_of_week, lesson_num, room_id)
+    UNIQUE(school_id, room_id, actual_date, lesson_num, group_id)
 );
 
 CREATE TABLE principal (

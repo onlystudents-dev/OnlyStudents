@@ -11,6 +11,39 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addCanceledLesson = `-- name: AddCanceledLesson :exec
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET canceled = true
+`
+
+type AddCanceledLessonParams struct {
+	SchoolID        int32
+	TeacherID       int32
+	RoomID          int32
+	DayOfWeek       int32
+	GroupID         int32
+	CustomSubject   bool
+	CustomSubjectID pgtype.Int4
+	SubjectID       pgtype.Int4
+	ActualDate      pgtype.Date
+	LessonNum       int32
+}
+
+func (q *Queries) AddCanceledLesson(ctx context.Context, arg AddCanceledLessonParams) error {
+	_, err := q.db.Exec(ctx, addCanceledLesson,
+		arg.SchoolID,
+		arg.TeacherID,
+		arg.RoomID,
+		arg.DayOfWeek,
+		arg.GroupID,
+		arg.CustomSubject,
+		arg.CustomSubjectID,
+		arg.SubjectID,
+		arg.ActualDate,
+		arg.LessonNum,
+	)
+	return err
+}
+
 const createBaseSchedule = `-- name: CreateBaseSchedule :exec
 INSERT INTO base_schedule (school_id, teacher_id, room_id, day_of_week, lesson_num, group_id, custom_subject, subject_id, custom_subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 `
@@ -654,6 +687,39 @@ func (q *Queries) ReadRoom(ctx context.Context, schoolID int32) ([]ReadRoomRow, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const removeCanceledLesson = `-- name: RemoveCanceledLesson :exec
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET canceled = false
+`
+
+type RemoveCanceledLessonParams struct {
+	SchoolID        int32
+	TeacherID       int32
+	RoomID          int32
+	DayOfWeek       int32
+	GroupID         int32
+	CustomSubject   bool
+	CustomSubjectID pgtype.Int4
+	SubjectID       pgtype.Int4
+	ActualDate      pgtype.Date
+	LessonNum       int32
+}
+
+func (q *Queries) RemoveCanceledLesson(ctx context.Context, arg RemoveCanceledLessonParams) error {
+	_, err := q.db.Exec(ctx, removeCanceledLesson,
+		arg.SchoolID,
+		arg.TeacherID,
+		arg.RoomID,
+		arg.DayOfWeek,
+		arg.GroupID,
+		arg.CustomSubject,
+		arg.CustomSubjectID,
+		arg.SubjectID,
+		arg.ActualDate,
+		arg.LessonNum,
+	)
+	return err
 }
 
 const updateBaseSchedule = `-- name: UpdateBaseSchedule :exec
