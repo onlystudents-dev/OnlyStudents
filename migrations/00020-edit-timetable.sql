@@ -22,7 +22,8 @@ CREATE TABLE bell_schedule (
 
 CREATE TABLE subjects (
     id SERIAL PRIMARY KEY,
-    subject_name TEXT NOT NULL
+    subject_name TEXT NOT NULL,
+    code TEXT
 );
 
 CREATE TABLE custom_subjects (

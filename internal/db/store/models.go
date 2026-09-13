@@ -77,7 +77,7 @@ type Class struct {
 	Name        string
 	TeacherID   int32
 	CoTeacherID pgtype.Int4
-	BellID      int32
+	BellID      pgtype.Int4
 }
 
 type CustomSubject struct {
@@ -285,6 +285,7 @@ type StudentCitizenship struct {
 type Subject struct {
 	ID          int32
 	SubjectName string
+	Code        pgtype.Text
 }
 
 type Teacher struct {

@@ -13,7 +13,7 @@ import (
 type GradeSummary struct {
 	ID          int64       `json:"id"`
 	Subject     string      `json:"subject"`
-	SubjectCode string      `json:"subject_code"`
+	SubjectCode pgtype.Text `json:"subject_code"`
 	Teacher     interface{} `json:"teacher"`
 	Term        string      `json:"term"`
 	Type        string      `json:"type"`
