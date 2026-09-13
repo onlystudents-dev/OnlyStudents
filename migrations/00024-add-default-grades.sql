@@ -4,21 +4,13 @@ VALUES (1, '2025/2026', '2025-09-01', '2026-06-15', TRUE);
 INSERT INTO terms (school_year_id, name, start_date, end_date, grade_deadline, is_active)
 VALUES (1, '1. félév', '2025-09-01', '2026-01-31', '2026-01-31', TRUE);
 
-INSERT INTO subjects (school_id, name, code)
+INSERT INTO subjects (subject_name)
 VALUES
-    (1, 'Matematika', 'MAT'),
-    (1, 'Magyar nyelv', 'NY'),
-    (1, 'Történelem', 'TORT'),
-    (1, 'Angol nyelv', 'ANGOL'),
-    (1, 'Informatika', 'INFO');
-
-INSERT INTO class_subjects (class_id, subject_id, teacher_id, term_id)
-VALUES
-    (1, 1, 1, 1),
-    (1, 2, 1, 1),
-    (1, 3, 1, 1),
-    (1, 4, 1, 1),
-    (1, 5, 1, 1);
+    ('Matematika'),
+    ('Magyar nyelv'),
+    ('Történelem'),
+    ('Angol nyelv'),
+    ('Informatika');
 
 INSERT INTO grade_types (school_id, name, weight)
 VALUES

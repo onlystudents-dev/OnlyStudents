@@ -1,9 +1,9 @@
-DROP TABLE IF EXISTS time_slots;
-DROP TABLE IF EXISTS lessons;
-DROP TABLE IF EXISTS calendar_events;
+DROP TABLE IF EXISTS lessons CASCADE;
+DROP TABLE IF EXISTS calendar_events CASCADE;
 
-DROP TABLE IF EXISTS subjects;
-DROP TABLE IF EXISTS class_subjects;
+DROP TABLE IF EXISTS subjects CASCADE;
+DROP TABLE IF EXISTS class_subjects CASCADE;
+DROP TABLE IF EXISTS time_slots CASCADE;
 
 CREATE TABLE bell_schedule_type (
     id SERIAL PRIMARY KEY,
@@ -64,7 +64,7 @@ CREATE TABLE base_schedule (
 CREATE TABLE time_table (
     id SERIAL PRIMARY KEY,
     school_id INT NOT NULL REFERENCES schools(id),
-    teacher_id INT NOT NULL REFERENCES teachers(id), 
+    teacher_id INT NOT NULL REFERENCES teachers(id),
     room_id INT NOT NULL REFERENCES rooms(id),
     day_of_week INT NOT NULL,
     group_id INT NOT NULL REFERENCES groups(id),
@@ -84,14 +84,7 @@ CREATE TABLE time_table (
 CREATE TABLE principal (
     id SERIAL PRIMARY KEY,
     school_id INT NOT NULL REFERENCES schools(id),
-    teacher_id INT NOT NULL REFERENCES teacher(id)
-);
-
-CREATE TABLE permissions (
-    id SERIAL PRIMARY KEY,
-    school_id INT NOT NULL REFERENCES schools(id),
-    teacher_id INT NOT NULL REFERENCES teacher(id),
-    permission_id INT NOT NULL REFERENCES permission_type(id)
+    teacher_id INT NOT NULL REFERENCES teachers(id)
 );
 
 CREATE TABLE permission_type (
@@ -108,4 +101,11 @@ INSERT INTO permission_type (name, description) VALUES ('MANAGE_ROOMS', 'Can man
 INSERT INTO permission_type (name, description) VALUES ('MANAGE_SUBSTITUTIONS', 'Can manage daily substitutions and cancel lessons.');
 INSERT INTO permission_type (name, description) VALUES ('MANAGE_CUSTOM_SUBJECT', 'Can create, edit, or delete custom subjects.');
 
-ALTER TABLE classes ADD COLUMN bell_id INT NOT NULL REFERENCES bell_schedule_type(id);
+CREATE TABLE permissions (
+    id SERIAL PRIMARY KEY,
+    school_id INT NOT NULL REFERENCES schools(id),
+    teacher_id INT NOT NULL REFERENCES teachers(id),
+    permission_id INT NOT NULL REFERENCES permission_type(id)
+);
+
+ALTER TABLE classes ADD COLUMN bell_id INT REFERENCES bell_schedule_type(id);
