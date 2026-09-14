@@ -40,9 +40,14 @@
     }
 
     .config {
-        @apply flex flex-row justify-between items-center w-full rounded-lg p-2 cursor-pointer;
-
+        @apply flex flex-row justify-between items-center w-full rounded-lg p-2 cursor-pointer relative;
         transition: background-color 300ms ease;
+        select {
+            @apply absolute text-end inset-0 w-full outline-none;
+            option {
+                @apply w-full;
+            }
+        }
     }
 
     .config:hover {

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 .save {
-    @apply fixed flex flex-row items-center justify-between bg-(--hover-color) left-1/2 -translate-x-1/2 p-2 rounded-lg;
+    @apply fixed flex flex-row items-center justify-between bg-(--hover-color) left-1/2 -translate-x-1/2 p-2 rounded-lg z-1;
     bottom: 20px;
     width: 50vw;
     min-width: 440px;
