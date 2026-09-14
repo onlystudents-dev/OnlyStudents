@@ -40,7 +40,7 @@ export default function Save({ options, setOptions, save }: {options: Record<str
     return (
         <>
             <div className={`save ${isEqual(options, defaults) && "hid"} fredoka`}>
-                <p className="ml-2">You have {count} unsaved change{count !== 1 ? "s" : ""}.</p>
+                <p className="ml-2">{getKey("UNSAVED_CHANGES", count as unknown as string, count !== 1 ? getKey("MULTIPLE") : "")}</p>
                 <div className="buttons rubik">
                     <Button onClick={() => setOptions({ ...defaults })} className="breset">
                         {getKey("RESET")}

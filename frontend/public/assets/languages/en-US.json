@@ -43,7 +43,11 @@
     "EMAIL_CHANGED": "Email changed successfully",
     "NICKNAME_CHANGED": "Nickname changed successfully",
     "RESEND": "Resend",
-    "USE_DIFFERENT_EMAIL": "Use different email"
+    "USE_DIFFERENT_EMAIL": "Use different email",
+    "APPEARANCE_SETTINGS": "Appearance",
+    "LANGUAGE": "Language",
+    "UNSAVED_CHANGES": "You have %1 unsaved change%2.",
+    "MULTIPLE": "s"
   },
   "errors": {
     "WRONG_CREDENTIALS": "The username doesn't pair with the password!",

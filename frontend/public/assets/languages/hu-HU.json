@@ -43,7 +43,11 @@
     "EMAIL_CHANGED": "",
     "NICKNAME_CHANGED": "Nickname changed successfully",
     "RESEND": "Resend",
-    "USE_DIFFERENT_EMAIL": "Use different email"
+    "USE_DIFFERENT_EMAIL": "Use different email",
+    "APPEARANCE_SETTINGS": "Megjelenítés",
+    "LANGUAGE": "Nyelv",
+    "UNSAVED_CHANGES": "Van %1 nem mentett változtatásod.",
+    "MULTIPLE": "k"
   },
   "errors": {
     "WRONG_CREDENTIALS": "A belépési adatok helytelenek!",

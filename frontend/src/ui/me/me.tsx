@@ -4,7 +4,7 @@ import type {Me} from "../../app.tsx";
 import Button from "./button.tsx";
 import {
     faAddressCard,
-    faEnvelope, faFloppyDisk,
+    faEnvelope, faFloppyDisk, faLanguage,
     faLock, faPaperPlane,
     faRightFromBracket, faRotateLeft,
     faUser,
@@ -13,19 +13,23 @@ import {
 import {useRef, useState} from "react";
 import Loading from "../../util/loading.tsx";
 import {fromResponse, getKey} from "../../util/language.ts";
-import Config from "./config.tsx";
+import Config, {DropdownConfig} from "./config.tsx";
 import {toast} from "react-toastify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import PasswordCheck from "../../auth/pwc.tsx";
+import Save from "../../util/save/save.tsx";
+
+export type option = "language"
 
 export default function Me({ me }: {me: Me}) {
     const ref = useRef<HTMLDivElement>(null)
     const sref = useRef<HTMLDivElement>(null)
 
     const [waiting, setWaiting] = useState(false)
+    const [loading, setLoading] = useState(false)
     const [hidden, setHidden] = useState(true)
 
-    const [active, setActive] = useState<"user" | "security">("user")
+    const [active, setActive] = useState<"appearance" | "user" | "security">("appearance")
 
     const [cancelled, setCancelled] = useState(false)
     const [email, setEmail] = useState(me.email_address)
@@ -43,13 +47,45 @@ export default function Me({ me }: {me: Me}) {
     const [confirmPassword, setConfirmPassword] = useState("")
     const [passed, setPassed] = useState(false)
 
+    type language = {
+        key: string,
+        name: string,
+        emoji: string,
+    }
+    const [languages, setLanguages] = useState<language[]>([])
+
+    const [options, setOptions] = useState<Record<option, unknown>>({
+        language: localStorage.getItem("language")
+    })
+
+    useState(() => {
+        async function Fetch() {
+            const response = await fetch("/assets/languages.json")
+            setLanguages(await response.json())
+        }
+
+        Fetch()
+    })
+
     return (
         <>
             <Navbar me={me} />
+            <Save options={options} setOptions={setOptions} save={save} />
+            {loading && <Loading />}
             <div className="main">
                 <div className="configs border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2">
                 {(() => {
                    switch(active) {
+                       case "appearance":
+                           return (
+                               <>
+                                   <DropdownConfig text={getKey("LANGUAGE")} icon={faLanguage} value={options.language as string} options={options} setOptions={setOptions} lkey={"language"}>
+                                       {languages.map((language) => (
+                                           <option value={language.key}>{language.emoji} {language.name}</option>
+                                       ))}
+                                   </DropdownConfig>
+                               </>
+                           )
                        case "user":
                            return (
                                <>
@@ -131,6 +167,7 @@ export default function Me({ me }: {me: Me}) {
                 <div className="buttons" onMouseLeave={() => setHidden(true)}>
                     <div ref={ref} className={`sbutton ${hidden && "hid"}`}></div>
                     <div ref={sref} className={`sbutton ssbutton`}></div>
+                    <Button onClick={button => {setActive("appearance"); sreposition(button)}} onMouseEnter={reposition} icon={faUser} text={getKey("APPEARANCE_SETTINGS")} />
                     <Button onClick={button => {setActive("user"); sreposition(button)}} onMouseEnter={reposition} icon={faUser} text={getKey("USER_SETTINGS")} />
                     <Button onClick={button => {setActive("security"); sreposition(button)}} onMouseEnter={reposition} icon={faLock} text={getKey("SECURITY")} />
                     <Button onClick={async (button) => {await logout(); sreposition(button)}} onMouseEnter={reposition} className="text-(--wrong-color)" icon={faRightFromBracket} text={getKey("LOGOUT")} />
@@ -138,6 +175,11 @@ export default function Me({ me }: {me: Me}) {
             </div>
         </>
     )
+
+    function save() {
+        localStorage.setItem("language", options.language as string)
+        location.reload()
+    }
 
     async function sendEmail() {
         if (!newEmail.current?.value) return
@@ -284,7 +326,7 @@ export default function Me({ me }: {me: Me}) {
     }
 
     async function logout() {
-        setWaiting(true)
+        setLoading(true)
         const response = await fetch("/api/v1/me/logout", {
             method: "POST",
         });
@@ -296,7 +338,7 @@ export default function Me({ me }: {me: Me}) {
             default:
                 toast.error(await response.text() || response.statusText);
         }
-        setWaiting(false)
+        setLoading(false)
     }
 
     function reposition(button: HTMLButtonElement) {
