@@ -12,7 +12,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import {useRef, useState} from "react";
 import Loading from "../../util/loading.tsx";
-import {fromResponse, getKey} from "../../util/language.ts";
+import {fromResponse, getKey, getLanguage, getLanguages} from "../../util/language.ts";
 import Config, {DropdownConfig} from "./config.tsx";
 import {toast} from "react-toastify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -47,25 +47,11 @@ export default function Me({ me }: {me: Me}) {
     const [confirmPassword, setConfirmPassword] = useState("")
     const [passed, setPassed] = useState(false)
 
-    type language = {
-        key: string,
-        name: string,
-        emoji: string,
-    }
-    const [languages, setLanguages] = useState<language[]>([])
-
     const [options, setOptions] = useState<Record<option, unknown>>({
-        language: localStorage.getItem("language")
+        language: localStorage.getItem("language") || ""
     })
 
-    useState(() => {
-        async function Fetch() {
-            const response = await fetch("/assets/languages.json")
-            setLanguages(await response.json())
-        }
-
-        Fetch()
-    })
+    const autolang = getLanguage(true)
 
     return (
         <>
@@ -80,7 +66,8 @@ export default function Me({ me }: {me: Me}) {
                            return (
                                <>
                                    <DropdownConfig text={getKey("LANGUAGE")} icon={faLanguage} value={options.language as string} options={options} setOptions={setOptions} lkey={"language"}>
-                                       {languages.map((language) => (
+                                       <option value="">{getKey("AUTOLANG", `${autolang?.emoji} ${autolang?.name}`)}</option>
+                                       {getLanguages().map((language) => (
                                            <option value={language.key}>{language.emoji} {language.name}</option>
                                        ))}
                                    </DropdownConfig>

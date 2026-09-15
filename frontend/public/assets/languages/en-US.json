@@ -47,7 +47,8 @@
     "APPEARANCE_SETTINGS": "Appearance",
     "LANGUAGE": "Language",
     "UNSAVED_CHANGES": "You have %1 unsaved change%2.",
-    "MULTIPLE": "s"
+    "MULTIPLE": "s",
+    "AUTOLANG": "Auto (%1)"
   },
   "errors": {
     "WRONG_CREDENTIALS": "The username doesn't pair with the password!",
