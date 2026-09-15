@@ -47,7 +47,8 @@
     "APPEARANCE_SETTINGS": "Megjelenítés",
     "LANGUAGE": "Nyelv",
     "UNSAVED_CHANGES": "Van %1 nem mentett változtatásod.",
-    "MULTIPLE": "k"
+    "MULTIPLE": "k",
+    "AUTOLANG": "Automatikus (%1)"
   },
   "errors": {
     "WRONG_CREDENTIALS": "A belépési adatok helytelenek!",
