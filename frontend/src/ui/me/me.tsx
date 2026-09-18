@@ -21,7 +21,7 @@ import Save from "../../util/save/save.tsx";
 
 export type option = "language"
 
-export default function Me({ me }: {me: Me}) {
+export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void>}) {
     const ref = useRef<HTMLDivElement>(null)
     const sref = useRef<HTMLDivElement>(null)
 
@@ -82,7 +82,7 @@ export default function Me({ me }: {me: Me}) {
                                            {settingEmail || (!cancelled && !me.email_verified) ? (<div className={`moving-content ${!(!cancelled && !me.email_verified) && "second"}`}>
                                                <input type="text" placeholder={getKey("CODE")} ref={code} key={"code"} />
 
-                                               <button className="absolute bottom-0 left-0" onClick={() => setCancelled(true)}>
+                                               <button className="absolute bottom-0 left-0" onClick={() => {setSettingEmail(false); setSettingEmailA(false); setCancelled(true)}}>
                                                    <FontAwesomeIcon icon={faRotateLeft} /> {getKey("USE_DIFFERENT_EMAIL")}
                                                </button>
                                                <div className="absolute bottom-0 right-0 flex flex-row gap-2">
@@ -188,6 +188,8 @@ export default function Me({ me }: {me: Me}) {
         switch (response.status) {
             case 200:
                 await resend(() => setTimeout(() => setSettingEmail(true), Math.max(500 - (performance.now() - start), 0)))
+                await fetchMe()
+                setEmail(newEmail.current.value)
                 break
             case 429: {
                 let seconds = response.headers.get("Retry-After")
@@ -235,7 +237,7 @@ export default function Me({ me }: {me: Me}) {
         switch (response.status) {
             case 200:
                 toast.success(getKey("EMAIL_CHANGED"))
-                setEmail(newEmail.current?.value || email)
+                await fetchMe()
                 break
             case 429: {
                 let seconds = response.headers.get("Retry-After")

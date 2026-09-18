@@ -36,22 +36,22 @@ export default function App() {
     const [loading, setLoading] = useState(true);
     const [me, setMe] = useState<Me | null>(null);
 
-    useEffect(() => {
-        async function Fetch() {
-            try {
-                const meR = await fetch("/api/v1/me/status");
-                if (meR.status === 429) {
-                    const seconds = meR.headers.get("Retry-After")
-                    if (seconds == null) return
-                    setRatelimit(Number(seconds))
-                    return
-                }
-                const meJ = await meR.json();
-                setMe(meJ);
-            } catch {/* empty */}
-        }
+    async function fetchMe() {
+        try {
+            const meR = await fetch("/api/v1/me/status");
+            if (meR.status === 429) {
+                const seconds = meR.headers.get("Retry-After")
+                if (seconds == null) return
+                setRatelimit(Number(seconds))
+                return
+            }
+            const meJ = await meR.json();
+            setMe(meJ);
+        } catch {/* empty */}
+    }
 
-        fetchLanguages().then(() => fetchLanguage().then(() => Fetch().then(() => setLoading(false))))
+    useEffect(() => {
+        fetchLanguages().then(() => fetchLanguage().then(() => fetchMe().then(() => setLoading(false))))
     }, [])
 
     return (
@@ -60,7 +60,7 @@ export default function App() {
                 <BrowserRouter>
                     <Routes>
                         <Route path="/" element={<Home me={me} />} />
-                        <Route path="/me" element={<Me me={me} />} />
+                        <Route path="/me" element={<Me me={me} fetchMe={fetchMe} />} />
                         <Route path="/homeworks" element={(() => {
                             switch (me.role) {
                                 case "guardian":

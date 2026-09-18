@@ -21,7 +21,7 @@ export default function Config({ icon, text, value, children, className}: {icon:
                 <div className="cantar configure configs">
                     {children}
                 </div>
-                <Overlay onClick={() => {setOpen(false)}} />
+                <Overlay onClick={() => {setOpen(false)}} z={1} time={10000} />
             </>}
         </>
     )
