@@ -93,3 +93,12 @@ INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, c
 
 -- name: ManageSubsitutionLesson :exec
 INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, is_substitution, substitution_teacher_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET is_substitution = $11, substitution_teacher_id = $12;
+
+-- name: CreateRealTimeLesson :exec
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+
+-- name: UpdateRealTimeLesson :exec
+UPDATE time_table SET teacher_id = $1, room_id = $2, day_of_week = $3, group_id = $4, custom_subject = $5, custom_subject_id = $6, subject_id = $7, actual_date = $8 AND lesson_num = $9 WHERE school_id = $10 AND id = $11; 
+
+-- name: DeleteRealTimeLesson :exec
+DELETE FROM time_table WHERE school_id = $1 AND id = $2; 

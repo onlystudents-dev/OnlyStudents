@@ -141,6 +141,39 @@ func (q *Queries) CreateLessonTime(ctx context.Context, arg CreateLessonTimePara
 	return err
 }
 
+const createRealTimeLesson = `-- name: CreateRealTimeLesson :exec
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+`
+
+type CreateRealTimeLessonParams struct {
+	SchoolID        int32
+	TeacherID       int32
+	RoomID          int32
+	DayOfWeek       int32
+	GroupID         int32
+	CustomSubject   bool
+	CustomSubjectID pgtype.Int4
+	SubjectID       pgtype.Int4
+	ActualDate      pgtype.Date
+	LessonNum       int32
+}
+
+func (q *Queries) CreateRealTimeLesson(ctx context.Context, arg CreateRealTimeLessonParams) error {
+	_, err := q.db.Exec(ctx, createRealTimeLesson,
+		arg.SchoolID,
+		arg.TeacherID,
+		arg.RoomID,
+		arg.DayOfWeek,
+		arg.GroupID,
+		arg.CustomSubject,
+		arg.CustomSubjectID,
+		arg.SubjectID,
+		arg.ActualDate,
+		arg.LessonNum,
+	)
+	return err
+}
+
 const createRoom = `-- name: CreateRoom :exec
 INSERT INTO rooms (school_id, name, capacity) VALUES ($1, $2, $3)
 `
@@ -223,6 +256,20 @@ type DeleteLessonTimeParams struct {
 
 func (q *Queries) DeleteLessonTime(ctx context.Context, arg DeleteLessonTimeParams) error {
 	_, err := q.db.Exec(ctx, deleteLessonTime, arg.SchoolID, arg.ID)
+	return err
+}
+
+const deleteRealTimeLesson = `-- name: DeleteRealTimeLesson :exec
+DELETE FROM time_table WHERE school_id = $1 AND id = $2
+`
+
+type DeleteRealTimeLessonParams struct {
+	SchoolID int32
+	ID       int32
+}
+
+func (q *Queries) DeleteRealTimeLesson(ctx context.Context, arg DeleteRealTimeLessonParams) error {
+	_, err := q.db.Exec(ctx, deleteRealTimeLesson, arg.SchoolID, arg.ID)
 	return err
 }
 
@@ -788,6 +835,41 @@ func (q *Queries) UpdateBaseSchedule(ctx context.Context, arg UpdateBaseSchedule
 		arg.CustomSubjectID,
 		arg.ID,
 		arg.SchoolID,
+	)
+	return err
+}
+
+const updateRealTimeLesson = `-- name: UpdateRealTimeLesson :exec
+UPDATE time_table SET teacher_id = $1, room_id = $2, day_of_week = $3, group_id = $4, custom_subject = $5, custom_subject_id = $6, subject_id = $7, actual_date = $8 AND lesson_num = $9 WHERE school_id = $10 AND id = $11
+`
+
+type UpdateRealTimeLessonParams struct {
+	TeacherID       int32
+	RoomID          int32
+	DayOfWeek       int32
+	GroupID         int32
+	CustomSubject   bool
+	CustomSubjectID pgtype.Int4
+	SubjectID       pgtype.Int4
+	ActualDate      pgtype.Date
+	LessonNum       int32
+	SchoolID        int32
+	ID              int32
+}
+
+func (q *Queries) UpdateRealTimeLesson(ctx context.Context, arg UpdateRealTimeLessonParams) error {
+	_, err := q.db.Exec(ctx, updateRealTimeLesson,
+		arg.TeacherID,
+		arg.RoomID,
+		arg.DayOfWeek,
+		arg.GroupID,
+		arg.CustomSubject,
+		arg.CustomSubjectID,
+		arg.SubjectID,
+		arg.ActualDate,
+		arg.LessonNum,
+		arg.SchoolID,
+		arg.ID,
 	)
 	return err
 }
