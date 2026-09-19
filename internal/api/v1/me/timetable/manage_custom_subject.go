@@ -38,7 +38,7 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -72,7 +72,7 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -107,7 +107,7 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		c.SendStatus(401)
 	}
 
@@ -136,7 +136,7 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		c.SendStatus(401)
 	}
 

@@ -43,7 +43,7 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -83,7 +83,7 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -124,7 +124,7 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -158,7 +158,7 @@ func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 

@@ -11,6 +11,108 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addFinalGrade = `-- name: AddFinalGrade :exec
+INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value) VALUES ($1, $2, $3, $4, $5)
+`
+
+type AddFinalGradeParams struct {
+	StudentID       int32
+	ClassSubjectsID int32
+	TermID          int32
+	TeacherID       int32
+	Value           int16
+}
+
+func (q *Queries) AddFinalGrade(ctx context.Context, arg AddFinalGradeParams) error {
+	_, err := q.db.Exec(ctx, addFinalGrade,
+		arg.StudentID,
+		arg.ClassSubjectsID,
+		arg.TermID,
+		arg.TeacherID,
+		arg.Value,
+	)
+	return err
+}
+
+const addGrade = `-- name: AddGrade :exec
+INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+`
+
+type AddGradeParams struct {
+	StudentID       int32
+	ClassSubjectsID int32
+	TeacherID       int32
+	TermID          int32
+	GradeTypeID     int32
+	Value           int16
+	Date            pgtype.Date
+	Note            pgtype.Text
+}
+
+func (q *Queries) AddGrade(ctx context.Context, arg AddGradeParams) error {
+	_, err := q.db.Exec(ctx, addGrade,
+		arg.StudentID,
+		arg.ClassSubjectsID,
+		arg.TeacherID,
+		arg.TermID,
+		arg.GradeTypeID,
+		arg.Value,
+		arg.Date,
+		arg.Note,
+	)
+	return err
+}
+
+const editFinalGrade = `-- name: EditFinalGrade :exec
+UPDATE final_grades SET class_subjects_id = $2, term_id = $3, teacher_id = $4, value = $5 WHERE id = $1
+`
+
+type EditFinalGradeParams struct {
+	ID              int64
+	ClassSubjectsID int32
+	TermID          int32
+	TeacherID       int32
+	Value           int16
+}
+
+func (q *Queries) EditFinalGrade(ctx context.Context, arg EditFinalGradeParams) error {
+	_, err := q.db.Exec(ctx, editFinalGrade,
+		arg.ID,
+		arg.ClassSubjectsID,
+		arg.TermID,
+		arg.TeacherID,
+		arg.Value,
+	)
+	return err
+}
+
+const editGrade = `-- name: EditGrade :exec
+UPDATE grades SET class_subjects_id = $2, teacher_id = $3, term_id = $4, grade_type_id = $5, value = $5, date = $6, note = $7 WHERE id = $1
+`
+
+type EditGradeParams struct {
+	ID              int64
+	ClassSubjectsID int32
+	TeacherID       int32
+	TermID          int32
+	GradeTypeID     int32
+	Date            pgtype.Date
+	Note            pgtype.Text
+}
+
+func (q *Queries) EditGrade(ctx context.Context, arg EditGradeParams) error {
+	_, err := q.db.Exec(ctx, editGrade,
+		arg.ID,
+		arg.ClassSubjectsID,
+		arg.TeacherID,
+		arg.TermID,
+		arg.GradeTypeID,
+		arg.Date,
+		arg.Note,
+	)
+	return err
+}
+
 const getStudentFinalGrades = `-- name: GetStudentFinalGrades :many
 SELECT
     fg.id,

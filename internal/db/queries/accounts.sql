@@ -52,6 +52,24 @@ UPDATE accounts SET nickname = $1 WHERE guardian_id = $2 AND role = 'guardian';
 -- name: UpdateNicknameTeacher :exec
 UPDATE accounts SET nickname = $1 WHERE teacher_id = $2 AND role = 'teacher';
 
+-- name: UpdateThemeStudent :exec
+UPDATE accounts SET theme = $1 WHERE student_id = $2 AND role = 'student';
+
+-- name: UpdateThemeGuardian :exec
+UPDATE accounts SET theme = $1 WHERE guardian_id = $2 AND role = 'guardian';
+
+-- name: UpdateThemeTeacher :exec
+UPDATE accounts SET theme = $1 WHERE teacher_id = $2 AND role = 'teacher';
+
+-- name: UpdateLangStudent :exec
+UPDATE accounts SET lang = $1 WHERE student_id = $2 AND role = 'student';
+
+-- name: UpdateLangGuardian :exec
+UPDATE accounts SET lang = $1 WHERE guardian_id = $2 AND role = 'guardian';
+
+-- name: UpdateLangTeacher :exec
+UPDATE accounts SET lang = $1 WHERE teacher_id = $2 AND role = 'teacher';
+
 -- name: VerifyEmailStudent :exec
 UPDATE accounts SET email_verified = true WHERE student_id = $1 AND role = 'student';
 

@@ -52,7 +52,7 @@ func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -92,7 +92,7 @@ func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -131,7 +131,7 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -166,7 +166,7 @@ func ReadGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -200,7 +200,7 @@ func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -236,7 +236,7 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -276,7 +276,7 @@ func ReadStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 

@@ -143,6 +143,8 @@ CREATE TABLE accounts (
     guardian_id INT REFERENCES guardians (id) ON DELETE CASCADE,
     email_address VARCHAR(256),
     email_verified BOOLEAN NOT NULL DEFAULT false,
+    theme VARCHAR(256) NOT NULL DEFAULT '',
+    lang VARCHAR(256) NOT NULL DEFAULT '',
     pfp_url VARCHAR(255) NOT NULL DEFAULT '/assets/default_pfp.png',
     nickname VARCHAR(255) NOT NULL DEFAULT '',
     CONSTRAINT chk_accounts_role CHECK (role IN ('student', 'teacher', 'guardian')),

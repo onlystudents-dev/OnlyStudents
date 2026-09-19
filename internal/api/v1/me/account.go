@@ -111,9 +111,95 @@ type changeNicknameRequest struct {
 	Nickname string `json:"nickname"`
 }
 
+type changeThemeRequest struct {
+	Theme string `json:"theme"`
+}
+
+type changeLangRequest struct {
+	Lang string `json:"lang"`
+}
+
 type changeEmailRequest struct {
 	Password string `json:"password"`
 	NewEmail string `json:"new_email"`
+}
+
+func ChangeTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	session_data, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+
+	var req changeThemeRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	queries := db_queries.New(pool)
+
+	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
+	var err error
+	switch session_data.Role {
+	case "student":
+		err = queries.UpdateThemeStudent(c.Context(), db_queries.UpdateThemeStudentParams{Theme: req.Theme, StudentID: pgAccountID})
+	case "teacher":
+		err = queries.UpdateThemeTeacher(c.Context(), db_queries.UpdateThemeTeacherParams{Theme: req.Theme, TeacherID: pgAccountID})
+	case "guardian":
+		err = queries.UpdateThemeGuardian(c.Context(), db_queries.UpdateThemeGuardianParams{Theme: req.Theme, GuardianID: pgAccountID})
+	default:
+		return c.SendStatus(400)
+	}
+
+	if err != nil {
+		if isUniqueViolation(err) {
+			return c.SendStatus(400)
+		}
+		slog.Error("change nickname error", "err", err)
+		return c.SendStatus(500)
+	}
+
+	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
+	return c.SendStatus(200)
+}
+
+func ChangeLang(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	session_data, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(401)
+	}
+
+	var req changeLangRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	queries := db_queries.New(pool)
+
+	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
+	var err error
+	switch session_data.Role {
+	case "student":
+		err = queries.UpdateLangStudent(c.Context(), db_queries.UpdateLangStudentParams{Lang: req.Lang, StudentID: pgAccountID})
+	case "teacher":
+		err = queries.UpdateLangTeacher(c.Context(), db_queries.UpdateLangTeacherParams{Lang: req.Lang, TeacherID: pgAccountID})
+	case "guardian":
+		err = queries.UpdateLangGuardian(c.Context(), db_queries.UpdateLangGuardianParams{Lang: req.Lang, GuardianID: pgAccountID})
+	default:
+		return c.SendStatus(400)
+	}
+
+	if err != nil {
+		if isUniqueViolation(err) {
+			return c.SendStatus(400)
+		}
+		slog.Error("change nickname error", "err", err)
+		return c.SendStatus(500)
+	}
+
+	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
+	return c.SendStatus(200)
 }
 
 func ChangeNickname(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {

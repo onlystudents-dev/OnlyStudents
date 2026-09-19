@@ -57,7 +57,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -104,7 +104,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -151,7 +151,7 @@ func AddSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -200,7 +200,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -249,7 +249,7 @@ func DeleteSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 

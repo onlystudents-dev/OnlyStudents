@@ -164,6 +164,14 @@ func main() {
 		return meapi.ChangeNickname(c, pool, rdb)
 	})
 
+	me_group.Post("/change_theme", func(c fiber.Ctx) error {
+		return meapi.ChangeTheme(c, pool, rdb)
+	})
+
+	me_group.Post("/change_lang", func(c fiber.Ctx) error {
+		return meapi.ChangeLang(c, pool, rdb)
+	})
+
 	me_group.Post("/verify_email", authLimit, func(c fiber.Ctx) error {
 		return meapi.VerifyEmailRequest(c, pool, rdb)
 	})

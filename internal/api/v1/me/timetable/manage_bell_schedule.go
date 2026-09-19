@@ -61,7 +61,7 @@ func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -95,7 +95,7 @@ func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -130,7 +130,7 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -164,7 +164,7 @@ func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -198,7 +198,7 @@ func CreateLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -243,7 +243,7 @@ func DeleteLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -282,7 +282,7 @@ func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -327,7 +327,7 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 

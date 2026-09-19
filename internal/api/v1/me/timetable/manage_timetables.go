@@ -100,7 +100,7 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -146,7 +146,7 @@ func DeleteBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -185,7 +185,7 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -232,7 +232,7 @@ func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -267,7 +267,7 @@ func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -302,7 +302,7 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -343,7 +343,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -390,7 +390,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
@@ -438,7 +438,7 @@ func DeleteRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
 
-	if has_permission == false {
+	if !has_permission {
 		return c.SendStatus(401)
 	}
 
