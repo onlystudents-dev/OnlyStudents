@@ -1,20 +1,17 @@
 package helpers
 
 import (
-	"context"
 	db_queries "onlystudents/internal/db/store"
 
+	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
 
-func CheckPermission(ctx context.Context, pool *pgxpool.Pool, rdb *redis.Client, token string, permission string, school_id int64) bool {
-	if token == "" {
-		return false
-	}
+func CheckPermission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, permission string, school_id int64) bool {
+	session_data, ok := c.Locals("session").(SessionData)
 
-	sessionData, err := SessionGet(ctx, rdb, token)
-	if err != nil {
+	if !ok {
 		return false
 	}
 
@@ -22,11 +19,11 @@ func CheckPermission(ctx context.Context, pool *pgxpool.Pool, rdb *redis.Client,
 
 	params := db_queries.CheckPermissionParams{
 		Name:      permission,
-		TeacherID: sessionData.AccountID,
+		TeacherID: session_data.AccountID,
 		SchoolID:  int32(school_id),
 	}
 
-	has, err := queries.CheckPermission(ctx, params)
+	has, err := queries.CheckPermission(c.Context(), params)
 
 	if err != nil {
 		return false

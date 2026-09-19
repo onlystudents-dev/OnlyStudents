@@ -26,23 +26,17 @@ type DeleteCustomSubjectRequest struct {
 func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateCustomSubjectRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
 	}
 
-	if token == "" {
-		return c.SendStatus(401)
-	}
-
 	if req.Name == "" {
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_CUSTOM_SUBJECT", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -67,22 +61,16 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditCustomSubjectRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if req.Name == "" || req.Id == 0 {
 		c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_CUSTOM_SUBJECT", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -108,22 +96,16 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteCustomSubjectRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
 		c.SendStatus(500)
-	}
-
-	if token == "" {
-		c.SendStatus(401)
 	}
 
 	if req.Id == 0 {
 		c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_CUSTOM_SUBJECT", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if has_permission == false {
 		c.SendStatus(401)
@@ -152,13 +134,7 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		c.SendStatus(500)
 	}
 
-	token := c.Cookies("session-token")
-
-	if token == "" {
-		c.SendStatus(401)
-	}
-
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_CUSTOM_SUBJECT", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if has_permission == false {
 		c.SendStatus(401)

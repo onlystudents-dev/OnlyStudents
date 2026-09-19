@@ -41,16 +41,10 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 
 	var req CanceledLessonRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -61,7 +55,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_SUBSTITUTIONS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -94,16 +88,10 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CanceledLessonRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -114,7 +102,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_SUBSTITUTIONS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -147,16 +135,10 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 func AddSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req SubstitutionsLessonRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -167,7 +149,7 @@ func AddSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_SUBSTITUTIONS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -202,16 +184,10 @@ func AddSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req SubstitutionsLessonRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -222,7 +198,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_SUBSTITUTIONS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -257,16 +233,10 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 func DeleteSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req SubstitutionsLessonRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -277,7 +247,7 @@ func DeleteSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(500)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_SUBSTITUTIONS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)

@@ -28,15 +28,9 @@ type DeleteRoomRequest struct {
 func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateRoomRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -47,7 +41,7 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_ROOMS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -74,15 +68,9 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditRoomRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -93,7 +81,7 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_ROOMS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -120,16 +108,10 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteRoomRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -140,7 +122,7 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_ROOMS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -164,23 +146,17 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
 	}
 
-	if token == "" {
-		return c.SendStatus(401)
-	}
-
 	if school_id == 0 {
 		return c.SendStatus(500)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_ROOMS", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)

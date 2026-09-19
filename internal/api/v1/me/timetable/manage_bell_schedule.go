@@ -50,22 +50,16 @@ type ReadLessonTimeRequest struct {
 func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateBellScheduleTypeRequest
 
-	token := c.Cookies("session_token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if req.Name == "" {
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_BELL_SCHEDULE", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -89,8 +83,6 @@ func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteBellScheduleTypeRequest
 
-	token := c.Cookies("session_token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
@@ -101,11 +93,7 @@ func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 		c.SendStatus(400)
 	}
 
-	if token == "" {
-		c.SendStatus(401)
-	}
-
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_BELL_SCHEDULE", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -130,8 +118,6 @@ func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditBellScheduleTypeRequest
 
-	token := c.Cookies("session_token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
@@ -142,11 +128,7 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		c.SendStatus(400)
 	}
 
-	if token == "" {
-		c.SendStatus(401)
-	}
-
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_BELL_SCHEDULE", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -170,9 +152,6 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 }
 
 func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
@@ -183,11 +162,7 @@ func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(500)
 	}
 
-	if token == "" {
-		return c.SendStatus(401)
-	}
-
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_BELL_SCHEDULE", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -207,16 +182,10 @@ func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 func CreateLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateLessonTimeRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -227,7 +196,7 @@ func CreateLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 		return c.SendStatus(500)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_BELL_SCHEDULE", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -258,16 +227,10 @@ func CreateLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 func DeleteLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteLessonTimeRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -278,7 +241,7 @@ func DeleteLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_BELL_SCHEDULE", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -303,16 +266,10 @@ func DeleteLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditLessonTimeRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -323,7 +280,7 @@ func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(400)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_BELL_SCHEDULE", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
@@ -354,16 +311,10 @@ func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req ReadLessonTimeRequest
 
-	token := c.Cookies("session-token")
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
 		return c.SendStatus(500)
-	}
-
-	if token == "" {
-		return c.SendStatus(401)
 	}
 
 	if school_id == 0 {
@@ -374,7 +325,7 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(500)
 	}
 
-	has_permission := helpers.CheckPermission(c.Context(), pool, rdb, token, "MANAGE_BELL_SCHEDULE", school_id)
+	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_BELL_SCHEDULE", school_id)
 
 	if has_permission == false {
 		return c.SendStatus(401)
