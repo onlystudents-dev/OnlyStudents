@@ -22,6 +22,16 @@ import (
 )
 
 func main() {
+	if !fiber.IsChild() {
+		f, err := helpers.SetupLogging()
+
+		if err != nil {
+			panic(err)
+		}
+
+		defer f.Close()
+	}
+
 	pool := db.Connect()
 
 	if !fiber.IsChild() {
@@ -114,17 +124,24 @@ func main() {
 	})
 
 	api_v1 := api.Group("/v1")
-
-	admin_group := api_v1.Group("/admin", apiLimit, func(c fiber.Ctx) error {
-		return middlewares.RequireRoleMiddleware(c, rdb, []string{"admin"})
-	})
-
-	admin_group.Post("/login", authLimit, func(c fiber.Ctx) error {
+	api_v1.Post("/admin/login", authLimit, func(c fiber.Ctx) error {
 		return v1.Login(c, pool, rdb)
 	})
 
-	admin_group.Post("/debug", authLimit, func(c fiber.Ctx) error {
-		return adminapi.AdminDebug(c, pool, rdb)
+	admin_group := api_v1.Group("/admin", apiLimit,
+		func(c fiber.Ctx) error {
+			return middlewares.AuthMiddleware(c, rdb)
+		},
+		func(c fiber.Ctx) error {
+			return middlewares.RequireRoleMiddleware(c, rdb, []string{"admin"})
+		})
+
+	admin_group.Get("/logs", func(c fiber.Ctx) error {
+		return adminapi.AdminLogs(c, pool, rdb)
+	})
+
+	admin_group.Post("/run_sql", func(c fiber.Ctx) error {
+		return adminapi.AdminRunSQL(c, pool, rdb)
 	})
 
 	me_group := api_v1.Group("/me", apiLimit, func(c fiber.Ctx) error {
@@ -169,10 +186,6 @@ func main() {
 
 	me_group.Get("/final_grades", func(c fiber.Ctx) error {
 		return meapi.FinalGrades(c, pool, rdb)
-	})
-
-	me_group.Get("/absences", func(c fiber.Ctx) error {
-		return meapi.Absences(c, pool, rdb)
 	})
 
 	me_group.Get("/exams", func(c fiber.Ctx) error {
