@@ -83,30 +83,39 @@ type DeleteRealTimeLessonRequest struct {
 }
 
 type BaseScheduleLessonResponse struct {
-	ID              int32       `json:"id"`
-	SchoolID        int32       `json:"school_id"`
-	TeacherID       int32       `json:"teacher_id"`
-	RoomID          int32       `json:"room_id"`
-	DayOfWeek       int32       `json:"day_of_week"`
-	LessonNum       int32       `json:"lesson_num"`
-	GroupID         int32       `json:"group_id"`
-	CustomSubject   bool        `json:"custom_subject"`
-	SubjectID       pgtype.Int4 `json:"subject_id"`
-	CustomSubjectID pgtype.Int4 `json:"custom_subject_id"`
-	SubjectName     string      `json:"subject_name"`
+	ID               int32       `json:"id"`
+	SchoolID         int32       `json:"school_id"`
+	TeacherID        int32       `json:"teacher_id"`
+	TeacherFirstName pgtype.Text `json:"teacher_first_name"`
+	TeacherLastName  pgtype.Text `json:"teacher_last_name"`
+	RoomID           int32       `json:"room_id"`
+	DayOfWeek        int32       `json:"day_of_week"`
+	LessonNum        int32       `json:"lesson_num"`
+	GroupID          int32       `json:"group_id"`
+	CustomSubject    bool        `json:"custom_subject"`
+	SubjectID        pgtype.Int4 `json:"subject_id"`
+	CustomSubjectID  pgtype.Int4 `json:"custom_subject_id"`
+	SubjectName      string      `json:"subject_name"`
+	HasExam          bool        `json:"has_exam"`
+	HasHomework      bool        `json:"has_homework"`
 }
 
 type RealTimeLessonResponse struct {
+	ActualDate         pgtype.Date `json:"actual_date"`
 	RoomID             int32       `json:"room_id"`
 	LessonNum          int32       `json:"lesson_num"`
 	DayOfWeek          int32       `json:"day_of_week"`
 	EffectiveTeacherID int32       `json:"effective_teacher_id"`
+	TeacherFirstName   pgtype.Text `json:"teacher_first_name"`
+	TeacherLastName    pgtype.Text `json:"teacher_last_name"`
 	GroupID            int32       `json:"group_id"`
 	SchoolID           int32       `json:"school_id"`
 	CustomSubject      bool        `json:"custom_subject"`
 	SubjectID          pgtype.Int4 `json:"subject_id"`
 	CustomSubjectID    pgtype.Int4 `json:"custom_subject_id"`
 	SubjectName        string      `json:"subject_name"`
+	HasExam            bool        `json:"has_exam"`
+	HasHomework        bool        `json:"has_homework"`
 	IsSubstitution     bool        `json:"is_substitution"`
 	Canceled           bool        `json:"canceled"`
 }
@@ -318,17 +327,21 @@ func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 
 	for _, row := range data {
 		lessons = append(lessons, BaseScheduleLessonResponse{
-			ID:              row.ID,
-			SchoolID:        row.SchoolID,
-			TeacherID:       row.TeacherID,
-			RoomID:          row.RoomID,
-			DayOfWeek:       row.DayOfWeek,
-			LessonNum:       row.LessonNum,
-			GroupID:         row.GroupID,
-			CustomSubject:   row.CustomSubject,
-			SubjectID:       row.SubjectID,
-			CustomSubjectID: row.CustomSubjectID,
-			SubjectName:     row.SubjectName,
+			ID:               row.ID,
+			SchoolID:         row.SchoolID,
+			TeacherID:        row.TeacherID,
+			TeacherFirstName: row.TeacherFirstName,
+			TeacherLastName:  row.TeacherLastName,
+			RoomID:           row.RoomID,
+			DayOfWeek:        row.DayOfWeek,
+			LessonNum:        row.LessonNum,
+			GroupID:          row.GroupID,
+			CustomSubject:    row.CustomSubject,
+			SubjectID:        row.SubjectID,
+			CustomSubjectID:  row.CustomSubjectID,
+			SubjectName:      row.SubjectName,
+			HasExam:          row.HasExam,
+			HasHomework:      row.HasHomework,
 		})
 	}
 
@@ -375,17 +388,21 @@ func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 
 	for _, row := range data {
 		lessons = append(lessons, BaseScheduleLessonResponse{
-			ID:              row.ID,
-			SchoolID:        row.SchoolID,
-			TeacherID:       row.TeacherID,
-			RoomID:          row.RoomID,
-			DayOfWeek:       row.DayOfWeek,
-			LessonNum:       row.LessonNum,
-			GroupID:         row.GroupID,
-			CustomSubject:   row.CustomSubject,
-			SubjectID:       row.SubjectID,
-			CustomSubjectID: row.CustomSubjectID,
-			SubjectName:     row.SubjectName,
+			ID:               row.ID,
+			SchoolID:         row.SchoolID,
+			TeacherID:        row.TeacherID,
+			TeacherFirstName: row.TeacherFirstName,
+			TeacherLastName:  row.TeacherLastName,
+			RoomID:           row.RoomID,
+			DayOfWeek:        row.DayOfWeek,
+			LessonNum:        row.LessonNum,
+			GroupID:          row.GroupID,
+			CustomSubject:    row.CustomSubject,
+			SubjectID:        row.SubjectID,
+			CustomSubjectID:  row.CustomSubjectID,
+			SubjectName:      row.SubjectName,
+			HasExam:          row.HasExam,
+			HasHomework:      row.HasHomework,
 		})
 	}
 
@@ -434,10 +451,10 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	queries := db_queries.New(pool)
 
 	params := db_queries.ReadRealTimeTableParams{
-		SchoolID:     int32(school_id),
-		ClassesID:    req.ClassId,
-		ActualDate:   pgtype.Date{Time: start, Valid: true},
-		ActualDate_2: pgtype.Date{Time: end, Valid: true},
+		SchoolID:  int32(school_id),
+		ClassesID: req.ClassId,
+		StartDate: pgtype.Date{Time: start, Valid: true},
+		EndDate:   pgtype.Date{Time: end, Valid: true},
 	}
 
 	data, err := queries.ReadRealTimeTable(c.Context(), params)
@@ -450,16 +467,21 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 
 	for _, row := range data {
 		lessons = append(lessons, RealTimeLessonResponse{
+			ActualDate:         row.ActualDate,
 			RoomID:             row.RoomID,
 			LessonNum:          row.LessonNum,
 			DayOfWeek:          row.DayOfWeek,
 			EffectiveTeacherID: row.EffectiveTeacherID,
+			TeacherFirstName:   row.TeacherFirstName,
+			TeacherLastName:    row.TeacherLastName,
 			GroupID:            row.GroupID,
 			SchoolID:           row.SchoolID,
 			CustomSubject:      row.CustomSubject,
 			SubjectID:          row.SubjectID,
 			CustomSubjectID:    row.CustomSubjectID,
 			SubjectName:        row.SubjectName,
+			HasExam:            row.HasExam,
+			HasHomework:        row.HasHomework,
 			IsSubstitution:     row.IsSubstitution,
 			Canceled:           row.Canceled,
 		})
