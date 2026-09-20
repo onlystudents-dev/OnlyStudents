@@ -43,7 +43,9 @@ func RunMigrations(conn *pgxpool.Pool) error {
 
 	migration_files = slices.DeleteFunc(migration_files, func(migration_file fs.DirEntry) bool {
 		if !constants.MigrationRegex.MatchString(migration_file.Name()) {
-			fmt.Fprintf(os.Stderr, "Found invalid migration file: %v\n", migration_file.Name())
+			if migration_file.Name() != "demo.sql" {
+				fmt.Fprintf(os.Stderr, "Found invalid migration file: %v\n", migration_file.Name())
+			}
 			return true
 		}
 
@@ -55,7 +57,7 @@ func RunMigrations(conn *pgxpool.Pool) error {
 	})
 
 	for _, migration_file := range migration_files {
-		if migration_file.Name() == "demo.sql" {
+		if migration_file.Name() == "demo.sql" && helpers.GetEnvFallback("DEMO_MODE", "false") != "true" {
 			continue
 		}
 
@@ -74,16 +76,6 @@ func RunMigrations(conn *pgxpool.Pool) error {
 		}
 
 		fmt.Fprintf(os.Stderr, "applied migration: %s\n", migration_name)
-	}
-
-	if helpers.GetEnvFallback("DEMO_MODE", "false") == "true" {
-		var version string
-		err := conn.QueryRow(context.Background(), "SELECT version FROM schema_migrations WHERE version = $1", "demo").Scan(&version)
-		if err != nil {
-			if err := applyMigration(context.Background(), conn, "demo.sql"); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

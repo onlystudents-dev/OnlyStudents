@@ -442,3 +442,12 @@ CREATE INDEX idx_exams_class_subjects_id ON exams (class_subjects_id);
 CREATE INDEX idx_exams_teacher_id ON exams (teacher_id);
 CREATE INDEX idx_exams_date ON exams (date);
 CREATE INDEX idx_exams_room_id ON exams (room_id);
+
+INSERT INTO permission_type (name, description) VALUES
+    ('PRINCIPAL', 'Has all additional permissions.'),
+    ('MANAGE_TIMETABLES', 'Can manage all class schedules.'),
+    ('MANAGE_BELL_SCHEDULE', 'Can manage all bell schedule type and manage bell schedule.'),
+    ('MANAGE_GROUPS', 'Can manage all groups and assign any student to any group.'),
+    ('MANAGE_ROOMS', 'Can manage all rooms'),
+    ('MANAGE_SUBSTITUTIONS', 'Can manage daily substitutions and cancel lessons.'),
+    ('MANAGE_CUSTOM_SUBJECT', 'Can create, edit, or delete custom subjects.');

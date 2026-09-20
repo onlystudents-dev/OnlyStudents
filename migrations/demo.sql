@@ -134,11 +134,5 @@ VALUES
     (1, 4, 1, 1, 2),
     (1, 5, 1, 1, 1);
 
-INSERT INTO permission_type (name, description) VALUES
-    ('PRINCIPAL', 'Has all additional permissions.'),
-    ('MANAGE_TIMETABLES', 'Can manage all class schedules.'),
-    ('MANAGE_BELL_SCHEDULE', 'Can manage all bell schedule type and manage bell schedule.'),
-    ('MANAGE_GROUPS', 'Can manage all groups and assign any student to any group.'),
-    ('MANAGE_ROOMS', 'Can manage all rooms'),
-    ('MANAGE_SUBSTITUTIONS', 'Can manage daily substitutions and cancel lessons.'),
-    ('MANAGE_CUSTOM_SUBJECT', 'Can create, edit, or delete custom subjects.');
+-- MANAGE_PRINCIPAL
+INSERT INTO permissions (school_id, teacher_id, permission_id) VALUES (1, 1, 1);
