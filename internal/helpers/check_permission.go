@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"math"
+
 	db_queries "onlystudents/internal/db/store"
 
 	"github.com/gofiber/fiber/v3"
@@ -15,12 +17,16 @@ func CheckPermission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, permiss
 		return false
 	}
 
+	if school_id < 0 || school_id > math.MaxInt32 {
+		return false
+	}
+
 	queries := db_queries.New(pool)
 
 	params := db_queries.CheckPermissionParams{
 		Name:      permission,
 		TeacherID: session_data.AccountID,
-		SchoolID:  int32(school_id),
+		SchoolID:  int32(school_id), // #nosec G115 -- bounds-checked above
 	}
 
 	has, err := queries.CheckPermission(c.Context(), params)

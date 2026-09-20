@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"onlystudents/internal/helpers"
 	"os"
-	"path/filepath"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,24 +29,28 @@ func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	log_dir := helpers.LogDir()
 
+	root, err := os.OpenRoot(log_dir)
+	if err != nil {
+		slog.Error("Error opening logs folder", "err", err)
+		return c.SendStatus(500)
+	}
+	defer root.Close()
+
+	root_fs := root.FS()
+
 	log_json := []LogFile{}
 
-	err := filepath.WalkDir(log_dir, func(path string, entry fs.DirEntry, err error) error {
+	err = fs.WalkDir(root_fs, ".", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
 			return err
 		}
 
-		content, err := os.ReadFile(path)
+		content, err := fs.ReadFile(root_fs, path)
 		if err != nil {
 			return err
 		}
 
-		name, err := filepath.Rel(log_dir, path)
-		if err != nil {
-			name = entry.Name()
-		}
-
-		log_json = append(log_json, LogFile{Name: name, Content: string(content)})
+		log_json = append(log_json, LogFile{Name: path, Content: string(content)})
 
 		return nil
 	})

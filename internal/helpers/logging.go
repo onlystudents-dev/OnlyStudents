@@ -6,7 +6,6 @@ import (
 	"log"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"syscall"
 	"time"
 )
@@ -18,13 +17,19 @@ func LogDir() string {
 func SetupLogging() (*os.File, error) {
 	dir := LogDir()
 
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return nil, err
 	}
 
-	path := filepath.Join(dir, fmt.Sprintf("app-%d.log", time.Now().Unix()))
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
 
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	path := fmt.Sprintf("app-%d.log", time.Now().Unix())
+
+	f, err := root.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		return nil, err
 	}
