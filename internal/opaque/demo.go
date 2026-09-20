@@ -74,7 +74,9 @@ func registerDemoAccount(ctx context.Context, queries *db_queries.Queries, serve
 		return err
 	}
 
-	record, _, err := client.RegistrationFinalize(resp, nil, nil)
+	// match JS client
+	record, _, err := client.RegistrationFinalize(resp, nil, nil,
+		&opaque.ClientOptions{KSFSalt: make([]byte, 16), KSFLength: 64})
 	if err != nil {
 		return err
 	}
