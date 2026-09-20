@@ -18,3 +18,7 @@ This is a student diary app, mimicking ekreta.hu, but modern, fast and just bett
 - Guardian children selector instead of multiple children accounts
 - Custom Themes
 - Insanely fast Fiber Go server, Node.JS frontend is served as static files
+
+# Demo Mode Credentials ( https://onlystudents.hu )
+- Student/Teacher/Guardian ID 1, Password: test
+- Email Change/Password reset does not work to combat spam!
