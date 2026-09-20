@@ -446,7 +446,7 @@ func (q *Queries) ManageSubsitutionLesson(ctx context.Context, arg ManageSubsitu
 }
 
 const readBaseScheduleClass = `-- name: ReadBaseScheduleClass :many
-SELECT DISTINCT bs.id, bs.school_id, bs.teacher_id, bs.room_id, bs.day_of_week, bs.lesson_num, bs.group_id, bs.custom_subject, bs.subject_id, bs.custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name FROM base_schedule bs JOIN groups g ON bs.group_id = g.id JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id LEFT JOIN subjects sub ON sub.id = bs.subject_id LEFT JOIN custom_subjects cs ON cs.id = bs.custom_subject_id WHERE s.classes_id = $1 AND s.school_id = $2
+SELECT DISTINCT bs.id, bs.school_id, bs.teacher_id, bs.room_id, bs.day_of_week, bs.lesson_num, bs.group_id, bs.custom_subject, bs.subject_id, bs.custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name, EXISTS (SELECT 1 FROM exams e WHERE e.class_subjects_id = bs.subject_id) AS has_exam, EXISTS (SELECT 1 FROM homework hw WHERE hw.class_subjects_id = bs.subject_id) AS has_homework, teach.first_name AS teacher_first_name, teach.last_name AS teacher_last_name FROM base_schedule bs JOIN groups g ON bs.group_id = g.id JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id LEFT JOIN subjects sub ON sub.id = bs.subject_id LEFT JOIN custom_subjects cs ON cs.id = bs.custom_subject_id LEFT JOIN teachers teach ON teach.id = bs.teacher_id WHERE s.classes_id = $1 AND s.school_id = $2
 `
 
 type ReadBaseScheduleClassParams struct {
@@ -455,17 +455,21 @@ type ReadBaseScheduleClassParams struct {
 }
 
 type ReadBaseScheduleClassRow struct {
-	ID              int32
-	SchoolID        int32
-	TeacherID       int32
-	RoomID          int32
-	DayOfWeek       int32
-	LessonNum       int32
-	GroupID         int32
-	CustomSubject   bool
-	SubjectID       pgtype.Int4
-	CustomSubjectID pgtype.Int4
-	SubjectName     string
+	ID               int32
+	SchoolID         int32
+	TeacherID        int32
+	RoomID           int32
+	DayOfWeek        int32
+	LessonNum        int32
+	GroupID          int32
+	CustomSubject    bool
+	SubjectID        pgtype.Int4
+	CustomSubjectID  pgtype.Int4
+	SubjectName      string
+	HasExam          bool
+	HasHomework      bool
+	TeacherFirstName pgtype.Text
+	TeacherLastName  pgtype.Text
 }
 
 func (q *Queries) ReadBaseScheduleClass(ctx context.Context, arg ReadBaseScheduleClassParams) ([]ReadBaseScheduleClassRow, error) {
@@ -489,6 +493,10 @@ func (q *Queries) ReadBaseScheduleClass(ctx context.Context, arg ReadBaseSchedul
 			&i.SubjectID,
 			&i.CustomSubjectID,
 			&i.SubjectName,
+			&i.HasExam,
+			&i.HasHomework,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
 		); err != nil {
 			return nil, err
 		}
@@ -501,7 +509,7 @@ func (q *Queries) ReadBaseScheduleClass(ctx context.Context, arg ReadBaseSchedul
 }
 
 const readBaseScheduleGroup = `-- name: ReadBaseScheduleGroup :many
-SELECT bs.id, bs.school_id, bs.teacher_id, bs.room_id, bs.day_of_week, bs.lesson_num, bs.group_id, bs.custom_subject, bs.subject_id, bs.custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name FROM base_schedule bs LEFT JOIN subjects sub ON sub.id = bs.subject_id LEFT JOIN custom_subjects cs ON cs.id = bs.custom_subject_id WHERE bs.group_id = $1 AND bs.school_id = $2
+SELECT bs.id, bs.school_id, bs.teacher_id, bs.room_id, bs.day_of_week, bs.lesson_num, bs.group_id, bs.custom_subject, bs.subject_id, bs.custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name, EXISTS (SELECT 1 FROM exams e WHERE e.class_subjects_id = bs.subject_id) AS has_exam, EXISTS (SELECT 1 FROM homework hw WHERE hw.class_subjects_id = bs.subject_id) AS has_homework, teach.first_name AS teacher_first_name, teach.last_name AS teacher_last_name FROM base_schedule bs LEFT JOIN subjects sub ON sub.id = bs.subject_id LEFT JOIN custom_subjects cs ON cs.id = bs.custom_subject_id LEFT JOIN teachers teach ON teach.id = bs.teacher_id WHERE bs.group_id = $1 AND bs.school_id = $2
 `
 
 type ReadBaseScheduleGroupParams struct {
@@ -510,17 +518,21 @@ type ReadBaseScheduleGroupParams struct {
 }
 
 type ReadBaseScheduleGroupRow struct {
-	ID              int32
-	SchoolID        int32
-	TeacherID       int32
-	RoomID          int32
-	DayOfWeek       int32
-	LessonNum       int32
-	GroupID         int32
-	CustomSubject   bool
-	SubjectID       pgtype.Int4
-	CustomSubjectID pgtype.Int4
-	SubjectName     string
+	ID               int32
+	SchoolID         int32
+	TeacherID        int32
+	RoomID           int32
+	DayOfWeek        int32
+	LessonNum        int32
+	GroupID          int32
+	CustomSubject    bool
+	SubjectID        pgtype.Int4
+	CustomSubjectID  pgtype.Int4
+	SubjectName      string
+	HasExam          bool
+	HasHomework      bool
+	TeacherFirstName pgtype.Text
+	TeacherLastName  pgtype.Text
 }
 
 func (q *Queries) ReadBaseScheduleGroup(ctx context.Context, arg ReadBaseScheduleGroupParams) ([]ReadBaseScheduleGroupRow, error) {
@@ -544,6 +556,10 @@ func (q *Queries) ReadBaseScheduleGroup(ctx context.Context, arg ReadBaseSchedul
 			&i.SubjectID,
 			&i.CustomSubjectID,
 			&i.SubjectName,
+			&i.HasExam,
+			&i.HasHomework,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
 		); err != nil {
 			return nil, err
 		}
@@ -714,17 +730,18 @@ func (q *Queries) ReadListOfStudents(ctx context.Context, arg ReadListOfStudents
 }
 
 const readRealTimeTable = `-- name: ReadRealTimeTable :many
-SELECT  COALESCE(t.room_id, b.room_id) AS room_id, COALESCE(t.lesson_num, b.lesson_num) AS lesson_num, COALESCE(t.day_of_week, b.day_of_week) AS day_of_week, COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) AS effective_teacher_id, COALESCE(t.group_id, b.group_id) AS group_id, COALESCE(t.school_id, b.school_id) AS school_id, COALESCE(t.custom_subject, b.custom_subject) AS custom_subject, COALESCE(t.subject_id, b.subject_id) AS subject_id, COALESCE(t.custom_subject_id, b.custom_subject_id) AS custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name, COALESCE(t.is_substitution, FALSE) AS is_substitution, COALESCE(t.canceled, FALSE) AS canceled FROM base_schedule b LEFT JOIN time_table t ON t.school_id = b.school_id AND t.group_id = b.group_id AND t.day_of_week = b.day_of_week AND t.lesson_num = b.lesson_num AND t.actual_date BETWEEN $1 AND $2 LEFT JOIN subjects sub ON sub.id = COALESCE(t.subject_id, b.subject_id) LEFT JOIN custom_subjects cs ON cs.id = COALESCE(t.custom_subject_id, b.custom_subject_id) WHERE b.group_id IN ( SELECT g.id FROM groups g JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $3 AND s.school_id = $4)
+SELECT d.actual_date::date AS actual_date, COALESCE(t.room_id, b.room_id) AS room_id, b.lesson_num, b.day_of_week, COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) AS effective_teacher_id, COALESCE(t.group_id, b.group_id) AS group_id, COALESCE(t.school_id, b.school_id) AS school_id, COALESCE(t.custom_subject, b.custom_subject) AS custom_subject, COALESCE(t.subject_id, b.subject_id) AS subject_id, COALESCE(t.custom_subject_id, b.custom_subject_id) AS custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name, COALESCE(t.is_substitution, FALSE) AS is_substitution, COALESCE(t.canceled, FALSE) AS canceled, EXISTS (SELECT 1 FROM exams e WHERE e.class_subjects_id = COALESCE(t.subject_id, b.subject_id) AND e.date = d.actual_date::date) AS has_exam, EXISTS (SELECT 1 FROM homework hw WHERE hw.class_subjects_id = COALESCE(t.subject_id, b.subject_id) AND hw.due_date = d.actual_date::date) AS has_homework, teach.first_name AS teacher_first_name, teach.last_name AS teacher_last_name FROM base_schedule b JOIN generate_series(CAST($1 AS date), CAST($2 AS date), interval '1 day') AS d(actual_date) ON EXTRACT(ISODOW FROM d.actual_date) = b.day_of_week LEFT JOIN time_table t ON t.school_id = b.school_id AND t.group_id = b.group_id AND t.day_of_week = b.day_of_week AND t.lesson_num = b.lesson_num AND t.actual_date = d.actual_date::date LEFT JOIN subjects sub ON sub.id = COALESCE(t.subject_id, b.subject_id) LEFT JOIN custom_subjects cs ON cs.id = COALESCE(t.custom_subject_id, b.custom_subject_id) LEFT JOIN teachers teach ON teach.id = COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) WHERE b.group_id IN ( SELECT g.id FROM groups g JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $3 AND s.school_id = $4) ORDER BY d.actual_date, b.lesson_num
 `
 
 type ReadRealTimeTableParams struct {
-	ActualDate   pgtype.Date
-	ActualDate_2 pgtype.Date
-	ClassesID    int32
-	SchoolID     int32
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+	ClassesID int32
+	SchoolID  int32
 }
 
 type ReadRealTimeTableRow struct {
+	ActualDate         pgtype.Date
 	RoomID             int32
 	LessonNum          int32
 	DayOfWeek          int32
@@ -737,12 +754,16 @@ type ReadRealTimeTableRow struct {
 	SubjectName        string
 	IsSubstitution     bool
 	Canceled           bool
+	HasExam            bool
+	HasHomework        bool
+	TeacherFirstName   pgtype.Text
+	TeacherLastName    pgtype.Text
 }
 
 func (q *Queries) ReadRealTimeTable(ctx context.Context, arg ReadRealTimeTableParams) ([]ReadRealTimeTableRow, error) {
 	rows, err := q.db.Query(ctx, readRealTimeTable,
-		arg.ActualDate,
-		arg.ActualDate_2,
+		arg.StartDate,
+		arg.EndDate,
 		arg.ClassesID,
 		arg.SchoolID,
 	)
@@ -754,6 +775,7 @@ func (q *Queries) ReadRealTimeTable(ctx context.Context, arg ReadRealTimeTablePa
 	for rows.Next() {
 		var i ReadRealTimeTableRow
 		if err := rows.Scan(
+			&i.ActualDate,
 			&i.RoomID,
 			&i.LessonNum,
 			&i.DayOfWeek,
@@ -766,6 +788,10 @@ func (q *Queries) ReadRealTimeTable(ctx context.Context, arg ReadRealTimeTablePa
 			&i.SubjectName,
 			&i.IsSubstitution,
 			&i.Canceled,
+			&i.HasExam,
+			&i.HasHomework,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
 		); err != nil {
 			return nil, err
 		}
