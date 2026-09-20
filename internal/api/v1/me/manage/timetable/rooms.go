@@ -28,13 +28,17 @@ type DeleteRoomRequest struct {
 func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateRoomRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.Name == "" || req.Capacity <= 0 {
@@ -44,7 +48,7 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -68,13 +72,17 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditRoomRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.Capacity == 0 || req.Id == 0 || req.Name == "" {
@@ -84,7 +92,7 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -108,14 +116,18 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteRoomRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.Id == 0 {
@@ -125,7 +137,7 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -145,26 +157,25 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
 
-	listofrooms, err := queries.ReadCustomSubject(c.Context(), int32(school_id))
+	listofrooms, err := queries.ReadRoom(c.Context(), int32(school_id))
 
 	if err != nil {
 		return c.SendStatus(500)

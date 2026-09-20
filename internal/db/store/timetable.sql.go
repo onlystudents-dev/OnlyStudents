@@ -12,7 +12,7 @@ import (
 )
 
 const addCanceledLesson = `-- name: AddCanceledLesson :exec
-INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET canceled = true
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true) ON CONFLICT (school_id, room_id, actual_date, lesson_num, group_id) DO UPDATE SET canceled = true
 `
 
 type AddCanceledLessonParams struct {
@@ -407,7 +407,7 @@ func (q *Queries) InsertStudentToGroup(ctx context.Context, arg InsertStudentToG
 }
 
 const manageSubsitutionLesson = `-- name: ManageSubsitutionLesson :exec
-INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, is_substitution, substitution_teacher_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET is_substitution = $11, substitution_teacher_id = $12
+UPDATE time_table SET teacher_id = $2, room_id = $3, day_of_week = $4, group_id = $5, custom_subject = $6, custom_subject_id = $7, subject_id = $8, actual_date = $9, lesson_num = $10, is_substitution = $11, substitution_teacher_id = $12 WHERE school_id = $1 AND id = $13
 `
 
 type ManageSubsitutionLessonParams struct {
@@ -423,6 +423,7 @@ type ManageSubsitutionLessonParams struct {
 	LessonNum             int32
 	IsSubstitution        bool
 	SubstitutionTeacherID pgtype.Int4
+	ID                    int32
 }
 
 func (q *Queries) ManageSubsitutionLesson(ctx context.Context, arg ManageSubsitutionLessonParams) error {
@@ -439,6 +440,7 @@ func (q *Queries) ManageSubsitutionLesson(ctx context.Context, arg ManageSubsitu
 		arg.LessonNum,
 		arg.IsSubstitution,
 		arg.SubstitutionTeacherID,
+		arg.ID,
 	)
 	return err
 }
@@ -682,7 +684,7 @@ func (q *Queries) ReadListOfStudents(ctx context.Context, arg ReadListOfStudents
 }
 
 const readRealTimeTable = `-- name: ReadRealTimeTable :many
-SELECT  COALESCE(t.room_id, b.room_id) AS room_id, COALESCE(t.lesson_num, b.lesson_num) AS lesson_num, COALESCE(t.day_of_week, b.day_of_week) AS day_of_week, COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) AS effective_teacher_id, COALESCE(t.group_id, b.group_id) AS group_id, COALESCE(t.school_id, b.school_id) AS school_id, COALESCE(t.custom_subject, b.custom_subject) AS custom_subject, COALESCE(t.subject_id, b.subject_id) AS subject_id, COALESCE(t.custom_subject_id, b.custom_subject_id) AS custom_subject_id, COALESCE(t.is_substitution, FALSE) AS is_substitution, COALESCE(t.canceled, FALSE) AS canceled FROM base_schedule b LEFT JOIN time_table t ON b.day_of_week = t.day_of_week AND b.lesson_num = t.lesson_num AND t.actual_date BETWEEN $1 AND $2 WHERE b.group_id IN ( SELECT g.id FROM groups g JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $3 AND s.school_id = $4)
+SELECT  COALESCE(t.room_id, b.room_id) AS room_id, COALESCE(t.lesson_num, b.lesson_num) AS lesson_num, COALESCE(t.day_of_week, b.day_of_week) AS day_of_week, COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) AS effective_teacher_id, COALESCE(t.group_id, b.group_id) AS group_id, COALESCE(t.school_id, b.school_id) AS school_id, COALESCE(t.custom_subject, b.custom_subject) AS custom_subject, COALESCE(t.subject_id, b.subject_id) AS subject_id, COALESCE(t.custom_subject_id, b.custom_subject_id) AS custom_subject_id, COALESCE(t.is_substitution, FALSE) AS is_substitution, COALESCE(t.canceled, FALSE) AS canceled FROM base_schedule b LEFT JOIN time_table t ON t.school_id = b.school_id AND t.group_id = b.group_id AND t.day_of_week = b.day_of_week AND t.lesson_num = b.lesson_num AND t.actual_date BETWEEN $1 AND $2 WHERE b.group_id IN ( SELECT g.id FROM groups g JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $3 AND s.school_id = $4)
 `
 
 type ReadRealTimeTableParams struct {
@@ -774,7 +776,7 @@ func (q *Queries) ReadRoom(ctx context.Context, schoolID int32) ([]ReadRoomRow, 
 }
 
 const removeCanceledLesson = `-- name: RemoveCanceledLesson :exec
-INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false) ON CONFLICT (school_id, room_id, day_of_week, actual_date, lesson_num, group_id, teacher_id) DO UPDATE SET canceled = false
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false) ON CONFLICT (school_id, room_id, actual_date, lesson_num, group_id) DO UPDATE SET canceled = false
 `
 
 type RemoveCanceledLessonParams struct {
@@ -840,7 +842,7 @@ func (q *Queries) UpdateBaseSchedule(ctx context.Context, arg UpdateBaseSchedule
 }
 
 const updateRealTimeLesson = `-- name: UpdateRealTimeLesson :exec
-UPDATE time_table SET teacher_id = $1, room_id = $2, day_of_week = $3, group_id = $4, custom_subject = $5, custom_subject_id = $6, subject_id = $7, actual_date = $8 AND lesson_num = $9 WHERE school_id = $10 AND id = $11
+UPDATE time_table SET teacher_id = $1, room_id = $2, day_of_week = $3, group_id = $4, custom_subject = $5, custom_subject_id = $6, subject_id = $7, actual_date = $8, lesson_num = $9 WHERE school_id = $10 AND id = $11
 `
 
 type UpdateRealTimeLessonParams struct {

@@ -25,25 +25,29 @@ type EditGroupRequest struct {
 }
 
 type ActionStudentGroupRequest struct {
-	Group_Id   int32 `json:"group_id"`
-	Student_Id int32 `json:"student_id"`
+	GroupID   int32 `json:"group_id"`
+	StudentID int32 `json:"student_id"`
 }
 
 type ReadStudentGroupRequest struct {
-	Group_Id int32 `json:"group_id"`
+	GroupID int32 `json:"group_id" query:"group_id"`
 }
 
 func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateGroupRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.BellId == 0 || req.Name == "" {
@@ -53,7 +57,7 @@ func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -76,14 +80,18 @@ func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteGroupRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.Id == 0 {
@@ -93,7 +101,7 @@ func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -115,14 +123,18 @@ func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditGroupRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.Id == 0 || req.Name == "" {
@@ -132,7 +144,7 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -157,17 +169,17 @@ func ReadGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -184,32 +196,36 @@ func ReadGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req ActionStudentGroupRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
-	if req.Group_Id == 0 || req.Student_Id == 0 {
+	if req.GroupID == 0 || req.StudentID == 0 {
 		return c.SendStatus(400)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.InsertStudentToGroupParams{
 		SchoolID:  int32(school_id),
-		GroupID:   req.Group_Id,
-		StudentID: req.Student_Id,
+		GroupID:   req.GroupID,
+		StudentID: req.StudentID,
 	}
 
 	err = queries.InsertStudentToGroup(c.Context(), params)
@@ -224,27 +240,31 @@ func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req ActionStudentGroupRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
-	if school_id == 0 {
-		return c.SendStatus(500)
+	if req.GroupID == 0 || req.StudentID == 0 || school_id == 0 {
+		return c.SendStatus(400)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.DeleteStudentFromGroupParams{
-		GroupID:   req.Group_Id,
-		StudentID: req.Student_Id,
+		GroupID:   req.GroupID,
+		StudentID: req.StudentID,
 		SchoolID:  int32(school_id),
 	}
 
@@ -260,30 +280,34 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 func ReadStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req ReadStudentGroupRequest
 
+	if err := c.Bind().Query(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
-	if req.Group_Id == 0 {
+	if req.GroupID == 0 {
 		return c.SendStatus(400)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.ReadListOfStudentsParams{
-		GroupID:  req.Group_Id,
+		GroupID:  req.GroupID,
 		SchoolID: int32(school_id),
 	}
 

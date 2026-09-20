@@ -26,10 +26,14 @@ type DeleteCustomSubjectRequest struct {
 func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateCustomSubjectRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.Name == "" {
@@ -39,7 +43,7 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -61,19 +65,23 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditCustomSubjectRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.Name == "" || req.Id == 0 {
-		c.SendStatus(400)
+		return c.SendStatus(400)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if !has_permission {
-		return c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -96,19 +104,23 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteCustomSubjectRequest
 
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		c.SendStatus(500)
+		return c.SendStatus(400)
 	}
 
 	if req.Id == 0 {
-		c.SendStatus(400)
+		return c.SendStatus(400)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if !has_permission {
-		c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -121,23 +133,26 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	err = queries.DeleteCustomSubject(c.Context(), params)
 
 	if err != nil {
-		c.SendStatus(500)
+		return c.SendStatus(500)
 	}
 
 	return c.SendStatus(200)
 }
 
 func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		c.SendStatus(500)
+		return c.SendStatus(400)
+	}
+
+	if school_id == 0 {
+		return c.SendStatus(400)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if !has_permission {
-		c.SendStatus(401)
+		return c.SendStatus(403)
 	}
 
 	queries := db_queries.New(pool)
@@ -145,7 +160,7 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	listofcustomsubject, err := queries.ReadCustomSubject(c.Context(), int32(school_id))
 
 	if err != nil {
-		c.SendStatus(500)
+		return c.SendStatus(500)
 	}
 
 	return c.JSON(listofcustomsubject)
