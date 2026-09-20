@@ -280,7 +280,7 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
     }
 
     async function updateNickname() {
-        if (!newNickname.current?.value) return
+        if (!newNickname.current?.value && newNickname.current?.value !== "") return
         setWaiting(true)
         const response = await fetch("/api/v1/me/change_nickname", {
             method: "POST",
@@ -294,7 +294,7 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
         switch (response.status) {
             case 200:
                 toast.success(getKey("NICKNAME_CHANGED"))
-                setNickname(newNickname.current?.value || nickname)
+                setNickname(newNickname.current.value)
                 break
             case 429: {
                 let seconds = response.headers.get("Retry-After")

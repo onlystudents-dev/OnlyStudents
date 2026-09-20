@@ -31,7 +31,7 @@
     "SECURITY": "Biztonság",
     "LOGOUT": "Kilépés",
     "RATE_LIMITED": "Le lettél korlátozva!",
-    "AUTO_REFRESH": "Automatikus újratöltés %1 másodpercen belül",
+    "BACK_IN": "Visszakerülsz %1 másodpercen belül",
     "EMAIL": "E-mail",
     "NICKNAME": "Becenév",
     "CHANGE_EMAIL": "E-mail megváltoztatása",
@@ -52,7 +52,15 @@
     "THEME": "Téma",
     "AUTOTHEME": "Automatikus (%1)",
     "THEMES.dark": "Sötét",
-    "THEMES.light": "Világos"
+    "THEMES.light": "Világos",
+    "DAYS.monday": "Hétfő",
+    "DAYS.tuesday": "Kedd",
+    "DAYS.wednesday": "Szerda",
+    "DAYS.thursday": "Csütörtök",
+    "DAYS.friday": "Péntek",
+    "DAYS.saturday": "Szombat",
+    "DAYS.sunday": "Vasárnap",
+    "TERM": "Tanév"
   },
   "errors": {
     "WRONG_CREDENTIALS": "A belépési adatok helytelenek!",
