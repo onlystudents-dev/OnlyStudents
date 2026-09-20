@@ -48,7 +48,11 @@
     "LANGUAGE": "Language",
     "UNSAVED_CHANGES": "You have %1 unsaved change%2.",
     "MULTIPLE": "s",
-    "AUTOLANG": "Auto (%1)"
+    "AUTOLANG": "Auto (%1)",
+    "THEME": "Theme",
+    "AUTOTHEME": "Auto (%1)",
+    "THEMES.dark": "Dark",
+    "THEMES.light": "Light"
   },
   "errors": {
     "WRONG_CREDENTIALS": "The username doesn't pair with the password!",

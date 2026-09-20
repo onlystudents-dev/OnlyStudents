@@ -18,7 +18,8 @@ import GuardianGrades from "./ui/guardian/grades.tsx";
 import StudentGrades from "./ui/student/grades.tsx";
 import TeacherGrades from "./ui/teacher/grades.tsx";
 import RateLimit from "./util/ratelimit.tsx";
-import {fetchLanguage, fetchLanguages} from "./util/language.ts";
+import {fetchLanguage} from "./util/language.ts";
+import {applyTheme, getAutoTheme, type Theme} from "./util/theme.ts";
 
 export type Me = {
     role: string,
@@ -29,6 +30,8 @@ export type Me = {
     email_address: string,
     email_verified: boolean,
     nickname: string,
+    lang: string,
+    theme: Theme,
 }
 
 export default function App() {
@@ -47,11 +50,22 @@ export default function App() {
             }
             const meJ = await meR.json();
             setMe(meJ);
+            return meJ;
         } catch {/* empty */}
     }
 
     useEffect(() => {
-        fetchLanguages().then(() => fetchLanguage().then(() => fetchMe().then(() => setLoading(false))))
+        function Fetch() {
+            fetchMe()
+                .then(me => {
+                    if (me) applyTheme(me)
+                    fetchLanguage(me)
+                        .then(() => setLoading(false))
+                })
+        }
+
+        applyTheme(getAutoTheme())
+        Fetch()
     }, [])
 
     return (

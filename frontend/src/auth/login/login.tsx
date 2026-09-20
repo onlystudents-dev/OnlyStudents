@@ -100,7 +100,7 @@ export default function Login() {
                 <div className={`content out ${pwrA && "hid"} h-86`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">
-                        <select className="poppins" value={role} onChange={(e) => setRole(e.target.value)}>
+                        <select className="poppins" value={role} onChange={(e) => {setRole(e.target.value); setWrong(false)}}>
                             <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
                             <option value="student">{getKey("ROLE.STUDENT")}</option>
                             <option value="teacher">{getKey("ROLE.TEACHER")}</option>

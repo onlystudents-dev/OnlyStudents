@@ -48,7 +48,11 @@
     "LANGUAGE": "Nyelv",
     "UNSAVED_CHANGES": "Van %1 nem mentett változtatásod.",
     "MULTIPLE": "k",
-    "AUTOLANG": "Automatikus (%1)"
+    "AUTOLANG": "Automatikus (%1)",
+    "THEME": "Téma",
+    "AUTOTHEME": "Automatikus (%1)",
+    "THEMES.dark": "Sötét",
+    "THEMES.light": "Világos"
   },
   "errors": {
     "WRONG_CREDENTIALS": "A belépési adatok helytelenek!",

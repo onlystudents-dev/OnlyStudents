@@ -83,6 +83,15 @@
     --right-color: #21fa90;
 }
 
+[data-theme="light"] {
+    --bg-color: #ffffff;
+    --txt-color: #111111;
+    --hover-color: #e8e8e8;
+    --border-color: #d0d0d0;
+    --wrong-color: #ed474a;
+    --right-color: #1ab369;
+}
+
 body {
     @apply min-h-screen;
     background-color: var(--bg-color);

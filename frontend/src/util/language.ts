@@ -1,36 +1,31 @@
 import {match} from "@formatjs/intl-localematcher";
+import type {Me} from "../app.tsx";
 
-export type language = {
+export type Language = {
     key: string,
     name: string,
     emoji: string,
 }
 
-let languages: language[]
-export async function fetchLanguages() {
-    const response = await fetch("/assets/languages.json")
-    languages = await response.json()
-}
+export const languages: Language[] = [
+    {"key": "en-US", "name": "English (US)", "emoji": "\uD83C\uDDFA\uD83C\uDDF8"},
+    {"key": "hu-HU", "name": "Magyar", "emoji": "\uD83C\uDDED\uD83C\uDDFA"}
+]
 
 let language: Record<string, Record<string, string>>
-export async function fetchLanguage() {
-    let response = await fetch(`/assets/languages/${getLanguage()?.key}.json`)
-    if (response.status === 404) response = await fetch("/assets/languages/en-US.json")
+export async function fetchLanguage(me: Me) {
+    const response = await fetch(`/assets/languages/${getLanguage(me)?.key}.json`)
     language = await response.json()
 }
 
-export function getLanguage(auto?: boolean) {
-    const stored = !auto ? localStorage.getItem("language") : null;
+export function getLanguage(me: Me, auto?: boolean) {
+    const stored = !auto ? me?.lang : null;
 
     return languages.find(o => o.key === match(
         stored ? [stored] : navigator.languages,
         languages.map((o) => o.key),
         "en-US"
     ))
-}
-
-export function getLanguages() {
-    return languages
 }
 
 export function getKey(key: string, ...args: string[]) {
@@ -56,4 +51,16 @@ export async function fromResponse(response: Response, ...args: string[]) {
     }
 
     return val
+}
+
+export async function setLanguage(language: string): Promise<[Response, () => void]> {
+    return [await fetch("/api/v1/me/change_lang", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            lang: language
+        })
+    }), () => location.reload()]
 }
