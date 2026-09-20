@@ -26,6 +26,7 @@ type TimetableLesson struct {
 	CustomSubject      bool        `json:"custom_subject"`
 	SubjectID          pgtype.Int4 `json:"subject_id"`
 	CustomSubjectID    pgtype.Int4 `json:"custom_subject_id"`
+	SubjectName        string      `json:"subject_name"`
 	IsSubstitution     bool        `json:"is_substitution"`
 	Canceled           bool        `json:"canceled"`
 }
@@ -41,6 +42,7 @@ type TimetableBaseLesson struct {
 	CustomSubject   bool        `json:"custom_subject"`
 	SubjectID       pgtype.Int4 `json:"subject_id"`
 	CustomSubjectID pgtype.Int4 `json:"custom_subject_id"`
+	SubjectName     string      `json:"subject_name"`
 }
 
 type TimetableBellSchedule struct {
@@ -134,6 +136,7 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 			CustomSubject:      row.CustomSubject,
 			SubjectID:          row.SubjectID,
 			CustomSubjectID:    row.CustomSubjectID,
+			SubjectName:        row.SubjectName,
 			IsSubstitution:     row.IsSubstitution,
 			Canceled:           row.Canceled,
 		})
@@ -174,6 +177,7 @@ func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 			CustomSubject:   row.CustomSubject,
 			SubjectID:       row.SubjectID,
 			CustomSubjectID: row.CustomSubjectID,
+			SubjectName:     row.SubjectName,
 		})
 	}
 
