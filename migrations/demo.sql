@@ -49,14 +49,8 @@ INSERT INTO guardians (
              'Addr', 'Addr'
          );
 
-INSERT INTO accounts (
-    role, password_hash, student_id, email_address
-)
-SELECT
-    'student',
-    '$argon2id$v=19$m=65536,t=1,p=16$uVcQrvROzMvx8pEKN8eMlA$wfXFSmeuUNDWKTZ3edtmeA+VjXec53r1++TE9n5Z5Jg',
-    s.id,
-    NULL
+INSERT INTO accounts (role, student_id, email_address)
+SELECT 'student', s.id, NULL
 FROM students s
 WHERE s.id_number = 123456789
   AND NOT EXISTS (
@@ -66,14 +60,8 @@ WHERE s.id_number = 123456789
       AND a.role = 'student'
 );
 
-INSERT INTO accounts (
-    role, password_hash, teacher_id, email_address
-)
-SELECT
-    'teacher',
-    '$argon2id$v=19$m=65536,t=1,p=16$dVZjUXJ2Uk96TXZ4OHBFS044ZU1sQQ$yt9FrwyGnwXP4H7Go14ot4R7DgD8BoEguVNTfmF3mfM',
-    t.id,
-    'principal@school.test'
+INSERT INTO accounts (role, teacher_id, email_address)
+SELECT 'teacher', t.id, 'principal@school.test'
 FROM teachers t
 WHERE t.id = 1
   AND NOT EXISTS (
@@ -83,14 +71,8 @@ WHERE t.id = 1
       AND a.role = 'teacher'
 );
 
-INSERT INTO accounts (
-    role, password_hash, guardian_id, email_address
-)
-SELECT
-    'guardian',
-    '$argon2id$v=19$m=65536,t=1,p=16$dVZjUXJ2Uk96TXZ4OHBFS044ZU1sQQ$yt9FrwyGnwXP4H7Go14ot4R7DgD8BoEguVNTfmF3mfM',
-    g.id,
-    'guardian@school.test'
+INSERT INTO accounts (role, guardian_id, email_address)
+SELECT 'guardian', g.id, 'guardian@school.test'
 FROM guardians g
 WHERE g.id = 1
   AND NOT EXISTS (

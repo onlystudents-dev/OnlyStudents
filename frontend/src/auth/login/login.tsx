@@ -7,6 +7,7 @@ import PasswordReset from "../pwr/pwr.tsx";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
 import {fromResponse, getKey} from "../../util/language.ts";
+import { opaqueLogin } from "../opaqueLogin.ts";
 
 export default function Login() {
     const [pwr, setPwr] = useState(false);
@@ -44,43 +45,21 @@ export default function Login() {
     }, [])
 
     const login = useCallback(async () => {
-        if (red) return
-        if (wrong) return
-        if (remaining) return
-        if (!id) return
-        if (!password) return
-        setWaiting(true)
-        try {
-            const response = await fetch("/api/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    user: Number(id),
-                    password: password,
-                    role: role,
-                })
-            })
-            switch (response.status) {
-                case 200:
-                    location.reload()
-                    break
-                case 429: {
-                    let seconds = response.headers.get("Retry-After")
-                    if (!seconds) seconds = "-1"
-                    toast.error(await fromResponse(response, seconds))
-                    updateRemaining(Number(seconds))
-                    break
-                }
-                default:
-                    toast.error(await fromResponse(response))
-                    setWrong(true)
-            }
-        } finally {
-            setWaiting(false)
+      if (red || wrong || remaining || !id || !password) return;
+      setWaiting(true);
+      try {
+        const res = await opaqueLogin({ userId: Number(id), role, password });
+        switch (res.status) {
+          case "ok": location.reload(); break;
+          case "wrong": toast.error(getKey("WRONG_CREDENTIALS")); setWrong(true); break;
+          case "ratelimited":
+            toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)));
+            updateRemaining(res.retryAfter);
+            break;
+          case "error": toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED")); break;
         }
-    }, [red, wrong, remaining, id, password, role, setWaiting, setWrong, updateRemaining])
+      } finally { setWaiting(false); }
+    }, [red, wrong, remaining, id, password, role, updateRemaining]);
 
     useEffect(() => {
         const handleKeyDown = async (e: KeyboardEvent) => {
@@ -108,7 +87,7 @@ export default function Login() {
                         <input className={`${(red || wrong) && "wrong"}`} type="text" placeholder={getKey("USER_ID")} value={id} onChange={(e) => {setId(e.target.value); checkUserID(e.target.value); setWrong(false)}} />
                         <input className={`${wrong && "wrong"}`} type="password" placeholder={getKey("PASSWORD")} value={password} onChange={(e) => {setPassword(e.target.value); setWrong(false)}} />
                     </div>
-                    <div className="logbutton">
+                    <div aria-disabled className="logbutton">
                         <Button onClick={sPwr}>
                             <FontAwesomeIcon icon={faQuestion} /> {getKey("FORGOT_PASSWORD")}
                         </Button>

@@ -11,92 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const changePasswordGuardian = `-- name: ChangePasswordGuardian :exec
-UPDATE accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian'
-`
-
-type ChangePasswordGuardianParams struct {
-	PasswordHash string
-	GuardianID   pgtype.Int4
-}
-
-func (q *Queries) ChangePasswordGuardian(ctx context.Context, arg ChangePasswordGuardianParams) error {
-	_, err := q.db.Exec(ctx, changePasswordGuardian, arg.PasswordHash, arg.GuardianID)
-	return err
-}
-
-const changePasswordStudent = `-- name: ChangePasswordStudent :exec
-UPDATE accounts SET password_hash = $1 WHERE student_id = $2 AND role = 'student'
-`
-
-type ChangePasswordStudentParams struct {
-	PasswordHash string
-	StudentID    pgtype.Int4
-}
-
-func (q *Queries) ChangePasswordStudent(ctx context.Context, arg ChangePasswordStudentParams) error {
-	_, err := q.db.Exec(ctx, changePasswordStudent, arg.PasswordHash, arg.StudentID)
-	return err
-}
-
-const changePasswordTeacher = `-- name: ChangePasswordTeacher :exec
-UPDATE accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher'
-`
-
-type ChangePasswordTeacherParams struct {
-	PasswordHash string
-	TeacherID    pgtype.Int4
-}
-
-func (q *Queries) ChangePasswordTeacher(ctx context.Context, arg ChangePasswordTeacherParams) error {
-	_, err := q.db.Exec(ctx, changePasswordTeacher, arg.PasswordHash, arg.TeacherID)
-	return err
-}
-
-const createGuardianAccount = `-- name: CreateGuardianAccount :exec
-INSERT INTO accounts (role, password_hash, guardian_id) VALUES ("guardian", $1, $2)
-`
-
-type CreateGuardianAccountParams struct {
-	PasswordHash string
-	GuardianID   pgtype.Int4
-}
-
-func (q *Queries) CreateGuardianAccount(ctx context.Context, arg CreateGuardianAccountParams) error {
-	_, err := q.db.Exec(ctx, createGuardianAccount, arg.PasswordHash, arg.GuardianID)
-	return err
-}
-
-const createStudentAccount = `-- name: CreateStudentAccount :exec
-INSERT INTO accounts (role, password_hash, student_id) VALUES ("student", $1, $2)
-`
-
-type CreateStudentAccountParams struct {
-	PasswordHash string
-	StudentID    pgtype.Int4
-}
-
-func (q *Queries) CreateStudentAccount(ctx context.Context, arg CreateStudentAccountParams) error {
-	_, err := q.db.Exec(ctx, createStudentAccount, arg.PasswordHash, arg.StudentID)
-	return err
-}
-
-const createTeacherAccount = `-- name: CreateTeacherAccount :exec
-INSERT INTO accounts (role, password_hash, teacher_id) VALUES ("teacher", $1, $2)
-`
-
-type CreateTeacherAccountParams struct {
-	PasswordHash string
-	TeacherID    pgtype.Int4
-}
-
-func (q *Queries) CreateTeacherAccount(ctx context.Context, arg CreateTeacherAccountParams) error {
-	_, err := q.db.Exec(ctx, createTeacherAccount, arg.PasswordHash, arg.TeacherID)
-	return err
-}
-
 const getAccountByGuardianID = `-- name: GetAccountByGuardianID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE guardian_id = $1 AND role = 'guardian'
+SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE guardian_id = $1 AND role = 'guardian'
 `
 
 func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.Int4) (Account, error) {
@@ -105,7 +21,6 @@ func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.
 	err := row.Scan(
 		&i.ID,
 		&i.Role,
-		&i.PasswordHash,
 		&i.StudentID,
 		&i.TeacherID,
 		&i.GuardianID,
@@ -120,7 +35,7 @@ func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.
 }
 
 const getAccountByStudentID = `-- name: GetAccountByStudentID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE student_id = $1 AND role = 'student'
+SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE student_id = $1 AND role = 'student'
 `
 
 func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.Int4) (Account, error) {
@@ -129,7 +44,6 @@ func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.In
 	err := row.Scan(
 		&i.ID,
 		&i.Role,
-		&i.PasswordHash,
 		&i.StudentID,
 		&i.TeacherID,
 		&i.GuardianID,
@@ -144,7 +58,7 @@ func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.In
 }
 
 const getAccountByTeacherID = `-- name: GetAccountByTeacherID :one
-SELECT id, role, password_hash, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE teacher_id = $1 AND role = 'teacher'
+SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE teacher_id = $1 AND role = 'teacher'
 `
 
 func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.Int4) (Account, error) {
@@ -153,7 +67,6 @@ func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.In
 	err := row.Scan(
 		&i.ID,
 		&i.Role,
-		&i.PasswordHash,
 		&i.StudentID,
 		&i.TeacherID,
 		&i.GuardianID,
@@ -167,46 +80,27 @@ func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.In
 	return i, err
 }
 
-const resetPasswordGuardian = `-- name: ResetPasswordGuardian :exec
-UPDATE accounts SET password_hash = $1 WHERE guardian_id = $2 AND role = 'guardian'
+const getAccountByUUID = `-- name: GetAccountByUUID :one
+SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE id = $1
 `
 
-type ResetPasswordGuardianParams struct {
-	PasswordHash string
-	GuardianID   pgtype.Int4
-}
-
-func (q *Queries) ResetPasswordGuardian(ctx context.Context, arg ResetPasswordGuardianParams) error {
-	_, err := q.db.Exec(ctx, resetPasswordGuardian, arg.PasswordHash, arg.GuardianID)
-	return err
-}
-
-const resetPasswordStudent = `-- name: ResetPasswordStudent :exec
-UPDATE accounts SET password_hash = $1 WHERE student_id = $2 AND role = 'student'
-`
-
-type ResetPasswordStudentParams struct {
-	PasswordHash string
-	StudentID    pgtype.Int4
-}
-
-func (q *Queries) ResetPasswordStudent(ctx context.Context, arg ResetPasswordStudentParams) error {
-	_, err := q.db.Exec(ctx, resetPasswordStudent, arg.PasswordHash, arg.StudentID)
-	return err
-}
-
-const resetPasswordTeacher = `-- name: ResetPasswordTeacher :exec
-UPDATE accounts SET password_hash = $1 WHERE teacher_id = $2 AND role = 'teacher'
-`
-
-type ResetPasswordTeacherParams struct {
-	PasswordHash string
-	TeacherID    pgtype.Int4
-}
-
-func (q *Queries) ResetPasswordTeacher(ctx context.Context, arg ResetPasswordTeacherParams) error {
-	_, err := q.db.Exec(ctx, resetPasswordTeacher, arg.PasswordHash, arg.TeacherID)
-	return err
+func (q *Queries) GetAccountByUUID(ctx context.Context, id pgtype.UUID) (Account, error) {
+	row := q.db.QueryRow(ctx, getAccountByUUID, id)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Role,
+		&i.StudentID,
+		&i.TeacherID,
+		&i.GuardianID,
+		&i.EmailAddress,
+		&i.EmailVerified,
+		&i.Theme,
+		&i.Lang,
+		&i.PfpUrl,
+		&i.Nickname,
+	)
+	return i, err
 }
 
 const updateEmailGuardian = `-- name: UpdateEmailGuardian :exec

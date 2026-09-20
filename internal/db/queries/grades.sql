@@ -50,3 +50,15 @@ JOIN teachers t ON t.id = fg.teacher_id
 JOIN terms ter ON ter.id = fg.term_id
 WHERE fg.student_id = $1
 ORDER BY fg.term_id, s.subject_name;
+
+-- name: AddGrade :exec
+INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+
+-- name: AddFinalGrade :exec
+INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value) VALUES ($1, $2, $3, $4, $5);
+
+-- name: EditGrade :exec
+UPDATE grades SET class_subjects_id = $2, teacher_id = $3, term_id = $4, grade_type_id = $5, value = $6, date = $7, note = $8 WHERE id = $1;
+
+-- name: EditFinalGrade :exec
+UPDATE final_grades SET class_subjects_id = $2, term_id = $3, teacher_id = $4, value = $5 WHERE id = $1;

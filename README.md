@@ -3,7 +3,8 @@ This is a student diary app, mimicking ekreta.hu, but modern, fast and just bett
 
 # Installation
 - Copy `.env.example` to `.env`
-- Populate the variables in `.env`
+- Run `go run ./cmd/opaque-setup` to get OPAQUE secrets and put them inside `.env`
+- Populate the other variables in `.env`
 - Run `docker compose up -d` or `podman compose up -d` depending on your configuration. Rootless Docker/Podman is supported with no additional changes needed.
 
 # Features (some planned, some implemented)
@@ -18,7 +19,3 @@ This is a student diary app, mimicking ekreta.hu, but modern, fast and just bett
 - Guardian children selector instead of multiple children accounts
 - Custom Themes
 - Insanely fast Fiber Go server, Node.JS frontend is served as static files
-
-# Demo Mode Credentials ( https://onlystudents.hu )
-- Student/Teacher/Guardian ID 1, Password: test
-- Email Change/Password reset does not work to combat spam!
