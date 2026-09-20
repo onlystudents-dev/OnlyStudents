@@ -20,7 +20,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build -o /go/bin/app .
 
 FROM gcr.io/distroless/static-debian13
-USER 1000
 WORKDIR /app
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
 COPY --from=serve /go/bin/app /app/app

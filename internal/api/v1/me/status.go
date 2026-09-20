@@ -28,6 +28,8 @@ type StatusData struct {
 	Nickname      string         `json:"nickname"`
 	EmailAddress  string         `json:"email_address"`
 	EmailVerified bool           `json:"email_verified"`
+	Theme         string         `json:"theme"`
+	Lang          string         `json:"lang"`
 	Children      []ChildrenData `json:"children"`
 }
 
@@ -66,6 +68,8 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			Nickname:      account.Nickname,
 			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
+			Theme:         account.Theme,
+			Lang:          account.Lang,
 			Children:      []ChildrenData{},
 		}
 
@@ -98,6 +102,8 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			Nickname:      account.Nickname,
 			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
+			Theme:         account.Theme,
+			Lang:          account.Lang,
 			Children:      guardian_children_data,
 		}
 
@@ -117,6 +123,8 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			Nickname:      account.Nickname,
 			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
+			Theme:         account.Theme,
+			Lang:          account.Lang,
 			Children:      []ChildrenData{},
 		}
 

@@ -10,6 +10,7 @@ import (
 	adminapi "onlystudents/internal/api/v1/admin"
 	meapi "onlystudents/internal/api/v1/me"
 	manageapi "onlystudents/internal/api/v1/me/manage"
+	timetableapi "onlystudents/internal/api/v1/me/manage/timetable"
 	"onlystudents/internal/db"
 	"onlystudents/internal/helpers"
 	env "onlystudents/internal/helpers"
@@ -22,6 +23,16 @@ import (
 )
 
 func main() {
+	if !fiber.IsChild() {
+		f, err := helpers.SetupLogging()
+
+		if err != nil {
+			panic(err)
+		}
+
+		defer f.Close()
+	}
+
 	pool := db.Connect()
 
 	if !fiber.IsChild() {
@@ -114,17 +125,24 @@ func main() {
 	})
 
 	api_v1 := api.Group("/v1")
-
-	admin_group := api_v1.Group("/admin", apiLimit, func(c fiber.Ctx) error {
-		return middlewares.RequireRoleMiddleware(c, rdb, []string{"admin"})
-	})
-
-	admin_group.Post("/login", authLimit, func(c fiber.Ctx) error {
+	api_v1.Post("/admin/login", authLimit, func(c fiber.Ctx) error {
 		return v1.Login(c, pool, rdb)
 	})
 
-	admin_group.Post("/debug", authLimit, func(c fiber.Ctx) error {
-		return adminapi.AdminDebug(c, pool, rdb)
+	admin_group := api_v1.Group("/admin", apiLimit,
+		func(c fiber.Ctx) error {
+			return middlewares.AuthMiddleware(c, rdb)
+		},
+		func(c fiber.Ctx) error {
+			return middlewares.RequireRoleMiddleware(c, rdb, []string{"admin"})
+		})
+
+	admin_group.Get("/logs", func(c fiber.Ctx) error {
+		return adminapi.AdminLogs(c, pool, rdb)
+	})
+
+	admin_group.Post("/run_sql", func(c fiber.Ctx) error {
+		return adminapi.AdminRunSQL(c, pool, rdb)
 	})
 
 	me_group := api_v1.Group("/me", apiLimit, func(c fiber.Ctx) error {
@@ -147,6 +165,14 @@ func main() {
 		return meapi.ChangeNickname(c, pool, rdb)
 	})
 
+	me_group.Post("/change_theme", func(c fiber.Ctx) error {
+		return meapi.ChangeTheme(c, pool, rdb)
+	})
+
+	me_group.Post("/change_lang", func(c fiber.Ctx) error {
+		return meapi.ChangeLang(c, pool, rdb)
+	})
+
 	me_group.Post("/verify_email", authLimit, func(c fiber.Ctx) error {
 		return meapi.VerifyEmailRequest(c, pool, rdb)
 	})
@@ -159,20 +185,12 @@ func main() {
 		return meapi.Status(c, pool, rdb)
 	})
 
-	me_group.Get("/timetable", func(c fiber.Ctx) error {
-		return c.SendStatus(501) // NOTE: Future codebase update for timetable should replace this
-	})
-
 	me_group.Get("/grades", func(c fiber.Ctx) error {
 		return meapi.Grades(c, pool, rdb)
 	})
 
 	me_group.Get("/final_grades", func(c fiber.Ctx) error {
 		return meapi.FinalGrades(c, pool, rdb)
-	})
-
-	me_group.Get("/absences", func(c fiber.Ctx) error {
-		return meapi.Absences(c, pool, rdb)
 	})
 
 	me_group.Get("/exams", func(c fiber.Ctx) error {
@@ -183,8 +201,148 @@ func main() {
 		return meapi.Homework(c, pool, rdb)
 	})
 
+	me_group.Get("/timetable", func(c fiber.Ctx) error {
+		return meapi.ReadMyRealTimeTable(c, pool, rdb)
+	})
+
+	me_group.Get("/timetable/base", func(c fiber.Ctx) error {
+		return meapi.ReadBaseSchedule(c, pool, rdb)
+	})
+
+	me_group.Get("/timetable/lesson_time", func(c fiber.Ctx) error {
+		return meapi.ReadLessonTime(c, pool, rdb)
+	})
+
+	me_group.Get("/timetable/room", func(c fiber.Ctx) error {
+		return meapi.ReadRoom(c, pool, rdb)
+	})
+
+	me_group.Get("/timetable/custom_subject", func(c fiber.Ctx) error {
+		return meapi.ReadCustomSubject(c, pool, rdb)
+	})
+
+	me_group.Get("/timetable/bell_schedule_type", func(c fiber.Ctx) error {
+		return meapi.ReadBellScheduleType(c, pool, rdb)
+	})
+
 	manage_group := me_group.Group("/manage", func(c fiber.Ctx) error {
 		return middlewares.RequireRoleMiddleware(c, rdb, []string{"teacher"})
+	})
+
+	timetable_group := manage_group.Group("/timetable")
+
+	timetable_group.Post("/bell_schedule_type", func(c fiber.Ctx) error {
+		return timetableapi.CreateBellScheduleType(c, pool, rdb)
+	})
+	timetable_group.Patch("/bell_schedule_type", func(c fiber.Ctx) error {
+		return timetableapi.EditBellScheduleType(c, pool, rdb)
+	})
+	timetable_group.Delete("/bell_schedule_type", func(c fiber.Ctx) error {
+		return timetableapi.DeleteBellScheduleType(c, pool, rdb)
+	})
+	timetable_group.Get("/bell_schedule_type", func(c fiber.Ctx) error {
+		return timetableapi.ReadBellScheduleType(c, pool, rdb)
+	})
+
+	timetable_group.Post("/lesson_time", func(c fiber.Ctx) error {
+		return timetableapi.CreateLessonTime(c, pool, rdb)
+	})
+	timetable_group.Patch("/lesson_time", func(c fiber.Ctx) error {
+		return timetableapi.EditLessonTime(c, pool, rdb)
+	})
+	timetable_group.Delete("/lesson_time", func(c fiber.Ctx) error {
+		return timetableapi.DeleteLessonTime(c, pool, rdb)
+	})
+	timetable_group.Get("/lesson_time", func(c fiber.Ctx) error {
+		return timetableapi.ReadLessonTime(c, pool, rdb)
+	})
+
+	timetable_group.Post("/custom_subject", func(c fiber.Ctx) error {
+		return timetableapi.CreateCustomSubject(c, pool, rdb)
+	})
+	timetable_group.Patch("/custom_subject", func(c fiber.Ctx) error {
+		return timetableapi.EditCustomSubject(c, pool, rdb)
+	})
+	timetable_group.Delete("/custom_subject", func(c fiber.Ctx) error {
+		return timetableapi.DeleteCustomSubject(c, pool, rdb)
+	})
+	timetable_group.Get("/custom_subject", func(c fiber.Ctx) error {
+		return timetableapi.ReadCustomSubject(c, pool, rdb)
+	})
+
+	timetable_group.Post("/room", func(c fiber.Ctx) error {
+		return timetableapi.CreateRoom(c, pool, rdb)
+	})
+	timetable_group.Patch("/room", func(c fiber.Ctx) error {
+		return timetableapi.UpdateRoom(c, pool, rdb)
+	})
+	timetable_group.Delete("/room", func(c fiber.Ctx) error {
+		return timetableapi.DeleteRoom(c, pool, rdb)
+	})
+	timetable_group.Get("/room", func(c fiber.Ctx) error {
+		return timetableapi.ReadRoom(c, pool, rdb)
+	})
+
+	timetable_group.Post("/group", func(c fiber.Ctx) error {
+		return timetableapi.CreateGroup(c, pool, rdb)
+	})
+	timetable_group.Patch("/group", func(c fiber.Ctx) error {
+		return timetableapi.EditGroup(c, pool, rdb)
+	})
+	timetable_group.Delete("/group", func(c fiber.Ctx) error {
+		return timetableapi.DeleteGroup(c, pool, rdb)
+	})
+	timetable_group.Get("/group", func(c fiber.Ctx) error {
+		return timetableapi.ReadGroup(c, pool, rdb)
+	})
+	timetable_group.Post("/group/student", func(c fiber.Ctx) error {
+		return timetableapi.InsertStudentToGroup(c, pool, rdb)
+	})
+	timetable_group.Delete("/group/student", func(c fiber.Ctx) error {
+		return timetableapi.DeleteStudentFromGroup(c, pool, rdb)
+	})
+	timetable_group.Get("/group/student", func(c fiber.Ctx) error {
+		return timetableapi.ReadStudentFromGroup(c, pool, rdb)
+	})
+
+	timetable_group.Post("/base_schedule", func(c fiber.Ctx) error {
+		return timetableapi.CreateBaseSchedule(c, pool, rdb)
+	})
+	timetable_group.Patch("/base_schedule", func(c fiber.Ctx) error {
+		return timetableapi.UpdateBaseSchedule(c, pool, rdb)
+	})
+	timetable_group.Delete("/base_schedule", func(c fiber.Ctx) error {
+		return timetableapi.DeleteBaseSchedule(c, pool, rdb)
+	})
+	timetable_group.Get("/base_schedule/class", func(c fiber.Ctx) error {
+		return timetableapi.ReadBaseScheduleClass(c, pool, rdb)
+	})
+	timetable_group.Get("/base_schedule/group", func(c fiber.Ctx) error {
+		return timetableapi.ReadBaseScheduleGroup(c, pool, rdb)
+	})
+
+	timetable_group.Post("/realtime", func(c fiber.Ctx) error {
+		return timetableapi.CreateRealTimeLesson(c, pool, rdb)
+	})
+	timetable_group.Patch("/realtime", func(c fiber.Ctx) error {
+		return timetableapi.UpdateRealTimeLesson(c, pool, rdb)
+	})
+	timetable_group.Delete("/realtime", func(c fiber.Ctx) error {
+		return timetableapi.DeleteRealTimeLesson(c, pool, rdb)
+	})
+	timetable_group.Get("/realtime", func(c fiber.Ctx) error {
+		return timetableapi.ReadRealTimeTable(c, pool, rdb)
+	})
+
+	timetable_group.Post("/canceled_lesson", func(c fiber.Ctx) error {
+		return timetableapi.AddCanceledLesson(c, pool, rdb)
+	})
+	timetable_group.Delete("/canceled_lesson", func(c fiber.Ctx) error {
+		return timetableapi.RemoveCanceledLesson(c, pool, rdb)
+	})
+
+	timetable_group.Patch("/substitution", func(c fiber.Ctx) error {
+		return timetableapi.UpdateSubstitution(c, pool, rdb)
 	})
 
 	manage_group.Get("/add_exam", func(c fiber.Ctx) error {

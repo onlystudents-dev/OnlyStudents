@@ -11,27 +11,128 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addFinalGrade = `-- name: AddFinalGrade :exec
+INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value) VALUES ($1, $2, $3, $4, $5)
+`
+
+type AddFinalGradeParams struct {
+	StudentID       int32
+	ClassSubjectsID int32
+	TermID          int32
+	TeacherID       int32
+	Value           int16
+}
+
+func (q *Queries) AddFinalGrade(ctx context.Context, arg AddFinalGradeParams) error {
+	_, err := q.db.Exec(ctx, addFinalGrade,
+		arg.StudentID,
+		arg.ClassSubjectsID,
+		arg.TermID,
+		arg.TeacherID,
+		arg.Value,
+	)
+	return err
+}
+
+const addGrade = `-- name: AddGrade :exec
+INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+`
+
+type AddGradeParams struct {
+	StudentID       int32
+	ClassSubjectsID int32
+	TeacherID       int32
+	TermID          int32
+	GradeTypeID     int32
+	Value           int16
+	Date            pgtype.Date
+	Note            pgtype.Text
+}
+
+func (q *Queries) AddGrade(ctx context.Context, arg AddGradeParams) error {
+	_, err := q.db.Exec(ctx, addGrade,
+		arg.StudentID,
+		arg.ClassSubjectsID,
+		arg.TeacherID,
+		arg.TermID,
+		arg.GradeTypeID,
+		arg.Value,
+		arg.Date,
+		arg.Note,
+	)
+	return err
+}
+
+const editFinalGrade = `-- name: EditFinalGrade :exec
+UPDATE final_grades SET class_subjects_id = $2, term_id = $3, teacher_id = $4, value = $5 WHERE id = $1
+`
+
+type EditFinalGradeParams struct {
+	ID              int64
+	ClassSubjectsID int32
+	TermID          int32
+	TeacherID       int32
+	Value           int16
+}
+
+func (q *Queries) EditFinalGrade(ctx context.Context, arg EditFinalGradeParams) error {
+	_, err := q.db.Exec(ctx, editFinalGrade,
+		arg.ID,
+		arg.ClassSubjectsID,
+		arg.TermID,
+		arg.TeacherID,
+		arg.Value,
+	)
+	return err
+}
+
+const editGrade = `-- name: EditGrade :exec
+UPDATE grades SET class_subjects_id = $2, teacher_id = $3, term_id = $4, grade_type_id = $5, value = $5, date = $6, note = $7 WHERE id = $1
+`
+
+type EditGradeParams struct {
+	ID              int64
+	ClassSubjectsID int32
+	TeacherID       int32
+	TermID          int32
+	GradeTypeID     int32
+	Date            pgtype.Date
+	Note            pgtype.Text
+}
+
+func (q *Queries) EditGrade(ctx context.Context, arg EditGradeParams) error {
+	_, err := q.db.Exec(ctx, editGrade,
+		arg.ID,
+		arg.ClassSubjectsID,
+		arg.TeacherID,
+		arg.TermID,
+		arg.GradeTypeID,
+		arg.Date,
+		arg.Note,
+	)
+	return err
+}
+
 const getStudentFinalGrades = `-- name: GetStudentFinalGrades :many
 SELECT
     fg.id,
-    s.name AS subject,
+    s.subject_name AS subject,
     s.code AS subject_code,
     CONCAT(t.first_name, ' ', t.last_name) AS teacher,
     ter.name AS term,
     fg.value
 FROM final_grades fg
-JOIN class_subjects cs ON cs.id = fg.class_subjects_id
-JOIN subjects s ON s.id = cs.subject_id
+JOIN subjects s ON s.id = fg.class_subjects_id
 JOIN teachers t ON t.id = fg.teacher_id
 JOIN terms ter ON ter.id = fg.term_id
 WHERE fg.student_id = $1
-ORDER BY fg.term_id, s.name
+ORDER BY fg.term_id, s.subject_name
 `
 
 type GetStudentFinalGradesRow struct {
 	ID          int64
 	Subject     string
-	SubjectCode string
+	SubjectCode pgtype.Text
 	Teacher     interface{}
 	Term        string
 	Value       int16
@@ -67,7 +168,7 @@ func (q *Queries) GetStudentFinalGrades(ctx context.Context, studentID int32) ([
 const getStudentGrades = `-- name: GetStudentGrades :many
 SELECT
     g.id,
-    s.name AS subject,
+    s.subject_name AS subject,
     s.code AS subject_code,
     CONCAT(t.first_name, ' ', t.last_name) AS teacher,
     ter.name AS term,
@@ -76,19 +177,18 @@ SELECT
     g.date,
     g.note
 FROM grades g
-JOIN class_subjects cs ON cs.id = g.class_subjects_id
-JOIN subjects s ON s.id = cs.subject_id
+JOIN subjects s ON s.id = g.class_subjects_id
 JOIN teachers t ON t.id = g.teacher_id
 JOIN terms ter ON ter.id = g.term_id
 JOIN grade_types gt ON gt.id = g.grade_type_id
 WHERE g.student_id = $1
-ORDER BY g.term_id, s.name, g.date
+ORDER BY g.term_id, s.subject_name, g.date
 `
 
 type GetStudentGradesRow struct {
 	ID          int64
 	Subject     string
-	SubjectCode string
+	SubjectCode pgtype.Text
 	Teacher     interface{}
 	Term        string
 	Type        string
@@ -130,7 +230,7 @@ func (q *Queries) GetStudentGrades(ctx context.Context, studentID int32) ([]GetS
 const getTeacherGrades = `-- name: GetTeacherGrades :many
 SELECT
     g.id,
-    s.name AS subject,
+    s.subject_name AS subject,
     s.code AS subject_code,
     CONCAT(t.first_name, ' ', t.last_name) AS teacher,
     ter.name AS term,
@@ -139,19 +239,18 @@ SELECT
     g.date,
     g.note
 FROM grades g
-JOIN class_subjects cs ON cs.id = g.class_subjects_id
-JOIN subjects s ON s.id = cs.subject_id
+JOIN subjects s ON s.id = g.class_subjects_id
 JOIN teachers t ON t.id = g.teacher_id
 JOIN terms ter ON ter.id = g.term_id
 JOIN grade_types gt ON gt.id = g.grade_type_id
 WHERE g.teacher_id = $1
-ORDER BY g.term_id, s.name, g.date
+ORDER BY g.term_id, s.subject_name, g.date
 `
 
 type GetTeacherGradesRow struct {
 	ID          int64
 	Subject     string
-	SubjectCode string
+	SubjectCode pgtype.Text
 	Teacher     interface{}
 	Term        string
 	Type        string

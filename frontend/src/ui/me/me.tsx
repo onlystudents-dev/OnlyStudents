@@ -5,21 +5,22 @@ import Button from "./button.tsx";
 import {
     faAddressCard,
     faEnvelope, faFloppyDisk, faLanguage,
-    faLock, faPaperPlane,
+    faLock, faPaintRoller, faPaperPlane,
     faRightFromBracket, faRotateLeft,
     faUser,
     faUserLock
 } from "@fortawesome/free-solid-svg-icons";
 import {useRef, useState} from "react";
 import Loading from "../../util/loading.tsx";
-import {fromResponse, getKey, getLanguage, getLanguages} from "../../util/language.ts";
+import {fromResponse, getKey, getLanguage, languages, setLanguage} from "../../util/language.ts";
 import Config, {DropdownConfig} from "./config.tsx";
 import {toast} from "react-toastify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import PasswordCheck from "../../auth/pwc.tsx";
 import Save from "../../util/save/save.tsx";
+import {getAutoTheme, setTheme, themes} from "../../util/theme.ts";
 
-export type option = "language"
+export type option = "language" | "theme"
 
 export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void>}) {
     const ref = useRef<HTMLDivElement>(null)
@@ -48,10 +49,16 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
     const [passed, setPassed] = useState(false)
 
     const [options, setOptions] = useState<Record<option, unknown>>({
-        language: localStorage.getItem("language") || ""
+        language: me.lang,
+        theme: me.theme,
     })
 
-    const autolang = getLanguage(true)
+    const autolang = getLanguage(me, true)
+
+    const methods: Record<option, (option: string) => Promise<[Response, () => void]>> = {
+        language: setLanguage,
+        theme: setTheme,
+    }
 
     return (
         <>
@@ -67,8 +74,14 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
                                <>
                                    <DropdownConfig text={getKey("LANGUAGE")} icon={faLanguage} value={options.language as string} options={options} setOptions={setOptions} lkey={"language"}>
                                        <option value="">{getKey("AUTOLANG", `${autolang?.emoji} ${autolang?.name}`)}</option>
-                                       {getLanguages().map((language) => (
+                                       {languages.map((language) => (
                                            <option value={language.key}>{language.emoji} {language.name}</option>
+                                       ))}
+                                   </DropdownConfig>
+                                   <DropdownConfig text={getKey("THEME")} icon={faPaintRoller} value={options.theme as string} options={options} setOptions={setOptions} lkey={"theme"}>
+                                       <option value="">{getKey("AUTOTHEME", getKey(`THEMES.${getAutoTheme()}`))}</option>
+                                       {themes.map(theme => (
+                                           theme && <option value={theme}>{getKey(`THEMES.${theme}`)}</option>
                                        ))}
                                    </DropdownConfig>
                                </>
@@ -163,9 +176,24 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
         </>
     )
 
-    function save() {
-        localStorage.setItem("language", options.language as string)
-        location.reload()
+    async function save(diff: Record<string, unknown>) {
+        const a: (() => void)[] = []
+
+        for (const [option, method] of Object.entries(methods)) {
+            if (!Object.keys(diff).includes(option)) continue
+            const [response, after] = await method(options[option as option] as string)
+
+            if (!response.ok) {
+                toast.error(fromResponse(response))
+                return
+            }
+
+            a.push(after)
+        }
+
+        for (const after of a) {
+            after()
+        }
     }
 
     async function sendEmail() {
