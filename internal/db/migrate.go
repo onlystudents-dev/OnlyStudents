@@ -42,10 +42,8 @@ func RunMigrations(conn *pgxpool.Pool) error {
 	}
 
 	migration_files = slices.DeleteFunc(migration_files, func(migration_file fs.DirEntry) bool {
-		if !constants.MigrationRegex.MatchString(migration_file.Name()) {
-			if migration_file.Name() != "demo.sql" {
-				fmt.Fprintf(os.Stderr, "Found invalid migration file: %v\n", migration_file.Name())
-			}
+		if !constants.MigrationRegex.MatchString(migration_file.Name()) && migration_file.Name() != "demo.sql" {
+			fmt.Fprintf(os.Stderr, "Found invalid migration file: %v\n", migration_file.Name())
 			return true
 		}
 
