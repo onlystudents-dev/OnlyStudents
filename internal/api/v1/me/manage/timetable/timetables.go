@@ -82,6 +82,35 @@ type DeleteRealTimeLessonRequest struct {
 	Id int32 `json:"id"`
 }
 
+type BaseScheduleLessonResponse struct {
+	ID              int32       `json:"id"`
+	SchoolID        int32       `json:"school_id"`
+	TeacherID       int32       `json:"teacher_id"`
+	RoomID          int32       `json:"room_id"`
+	DayOfWeek       int32       `json:"day_of_week"`
+	LessonNum       int32       `json:"lesson_num"`
+	GroupID         int32       `json:"group_id"`
+	CustomSubject   bool        `json:"custom_subject"`
+	SubjectID       pgtype.Int4 `json:"subject_id"`
+	CustomSubjectID pgtype.Int4 `json:"custom_subject_id"`
+	SubjectName     string      `json:"subject_name"`
+}
+
+type RealTimeLessonResponse struct {
+	RoomID             int32       `json:"room_id"`
+	LessonNum          int32       `json:"lesson_num"`
+	DayOfWeek          int32       `json:"day_of_week"`
+	EffectiveTeacherID int32       `json:"effective_teacher_id"`
+	GroupID            int32       `json:"group_id"`
+	SchoolID           int32       `json:"school_id"`
+	CustomSubject      bool        `json:"custom_subject"`
+	SubjectID          pgtype.Int4 `json:"subject_id"`
+	CustomSubjectID    pgtype.Int4 `json:"custom_subject_id"`
+	SubjectName        string      `json:"subject_name"`
+	IsSubstitution     bool        `json:"is_substitution"`
+	Canceled           bool        `json:"canceled"`
+}
+
 func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateBaseScheduleLessonRequest
 
@@ -285,7 +314,25 @@ func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	lessons := make([]BaseScheduleLessonResponse, 0, len(data))
+
+	for _, row := range data {
+		lessons = append(lessons, BaseScheduleLessonResponse{
+			ID:              row.ID,
+			SchoolID:        row.SchoolID,
+			TeacherID:       row.TeacherID,
+			RoomID:          row.RoomID,
+			DayOfWeek:       row.DayOfWeek,
+			LessonNum:       row.LessonNum,
+			GroupID:         row.GroupID,
+			CustomSubject:   row.CustomSubject,
+			SubjectID:       row.SubjectID,
+			CustomSubjectID: row.CustomSubjectID,
+			SubjectName:     row.SubjectName,
+		})
+	}
+
+	return c.JSON(lessons)
 }
 
 func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -324,7 +371,25 @@ func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	lessons := make([]BaseScheduleLessonResponse, 0, len(data))
+
+	for _, row := range data {
+		lessons = append(lessons, BaseScheduleLessonResponse{
+			ID:              row.ID,
+			SchoolID:        row.SchoolID,
+			TeacherID:       row.TeacherID,
+			RoomID:          row.RoomID,
+			DayOfWeek:       row.DayOfWeek,
+			LessonNum:       row.LessonNum,
+			GroupID:         row.GroupID,
+			CustomSubject:   row.CustomSubject,
+			SubjectID:       row.SubjectID,
+			CustomSubjectID: row.CustomSubjectID,
+			SubjectName:     row.SubjectName,
+		})
+	}
+
+	return c.JSON(lessons)
 }
 
 func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -381,7 +446,26 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	lessons := make([]RealTimeLessonResponse, 0, len(data))
+
+	for _, row := range data {
+		lessons = append(lessons, RealTimeLessonResponse{
+			RoomID:             row.RoomID,
+			LessonNum:          row.LessonNum,
+			DayOfWeek:          row.DayOfWeek,
+			EffectiveTeacherID: row.EffectiveTeacherID,
+			GroupID:            row.GroupID,
+			SchoolID:           row.SchoolID,
+			CustomSubject:      row.CustomSubject,
+			SubjectID:          row.SubjectID,
+			CustomSubjectID:    row.CustomSubjectID,
+			SubjectName:        row.SubjectName,
+			IsSubstitution:     row.IsSubstitution,
+			Canceled:           row.Canceled,
+		})
+	}
+
+	return c.JSON(lessons)
 }
 
 func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
