@@ -16,6 +16,58 @@ type ReadLessonTimeRequest struct {
 	TypeID int32 `json:"type_id" query:"type_id"`
 }
 
+type TimetableLesson struct {
+	RoomID             int32       `json:"room_id"`
+	LessonNum          int32       `json:"lesson_num"`
+	DayOfWeek          int32       `json:"day_of_week"`
+	EffectiveTeacherID int32       `json:"effective_teacher_id"`
+	GroupID            int32       `json:"group_id"`
+	SchoolID           int32       `json:"school_id"`
+	CustomSubject      bool        `json:"custom_subject"`
+	SubjectID          pgtype.Int4 `json:"subject_id"`
+	CustomSubjectID    pgtype.Int4 `json:"custom_subject_id"`
+	IsSubstitution     bool        `json:"is_substitution"`
+	Canceled           bool        `json:"canceled"`
+}
+
+type TimetableBaseLesson struct {
+	ID              int32       `json:"id"`
+	SchoolID        int32       `json:"school_id"`
+	TeacherID       int32       `json:"teacher_id"`
+	RoomID          int32       `json:"room_id"`
+	DayOfWeek       int32       `json:"day_of_week"`
+	LessonNum       int32       `json:"lesson_num"`
+	GroupID         int32       `json:"group_id"`
+	CustomSubject   bool        `json:"custom_subject"`
+	SubjectID       pgtype.Int4 `json:"subject_id"`
+	CustomSubjectID pgtype.Int4 `json:"custom_subject_id"`
+}
+
+type TimetableBellSchedule struct {
+	ID           int32       `json:"id"`
+	SchoolID     int32       `json:"school_id"`
+	TypeID       int32       `json:"type_id"`
+	LessonNumber pgtype.Int4 `json:"lesson_number"`
+	AtStart      pgtype.Time `json:"at_start"`
+	AtEnd        pgtype.Time `json:"at_end"`
+}
+
+type TimetableRoom struct {
+	ID       int32  `json:"id"`
+	Name     string `json:"name"`
+	Capacity int32  `json:"capacity"`
+}
+
+type TimetableCustomSubject struct {
+	ID          int32  `json:"id"`
+	SubjectName string `json:"subject_name"`
+}
+
+type TimetableBellScheduleType struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
 func parseDateRange(c fiber.Ctx) (time.Time, time.Time, error) {
 	start_date := c.Query("start_date", "none")
 
@@ -69,7 +121,25 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	lessons := make([]TimetableLesson, 0, len(data))
+
+	for _, row := range data {
+		lessons = append(lessons, TimetableLesson{
+			RoomID:             row.RoomID,
+			LessonNum:          row.LessonNum,
+			DayOfWeek:          row.DayOfWeek,
+			EffectiveTeacherID: row.EffectiveTeacherID,
+			GroupID:            row.GroupID,
+			SchoolID:           row.SchoolID,
+			CustomSubject:      row.CustomSubject,
+			SubjectID:          row.SubjectID,
+			CustomSubjectID:    row.CustomSubjectID,
+			IsSubstitution:     row.IsSubstitution,
+			Canceled:           row.Canceled,
+		})
+	}
+
+	return c.JSON(lessons)
 }
 
 func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -90,7 +160,24 @@ func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	lessons := make([]TimetableBaseLesson, 0, len(data))
+
+	for _, row := range data {
+		lessons = append(lessons, TimetableBaseLesson{
+			ID:              row.ID,
+			SchoolID:        row.SchoolID,
+			TeacherID:       row.TeacherID,
+			RoomID:          row.RoomID,
+			DayOfWeek:       row.DayOfWeek,
+			LessonNum:       row.LessonNum,
+			GroupID:         row.GroupID,
+			CustomSubject:   row.CustomSubject,
+			SubjectID:       row.SubjectID,
+			CustomSubjectID: row.CustomSubjectID,
+		})
+	}
+
+	return c.JSON(lessons)
 }
 
 func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -117,7 +204,20 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	lesson_times := make([]TimetableBellSchedule, 0, len(data))
+
+	for _, row := range data {
+		lesson_times = append(lesson_times, TimetableBellSchedule{
+			ID:           row.ID,
+			SchoolID:     row.SchoolID,
+			TypeID:       row.TypeID,
+			LessonNumber: row.LessonNumber,
+			AtStart:      row.AtStart,
+			AtEnd:        row.AtEnd,
+		})
+	}
+
+	return c.JSON(lesson_times)
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -134,7 +234,17 @@ func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	rooms := make([]TimetableRoom, 0, len(data))
+
+	for _, row := range data {
+		rooms = append(rooms, TimetableRoom{
+			ID:       row.ID,
+			Name:     row.Name,
+			Capacity: row.Capacity,
+		})
+	}
+
+	return c.JSON(rooms)
 }
 
 func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -151,7 +261,16 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	custom_subjects := make([]TimetableCustomSubject, 0, len(data))
+
+	for _, row := range data {
+		custom_subjects = append(custom_subjects, TimetableCustomSubject{
+			ID:          row.ID,
+			SubjectName: row.SubjectName,
+		})
+	}
+
+	return c.JSON(custom_subjects)
 }
 
 func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -168,5 +287,14 @@ func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(500)
 	}
 
-	return c.JSON(data)
+	bell_schedule_types := make([]TimetableBellScheduleType, 0, len(data))
+
+	for _, row := range data {
+		bell_schedule_types = append(bell_schedule_types, TimetableBellScheduleType{
+			ID:   row.ID,
+			Name: row.Name,
+		})
+	}
+
+	return c.JSON(bell_schedule_types)
 }
