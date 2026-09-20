@@ -11,6 +11,6 @@
 }
 
 .overlay {
-    @apply fixed w-screen min-h-screen inset-0;
+    @apply fixed w-screen inset-0;
     backdrop-filter: blur(2px);
 }

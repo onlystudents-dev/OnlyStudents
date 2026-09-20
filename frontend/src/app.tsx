@@ -44,10 +44,12 @@ export default function App() {
             const meR = await fetch("/api/v1/me/status");
             if (meR.status === 429) {
                 const seconds = meR.headers.get("Retry-After")
-                if (seconds == null) return
+                if (seconds == null) return false
+                await fetchLanguage(null)
                 setRatelimit(Number(seconds))
-                return
+                return false
             }
+            if (meR.status === 401) return true
             const meJ = await meR.json();
             setMe(meJ);
             return meJ;
@@ -58,9 +60,11 @@ export default function App() {
         function Fetch() {
             fetchMe()
                 .then(me => {
-                    if (me) applyTheme(me)
-                    fetchLanguage(me)
-                        .then(() => setLoading(false))
+                    if (me) {
+                        applyTheme(me)
+                        fetchLanguage(me)
+                            .then(() => setLoading(false))
+                    } else setLoading(false)
                 })
         }
 
@@ -70,7 +74,7 @@ export default function App() {
 
     return (
         <>
-            {ratelimit !== -1 ? <RateLimit retry={ratelimit} /> : loading ? <Loading /> : !me ? <Login /> : (
+            {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={() => location.reload()} standalone /> : loading ? <Loading /> : !me ? <Login /> : (
                 <BrowserRouter>
                     <Routes>
                         <Route path="/" element={<Home me={me} />} />

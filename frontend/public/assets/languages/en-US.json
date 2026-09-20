@@ -31,7 +31,7 @@
     "SECURITY": "Security",
     "LOGOUT": "Log out",
     "RATE_LIMITED": "You've been rate limited!",
-    "AUTO_REFRESH": "Will auto-refresh in %1 seconds",
+    "BACK_IN": "You will get back in %1 seconds",
     "EMAIL": "Email",
     "NICKNAME": "Nickname",
     "CHANGE_EMAIL": "Change email",
@@ -52,7 +52,15 @@
     "THEME": "Theme",
     "AUTOTHEME": "Auto (%1)",
     "THEMES.dark": "Dark",
-    "THEMES.light": "Light"
+    "THEMES.light": "Light",
+    "DAYS.monday": "Monday",
+    "DAYS.tuesday": "Tuesday",
+    "DAYS.wednesday": "Wednesday",
+    "DAYS.thursday": "Thursday",
+    "DAYS.friday": "Friday",
+    "DAYS.saturday": "Saturday",
+    "DAYS.sunday": "Sunday",
+    "TERM": "Term"
   },
   "errors": {
     "WRONG_CREDENTIALS": "The username doesn't pair with the password!",
