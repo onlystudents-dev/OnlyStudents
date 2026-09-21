@@ -32,23 +32,49 @@ type Room = {
     capacity: number,
 }
 
+type Class = {
+    id: number,
+    school_id: number,
+    name: string,
+    teacher_id: number,
+    has_co_teacher_id: boolean,
+    co_teacher_id: number,
+    has_bell_id: boolean,
+    bell_id: number,
+}
+
+type LessonTime = {
+    id: number,
+    school_id: number,
+    type_id: number,
+    lesson_number: number,
+    at_start: LessonTimeDate,
+    at_end: LessonTimeDate,
+}
+
+type LessonTimeDate = {
+    Microseconds: number,
+    Valid: boolean,
+}
+
 type day = {
     date: string,
     lessons: Lesson[],
 }
 
 export default function StudentTimetable({ me }: {me: Me}) {
-    const [rooms, setRooms] = React.useState<Room[]>([])
+    const [rooms, setRooms] = useState<Room[]>([])
+    const [lessonTime, setLessonTime] = useState<LessonTime[]>([])
 
-    const [monday, setMonday] = React.useState<day>({date: "", lessons: []})
-    const [tuesday, setTuesday] = React.useState<day>({date: "", lessons: []})
-    const [wednesday, setWednesday] = React.useState<day>({date: "", lessons: []})
-    const [thursday, setThursday] = React.useState<day>({date: "", lessons: []})
-    const [friday, setFriday] = React.useState<day>({date: "", lessons: []})
-    const [saturday, setSaturday] = React.useState<day>({date: "", lessons: []})
-    const [sunday, setSunday] = React.useState<day>({date: "", lessons: []})
+    const [monday, setMonday] = useState<day>({date: "", lessons: []})
+    const [tuesday, setTuesday] = useState<day>({date: "", lessons: []})
+    const [wednesday, setWednesday] = useState<day>({date: "", lessons: []})
+    const [thursday, setThursday] = useState<day>({date: "", lessons: []})
+    const [friday, setFriday] = useState<day>({date: "", lessons: []})
+    const [saturday, setSaturday] = useState<day>({date: "", lessons: []})
+    const [sunday, setSunday] = useState<day>({date: "", lessons: []})
 
-    const [year, setYear] = React.useState<string>("")
+    const [year, setYear] = useState<string>("")
 
     const [ratelimit, setRateLimit] = useState(-1)
 
@@ -114,17 +140,32 @@ export default function StudentTimetable({ me }: {me: Me}) {
     useEffect(() => {
         async function Fetch() {
             await fetchWeekLessons()
-            const response = await fetch("/api/v1/me/timetable/room")
-            if (!response) {
-                await fromResponse(response)
-                return
+
+            async function fetchInto<T>(
+                api: string,
+                method?: React.Dispatch<React.SetStateAction<T>>
+            ) {
+                const response = await fetch(api)
+
+                if (!response.ok) {
+                    await fromResponse(response)
+                    return
+                }
+
+                const json = await response.json() as T
+
+                if (method) method(json)
+                return json
             }
 
-            setRooms(await response.json())
+            await Promise.all([
+                fetchInto("/api/v1/me/timetable/room", setRooms),
+                fetchInto<Class>("/api/v1/me/class").then(clazz => fetchInto(`/api/v1/me/timetable/lesson_time?type_id=${clazz?.bell_id}`, setLessonTime)),
+            ])
         }
 
         Fetch()
-    }, [fetchWeekLessons]);
+    }, [fetchWeekLessons])
 
     const days: Record<string, day> = {
         monday,
@@ -175,7 +216,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                                             <FontAwesomeIcon icon={faHouseChimney} />
                                         </span>}
                                     </div>
-                                    <h2></h2>
+                                    <h2>{toHoursAndMinutes(lesson)}</h2>
                                 </div>
                             </div>
                         ))}
@@ -190,11 +231,26 @@ export default function StudentTimetable({ me }: {me: Me}) {
         </>
     )
 
+    function toHoursAndMinutes(lesson: Lesson) {
+        const time = lessonTime.find(lt => lt.lesson_number === lesson.lesson_num)
+        if (!time) return ""
+
+        const language = getLanguage(me)?.key || "en-US"
+
+        const format = (microseconds: number) =>
+            new Intl.DateTimeFormat(language, {
+                hour: "numeric",
+                minute: "2-digit",
+            }).format(new Date(microseconds / 1000))
+
+        return `${format(time.at_start.Microseconds)}-${format(time.at_end.Microseconds)}`
+    }
+
     function formatUnixDate(unix: number, locale: string): string {
         return new Intl.DateTimeFormat(locale, {
             month: "short",
             day: "numeric",
-        }).format(new Date(unix * 1000));
+        }).format(new Date(unix * 1000))
     }
 
     function getWeekRange(date: Date) {

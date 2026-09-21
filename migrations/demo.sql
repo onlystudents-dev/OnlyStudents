@@ -19,10 +19,20 @@ INSERT INTO schools (
              1, 1, '+0000000000', 'school@school.test'
          );
 
-INSERT INTO classes (
-    id, school_id, name, teacher_id
+INSERT INTO bell_schedule_type (
+    id,
+    school_id,
+    name
 ) VALUES (
-             1, 1, 'Default Class', 1
+             1,
+             1,
+             'Default'
+         );
+
+INSERT INTO classes (
+    id, school_id, name, teacher_id, bell_id
+) VALUES (
+             1, 1, 'Default Class', 1, 1
          );
 
 INSERT INTO students (
@@ -211,16 +221,6 @@ INSERT INTO permissions (
          );
 
 -- Test timetable setup
-
-INSERT INTO bell_schedule_type (
-    id,
-    school_id,
-    name
-) VALUES (
-             1,
-             1,
-             'Default'
-         );
 
 INSERT INTO bell_schedule (
     school_id,
