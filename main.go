@@ -252,6 +252,14 @@ func main() {
 		return meapi.ReadCustomSubject(c, pool, rdb)
 	})
 
+	me_group.Get("/class", func(c fiber.Ctx) error {
+		return meapi.ReadClass(c, pool, rdb)
+	})
+
+	me_group.Get("/groups", func(c fiber.Ctx) error {
+		return meapi.ReadGroups(c, pool, rdb)
+	})
+
 	me_group.Get("/timetable/bell_schedule_type", func(c fiber.Ctx) error {
 		return meapi.ReadBellScheduleType(c, pool, rdb)
 	})

@@ -11,8 +11,9 @@ import (
 )
 
 type readerScope struct {
-	SchoolID int32
-	ClassID  int32
+	SchoolID  int32
+	ClassID   int32
+	StudentID int32
 }
 
 func ResolveReaderScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (readerScope, error) {
@@ -43,7 +44,7 @@ func ResolveReaderScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (rea
 		return readerScope{}, errors.New("invalid scope")
 	}
 
-	return readerScope{SchoolID: student.SchoolID, ClassID: student.ClassesID}, nil
+	return readerScope{StudentID: studentID, SchoolID: student.SchoolID, ClassID: student.ClassesID}, nil
 }
 
 func ResolvePerson(c fiber.Ctx, queries db_queries.Queries, session_data SessionData) (int32, error) {
