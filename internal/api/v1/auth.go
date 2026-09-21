@@ -247,7 +247,7 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 	return c.SendStatus(501)
 
 	// invalidate cached account object which has the old password hash
-	helpers.InvalidateCachedAccount(c.Context(), rdb, sessionData.Role, sessionData.AccountID)
+	// helpers.InvalidateCachedAccount(c.Context(), rdb, sessionData.Role, sessionData.AccountID)
 
-	return c.SendStatus(200)
+	// return c.SendStatus(200)
 }
