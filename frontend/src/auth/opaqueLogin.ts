@@ -1,4 +1,4 @@
-import * as opaque from "@serenity-kit/opaque";
+import {ready, client} from "@serenity-kit/opaque";
 
 export type OpaqueLoginResult =
   | { status: "ok" }
@@ -10,10 +10,10 @@ export async function opaqueLogin(params: {
   userId: number; role: string; password: string;
   identifiers?: { client?: string; server?: string };
 }): Promise<OpaqueLoginResult> {
-  await opaque.ready;
+  await ready;
   try {
     const { clientLoginState, startLoginRequest } =
-      opaque.client.startLogin({ password: params.password });
+      client.startLogin({ password: params.password });
 
     const initRes = await fetch("/api/login/init", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -24,7 +24,7 @@ export async function opaqueLogin(params: {
 
     const { login_response, login_handle } = await initRes.json();
 
-    const result = opaque.client.finishLogin({
+    const result = client.finishLogin({
       clientLoginState, loginResponse: login_response, password: params.password,
       ...(params.identifiers ? { identifiers: params.identifiers } : {}),
     });

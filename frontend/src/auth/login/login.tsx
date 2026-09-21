@@ -6,7 +6,7 @@ import {faArrowRight, faQuestion} from "@fortawesome/free-solid-svg-icons";
 import PasswordReset from "../pwr/pwr.tsx";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
-import {fromResponse, getKey} from "../../util/language.ts";
+import {getKey} from "../../util/language.ts";
 import { opaqueLogin } from "../opaqueLogin.ts";
 
 export default function Login() {
