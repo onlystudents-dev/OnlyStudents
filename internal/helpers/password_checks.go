@@ -97,17 +97,19 @@ func PasswordChecks(c fiber.Ctx, password string, confirm_password string) (bool
 		})
 	}
 
-	breached, err := HaveIBeenPwnedCheck(password)
+	if GetEnvFallback("HIBP_CHECK_ENABLED", "false") == "true" {
+		breached, err := HaveIBeenPwnedCheck(password)
 
-	if err != nil {
-		slog.Error("have i been pwned error", "err", err)
-		return false, c.SendStatus(500)
-	}
+		if err != nil {
+			slog.Error("have i been pwned error", "err", err)
+			return false, c.SendStatus(500)
+		}
 
-	if breached {
-		return false, c.Status(400).JSON(fiber.Map{
-			"error": "PASSWORD_EXPOSED",
-		})
+		if breached {
+			return false, c.Status(400).JSON(fiber.Map{
+				"error": "PASSWORD_EXPOSED",
+			})
+		}
 	}
 
 	return true, nil

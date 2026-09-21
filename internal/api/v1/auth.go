@@ -3,82 +3,122 @@ package v1
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
+	"errors"
+
 	"fmt"
 	"log/slog"
 	"math/big"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"onlystudents/internal/mail"
+	opaquepkg "onlystudents/internal/opaque"
 	"time"
 
+	"github.com/bytemare/opaque"
+	"github.com/goccy/go-json"
+
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
 
-type loginRequest struct {
-	User     int32  `json:"user"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+type loginInitRequest struct {
+	User              int32             `json:"user"`
+	Role              string            `json:"role"`
+	StartLoginRequest opaquepkg.Message `json:"start_login_request"`
 }
 
-var dummyPasswordHash = func() string {
-	h, err := helpers.Argon2HashPassword("timing-equalization-dummy")
-	if err != nil {
-		panic(err)
-	}
-	return h
-}()
+type forgetPasswordRequest struct {
+	User int32  `json:"user"`
+	Role string `json:"role"`
+}
 
-func Login(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req loginRequest
+type loginInitResponse struct {
+	LoginResponse opaquepkg.Message `json:"login_response"`
+	LoginHandle   string            `json:"login_handle"`
+}
+
+type loginFinishRequest struct {
+	LoginHandle        string            `json:"login_handle"`
+	FinishLoginRequest opaquepkg.Message `json:"finish_login_request"`
+}
+
+func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
+	var req loginInitRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
 	}
 
-	if req.User <= 0 || req.Password == "" || req.Role == "" {
+	if req.User <= 0 || req.Role == "" || len(req.StartLoginRequest) == 0 {
 		return c.SendStatus(400)
 	}
+
+	var record *opaque.ClientRecord
 
 	queries := db_queries.New(pool)
 	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, req.Role, req.User, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 
-	if err != nil {
-		// run argon2verify on a dummy hash (if the hash isnt a dummy, you could still do enumeration because "" would fail instantly) to fix timing-based enumeration attacks, if the account does not exist, it would not verify with argon2, which would have a slight latency difference
-		helpers.Argon2Verify(req.Password, dummyPasswordHash)
-		return c.Status(401).JSON(fiber.Map{
-			"error": "WRONG_CREDENTIALS",
-		})
-	}
+	switch {
+	case err == nil:
+		opaque_record, rerr := queries.GetOpaqueRecord(c.Context(), account.ID)
+		if rerr != nil {
+			record = opaquepkg.FakeRecord
+		} else {
+			reg, derr := opaque_server.Deserialize.RegistrationRecord(opaque_record.RegistrationRecord)
 
-	if !helpers.Argon2Verify(req.Password, account.PasswordHash) {
-		return c.Status(401).JSON(fiber.Map{
-			"error": "WRONG_CREDENTIALS",
-		})
-	}
-
-	session_token, err := helpers.SessionCreate(c.Context(), rdb, req.User, req.Role)
-	if err != nil {
+			if derr != nil {
+				slog.Error("corrupt opaque record", "err", derr)
+				return c.SendStatus(500)
+			}
+			record = &opaque.ClientRecord{
+				CredentialIdentifier: []byte(account.ID.String()),
+				RegistrationRecord:   reg,
+			}
+		}
+	case errors.Is(err, pgx.ErrNoRows):
+		record = opaquepkg.FakeRecord
+	default:
+		slog.Error("login init account lookup", "err", err)
 		return c.SendStatus(500)
+	}
+
+	ke2, handle, err := opaquepkg.LoginInit(c.Context(), opaque_server, rdb, record, req.StartLoginRequest)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	return c.JSON(loginInitResponse{LoginResponse: ke2, LoginHandle: handle})
+}
+
+func LoginFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
+	var req loginFinishRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	if req.LoginHandle == "" {
+		return c.SendStatus(400)
+	}
+
+	sessionToken, err := opaquepkg.LoginFinish(c.Context(), opaque_server, rdb, pool, req.LoginHandle, req.FinishLoginRequest)
+
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "WRONG_CREDENTIALS"})
 	}
 
 	duration := time.Duration(helpers.GetInt64EnvFallback("SESSION_TTL", 3600, 2592000)) * time.Second
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "session_token",
-		Value:    session_token,
+		Value:    sessionToken,
 		Expires:  time.Now().Add(duration),
 		HTTPOnly: true,
 		Secure:   helpers.GetEnvFallback("APP_ENV", "development") == "production",
 		SameSite: "Lax",
 	})
 
-	return c.JSON(helpers.SessionData{
-		Role:      req.Role,
-		AccountID: req.User,
-	})
+	return c.SendStatus(200)
 }
 
 func Logout(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -115,7 +155,7 @@ func generateResetCode(length int) (string, error) {
 }
 
 func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req loginRequest
+	var req forgetPasswordRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(200)
 	}
@@ -203,43 +243,11 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(500)
 	}
 
-	hashedPassword, err := helpers.Argon2HashPassword(req.Password)
-	if err != nil {
-		slog.Error("password hashing error", "err", err)
-		return c.SendStatus(500)
-	}
-
-	queries := db_queries.New(pool)
-
-	if sessionData.Role == "guardian" {
-		err = queries.ResetPasswordGuardian(c.Context(), db_queries.ResetPasswordGuardianParams{PasswordHash: hashedPassword, GuardianID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
-
-		if err != nil {
-			slog.Error("password recovery error", "err", err)
-			return c.SendStatus(500)
-		}
-	}
-
-	if sessionData.Role == "student" {
-		err = queries.ResetPasswordStudent(c.Context(), db_queries.ResetPasswordStudentParams{PasswordHash: hashedPassword, StudentID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
-
-		if err != nil {
-			slog.Error("password recovery error", "err", err)
-			return c.SendStatus(500)
-		}
-	}
-
-	if sessionData.Role == "teacher" {
-		err = queries.ResetPasswordTeacher(c.Context(), db_queries.ResetPasswordTeacherParams{PasswordHash: hashedPassword, TeacherID: pgtype.Int4{Int32: sessionData.AccountID, Valid: true}})
-
-		if err != nil {
-			slog.Error("password recovery error", "err", err)
-			return c.SendStatus(500)
-		}
-	}
+	// IMPORTANT TODO: OPAQUE password change
+	return c.SendStatus(501)
 
 	// invalidate cached account object which has the old password hash
-	helpers.InvalidateCachedAccount(c.Context(), rdb, sessionData.Role, sessionData.AccountID)
+	// helpers.InvalidateCachedAccount(c.Context(), rdb, sessionData.Role, sessionData.AccountID)
 
-	return c.SendStatus(200)
+	// return c.SendStatus(200)
 }

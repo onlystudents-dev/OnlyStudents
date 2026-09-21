@@ -1,9 +1,14 @@
 # OnlyStudents
 This is a student diary app, mimicking ekreta.hu, but modern, fast and just better.
 
+# WARNING
+This is pre-alpha software, untested, and does have a ton of breaking API and other changes constantly. There is no versioning system yet either.
+Right now, password resets and forget password don't work at all due to the addition of OPAQUE for registration/login, and no OPAQUE registration path set up yet. For testing/development, `DEMO_MODE=true` can be used right now which registers demo accounts to OPAQUE. See `Demo Mode Credentials`
+
 # Installation
 - Copy `.env.example` to `.env`
-- Populate the variables in `.env`
+- Run `go run ./cmd/opaque-setup` to get OPAQUE secrets and put them inside `.env`
+- Populate the other variables in `.env`
 - Run `docker compose up -d` or `podman compose up -d` depending on your configuration. Rootless Docker/Podman is supported with no additional changes needed.
 
 # Features (some planned, some implemented)

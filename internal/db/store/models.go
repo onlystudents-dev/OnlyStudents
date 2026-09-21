@@ -22,7 +22,6 @@ type Absence struct {
 type Account struct {
 	ID            pgtype.UUID
 	Role          string
-	PasswordHash  string
 	StudentID     pgtype.Int4
 	TeacherID     pgtype.Int4
 	GuardianID    pgtype.Int4
@@ -32,6 +31,14 @@ type Account struct {
 	Lang          string
 	PfpUrl        string
 	Nickname      string
+}
+
+type AccountOpaque struct {
+	AccountUuid          pgtype.UUID
+	RegistrationRecord   []byte
+	CredentialIdentifier []byte
+	CreatedAt            pgtype.Date
+	UpdatedAt            pgtype.Date
 }
 
 type Announcement struct {
@@ -249,6 +256,13 @@ type SchoolYear struct {
 	StartDate pgtype.Date
 	EndDate   pgtype.Date
 	IsActive  bool
+}
+
+type Session struct {
+	ID          pgtype.UUID
+	AccountUuid pgtype.UUID
+	CreatedAt   pgtype.Date
+	LastSeenAt  pgtype.Date
 }
 
 type Student struct {

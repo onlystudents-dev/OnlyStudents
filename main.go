@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -15,6 +17,7 @@ import (
 	"onlystudents/internal/helpers"
 	env "onlystudents/internal/helpers"
 	"onlystudents/internal/middlewares"
+	opaquepkg "onlystudents/internal/opaque"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
@@ -23,6 +26,10 @@ import (
 )
 
 func main() {
+	if helpers.GetEnvFallback("DEMO_MODE", "false") == "true" && env.GetEnvFallback("APP_ENV", "development") == "production" {
+		slog.Warn("DEMO_MODE = true is not recommended in production!")
+	}
+
 	if !fiber.IsChild() {
 		f, err := helpers.SetupLogging()
 
@@ -50,11 +57,27 @@ func main() {
 	})
 	defer rdb.Close()
 
+	opaque_server, err := opaquepkg.CreateServerFromEnv()
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create OPAQUE server: %s", err))
+	}
+
+	if err := opaquepkg.InitFakeRecord(opaquepkg.Conf); err != nil {
+		panic(fmt.Sprintf("Failed to initialize OPAQUE fake record: %s", err))
+	}
+
+	if !fiber.IsChild() && helpers.GetEnvFallback("DEMO_MODE", "false") == "true" {
+		if err := opaquepkg.SeedDemo(context.Background(), pool, opaque_server); err != nil {
+			panic(fmt.Sprintf("Failed to seed demo accounts: %s", err))
+		}
+	}
+
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
 		AppName:     "OnlyStudents",
-		BodyLimit:   1 << 20,
+		BodyLimit:   1 << 18,
 		TrustProxy:  helpers.GetEnvFallback("TRUST_PROXY", "false") == "true",
 		ProxyHeader: fiber.HeaderXForwardedFor,
 		TrustProxyConfig: fiber.TrustProxyConfig{
@@ -112,8 +135,12 @@ func main() {
 		return middlewares.RateLimitMiddleware(c, rdb, "forget", forgetRateMax, forgetRateWindow)
 	}
 
-	api.Post("/login", authLimit, func(c fiber.Ctx) error {
-		return v1.Login(c, pool, rdb)
+	api.Post("/login/init", authLimit, func(c fiber.Ctx) error {
+		return v1.LoginInit(c, pool, rdb, opaque_server)
+	})
+
+	api.Post("/login/finish", authLimit, func(c fiber.Ctx) error {
+		return v1.LoginFinish(c, pool, rdb, opaque_server)
 	})
 
 	api.Post("/forget_password", forgetLimit, func(c fiber.Ctx) error {
@@ -125,8 +152,12 @@ func main() {
 	})
 
 	api_v1 := api.Group("/v1")
-	api_v1.Post("/admin/login", authLimit, func(c fiber.Ctx) error {
-		return v1.Login(c, pool, rdb)
+	api_v1.Post("/admin/login/init", authLimit, func(c fiber.Ctx) error {
+		return v1.LoginInit(c, pool, rdb, opaque_server)
+	})
+
+	api_v1.Post("/admin/login/finish", authLimit, func(c fiber.Ctx) error {
+		return v1.LoginFinish(c, pool, rdb, opaque_server)
 	})
 
 	admin_group := api_v1.Group("/admin", apiLimit,
@@ -219,6 +250,14 @@ func main() {
 
 	me_group.Get("/timetable/custom_subject", func(c fiber.Ctx) error {
 		return meapi.ReadCustomSubject(c, pool, rdb)
+	})
+
+	me_group.Get("/class", func(c fiber.Ctx) error {
+		return meapi.ReadClass(c, pool, rdb)
+	})
+
+	me_group.Get("/groups", func(c fiber.Ctx) error {
+		return meapi.ReadGroups(c, pool, rdb)
 	})
 
 	me_group.Get("/timetable/bell_schedule_type", func(c fiber.Ctx) error {

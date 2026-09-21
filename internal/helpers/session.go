@@ -12,11 +12,13 @@ import (
 )
 
 type SessionData struct {
-	Role      string `json:"role"`
-	AccountID int32  `json:"account_id"`
+	Role        string `json:"role"`
+	AccountID   int32  `json:"account_id"`
+	AccountUUID string `json:"account_uuid"`
+	DeviceID    string `json:"device_id"`
 }
 
-func SessionCreate(ctx context.Context, rdb *redis.Client, accountID int32, role string) (string, error) {
+func SessionCreate(ctx context.Context, rdb *redis.Client, accountID int32, accountUUID string, DeviceID string, role string) (string, error) {
 	buf := make([]byte, GetUintEnvFallback("SESSION_COOKIE_LEN", 32))
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
@@ -25,7 +27,7 @@ func SessionCreate(ctx context.Context, rdb *redis.Client, accountID int32, role
 
 	ttl := time.Duration(GetInt64EnvFallback("SESSION_TTL", 3600, 2592000)) * time.Second
 
-	val, err := json.Marshal(SessionData{Role: role, AccountID: accountID})
+	val, err := json.Marshal(SessionData{Role: role, AccountID: accountID, DeviceID: DeviceID, AccountUUID: accountUUID})
 
 	if err != nil {
 		return "", err

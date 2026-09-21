@@ -165,7 +165,6 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {

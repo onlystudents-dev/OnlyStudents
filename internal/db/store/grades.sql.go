@@ -87,7 +87,7 @@ func (q *Queries) EditFinalGrade(ctx context.Context, arg EditFinalGradeParams) 
 }
 
 const editGrade = `-- name: EditGrade :exec
-UPDATE grades SET class_subjects_id = $2, teacher_id = $3, term_id = $4, grade_type_id = $5, value = $5, date = $6, note = $7 WHERE id = $1
+UPDATE grades SET class_subjects_id = $2, teacher_id = $3, term_id = $4, grade_type_id = $5, value = $6, date = $7, note = $8 WHERE id = $1
 `
 
 type EditGradeParams struct {
@@ -96,6 +96,7 @@ type EditGradeParams struct {
 	TeacherID       int32
 	TermID          int32
 	GradeTypeID     int32
+	Value           int16
 	Date            pgtype.Date
 	Note            pgtype.Text
 }
@@ -107,6 +108,7 @@ func (q *Queries) EditGrade(ctx context.Context, arg EditGradeParams) error {
 		arg.TeacherID,
 		arg.TermID,
 		arg.GradeTypeID,
+		arg.Value,
 		arg.Date,
 		arg.Note,
 	)
