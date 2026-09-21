@@ -66,7 +66,6 @@ func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server
 			record = opaquepkg.FakeRecord
 		} else {
 			reg, derr := opaque_server.Deserialize.RegistrationRecord(opaque_record.RegistrationRecord)
-			slog.Info(derr.Error())
 
 			if derr != nil {
 				slog.Error("corrupt opaque record", "err", derr)
@@ -85,7 +84,6 @@ func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server
 	}
 
 	ke2, handle, err := opaquepkg.LoginInit(c.Context(), opaque_server, rdb, record, req.StartLoginRequest)
-	slog.Info(err.Error())
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
