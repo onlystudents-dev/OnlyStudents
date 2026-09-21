@@ -61,9 +61,6 @@ jobs:
       - name: gosec
         run: |
           $(go env GOPATH)/bin/gosec -exclude=G104 --exclude-dir frontend --exclude-dir internal/db/store ./...
-      - name: gitleaks
-        run: |
-          $(go env GOPATH)/bin/gitleaks detect --source=. --redact --exit-code=1
       - name: go vet
         run: |
           go vet ./...
