@@ -73,6 +73,7 @@ export default function App() {
     }, [])
 
     const byRole = (guardian: ReactNode, student: ReactNode, teacher: ReactNode) => {
+        if (!me) return <Loading />
         switch (me.role) {
             case "guardian":
                 return guardian
@@ -89,13 +90,40 @@ export default function App() {
         <>
             {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={() => location.reload()} standalone /> : loading ? <Loading /> : !me ? <Login /> : (
                 <Switch>
-                    <Route path="/">{() => <Home me={me} />}</Route>
-                    <Route path="/me">{() => <Me me={me} fetchMe={fetchMe} />}</Route>
-                    <Route path="/homeworks">{() => byRole(<GuardianHomeworks me={me} />, <StudentHomeworks me={me} />, <TeacherHomeworks me={me} />)}</Route>
-                    <Route path="/timetable">{() => byRole(<GuardianTimetable me={me} />, <StudentTimetable me={me} />, <TeacherTimetable me={me} />)}</Route>
-                    <Route path="/absences">{() => byRole(<GuardianAbsences me={me} />, <StudentAbsences me={me} />, <TeacherAbsences me={me} />)}</Route>
-                    <Route path="/grades">{() => byRole(<GuardianGrades me={me} />, <StudentGrades me={me} />, <TeacherGrades me={me} />)}</Route>
-                    <Route>{() => <Loading />}</Route>
+                    <Route path="/">
+                        <Home me={me} />
+                    </Route>
+                    <Route path="/me">
+                        <Me me={me} fetchMe={fetchMe} />
+                    </Route>
+                    <Route path="/homeworks">
+                        {() => byRole(
+                            <GuardianHomeworks me={me} />,
+                            <StudentHomeworks me={me} />,
+                            <TeacherHomeworks me={me} />
+                        )}
+                    </Route>
+                    <Route path="/timetable">
+                        {() => byRole(
+                            <GuardianTimetable me={me} />,
+                            <StudentTimetable me={me} />,
+                            <TeacherTimetable me={me} />
+                        )}
+                    </Route>
+                    <Route path="/absences">
+                        {() => byRole(
+                            <GuardianAbsences me={me} />,
+                            <StudentAbsences me={me} />,
+                            <TeacherAbsences me={me} />
+                        )}
+                    </Route>
+                    <Route path="/grades">
+                        {() => byRole(
+                            <GuardianGrades me={me} />,
+                            <StudentGrades me={me} />,
+                            <TeacherGrades me={me} />
+                        )}
+                    </Route>
                 </Switch>
             )}
             <ToastContainer theme={"dark"} position={"bottom-right"} />
