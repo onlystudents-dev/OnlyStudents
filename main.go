@@ -90,7 +90,7 @@ func main() {
 	})
 
 	// frontend
-	app.Use("/assets/fonts", static.New("frontend/dist/assets/fonts", static.Config{MaxAge: 31536000, Compress: true}))
+	app.Use("/assets/fonts", static.New("frontend/dist/assets/fonts", static.Config{MaxAge: 31536000}))
 	app.Use("/assets", static.New("frontend/dist/assets", static.Config{MaxAge: 3600, Compress: true}))
 	paths := []string{
 		"/",
