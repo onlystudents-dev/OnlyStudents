@@ -1,7 +1,7 @@
-import {BrowserRouter, Route, Routes} from "react-router";
+import {Route, Switch} from "wouter";
 import Home from "./home.tsx";
 import {ToastContainer} from "react-toastify";
-import {useEffect, useState} from "react";
+import {useEffect, useState, type ReactNode} from "react";
 import Login from "./auth/login/login.tsx";
 import Loading from "./util/loading.tsx";
 import GuardianHomeworks from "./ui/guardian/homeworks.tsx";
@@ -72,63 +72,31 @@ export default function App() {
         Fetch()
     }, [])
 
+    const byRole = (guardian: ReactNode, student: ReactNode, teacher: ReactNode) => {
+        switch (me.role) {
+            case "guardian":
+                return guardian
+            case "student":
+                return student
+            case "teacher":
+                return teacher
+            default:
+                return <Loading />
+        }
+    }
+
     return (
         <>
             {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={() => location.reload()} standalone /> : loading ? <Loading /> : !me ? <Login /> : (
-                <BrowserRouter>
-                    <Routes>
-                        <Route path="/" element={<Home me={me} />} />
-                        <Route path="/me" element={<Me me={me} fetchMe={fetchMe} />} />
-                        <Route path="/homeworks" element={(() => {
-                            switch (me.role) {
-                                case "guardian":
-                                    return <GuardianHomeworks me={me} />
-                                case "student":
-                                    return <StudentHomeworks me={me} />
-                                case "teacher":
-                                    return <TeacherHomeworks me={me} />
-                                default:
-                                    return <Loading />
-                            }
-                        })()} />
-                        <Route path="/timetable" element={(() => {
-                            switch (me.role) {
-                                case "guardian":
-                                    return <GuardianTimetable me={me} />
-                                case "student":
-                                    return <StudentTimetable me={me} />
-                                case "teacher":
-                                    return <TeacherTimetable me={me} />
-                                default:
-                                    return <Loading />
-                            }
-                        })()} />
-                        <Route path="/absences" element={(() => {
-                            switch (me.role) {
-                                case "guardian":
-                                    return <GuardianAbsences me={me} />
-                                case "student":
-                                    return <StudentAbsences me={me} />
-                                case "teacher":
-                                    return <TeacherAbsences me={me} />
-                                default:
-                                    return <Loading />
-                            }
-                        })()} />
-                        <Route path="/grades" element={(() => {
-                            switch (me.role) {
-                                case "guardian":
-                                    return <GuardianGrades me={me} />
-                                case "student":
-                                    return <StudentGrades me={me} />
-                                case "teacher":
-                                    return <TeacherGrades me={me} />
-                                default:
-                                    return <Loading />
-                            }
-                        })()} />
-                    </Routes>
-                </BrowserRouter>
+                <Switch>
+                    <Route path="/">{() => <Home me={me} />}</Route>
+                    <Route path="/me">{() => <Me me={me} fetchMe={fetchMe} />}</Route>
+                    <Route path="/homeworks">{() => byRole(<GuardianHomeworks me={me} />, <StudentHomeworks me={me} />, <TeacherHomeworks me={me} />)}</Route>
+                    <Route path="/timetable">{() => byRole(<GuardianTimetable me={me} />, <StudentTimetable me={me} />, <TeacherTimetable me={me} />)}</Route>
+                    <Route path="/absences">{() => byRole(<GuardianAbsences me={me} />, <StudentAbsences me={me} />, <TeacherAbsences me={me} />)}</Route>
+                    <Route path="/grades">{() => byRole(<GuardianGrades me={me} />, <StudentGrades me={me} />, <TeacherGrades me={me} />)}</Route>
+                    <Route>{() => <Loading />}</Route>
+                </Switch>
             )}
             <ToastContainer theme={"dark"} position={"bottom-right"} />
         </>
