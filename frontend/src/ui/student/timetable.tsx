@@ -60,19 +60,20 @@ type LessonTimeDate = {
 type day = {
     date: string,
     lessons: Lesson[],
+    today: boolean
 }
 
 export default function StudentTimetable({ me }: {me: Me}) {
     const [rooms, setRooms] = useState<Room[]>([])
     const [lessonTime, setLessonTime] = useState<LessonTime[]>([])
 
-    const [monday, setMonday] = useState<day>({date: "", lessons: []})
-    const [tuesday, setTuesday] = useState<day>({date: "", lessons: []})
-    const [wednesday, setWednesday] = useState<day>({date: "", lessons: []})
-    const [thursday, setThursday] = useState<day>({date: "", lessons: []})
-    const [friday, setFriday] = useState<day>({date: "", lessons: []})
-    const [saturday, setSaturday] = useState<day>({date: "", lessons: []})
-    const [sunday, setSunday] = useState<day>({date: "", lessons: []})
+    const [monday, setMonday] = useState<day>({date: "", lessons: [], today: false})
+    const [tuesday, setTuesday] = useState<day>({date: "", lessons: [], today: false})
+    const [wednesday, setWednesday] = useState<day>({date: "", lessons: [], today: false})
+    const [thursday, setThursday] = useState<day>({date: "", lessons: [], today: false})
+    const [friday, setFriday] = useState<day>({date: "", lessons: [], today: false})
+    const [saturday, setSaturday] = useState<day>({date: "", lessons: [], today: false})
+    const [sunday, setSunday] = useState<day>({date: "", lessons: [], today: false})
 
     const [year, setYear] = useState<string>("")
 
@@ -103,37 +104,44 @@ export default function StudentTimetable({ me }: {me: Me}) {
 
         setMonday({
             date: formatUnixDate(mondayTime, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 1)
+            lessons: lessons.filter(lesson => lesson.day_of_week === 1),
+            today: monday.getDate() === new Date().getDate(),
         })
 
         setTuesday({
             date: formatUnixDate(mondayTime + day, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 2)
+            lessons: lessons.filter(lesson => lesson.day_of_week === 2),
+            today: monday.getDate() + 1 === new Date().getDate(),
         })
 
         setWednesday({
             date: formatUnixDate(mondayTime + day * 2, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 3)
+            lessons: lessons.filter(lesson => lesson.day_of_week === 3),
+            today: monday.getDate() + 2 === new Date().getDate(),
         })
 
         setThursday({
             date: formatUnixDate(mondayTime + day * 3, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 4)
+            lessons: lessons.filter(lesson => lesson.day_of_week === 4),
+            today: monday.getDate() + 3 === new Date().getDate(),
         })
 
         setFriday({
             date: formatUnixDate(mondayTime + day * 4, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 5)
+            lessons: lessons.filter(lesson => lesson.day_of_week === 5),
+            today: monday.getDate() + 4 === new Date().getDate(),
         })
 
         setSaturday({
             date: formatUnixDate(mondayTime + day * 5, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 6)
+            lessons: lessons.filter(lesson => lesson.day_of_week === 6),
+            today: monday.getDate() + 5 === new Date().getDate(),
         })
 
         setSunday({
             date: formatUnixDate(mondayTime + day * 6, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 0)
+            lessons: lessons.filter(lesson => lesson.day_of_week === 0),
+            today: monday.getDate() + 6 === new Date().getDate(),
         })
     }, [me])
 
@@ -186,7 +194,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
             <div className="w-full flex flex-row justify-center pt-4">
                 <h1 className="text-5xl rubik">{year} {getKey("TERM")}</h1>
             </div>
-            <div className="w-full h-fit p-4 gap-4 flex flex-row justify-center items-start">
+            <div className="w-full h-fit p-4 gap-4 flex flex-row justify-center items-stretch">
                 <div className="flex flex-col justify-center h-14">
                     <span className="icon" onClick={() => fetchWeekLessons(addDays(-7))}>
                         <FontAwesomeIcon icon={faAngleLeft} />
@@ -194,7 +202,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                 </div>
                 {Object.entries(days).filter(([, day]) => day.lessons.length > 0).map(([name, day]) => (
                     <div className="day">
-                        <div className="date">
+                        <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>
                             <h1 className="rubik">{getKey(`DAYS.${name}`)}</h1>
                             <p className="poppins">{day.date}</p>
                         </div>

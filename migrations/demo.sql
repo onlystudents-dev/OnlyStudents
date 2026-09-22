@@ -368,7 +368,13 @@ INSERT INTO time_table (
       (1, 1, 1, 5, 1, FALSE, 2, '2026-09-18', 1, FALSE, NULL, FALSE),
       (1, 1, 1, 5, 1, FALSE, 3, '2026-09-18', 2, FALSE, NULL, FALSE),
       (1, 1, 1, 5, 1, FALSE, 1, '2026-09-18', 3, FALSE, NULL, FALSE),
-      (1, 1, 1, 5, 1, FALSE, 5, '2026-09-18', 4, FALSE, NULL, FALSE);
+      (1, 1, 1, 5, 1, FALSE, 5, '2026-09-18', 4, FALSE, NULL, FALSE),
+
+      -- Friday 2026-09-18
+      (1, 1, 1, 6, 1, FALSE, 1, '2026-09-19', 1, FALSE, NULL, FALSE),
+      (1, 1, 1, 6, 1, FALSE, 4, '2026-09-19', 2, FALSE, NULL, FALSE),
+      (1, 1, 1, 6, 1, FALSE, 3, '2026-09-19', 3, FALSE, NULL, FALSE),
+      (1, 1, 1, 6, 1, FALSE, 5, '2026-09-19', 4, FALSE, NULL, FALSE);
 
 -- Homework
 
@@ -382,43 +388,43 @@ INSERT INTO homework (
       -- Monday
       (1, 1, 'Algebra gyakorló feladatok',
        'Oldd meg a 12–20. feladatokat a munkafüzetből.',
-       '2026-09-14'),
+       '2026-09-21'),
 
       (4, 1, 'English vocabulary',
        'Tanuld meg az Unit 1 szavait.',
-       '2026-09-14'),
+       '2026-09-21'),
 
       -- Tuesday
       (2, 1, 'Nyelvtani feladatlap',
        'A kijelölt nyelvtani feladatok megoldása.',
-       '2026-09-15'),
+       '2026-09-22'),
 
       (1, 1, 'Geometria gyakorlás',
        'Háromszögek és szögek gyakorlása.',
-       '2026-09-15'),
+       '2026-09-22'),
 
       -- Wednesday
       (5, 1, 'Informatika projekt',
        'Készíts egy rövid bemutatót a megadott témáról.',
-       '2026-09-16'),
+       '2026-09-23'),
 
       -- Thursday
-      (3, 1, 'Ókori Róma összefoglaló',
-       'Készíts egy egyoldalas összefoglalót.',
-       '2026-09-17'),
+      (1, 1, 'Dolgozatra készülés',
+       'Geometriai feladatok átnézése, megtanulása',
+       '2026-09-24'),
 
       (4, 1, 'English exercises',
        'Complete exercises 4–8 in the workbook.',
-       '2026-09-17'),
+       '2026-09-24'),
 
       -- Friday
       (1, 1, 'Törtek gyakorlása',
        'Oldd meg a kijelölt törtes feladatokat.',
-       '2026-09-18'),
+       '2026-09-25'),
 
       (5, 1, 'Programozási feladat',
        'Készíts egy egyszerű Java programot.',
-       '2026-09-18');
+       '2026-09-25');
 
 -- Exams
 
@@ -435,7 +441,7 @@ INSERT INTO exams (
       -- Monday
       (4, 1, 'Angol témazáró',
        'Unit 1 dolgozat.',
-       '2026-09-14',
+       '2026-09-21',
        '08:00',
        '08:45',
        1),
@@ -443,7 +449,7 @@ INSERT INTO exams (
       -- Tuesday
       (1, 1, 'Matematika dolgozat',
        'Algebra és egyenletek.',
-       '2026-09-15',
+       '2026-09-22',
        '08:55',
        '09:40',
        1),
@@ -451,7 +457,7 @@ INSERT INTO exams (
       -- Wednesday
       (5, 1, 'Informatika számonkérés',
        'Alapvető programozási ismeretek.',
-       '2026-09-16',
+       '2026-09-23',
        '08:55',
        '09:40',
        1),
@@ -459,7 +465,7 @@ INSERT INTO exams (
       -- Thursday
       (3, 1, 'Történelem témazáró',
        'Az ókori Róma.',
-       '2026-09-17',
+       '2026-09-24',
        '08:00',
        '08:45',
        1),
@@ -467,7 +473,7 @@ INSERT INTO exams (
       -- Friday
       (1, 1, 'Matematika témazáró',
        'Geometria.',
-       '2026-09-18',
+       '2026-09-25',
        '09:50',
        '10:35',
        1);

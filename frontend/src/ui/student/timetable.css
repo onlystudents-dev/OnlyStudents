@@ -3,7 +3,7 @@
 .day {
     @apply flex flex-col justify-start items-center w-80 gap-2;
     .date {
-        @apply flex flex-col justify-between items-center h-14;
+        @apply flex flex-col justify-between items-center h-14 w-full;
         h1 {
             @apply text-2xl;
         }
