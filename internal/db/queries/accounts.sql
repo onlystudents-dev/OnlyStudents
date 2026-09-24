@@ -1,3 +1,6 @@
+-- name: CreateAccount :exec
+INSERT INTO accounts (id,role,student_id,teacher_id,guardian_id,email_address,email_verified,theme,lang,pfp_url,nickname) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+
 -- name: GetAccountByStudentID :one
 SELECT * FROM accounts WHERE student_id = $1 AND role = 'student';
 

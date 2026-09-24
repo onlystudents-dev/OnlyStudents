@@ -7,7 +7,46 @@ package db_queries
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createTeacher = `-- name: CreateTeacher :one
+INSERT INTO teachers (phone_number,username,birth_first_name,birth_last_name,birth_date,birth_city,birth_country,permament_address,temporary_address,first_name,last_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id
+`
+
+type CreateTeacherParams struct {
+	PhoneNumber      string
+	Username         string
+	BirthFirstName   string
+	BirthLastName    string
+	BirthDate        pgtype.Date
+	BirthCity        string
+	BirthCountry     string
+	PermamentAddress string
+	TemporaryAddress string
+	FirstName        string
+	LastName         string
+}
+
+func (q *Queries) CreateTeacher(ctx context.Context, arg CreateTeacherParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createTeacher,
+		arg.PhoneNumber,
+		arg.Username,
+		arg.BirthFirstName,
+		arg.BirthLastName,
+		arg.BirthDate,
+		arg.BirthCity,
+		arg.BirthCountry,
+		arg.PermamentAddress,
+		arg.TemporaryAddress,
+		arg.FirstName,
+		arg.LastName,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
 
 const getTeacher = `-- name: GetTeacher :one
 SELECT id, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers WHERE id = $1

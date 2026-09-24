@@ -122,6 +122,23 @@ func CacheOrGetTeacherAbsences(ctx context.Context, rdb *redis.Client, queries d
 	})
 }
 
+func CacheOrGetStudentGroups(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, StudentID int32, SchoolID int32, ttl int32) ([]db_queries.Group, error) {
+	key := fmt.Sprintf("student_groups:%d:%d", SchoolID, StudentID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.Group, error) {
+		return queries.GetGroupsByStudentID(ctx, db_queries.GetGroupsByStudentIDParams{
+			StudentID: StudentID,
+			SchoolID:  SchoolID,
+		})
+	})
+}
+
+func CacheOrGetStudentClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, StudentID int32, ttl int32) (db_queries.Class, error) {
+	key := fmt.Sprintf("student_class:%d", StudentID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.Class, error) {
+		return queries.GetClassByID(ctx, StudentID)
+	})
+}
+
 func InvalidateCachedAccount(ctx context.Context, rdb *redis.Client, role string, account_id int32) {
 	switch role {
 	case "student":

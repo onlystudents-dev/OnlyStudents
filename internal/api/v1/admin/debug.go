@@ -1,10 +1,13 @@
 package adminapi
 
 import (
+	"fmt"
 	"io/fs"
 	"log/slog"
+	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,8 +19,15 @@ type LogFile struct {
 	Content string `json:"content"`
 }
 
-type runSQLRequest struct {
-	Cmd string `json:"cmd"`
+type AdminStatusData struct {
+	DBPing         int64  `json:"db_ping"`
+	RedisStatus    string `json:"redis_ping"`
+	DBQuerySuccess bool   `json:"db_query_success"`
+	SchoolCount    int64  `json:"school_count"`
+	AccountCount   int64  `json:"account_count"`
+	StudentCount   int64  `json:"student_count"`
+	TeacherCount   int64  `json:"teacher_count"`
+	GuardianCount  int64  `json:"guardian_count"`
 }
 
 func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -63,23 +73,64 @@ func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return c.JSON(log_json)
 }
 
-func AdminRunSQL(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func GetDBPing(c fiber.Ctx, pool *pgxpool.Pool) int64 {
+	var db_ping int64
+
+	start := time.Now().UnixMilli()
+	err := pool.Ping(c.Context())
+
+	if err != nil {
+		db_ping = -1
+	} else {
+		db_ping = time.Now().UnixMilli() - start
+	}
+
+	return db_ping
+}
+
+func GetRedisStatus(c fiber.Ctx, rdb *redis.Client) string {
+	var redis_db_status string
+
+	start := time.Now().UnixMilli()
+	_, err := rdb.Ping(c.Context()).Result()
+
+	if err != nil {
+		redis_db_status = fmt.Sprintf("Dragonfly returned error: %s in %d ms", err, time.Now().UnixMilli()-start)
+	} else {
+		redis_db_status = fmt.Sprintf("PONG in %d ms", time.Now().UnixMilli()-start)
+	}
+
+	return redis_db_status
+}
+
+func AdminStatus(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
 		return c.SendStatus(401)
 	}
 
-	var req runSQLRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
-	}
+	queries := db_queries.New(pool)
 
-	cmd_tag, err := pool.Exec(c.Context(), req.Cmd)
+	debug_data, err := queries.GetAdminDebugData(c.Context())
 
 	if err != nil {
-		return c.Status(400).SendString(err.Error())
+		slog.Error(fmt.Sprintf("Error getting debug data from Postgres DB: %s", err))
+		return c.JSON(AdminStatusData{
+			DBPing:         GetDBPing(c, pool),
+			RedisStatus:    GetRedisStatus(c, rdb),
+			DBQuerySuccess: false,
+		})
 	} else {
-		return c.Status(200).SendString(cmd_tag.String())
+		return c.JSON(AdminStatusData{
+			DBPing:         GetDBPing(c, pool),
+			RedisStatus:    GetRedisStatus(c, rdb),
+			DBQuerySuccess: true,
+			SchoolCount:    debug_data.SchoolCount,
+			AccountCount:   debug_data.AccountCount,
+			StudentCount:   debug_data.StudentCount,
+			TeacherCount:   debug_data.TeacherCount,
+			GuardianCount:  debug_data.GuardianCount,
+		})
 	}
 }

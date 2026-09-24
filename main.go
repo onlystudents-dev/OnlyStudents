@@ -172,8 +172,20 @@ func main() {
 		return adminapi.AdminLogs(c, pool, rdb)
 	})
 
-	admin_group.Post("/run_sql", func(c fiber.Ctx) error {
-		return adminapi.AdminRunSQL(c, pool, rdb)
+	admin_group.Get("/status", func(c fiber.Ctx) error {
+		return adminapi.AdminStatus(c, pool, rdb)
+	})
+
+	admin_group.Post("/enroll/student", func(c fiber.Ctx) error {
+		return adminapi.EnrollStudent(c, pool, rdb, opaque_server)
+	})
+
+	admin_group.Post("/enroll/teacher", func(c fiber.Ctx) error {
+		return adminapi.EnrollTeacher(c, pool, rdb, opaque_server)
+	})
+
+	admin_group.Post("/enroll/guardian", func(c fiber.Ctx) error {
+		return adminapi.EnrollGuardian(c, pool, rdb, opaque_server)
 	})
 
 	me_group := api_v1.Group("/me", apiLimit, func(c fiber.Ctx) error {
