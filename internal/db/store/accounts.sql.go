@@ -11,6 +11,41 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createAccount = `-- name: CreateAccount :exec
+INSERT INTO accounts (id,role,student_id,teacher_id,guardian_id,email_address,email_verified,theme,lang,pfp_url,nickname) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+`
+
+type CreateAccountParams struct {
+	ID            pgtype.UUID
+	Role          string
+	StudentID     pgtype.Int4
+	TeacherID     pgtype.Int4
+	GuardianID    pgtype.Int4
+	EmailAddress  pgtype.Text
+	EmailVerified bool
+	Theme         string
+	Lang          string
+	PfpUrl        string
+	Nickname      string
+}
+
+func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) error {
+	_, err := q.db.Exec(ctx, createAccount,
+		arg.ID,
+		arg.Role,
+		arg.StudentID,
+		arg.TeacherID,
+		arg.GuardianID,
+		arg.EmailAddress,
+		arg.EmailVerified,
+		arg.Theme,
+		arg.Lang,
+		arg.PfpUrl,
+		arg.Nickname,
+	)
+	return err
+}
+
 const getAccountByGuardianID = `-- name: GetAccountByGuardianID :one
 SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE guardian_id = $1 AND role = 'guardian'
 `

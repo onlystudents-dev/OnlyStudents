@@ -5,11 +5,13 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"html"
 	"log/slog"
 	"math/big"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"onlystudents/internal/mail"
+	"slices"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -81,6 +83,10 @@ func ChangeTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(400)
 	}
 
+	if req.Theme == "" || !slices.Contains(helpers.Themes, req.Theme) {
+		return c.SendStatus(400)
+	}
+
 	queries := db_queries.New(pool)
 
 	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
@@ -117,6 +123,10 @@ func ChangeLang(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	var req changeLangRequest
 	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	if req.Lang == "" || !slices.Contains(helpers.Languages, req.Lang) {
 		return c.SendStatus(400)
 	}
 
@@ -159,6 +169,10 @@ func ChangeNickname(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(400)
 	}
 
+	if len(req.Nickname) < 8 || len(req.Nickname) > 64 || html.EscapeString(req.Nickname) != req.Nickname {
+		return c.SendStatus(400)
+	}
+
 	queries := db_queries.New(pool)
 
 	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
@@ -198,7 +212,7 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(400)
 	}
 
-	if req.Password == "" || req.NewEmail == "" {
+	if req.Password == "" || req.NewEmail == "" || !helpers.EmailRegex.MatchString(req.NewEmail) {
 		return c.SendStatus(400)
 	}
 

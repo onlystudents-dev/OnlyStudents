@@ -28,7 +28,7 @@ func InitFakeRecord(conf *opaque.Configuration) error {
 	return nil
 }
 
-type enrollState struct {
+type EnrollState struct {
 	AccountUUID string `json:"account_uuid"`
 }
 
@@ -38,8 +38,8 @@ type loginState struct {
 }
 
 func EnrollInit(ctx context.Context, s *opaque.Server, rdb *redis.Client, enroll_token string, reqBytes []byte) (respBytes []byte, err error) {
-	if enroll_token == "" {
-		return []byte{}, errors.New("Missing args")
+	if enroll_token == "" || len(enroll_token) != helpers.GetIntEnvFallback("OPAQUE_ENROLL_TOKEN_LEN", 32, 512) {
+		return []byte{}, errors.New("Wrong args")
 	}
 
 	registration_req, err := s.Deserialize.RegistrationRequest(reqBytes)
@@ -50,7 +50,7 @@ func EnrollInit(ctx context.Context, s *opaque.Server, rdb *redis.Client, enroll
 
 	raw, err := rdb.Get(ctx, "enroll:"+enroll_token).Bytes()
 
-	var enroll_state enrollState
+	var enroll_state EnrollState
 
 	if err != nil {
 		return []byte{}, err
@@ -84,7 +84,7 @@ func EnrollFinish(ctx context.Context, s *opaque.Server, rdb *redis.Client, pool
 
 	raw, err := rdb.GetDel(ctx, "enroll:"+enroll_token).Bytes()
 
-	var enroll_state enrollState
+	var enroll_state EnrollState
 
 	if err != nil {
 		return "", err

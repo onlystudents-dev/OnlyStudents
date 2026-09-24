@@ -7,7 +7,44 @@ package db_queries
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createGuardian = `-- name: CreateGuardian :one
+INSERT INTO guardians (phone_number,first_name,last_name,birth_first_name,birth_last_name,birth_date,birth_city,birth_country,permament_address,temporary_address) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
+`
+
+type CreateGuardianParams struct {
+	PhoneNumber      string
+	FirstName        string
+	LastName         string
+	BirthFirstName   string
+	BirthLastName    string
+	BirthDate        pgtype.Date
+	BirthCity        string
+	BirthCountry     string
+	PermamentAddress string
+	TemporaryAddress string
+}
+
+func (q *Queries) CreateGuardian(ctx context.Context, arg CreateGuardianParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createGuardian,
+		arg.PhoneNumber,
+		arg.FirstName,
+		arg.LastName,
+		arg.BirthFirstName,
+		arg.BirthLastName,
+		arg.BirthDate,
+		arg.BirthCity,
+		arg.BirthCountry,
+		arg.PermamentAddress,
+		arg.TemporaryAddress,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
 
 const getGuardian = `-- name: GetGuardian :one
 SELECT id, phone_number, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address FROM guardians WHERE id = $1

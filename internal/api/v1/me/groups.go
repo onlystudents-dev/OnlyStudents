@@ -38,7 +38,7 @@ func ReadClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	queries := db_queries.New(pool)
 
-	class_data, err := queries.GetClassByID(c.Context(), scope.ClassID)
+	class_data, err := helpers.CacheOrGetStudentClass(c.Context(), rdb, *queries, scope.StudentID, helpers.GetInt32EnvFallback("CLASS_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
 		return c.SendStatus(500)
@@ -71,9 +71,7 @@ func ReadGroups(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	queries := db_queries.New(pool)
 
-	groups_data, err := queries.GetGroupsByStudentID(c.Context(), db_queries.GetGroupsByStudentIDParams{
-		StudentID: scope.StudentID,
-	})
+	groups_data, err := helpers.CacheOrGetStudentGroups(c.Context(), rdb, *queries, scope.StudentID, scope.SchoolID, helpers.GetInt32EnvFallback("GROUPS_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
 		return c.SendStatus(500)
