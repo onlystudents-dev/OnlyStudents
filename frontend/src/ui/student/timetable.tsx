@@ -6,6 +6,8 @@ import "./timetable.css";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faAngleLeft, faAngleRight, faHouseChimney, faPenToSquare} from "@fortawesome/free-solid-svg-icons";
 import RateLimit from "../../util/ratelimit.tsx";
+import Skeleton from "../../util/skeleton/skeleton.tsx";
+import Loading from "../../util/loading.tsx";
 
 type Lesson = {
     room_id: number,
@@ -78,8 +80,10 @@ export default function StudentTimetable({ me }: {me: Me}) {
     const [year, setYear] = useState<string>("")
 
     const [ratelimit, setRateLimit] = useState(-1)
+    const [loading, setLoading] = useState(false)
 
     const fetchWeekLessons = useCallback(async (date = new Date()) => {
+        setLoading(true)
         const { start, end, monday, mondayTime } = getWeekRange(date)
 
         const response = await fetch(`/api/v1/me/timetable?start_date=${start}&end_date=${end}`)
@@ -143,6 +147,8 @@ export default function StudentTimetable({ me }: {me: Me}) {
             lessons: lessons.filter(lesson => lesson.day_of_week === 0),
             today: monday.getDate() + 6 === new Date().getDate(),
         })
+
+        setLoading(false)
     }, [me])
 
     useEffect(() => {
@@ -190,6 +196,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
     return (
         <>
             <Navbar me={me} />
+            {loading && <Loading />}
             {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
             <div className="w-full flex flex-row justify-center pt-4">
                 <h1 className="text-5xl rubik">{year} {getKey("TERM")}</h1>
@@ -213,7 +220,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                                         <h1 className="rubik">{lesson.subject_name}</h1>
                                         <h2 className="poppins">{lesson.teacher_first_name} {lesson.teacher_last_name}</h2>
                                     </div>
-                                    <p className="fredoka">{rooms.find(room => room.id === lesson.room_id)?.name}</p>
+                                    <p className="fredoka">{rooms.find(room => room.id === lesson.room_id)?.name || <Skeleton width={48} height={16} color={"var(--card-color)"} />}</p>
                                 </div>
                                 <div className="flex flex-col justify-between items-end h-full">
                                     <div className="flex flex-col gap-1">
@@ -224,7 +231,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                                             <FontAwesomeIcon icon={faHouseChimney} />
                                         </span>}
                                     </div>
-                                    <h2>{toHoursAndMinutes(lesson)}</h2>
+                                    <h2>{toHoursAndMinutes(lesson) || <Skeleton width={96} height={16} color={"var(--hover-color)"} />}</h2>
                                 </div>
                             </div>
                         ))}
