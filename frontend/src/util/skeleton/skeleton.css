@@ -1,0 +1,21 @@
+.skeleton {
+    background: linear-gradient(
+            90deg,
+            var(--skeleton-color) 25%,
+            color-mix(in srgb, var(--skeleton-color), white 35%) 50%,
+            var(--skeleton-color) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 0.5rem;
+}
+
+@keyframes skeleton-loading {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
