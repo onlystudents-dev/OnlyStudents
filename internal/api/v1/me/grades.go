@@ -26,7 +26,7 @@ func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
@@ -36,7 +36,7 @@ func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	account_id, err := helpers.ResolvePerson(c, *queries, session_data)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	switch session_data.Role {
@@ -44,7 +44,7 @@ func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		grades, err := helpers.CacheOrGetStudentGrades(c.Context(), rdb, *queries, account_id, helpers.GetInt32EnvFallback("GRADES_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
-			return c.SendStatus(500)
+			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
 		for _, grade_row := range grades {
@@ -65,7 +65,7 @@ func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		grades, err := helpers.CacheOrGetTeacherGrades(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("GRADES_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
-			return c.SendStatus(500)
+			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
 		for _, grade_row := range grades {
@@ -83,7 +83,7 @@ func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 	default:
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return c.JSON(grade_summaries)
@@ -93,7 +93,7 @@ func FinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
@@ -103,7 +103,7 @@ func FinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	account_id, err := helpers.ResolvePerson(c, *queries, session_data)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	switch session_data.Role {
@@ -111,7 +111,7 @@ func FinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		grades, err := helpers.CacheOrGetStudentGrades(c.Context(), rdb, *queries, account_id, helpers.GetInt32EnvFallback("GRADES_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
-			return c.SendStatus(500)
+			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
 		for _, grade_row := range grades {
@@ -126,7 +126,7 @@ func FinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 	default:
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return c.JSON(grade_summaries)

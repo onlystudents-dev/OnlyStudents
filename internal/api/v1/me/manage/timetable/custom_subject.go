@@ -27,23 +27,23 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	var req CreateCustomSubjectRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if req.Name == "" {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if !has_permission {
-		return c.SendStatus(403)
+		return c.SendStatus(fiber.StatusForbidden)
 	}
 
 	queries := db_queries.New(pool)
@@ -56,32 +56,32 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	err = queries.CreateCustomSubject(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditCustomSubjectRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if req.Name == "" || req.Id == 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if !has_permission {
-		return c.SendStatus(403)
+		return c.SendStatus(fiber.StatusForbidden)
 	}
 
 	queries := db_queries.New(pool)
@@ -95,32 +95,32 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	err = queries.EditCustomSubject(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteCustomSubjectRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if req.Id == 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if !has_permission {
-		return c.SendStatus(403)
+		return c.SendStatus(fiber.StatusForbidden)
 	}
 
 	queries := db_queries.New(pool)
@@ -133,26 +133,26 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	err = queries.DeleteCustomSubject(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
 
 	if !has_permission {
-		return c.SendStatus(403)
+		return c.SendStatus(fiber.StatusForbidden)
 	}
 
 	queries := db_queries.New(pool)
@@ -160,7 +160,7 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	listofcustomsubject, err := queries.ReadCustomSubject(c.Context(), int32(school_id))
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.JSON(listofcustomsubject)

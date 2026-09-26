@@ -13,9 +13,9 @@ func GetGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }
 
 // TODO: implement this
@@ -23,9 +23,9 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }
 
 // TODO: implement this
@@ -33,9 +33,9 @@ func RemoveGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }
 
 // TODO: implement this
@@ -43,9 +43,9 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }
 
 // TODO: implement this
@@ -53,9 +53,9 @@ func GetFinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }
 
 // TODO: implement this
@@ -63,9 +63,9 @@ func AddFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }
 
 // TODO: implement this
@@ -73,9 +73,9 @@ func RemoveFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }
 
 // TODO: implement this
@@ -83,7 +83,7 @@ func EditFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }

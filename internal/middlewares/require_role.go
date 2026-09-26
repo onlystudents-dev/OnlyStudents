@@ -12,11 +12,11 @@ func RequireRoleMiddleware(c fiber.Ctx, rdb *redis.Client, roles []string) error
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	if !slices.Contains(roles, session_data.Role) {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	return c.Next()
