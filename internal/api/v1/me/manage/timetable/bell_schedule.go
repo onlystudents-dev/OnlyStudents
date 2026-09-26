@@ -55,7 +55,7 @@ func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 
 	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_BELL_SCHEDULE")
 
-	if status_code != 200 {
+	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
 	}
 
@@ -83,7 +83,7 @@ func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 
 	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_BELL_SCHEDULE")
 
-	if status_code != 200 {
+	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
 	}
 
@@ -112,7 +112,7 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 
 	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_BELL_SCHEDULE")
 
-	if status_code != 200 {
+	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
 	}
 
@@ -136,7 +136,7 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_BELL_SCHEDULE")
 
-	if status_code != 200 {
+	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
 	}
 
@@ -164,7 +164,7 @@ func CreateLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 
 	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_BELL_SCHEDULE")
 
-	if status_code != 200 {
+	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
 	}
 
@@ -203,7 +203,7 @@ func DeleteLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 
 	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_BELL_SCHEDULE")
 
-	if status_code != 200 {
+	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
 	}
 
@@ -236,7 +236,7 @@ func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_BELL_SCHEDULE")
 
-	if status_code != 200 {
+	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
 	}
 
@@ -275,7 +275,7 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_BELL_SCHEDULE")
 
-	if status_code != 200 {
+	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
 	}
 
