@@ -35,19 +35,23 @@ export type Me = {
 }
 
 declare global {
-    interface Window { __INITIAL_STATUS__?: Me | string | null }
+    interface Window { __INITIAL_STATUS__?: Me | string | number }
 }
 
 export default function App() {
-    const [ratelimit, setRatelimit] = useState<number>(-1);
-    const [loading, setLoading] = useState(true);
-    const [me, setMe] = useState<Me | null>(null);
+    const [ratelimit, setRatelimit] = useState<number>(-1)
+    const [loading, setLoading] = useState(true)
+    const [me, setMe] = useState<Me | null>(null)
 
     async function fetchMe() {
         const me = window.__INITIAL_STATUS__
         if (typeof me !== "undefined") {
             if (typeof me === "string") return true
-            if (me === null) return false
+            if (typeof me === "number") {
+                await fetchLanguage(null)
+                setRatelimit(me)
+                return false
+            }
 
             window.__INITIAL_STATUS__ = undefined
             setMe(me)
@@ -101,7 +105,7 @@ export default function App() {
 
     return (
         <>
-            {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={() => location.reload()} standalone /> : loading ? <Loading /> : !me ? <Login /> : (
+            {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={() => location.reload()} /> : loading ? <Loading /> : !me ? <Login /> : (
                 <Switch>
                     <Route path="/">
                         <Home me={me} />
