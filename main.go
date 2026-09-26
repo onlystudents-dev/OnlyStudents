@@ -249,9 +249,7 @@ func main() {
 		return meapi.Status(c, pool, rdb)
 	})
 
-	student_group := me_group.Group("/student", apiLimit, func(c fiber.Ctx) error {
-		return middlewares.AuthMiddleware(c, rdb)
-	},
+	student_group := me_group.Group("/student",
 		func(c fiber.Ctx) error {
 			return middlewares.RequireRoleMiddleware(c, rdb, []string{"student", "guardian"})
 		})
