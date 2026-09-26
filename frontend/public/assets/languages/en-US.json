@@ -13,12 +13,13 @@
     "SEND_EMAIL": "Send email",
     "CODE": "Code sent to your email",
     "CONFIRM_PASSWORD": "Confirm password",
-    "CONDITION.CHARS": "At least 12 characters",
+    "CONDITION.CHARS": "At least %1 characters",
     "CONDITION.LOWER": "Contains lowercase letters",
     "CONDITION.UPPER": "Contains uppercase letters",
     "CONDITION.NUMBERS": "Contains numbers",
     "CONDITION.SPECIAL": "Contains special characters",
     "CONDITION.MATCH": "The two passwords match",
+    "CONDITION.EXPOSED": "Not exposed in a data breach",
     "RESET": "Reset",
     "SAVE": "Save",
     "HOME": "Home",
@@ -65,8 +66,6 @@
   "errors": {
     "WRONG_CREDENTIALS": "The username doesn't pair with the password!",
     "TOO_MANY_REQUESTS": "Too many attempts, try again in %1 seconds.",
-    "PASSWORD_WEAK": "Your password is too weak, please try something more secure!",
-    "PASSWORD_EXPOSED": "Your password was found in a data breach! Please use another one, and change other accounts which use it.",
     "INVALID_PASSWORD_RESET_TOKEN": "Invalid Password Reset Token!",
     "INVALID_VERIFICATION_CODE": "Invalid Verification Code!"
   }
