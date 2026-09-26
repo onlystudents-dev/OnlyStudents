@@ -6,6 +6,7 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {toast} from "react-toastify";
 import PasswordCheck from "../pwc.tsx";
 import {fromResponse, getKey} from "../../util/language.ts";
+import {getPasswordConfig, type PasswordConfig} from "../passwordConfig.ts";
 
 export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID, setWaiting, setResetL }: {pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void, setWaiting: React.Dispatch<React.SetStateAction<boolean>>, setResetL:  React.Dispatch<React.SetStateAction<boolean>>}) {
     const [reset, setReset] = useState(false);
@@ -17,9 +18,15 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
 
     const [passed, setPassed] = useState(false);
 
+    const [config, setConfig] = useState<PasswordConfig | null>(null);
+
     const [remaining, setRemaining] = useState("");
 
     const timerRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        getPasswordConfig().then(setConfig);
+    }, []);
 
     const updateRemaining = useCallback(function step(remaining: number) {
         if (timerRef.current) {
@@ -138,8 +145,8 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
                 </div>}
                 {reset && <div className="loginput fredoka in">
                     <input type="text" placeholder={getKey("CODE")} onChange={(e) => setCode(e.target.value)} />
-                    <input type="password" placeholder={getKey("PASSWORD")} onChange={(e) => setPassword(e.target.value)} />
-                    <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setPassword(e.target.value)} />
+                    <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setConfirmPassword(e.target.value)} />
                     <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                 </div>}
 

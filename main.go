@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	v1 "onlystudents/internal/api/v1"
 	adminapi "onlystudents/internal/api/v1/admin"
@@ -75,12 +76,15 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		JSONEncoder: json.Marshal,
-		JSONDecoder: json.Unmarshal,
-		AppName:     "OnlyStudents",
-		BodyLimit:   1 << 18,
-		TrustProxy:  helpers.GetEnvFallback("TRUST_PROXY", "false") == "true",
-		ProxyHeader: fiber.HeaderXForwardedFor,
+		JSONEncoder:  json.Marshal,
+		JSONDecoder:  json.Unmarshal,
+		AppName:      "OnlyStudents",
+		BodyLimit:    1 << 18,
+		ReadTimeout:  time.Duration(helpers.GetInt64EnvFallback("SERVER_READ_TIMEOUT", 10, 3600)) * time.Second,
+		WriteTimeout: time.Duration(helpers.GetInt64EnvFallback("SERVER_WRITE_TIMEOUT", 30, 3600)) * time.Second,
+		IdleTimeout:  time.Duration(helpers.GetInt64EnvFallback("SERVER_IDLE_TIMEOUT", 120, 86400)) * time.Second,
+		TrustProxy:   helpers.GetEnvFallback("TRUST_PROXY", "false") == "true",
+		ProxyHeader:  fiber.HeaderXForwardedFor,
 		TrustProxyConfig: fiber.TrustProxyConfig{
 			Proxies: strings.Split(helpers.GetEnvFallback("TRUSTED_PROXIES", "127.0.0.1/32"), ","),
 		},
@@ -140,6 +144,17 @@ func main() {
 
 	api := app.Group("/api")
 
+	api.Get("/config", func(c fiber.Ctx) error {
+		c.Set("Cache-Control", "public, max-age=86400")
+		return c.JSON(fiber.Map{
+			"password": fiber.Map{
+				"minLength":        env.GetIntEnvFallback("PW_MIN_LEN", 12, 128),
+				"maxLength":        env.GetIntEnvFallback("PW_MAX_LEN", 256, 1024),
+				"hibpCheckEnabled": env.GetEnvFallback("HIBP_CHECK_ENABLED", "false") == "true",
+			},
+		})
+	})
+
 	authLimit := func(c fiber.Ctx) error {
 		return middlewares.RateLimitMiddleware(c, rdb, "auth", authRateMax, authRateWindow)
 	}
@@ -158,6 +173,14 @@ func main() {
 		return v1.LoginFinish(c, pool, rdb, opaque_server)
 	})
 
+	api.Post("/enroll/init", authLimit, func(c fiber.Ctx) error {
+		return v1.EnrollInit(c, pool, rdb, opaque_server)
+	})
+
+	api.Post("/enroll/finish", authLimit, func(c fiber.Ctx) error {
+		return v1.EnrollFinish(c, pool, rdb, opaque_server)
+	})
+
 	api.Post("/forget_password", forgetLimit, func(c fiber.Ctx) error {
 		return v1.ForgetPassword(c, pool, rdb)
 	})
@@ -167,13 +190,6 @@ func main() {
 	})
 
 	api_v1 := api.Group("/v1")
-	api_v1.Post("/admin/login/init", authLimit, func(c fiber.Ctx) error {
-		return v1.LoginInit(c, pool, rdb, opaque_server)
-	})
-
-	api_v1.Post("/admin/login/finish", authLimit, func(c fiber.Ctx) error {
-		return v1.LoginFinish(c, pool, rdb, opaque_server)
-	})
 
 	admin_group := api_v1.Group("/admin", apiLimit,
 		func(c fiber.Ctx) error {

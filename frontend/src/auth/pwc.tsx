@@ -1,11 +1,42 @@
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faCheck, faXmark} from "@fortawesome/free-solid-svg-icons";
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import {getKey} from "../util/language.ts";
+import {getPasswordConfig, isPasswordExposed, type PasswordConfig} from "./passwordConfig.ts";
 
 export default function PasswordCheck({ password, confirmPassword, setPassed }: {password: string, confirmPassword?: string, setPassed: React.Dispatch<React.SetStateAction<boolean>>}) {
+    const [config, setConfig] = useState<PasswordConfig | null>(null);
+    const [exposed, setExposed] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        getPasswordConfig().then(setConfig);
+    }, []);
+
+    useEffect(() => {
+        if (!config?.hibpCheckEnabled || !password) {
+            setExposed(null);
+            return;
+        }
+
+        setExposed(null)
+        let active = true
+        const timer = setTimeout(() => {
+            isPasswordExposed(password).then(result => {
+                if (active) setExposed(result)
+            })
+        }, 400)
+
+        return () => {
+            active = false
+            clearTimeout(timer)
+        }
+    }, [password, config?.hibpCheckEnabled]);
+
+    const minLength = config?.minLength ?? 12
+    const maxLength = config?.maxLength ?? 256
+
     const checks = [
-        { label: getKey("CONDITION.CHARS"),    ok: password.length >= 12 },
+        { label: getKey("CONDITION.CHARS", String(minLength)), ok: password.length >= minLength && password.length <= maxLength },
         { label: getKey("CONDITION.LOWER"), ok: /[a-z]/.test(password) },
         { label: getKey("CONDITION.UPPER"), ok: /[A-Z]/.test(password) },
         { label: getKey("CONDITION.NUMBERS"), ok: /[0-9]/.test(password) },
@@ -13,6 +44,9 @@ export default function PasswordCheck({ password, confirmPassword, setPassed }: 
     ];
     if (confirmPassword !== undefined) {
         checks.push({ label: getKey("CONDITION.MATCH"), ok: password === confirmPassword })
+    }
+    if (config?.hibpCheckEnabled) {
+        checks.push({ label: getKey("CONDITION.EXPOSED"), ok: exposed === false })
     }
 
     const passed = checks.filter(c => c.ok).length
