@@ -3,7 +3,6 @@ package timetable
 import (
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,30 +29,24 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Name == "" {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.CreateCustomSubjectParams{
-		SchoolID:    int32(school_id),
+		SchoolID:    int32(scope.SchoolID),
 		SubjectName: req.Name,
 	}
 
-	err = queries.CreateCustomSubject(c.Context(), params)
+	err := queries.CreateCustomSubject(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -69,30 +62,25 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Name == "" || req.Id == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.EditCustomSubjectParams{
 		SubjectName: req.Name,
-		SchoolID:    int32(school_id),
+		SchoolID:    int32(scope.SchoolID),
 		ID:          req.Id,
 	}
 
-	err = queries.EditCustomSubject(c.Context(), params)
+	err := queries.EditCustomSubject(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -108,29 +96,24 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Id == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.DeleteCustomSubjectParams{
 		ID:       req.Id,
-		SchoolID: int32(school_id),
+		SchoolID: scope.SchoolID,
 	}
 
-	err = queries.DeleteCustomSubject(c.Context(), params)
+	err := queries.DeleteCustomSubject(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -140,28 +123,19 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 }
 
 func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
 
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", school_id)
-
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
-	listofcustomsubject, err := queries.ReadCustomSubject(c.Context(), int32(school_id))
+	custom_subjects, err := queries.ReadCustomSubject(c.Context(), int32(scope.SchoolID))
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.JSON(listofcustomsubject)
+	return c.JSON(custom_subjects)
 }

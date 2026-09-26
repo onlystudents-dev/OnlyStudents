@@ -3,7 +3,6 @@ package timetable
 import (
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,35 +39,25 @@ func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.BellId == 0 || req.Name == "" {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.CreateGroupParams{
-		SchoolID:  int32(school_id),
+		SchoolID:  scope.SchoolID,
 		BellID:    req.BellId,
 		GroupName: req.Name,
 	}
 
-	err = queries.CreateGroup(c.Context(), params)
+	err := queries.CreateGroup(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -84,34 +73,24 @@ func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Id == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.DeleteGroupParams{
-		SchoolID: int32(school_id),
+		SchoolID: scope.SchoolID,
 		ID:       req.Id,
 	}
 
-	err = queries.DeleteGroup(c.Context(), params)
+	err := queries.DeleteGroup(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -127,35 +106,25 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
 
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	if req.Id == 0 || req.Name == "" {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
-
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
-	}
-
 	queries := db_queries.New(pool)
 
 	params := db_queries.EditGroupParams{
-		SchoolID:  int32(school_id),
+		SchoolID:  scope.SchoolID,
 		ID:        req.Id,
 		GroupName: req.Name,
 	}
 
-	err = queries.EditGroup(c.Context(), params)
+	err := queries.EditGroup(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -165,25 +134,16 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
 
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
-
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
-	data, err := queries.ReadGroup(c.Context(), int32(school_id))
+	data, err := queries.ReadGroup(c.Context(), scope.SchoolID)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -199,35 +159,25 @@ func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
 
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	if req.GroupID == 0 || req.StudentID == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
-
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
-	}
-
 	queries := db_queries.New(pool)
 
 	params := db_queries.InsertStudentToGroupParams{
-		SchoolID:  int32(school_id),
+		SchoolID:  scope.SchoolID,
 		GroupID:   req.GroupID,
 		StudentID: req.StudentID,
 	}
 
-	err = queries.InsertStudentToGroup(c.Context(), params)
+	err := queries.InsertStudentToGroup(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -243,20 +193,14 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
+	if req.GroupID == 0 || req.StudentID == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.GroupID == 0 || req.StudentID == 0 || school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
-
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -264,10 +208,10 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 	params := db_queries.DeleteStudentFromGroupParams{
 		GroupID:   req.GroupID,
 		StudentID: req.StudentID,
-		SchoolID:  int32(school_id),
+		SchoolID:  scope.SchoolID,
 	}
 
-	err = queries.DeleteStudentFromGroup(c.Context(), params)
+	err := queries.DeleteStudentFromGroup(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -283,31 +227,21 @@ func ReadStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
 
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	if req.GroupID == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_GROUPS", school_id)
-
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
-	}
-
 	queries := db_queries.New(pool)
 
 	params := db_queries.ReadListOfStudentsParams{
 		GroupID:  req.GroupID,
-		SchoolID: int32(school_id),
+		SchoolID: scope.SchoolID,
 	}
 
 	data, err := queries.ReadListOfStudents(c.Context(), params)

@@ -127,24 +127,14 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.TeacherId == 0 || req.DayOfWeek == 0 || req.LessonNumber <= 0 || req.RoomId == 0 || req.GroupId == 0 || (req.IsCustomSubject == true && req.CustomSubjectId == 0) || (req.IsCustomSubject == false && req.SubjectId == 0) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -161,7 +151,7 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	}
 
 	params := db_queries.CreateBaseScheduleParams{
-		SchoolID:        int32(school_id),
+		SchoolID:        scope.SchoolID,
 		TeacherID:       req.TeacherId,
 		RoomID:          req.RoomId,
 		DayOfWeek:       req.DayOfWeek,
@@ -171,7 +161,7 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		SubjectID:       subject_id,
 	}
 
-	err = queries.CreateBaseSchedule(c.Context(), params)
+	err := queries.CreateBaseSchedule(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -187,34 +177,24 @@ func DeleteBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Id == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.DeleteBaseScheduleParams{
 		ID:       req.Id,
-		SchoolID: int32(school_id),
+		SchoolID: scope.SchoolID,
 	}
 
-	err = queries.DeleteBaseSchedule(c.Context(), params)
+	err := queries.DeleteBaseSchedule(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -230,24 +210,14 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Id == 0 || req.TeacherId == 0 || req.DayOfWeek == 0 || req.LessonNumber <= 0 || req.RoomId == 0 || req.GroupId == 0 || (req.IsCustomSubject == true && req.CustomSubjectId == 0) || (req.IsCustomSubject == false && req.SubjectId == 0) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -264,7 +234,7 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	}
 
 	params := db_queries.UpdateBaseScheduleParams{
-		SchoolID:        int32(school_id),
+		SchoolID:        scope.SchoolID,
 		TeacherID:       req.TeacherId,
 		RoomID:          req.RoomId,
 		DayOfWeek:       req.DayOfWeek,
@@ -274,7 +244,7 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		SubjectID:       subject_id,
 	}
 
-	err = queries.UpdateBaseSchedule(c.Context(), params)
+	err := queries.UpdateBaseSchedule(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -290,31 +260,21 @@ func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.ClassId == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.ReadBaseScheduleClassParams{
 		ClassesID: req.ClassId,
-		SchoolID:  int32(school_id),
+		SchoolID:  int32(scope.SchoolID),
 	}
 
 	data, err := queries.ReadBaseScheduleClass(c.Context(), params)
@@ -365,16 +325,16 @@ func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.ReadBaseScheduleGroupParams{
-		SchoolID: int32(school_id),
+		SchoolID: scope.SchoolID,
 		GroupID:  req.GroupId,
 	}
 
@@ -442,16 +402,16 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.ReadRealTimeTableParams{
-		SchoolID:  int32(school_id),
+		SchoolID:  int32(scope.SchoolID),
 		ClassesID: req.ClassId,
 		StartDate: pgtype.Date{Time: start, Valid: true},
 		EndDate:   pgtype.Date{Time: end, Valid: true},
@@ -497,24 +457,14 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) || req.ActualDate.Time.IsZero() || req.LessonNumber <= 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -531,7 +481,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	}
 
 	params := db_queries.CreateRealTimeLessonParams{
-		SchoolID:        int32(school_id),
+		SchoolID:        scope.SchoolID,
 		TeacherID:       req.TeacherId,
 		RoomID:          req.RoomId,
 		DayOfWeek:       req.DayOfWeek,
@@ -543,7 +493,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		LessonNum:       req.LessonNumber,
 	}
 
-	err = queries.CreateRealTimeLesson(c.Context(), params)
+	err := queries.CreateRealTimeLesson(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -559,24 +509,14 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Id == 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) || req.ActualDate.Time.IsZero() || req.LessonNumber <= 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -593,7 +533,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	}
 
 	params := db_queries.UpdateRealTimeLessonParams{
-		SchoolID:        int32(school_id),
+		SchoolID:        scope.SchoolID,
 		TeacherID:       req.TeacherId,
 		RoomID:          req.RoomId,
 		DayOfWeek:       req.DayOfWeek,
@@ -605,7 +545,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		LessonNum:       req.LessonNumber,
 	}
 
-	err = queries.UpdateRealTimeLesson(c.Context(), params)
+	err := queries.UpdateRealTimeLesson(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -621,34 +561,24 @@ func DeleteRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Id == 0 {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_TIMETABLES", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
 
 	params := db_queries.DeleteRealTimeLessonParams{
-		SchoolID: int32(school_id),
+		SchoolID: scope.SchoolID,
 		ID:       req.Id,
 	}
 
-	err = queries.DeleteRealTimeLesson(c.Context(), params)
+	err := queries.DeleteRealTimeLesson(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)

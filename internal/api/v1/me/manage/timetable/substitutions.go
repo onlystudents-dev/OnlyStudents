@@ -3,7 +3,6 @@ package timetable
 import (
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -45,24 +44,14 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Date.Time.IsZero() || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_SUBSTITUTIONS")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -79,7 +68,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	}
 
 	params := db_queries.AddCanceledLessonParams{
-		SchoolID:        int32(school_id),
+		SchoolID:        scope.SchoolID,
 		TeacherID:       req.TeacherId,
 		RoomID:          req.RoomId,
 		DayOfWeek:       req.DayOfWeek,
@@ -91,7 +80,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		LessonNum:       req.LessonNumber,
 	}
 
-	err = queries.AddCanceledLesson(c.Context(), params)
+	err := queries.AddCanceledLesson(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -107,24 +96,14 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.Date.Time.IsZero() || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_SUBSTITUTIONS")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -141,7 +120,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	}
 
 	params := db_queries.RemoveCanceledLessonParams{
-		SchoolID:        int32(school_id),
+		SchoolID:        scope.SchoolID,
 		TeacherID:       req.TeacherId,
 		RoomID:          req.RoomId,
 		DayOfWeek:       req.DayOfWeek,
@@ -153,7 +132,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		LessonNum:       req.LessonNumber,
 	}
 
-	err = queries.RemoveCanceledLesson(c.Context(), params)
+	err := queries.RemoveCanceledLesson(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -169,24 +148,14 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if school_id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	if req.ID == 0 || req.Date.Time.IsZero() || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0 || !req.IsSubstitution || req.SubstitutionTeacherId == 0) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_SUBSTITUTIONS", school_id)
+	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_SUBSTITUTIONS")
 
-	if !has_permission {
-		return c.SendStatus(fiber.StatusForbidden)
+	if status_code != 200 {
+		return c.SendStatus(status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -211,7 +180,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	}
 
 	params := db_queries.ManageSubsitutionLessonParams{
-		SchoolID:              int32(school_id),
+		SchoolID:              scope.SchoolID,
 		TeacherID:             req.TeacherId,
 		RoomID:                req.RoomId,
 		DayOfWeek:             req.DayOfWeek,
@@ -226,7 +195,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		ID:                    req.ID,
 	}
 
-	err = queries.ManageSubsitutionLesson(c.Context(), params)
+	err := queries.ManageSubsitutionLesson(c.Context(), params)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
