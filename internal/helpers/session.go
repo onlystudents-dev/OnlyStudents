@@ -18,6 +18,10 @@ type SessionData struct {
 	DeviceID    string `json:"device_id"`
 }
 
+func accountSessionsKey(accountUUID string) string {
+	return "account_sessions:" + accountUUID
+}
+
 func SessionCreate(ctx context.Context, rdb *redis.Client, accountID int32, accountUUID string, DeviceID string, role string) (string, error) {
 	buf := make([]byte, GetUintEnvFallback("SESSION_COOKIE_LEN", 32))
 	if _, err := rand.Read(buf); err != nil {
@@ -34,6 +38,14 @@ func SessionCreate(ctx context.Context, rdb *redis.Client, accountID int32, acco
 	}
 
 	if err := rdb.Set(ctx, "session:"+secret, val, ttl).Err(); err != nil {
+		return "", err
+	}
+
+	if err := rdb.SAdd(ctx, accountSessionsKey(accountUUID), secret).Err(); err != nil {
+		return "", err
+	}
+
+	if err := rdb.Expire(ctx, accountSessionsKey(accountUUID), ttl).Err(); err != nil {
 		return "", err
 	}
 
@@ -58,6 +70,32 @@ func SessionGet(ctx context.Context, rdb *redis.Client, secret string) (SessionD
 	return data, nil
 }
 
-func SessionDelete(ctx context.Context, rdb *redis.Client, secret string) error {
-	return rdb.Del(ctx, "session:"+secret).Err()
+func SessionDelete(ctx context.Context, rdb *redis.Client, accountUUID string, secret string) error {
+	if err := rdb.Del(ctx, "session:"+secret).Err(); err != nil {
+		return err
+	}
+
+	if accountUUID == "" {
+		return nil
+	}
+
+	return rdb.SRem(ctx, accountSessionsKey(accountUUID), secret).Err()
+}
+
+func SessionRevokeAll(ctx context.Context, rdb *redis.Client, accountUUID string) error {
+	key := accountSessionsKey(accountUUID)
+
+	secrets, err := rdb.SMembers(ctx, key).Result()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return err
+	}
+
+	pipe := rdb.Pipeline()
+	for _, secret := range secrets {
+		pipe.Del(ctx, "session:"+secret)
+	}
+	pipe.Del(ctx, key)
+
+	_, err = pipe.Exec(ctx)
+	return err
 }

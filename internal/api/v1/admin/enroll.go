@@ -2,7 +2,6 @@ package adminapi
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"log/slog"
 	db_queries "onlystudents/internal/db/store"
@@ -95,9 +94,13 @@ type MassEnrollRequest struct {
 }
 
 func SendEnrollToken(rdb *redis.Client, ctx context.Context, enroll_token string, email string, role string, account_uuid uuid.UUID) {
-	rdb.Set(ctx, fmt.Sprintf("enroll:%s", enroll_token), opaquepkg.EnrollState{
+	err := rdb.Set(ctx, fmt.Sprintf("enroll:%s", enroll_token), opaquepkg.EnrollState{
 		AccountUUID: account_uuid.String(),
-	}, time.Duration(helpers.GetIntEnvFallback("ENROLL_TOKEN_TTL", 168, 30*24)))
+	}, time.Duration(helpers.GetIntEnvFallback("ENROLL_TOKEN_TTL", 168, 30*24))*time.Hour).Err()
+
+	if err != nil {
+		return
+	}
 
 	// #nosec G118
 	go func() {
@@ -118,7 +121,7 @@ func SendEnrollToken(rdb *redis.Client, ctx context.Context, enroll_token string
 }
 
 func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, rdb *redis.Client) int {
-	enroll_token := hex.EncodeToString(opaque.RandomBytes(helpers.GetIntEnvFallback("OPAQUE_ENROLL_TOKEN_LEN", 32, 512)))
+	enroll_token := opaquepkg.NewEnrollToken()
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -183,20 +186,20 @@ func EnrollStudent(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *o
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	var req EnrollStudentRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return c.SendStatus(enroll_student(c, req, pool, rdb))
 }
 
 func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, rdb *redis.Client) int {
-	enroll_token := hex.EncodeToString(opaque.RandomBytes(helpers.GetIntEnvFallback("OPAQUE_ENROLL_TOKEN_LEN", 32, 512)))
+	enroll_token := opaquepkg.NewEnrollToken()
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -250,20 +253,20 @@ func EnrollTeacher(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *o
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	var req EnrollTeacherRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return c.SendStatus(enroll_teacher(c, req, pool, rdb))
 }
 
 func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool, rdb *redis.Client) int {
-	enroll_token := hex.EncodeToString(opaque.RandomBytes(helpers.GetIntEnvFallback("OPAQUE_ENROLL_TOKEN_LEN", 32, 512)))
+	enroll_token := opaquepkg.NewEnrollToken()
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -316,13 +319,13 @@ func EnrollGuardian(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	var req EnrollGuardianRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return c.SendStatus(enroll_guardian(c, req, pool, rdb))
@@ -333,13 +336,13 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	var req MassEnrollRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	var student_errors int
@@ -370,5 +373,5 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 		}
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }

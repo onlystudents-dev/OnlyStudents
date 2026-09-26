@@ -38,7 +38,7 @@ type loginState struct {
 }
 
 func EnrollInit(ctx context.Context, s *opaque.Server, rdb *redis.Client, enroll_token string, reqBytes []byte) (respBytes []byte, err error) {
-	if enroll_token == "" || len(enroll_token) != helpers.GetIntEnvFallback("OPAQUE_ENROLL_TOKEN_LEN", 32, 512) {
+	if enroll_token == "" || !ValidEnrollToken(enroll_token) {
 		return []byte{}, errors.New("Wrong args")
 	}
 

@@ -33,7 +33,7 @@ func ReadClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
@@ -41,13 +41,13 @@ func ReadClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	class_data, err := helpers.CacheOrGetStudentClass(c.Context(), rdb, *queries, scope.StudentID, helpers.GetInt32EnvFallback("CLASS_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	if class_data.SchoolID != scope.SchoolID {
 		slog.Warn("Something went extremely wrong. Class school id does not match scope. Report to devs.")
 		slog.Warn(fmt.Sprintf("Scope School ID: %d\nClass School ID: %d", scope.SchoolID, class_data.SchoolID))
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.JSON(ClassData{
@@ -66,7 +66,7 @@ func ReadGroups(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
@@ -74,7 +74,7 @@ func ReadGroups(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	groups_data, err := helpers.CacheOrGetStudentGroups(c.Context(), rdb, *queries, scope.StudentID, scope.SchoolID, helpers.GetInt32EnvFallback("GROUPS_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	groups := []GroupData{}
@@ -83,7 +83,7 @@ func ReadGroups(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		if group_data.SchoolID != scope.SchoolID {
 			slog.Warn("Something went extremely wrong. Group school id does not match scope. Report to devs.")
 			slog.Warn(fmt.Sprintf("Scope School ID: %d\nGroup School ID: %d", scope.SchoolID, group_data.SchoolID))
-			return c.SendStatus(500)
+			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
 		group_data_go := GroupData{

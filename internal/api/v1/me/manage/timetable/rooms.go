@@ -29,26 +29,26 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateRoomRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if req.Name == "" || req.Capacity <= 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(403)
+		return c.SendStatus(fiber.StatusForbidden)
 	}
 
 	queries := db_queries.New(pool)
@@ -62,10 +62,10 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	err = queries.CreateRoom(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 
 }
 
@@ -73,26 +73,26 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditRoomRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if req.Capacity == 0 || req.Id == 0 || req.Name == "" {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(403)
+		return c.SendStatus(fiber.StatusForbidden)
 	}
 
 	queries := db_queries.New(pool)
@@ -107,37 +107,37 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	err = queries.EditRoom(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteRoomRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if req.Id == 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(403)
+		return c.SendStatus(fiber.StatusForbidden)
 	}
 
 	queries := db_queries.New(pool)
@@ -150,27 +150,27 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	err = queries.DeleteRoom(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if school_id == 0 {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	has_permission := helpers.CheckPermission(c, pool, rdb, "MANAGE_ROOMS", school_id)
 
 	if !has_permission {
-		return c.SendStatus(403)
+		return c.SendStatus(fiber.StatusForbidden)
 	}
 
 	queries := db_queries.New(pool)
@@ -178,7 +178,7 @@ func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	listofrooms, err := queries.ReadRoom(c.Context(), int32(school_id))
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.JSON(listofrooms)

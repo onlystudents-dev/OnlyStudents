@@ -111,12 +111,12 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	start, end, err := parseDateRange(c)
 	if err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	queries := db_queries.New(pool)
@@ -129,7 +129,7 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	})
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	lessons := make([]TimetableLesson, 0, len(data))
@@ -163,7 +163,7 @@ func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
@@ -174,7 +174,7 @@ func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 	})
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	lessons := make([]TimetableBaseLesson, 0, len(data))
@@ -206,13 +206,13 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req ReadLessonTimeRequest
 
 	if err := c.Bind().Query(&req); err != nil {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
@@ -223,7 +223,7 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	})
 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	lesson_times := make([]TimetableBellSchedule, 0, len(data))
@@ -246,14 +246,14 @@ func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
 
 	data, err := queries.ReadRoom(c.Context(), scope.SchoolID)
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	rooms := make([]TimetableRoom, 0, len(data))
@@ -273,14 +273,14 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
 
 	data, err := queries.ReadCustomSubject(c.Context(), scope.SchoolID)
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	custom_subjects := make([]TimetableCustomSubject, 0, len(data))
@@ -299,14 +299,14 @@ func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
 
 	data, err := queries.ReadBellScheduleType(c.Context(), scope.SchoolID)
 	if err != nil {
-		return c.SendStatus(500)
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	bell_schedule_types := make([]TimetableBellScheduleType, 0, len(data))

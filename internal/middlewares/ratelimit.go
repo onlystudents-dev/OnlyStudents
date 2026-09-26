@@ -38,13 +38,3 @@ func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client, scope string, max, wind
 
 	return c.Next()
 }
-
-func RateLimitExceeded(rdb *redis.Client, scope string, ip string, max int64) bool {
-	count, err := rdb.Get(context.Background(), fmt.Sprintf("ratelimit:%s:%s", scope, ip)).Int64()
-
-	if err != nil {
-		return false
-	}
-
-	return count > max
-}

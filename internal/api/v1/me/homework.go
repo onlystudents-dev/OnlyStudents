@@ -13,7 +13,7 @@ func Homework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	return c.SendStatus(501)
+	return c.SendStatus(fiber.StatusNotImplemented)
 }

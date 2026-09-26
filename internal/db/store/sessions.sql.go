@@ -54,6 +54,15 @@ func (q *Queries) ListSessions(ctx context.Context, accountUuid pgtype.UUID) ([]
 	return items, nil
 }
 
+const revokeAllSessions = `-- name: RevokeAllSessions :exec
+DELETE FROM sessions WHERE account_uuid = $1
+`
+
+func (q *Queries) RevokeAllSessions(ctx context.Context, accountUuid pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, revokeAllSessions, accountUuid)
+	return err
+}
+
 const revokeSession = `-- name: RevokeSession :exec
 DELETE FROM sessions WHERE id = $1 AND account_uuid = $2
 `

@@ -148,9 +148,9 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	if err != nil {
 		switch err.Error() {
 		case "invalid role":
-			return c.SendStatus(400)
+			return c.SendStatus(fiber.StatusBadRequest)
 		default:
-			return c.SendStatus(401)
+			return c.SendStatus(fiber.StatusUnauthorized)
 		}
 	}
 

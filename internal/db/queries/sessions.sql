@@ -7,5 +7,8 @@ SELECT * FROM sessions WHERE account_uuid = $1;
 -- name: RevokeSession :exec
 DELETE FROM sessions WHERE id = $1 AND account_uuid = $2;
 
+-- name: RevokeAllSessions :exec
+DELETE FROM sessions WHERE account_uuid = $1;
+
 -- name: TouchSession :exec
 UPDATE sessions SET last_seen_at = current_date WHERE id = $1;
