@@ -11,16 +11,15 @@ import (
 )
 
 type AbsenceSummary struct {
-	ID          int64
-	Student     interface{}
-	Subject     string
-	SubjectCode pgtype.Text
-	Teacher     interface{}
-	Date        pgtype.Date
-	Type        string
-	Justified   bool
-	Note        pgtype.Text
-	VerifiedBy  interface{}
+	ID          int64       `json:"id"`
+	Subject     string      `json:"subject"`
+	SubjectCode pgtype.Text `json:"subject_code"`
+	Teacher     interface{} `json:"teacher"`
+	Date        pgtype.Date `json:"date"`
+	Type        string      `json:"type"`
+	Justified   bool        `json:"justified"`
+	Note        pgtype.Text `json:"note"`
+	VerifiedBy  interface{} `json:"verified_by"`
 }
 
 func Absences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
