@@ -249,63 +249,70 @@ func main() {
 		return meapi.Status(c, pool, rdb)
 	})
 
-	me_group.Get("/grades", func(c fiber.Ctx) error {
+	student_group := me_group.Group("/student", apiLimit, func(c fiber.Ctx) error {
+		return middlewares.AuthMiddleware(c, rdb)
+	},
+		func(c fiber.Ctx) error {
+			return middlewares.RequireRoleMiddleware(c, rdb, []string{"student", "guardian"})
+		})
+
+	student_group.Get("/grades", func(c fiber.Ctx) error {
 		return studentapi.Grades(c, pool, rdb)
 	})
 
-	me_group.Get("/absences", func(c fiber.Ctx) error {
+	student_group.Get("/absences", func(c fiber.Ctx) error {
 		return studentapi.Absences(c, pool, rdb)
 	})
 
-	me_group.Get("/final_grades", func(c fiber.Ctx) error {
+	student_group.Get("/final_grades", func(c fiber.Ctx) error {
 		return studentapi.FinalGrades(c, pool, rdb)
 	})
 
-	me_group.Get("/exams", func(c fiber.Ctx) error {
+	student_group.Get("/exams", func(c fiber.Ctx) error {
 		return studentapi.Exams(c, pool, rdb)
 	})
 
-	me_group.Get("/homework", func(c fiber.Ctx) error {
+	student_group.Get("/homework", func(c fiber.Ctx) error {
 		return studentapi.Homework(c, pool, rdb)
 	})
 
-	me_group.Get("/timetable", func(c fiber.Ctx) error {
+	student_group.Get("/timetable", func(c fiber.Ctx) error {
 		return studentapi.ReadMyRealTimeTable(c, pool, rdb)
 	})
 
-	me_group.Get("/timetable/base", func(c fiber.Ctx) error {
+	student_group.Get("/timetable/base", func(c fiber.Ctx) error {
 		return studentapi.ReadBaseSchedule(c, pool, rdb)
 	})
 
-	me_group.Get("/timetable/lesson_time", func(c fiber.Ctx) error {
+	student_group.Get("/timetable/lesson_time", func(c fiber.Ctx) error {
 		return studentapi.ReadLessonTime(c, pool, rdb)
 	})
 
-	me_group.Get("/timetable/room", func(c fiber.Ctx) error {
+	student_group.Get("/timetable/room", func(c fiber.Ctx) error {
 		return studentapi.ReadRoom(c, pool, rdb)
 	})
 
-	me_group.Get("/timetable/custom_subject", func(c fiber.Ctx) error {
+	student_group.Get("/timetable/custom_subject", func(c fiber.Ctx) error {
 		return studentapi.ReadCustomSubject(c, pool, rdb)
 	})
 
-	me_group.Get("/class", func(c fiber.Ctx) error {
+	student_group.Get("/class", func(c fiber.Ctx) error {
 		return studentapi.ReadClass(c, pool, rdb)
 	})
 
-	me_group.Get("/groups", func(c fiber.Ctx) error {
+	student_group.Get("/groups", func(c fiber.Ctx) error {
 		return studentapi.ReadGroups(c, pool, rdb)
 	})
 
-	me_group.Get("/timetable/bell_schedule_type", func(c fiber.Ctx) error {
+	student_group.Get("/timetable/bell_schedule_type", func(c fiber.Ctx) error {
 		return studentapi.ReadBellScheduleType(c, pool, rdb)
 	})
 
-	manage_group := me_group.Group("/manage", func(c fiber.Ctx) error {
+	teacher_group := me_group.Group("/teacher", func(c fiber.Ctx) error {
 		return middlewares.RequireRoleMiddleware(c, rdb, []string{"teacher"})
 	})
 
-	timetable_group := manage_group.Group("/timetable")
+	timetable_group := teacher_group.Group("/timetable")
 
 	timetable_group.Post("/bell_schedule_type", func(c fiber.Ctx) error {
 		return timetableapi.CreateBellScheduleType(c, pool, rdb)
@@ -421,27 +428,27 @@ func main() {
 		return timetableapi.UpdateSubstitution(c, pool, rdb)
 	})
 
-	manage_group.Get("/add_exam", func(c fiber.Ctx) error {
+	teacher_group.Get("/add_exam", func(c fiber.Ctx) error {
 		return teacherapi.AddExam(c, pool, rdb)
 	})
 
-	manage_group.Get("/remove_exam", func(c fiber.Ctx) error {
+	teacher_group.Get("/remove_exam", func(c fiber.Ctx) error {
 		return teacherapi.RemoveExam(c, pool, rdb)
 	})
 
-	manage_group.Get("/edit_exam", func(c fiber.Ctx) error {
+	teacher_group.Get("/edit_exam", func(c fiber.Ctx) error {
 		return teacherapi.EditExam(c, pool, rdb)
 	})
 
-	manage_group.Get("/add_grades", func(c fiber.Ctx) error {
+	teacher_group.Get("/add_grades", func(c fiber.Ctx) error {
 		return teacherapi.AddGrade(c, pool, rdb)
 	})
 
-	manage_group.Get("/remove_grades", func(c fiber.Ctx) error {
+	teacher_group.Get("/remove_grades", func(c fiber.Ctx) error {
 		return teacherapi.RemoveGrade(c, pool, rdb)
 	})
 
-	manage_group.Get("/edit_grades", func(c fiber.Ctx) error {
+	teacher_group.Get("/edit_grades", func(c fiber.Ctx) error {
 		return teacherapi.EditGrade(c, pool, rdb)
 	})
 
