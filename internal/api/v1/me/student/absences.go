@@ -27,7 +27,7 @@ func Absences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	queries := db_queries.New(pool)
@@ -37,7 +37,7 @@ func Absences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	account_id, err := helpers.ResolvePerson(c, *queries, session_data)
 
 	if err != nil {
-		return c.SendStatus(401)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	switch session_data.Role {
@@ -45,7 +45,7 @@ func Absences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		absences, err := helpers.CacheOrGetStudentAbsences(c.Context(), rdb, *queries, account_id, helpers.GetInt32EnvFallback("ABSENCES_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
-			return c.SendStatus(500)
+			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
 		for _, absence_row := range absences {
@@ -63,7 +63,7 @@ func Absences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}
 
 	default:
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return c.JSON(absence_summaries)
