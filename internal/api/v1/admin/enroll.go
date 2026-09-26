@@ -84,8 +84,8 @@ type EnrollGuardianRequest struct {
 }
 
 type UserRegistrationEmailData struct {
-	EnrollToken string `json:"enroll_token"`
-	Name        string `json:"name"`
+	EnrollURL string `json:"enroll_url"`
+	Name      string `json:"name"`
 }
 
 type MassEnrollRequest struct {
@@ -109,7 +109,8 @@ func SendEnrollToken(rdb *redis.Client, ctx context.Context, enroll_token string
 			slog.Error("admin enroll mailer init failed", "err", e)
 			return
 		}
-		if e := mailer.SendTemplateContext(bg, email, "OnlyStudents Registration", "registration.html", UserRegistrationEmailData{EnrollToken: enroll_token, Name: role}); e != nil {
+		enroll_url := fmt.Sprintf("%s/enroll?enroll_token=%s", helpers.GetEnvFallback("APP_URL", "http://localhost:8080"), enroll_token)
+		if e := mailer.SendTemplateContext(bg, email, "OnlyStudents Registration", "registration.html", UserRegistrationEmailData{EnrollURL: enroll_url, Name: role}); e != nil {
 			slog.Error("admin enroll email failed", "account", email, "err", e)
 		}
 	}()
