@@ -149,6 +149,31 @@ INSERT INTO subjects (
       ('Angol nyelv'),
       ('Informatika');
 
+-- Taught subjects.
+INSERT INTO class_subjects (
+    id,
+    school_id,
+    class_id,
+    subject_id,
+    custom_subject,
+    custom_subject_id,
+    teacher_id
+) VALUES
+      -- Matematika
+      (1, 1, 1, 1, FALSE, NULL, 1),
+
+      -- Magyar nyelv
+      (2, 1, 1, 2, FALSE, NULL, 1),
+
+      -- Történelem
+      (3, 1, 1, 3, FALSE, NULL, 1),
+
+      -- Angol nyelv
+      (4, 1, 1, 4, FALSE, NULL, 1),
+
+      -- Informatika
+      (5, 1, 1, 5, FALSE, NULL, 1);
+
 INSERT INTO grade_types (
     school_id,
     name,
@@ -477,3 +502,98 @@ INSERT INTO exams (
        '09:50',
        '10:35',
        1);
+
+-- Absences
+
+INSERT INTO absences (
+    student_id,
+    class_subjects_id,
+    lesson_id,
+    date,
+    type,
+    justified,
+    verified_by,
+    note
+)
+SELECT
+    1,
+    2,
+    bs.id,
+    '2026-09-15',
+    'absent',
+    TRUE,
+    1,
+    'Betegség miatt nem jelent meg.'
+FROM base_schedule bs
+WHERE bs.school_id = 1
+  AND bs.group_id = 1
+  AND bs.day_of_week = 2
+  AND bs.lesson_num = 1
+  AND NOT EXISTS (
+    SELECT 1
+    FROM absences a
+    WHERE a.student_id = 1
+      AND a.lesson_id = bs.id
+);
+
+INSERT INTO absences (
+    student_id,
+    class_subjects_id,
+    lesson_id,
+    date,
+    type,
+    justified,
+    verified_by,
+    note
+)
+SELECT
+    1,
+    1,
+    bs.id,
+    '2026-09-16',
+    'absent',
+    FALSE,
+    NULL,
+    NULL
+FROM base_schedule bs
+WHERE bs.school_id = 1
+  AND bs.group_id = 1
+  AND bs.day_of_week = 3
+  AND bs.lesson_num = 1
+  AND NOT EXISTS (
+    SELECT 1
+    FROM absences a
+    WHERE a.student_id = 1
+      AND a.lesson_id = bs.id
+);
+
+INSERT INTO absences (
+    student_id,
+    class_subjects_id,
+    lesson_id,
+    date,
+    type,
+    justified,
+    verified_by,
+    note
+)
+SELECT
+    1,
+    5,
+    bs.id,
+    '2026-09-17',
+    'tardy',
+    FALSE,
+    NULL,
+    'Késett a tanórára.'
+FROM base_schedule bs
+WHERE bs.school_id = 1
+  AND bs.group_id = 1
+  AND bs.day_of_week = 4
+  AND bs.lesson_num = 4
+  AND NOT EXISTS (
+    SELECT 1
+    FROM absences a
+    WHERE a.student_id = 1
+      AND a.lesson_id = bs.id
+);

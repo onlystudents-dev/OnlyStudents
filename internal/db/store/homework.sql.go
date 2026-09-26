@@ -98,7 +98,7 @@ func (q *Queries) EditHomeworkSubmission(ctx context.Context, arg EditHomeworkSu
 const getStudentHomework = `-- name: GetStudentHomework :many
 SELECT
     h.id,
-    s.subject_name AS subject,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
     CONCAT(t.first_name, ' ', t.last_name) AS teacher,
     h.title,
@@ -108,15 +108,15 @@ SELECT
     hs.submitted_at,
     hs.graded_value
 FROM homework h
-JOIN subjects s ON s.id = h.class_subjects_id
+JOIN class_subjects csub ON csub.id = h.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = h.teacher_id
 LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $1
-WHERE h.class_subjects_id IN (
-    SELECT bs.subject_id
-    FROM base_schedule bs
-    JOIN group_members gm ON gm.group_id = bs.group_id
-    WHERE gm.student_id = $1
-      AND bs.subject_id IS NOT NULL
+WHERE csub.class_id = (
+    SELECT st.classes_id
+    FROM students st
+    WHERE st.id = $1
 )
 ORDER BY h.due_date, h.created_at
 `

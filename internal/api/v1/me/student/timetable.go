@@ -169,8 +169,8 @@ func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 	queries := db_queries.New(pool)
 
 	data, err := queries.ReadBaseScheduleClass(c.Context(), db_queries.ReadBaseScheduleClassParams{
-		SchoolID:  scope.SchoolID,
-		ClassesID: scope.ClassID,
+		SchoolID: scope.SchoolID,
+		ClassID:  scope.ClassID,
 	})
 
 	if err != nil {

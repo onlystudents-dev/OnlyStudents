@@ -38,7 +38,7 @@ func ReadClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	queries := db_queries.New(pool)
 
-	class_data, err := helpers.CacheOrGetStudentClass(c.Context(), rdb, *queries, scope.StudentID, helpers.GetInt32EnvFallback("CLASS_CACHE_TTL", 5*60, 604800))
+	class_data, err := helpers.CacheOrGetStudentClass(c.Context(), rdb, *queries, scope.ClassID, helpers.GetInt32EnvFallback("CLASS_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)

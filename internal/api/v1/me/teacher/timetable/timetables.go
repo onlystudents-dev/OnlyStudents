@@ -273,8 +273,8 @@ func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 	queries := db_queries.New(pool)
 
 	params := db_queries.ReadBaseScheduleClassParams{
-		ClassesID: req.ClassId,
-		SchoolID:  int32(scope.SchoolID),
+		ClassID:  req.ClassId,
+		SchoolID: int32(scope.SchoolID),
 	}
 
 	data, err := queries.ReadBaseScheduleClass(c.Context(), params)

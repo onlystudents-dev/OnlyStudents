@@ -9,14 +9,15 @@ import (
 )
 
 type Absence struct {
-	ID         int64
-	StudentID  int32
-	LessonID   pgtype.Int4
-	Date       pgtype.Date
-	Type       string
-	Justified  bool
-	VerifiedBy pgtype.Int4
-	Note       pgtype.Text
+	ID              int64
+	StudentID       int32
+	LessonID        pgtype.Int4
+	Date            pgtype.Date
+	Type            string
+	Justified       bool
+	VerifiedBy      pgtype.Int4
+	Note            pgtype.Text
+	ClassSubjectsID pgtype.Int4
 }
 
 type Account struct {
@@ -87,6 +88,16 @@ type Class struct {
 	TeacherID   int32
 	CoTeacherID pgtype.Int4
 	BellID      pgtype.Int4
+}
+
+type ClassSubject struct {
+	ID              int32
+	SchoolID        int32
+	ClassID         int32
+	SubjectID       pgtype.Int4
+	CustomSubject   bool
+	CustomSubjectID pgtype.Int4
+	TeacherID       int32
 }
 
 type CustomSubject struct {
