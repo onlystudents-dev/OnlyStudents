@@ -103,50 +103,28 @@ export default function StudentTimetable({ me }: {me: Me}) {
         }
 
         const lessons: Lesson[] = await response.json()
-        const day = 60 * 60 * 24
+        const daySeconds = 86400
         const language = getLanguage(me)?.key || "en-US"
+        const now = new Date()
 
-        setMonday({
-            date: formatUnixDate(mondayTime, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 1),
-            today: monday.getDate() === new Date().getDate(),
-        })
+        const createDayData = (dayOffset: number, dayOfWeek: number) => {
+            const targetDate = new Date(monday)
+            targetDate.setDate(monday.getDate() + dayOffset)
 
-        setTuesday({
-            date: formatUnixDate(mondayTime + day, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 2),
-            today: monday.getDate() + 1 === new Date().getDate(),
-        })
+            return {
+                date: formatUnixDate(mondayTime + daySeconds * dayOffset, language),
+                lessons: lessons.filter(lesson => lesson.day_of_week === dayOfWeek),
+                today: targetDate.toDateString() === now.toDateString(),
+            }
+        }
 
-        setWednesday({
-            date: formatUnixDate(mondayTime + day * 2, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 3),
-            today: monday.getDate() + 2 === new Date().getDate(),
-        })
-
-        setThursday({
-            date: formatUnixDate(mondayTime + day * 3, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 4),
-            today: monday.getDate() + 3 === new Date().getDate(),
-        })
-
-        setFriday({
-            date: formatUnixDate(mondayTime + day * 4, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 5),
-            today: monday.getDate() + 4 === new Date().getDate(),
-        })
-
-        setSaturday({
-            date: formatUnixDate(mondayTime + day * 5, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 6),
-            today: monday.getDate() + 5 === new Date().getDate(),
-        })
-
-        setSunday({
-            date: formatUnixDate(mondayTime + day * 6, language),
-            lessons: lessons.filter(lesson => lesson.day_of_week === 0),
-            today: monday.getDate() + 6 === new Date().getDate(),
-        })
+        setMonday(createDayData(0, 1))
+        setTuesday(createDayData(1, 2))
+        setWednesday(createDayData(2, 3))
+        setThursday(createDayData(3, 4))
+        setFriday(createDayData(4, 5))
+        setSaturday(createDayData(5, 6))
+        setSunday(createDayData(6, 0))
 
         setLoading(false)
     }, [me])
