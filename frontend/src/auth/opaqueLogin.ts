@@ -1,5 +1,3 @@
-import {ready, client} from "@serenity-kit/opaque";
-
 export type OpaqueLoginResult =
   | { status: "ok" }
   | { status: "wrong" }
@@ -10,6 +8,7 @@ export async function opaqueLogin(params: {
   userId: number; role: string; password: string;
   identifiers?: { client?: string; server?: string };
 }): Promise<OpaqueLoginResult> {
+  const { ready, client } = await import("@serenity-kit/opaque")
   await ready;
   try {
     const { clientLoginState, startLoginRequest } =

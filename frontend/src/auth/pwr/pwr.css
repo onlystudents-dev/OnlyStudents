@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@reference "tailwindcss";
 
 .in {
     animation: getIn 500ms ease-in-out;

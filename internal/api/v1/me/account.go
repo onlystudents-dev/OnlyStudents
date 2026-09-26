@@ -67,7 +67,6 @@ type changeLangRequest struct {
 }
 
 type changeEmailRequest struct {
-	Password string `json:"password"`
 	NewEmail string `json:"new_email"`
 }
 
@@ -212,42 +211,35 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.Password == "" || req.NewEmail == "" || !helpers.EmailRegex.MatchString(req.NewEmail) {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
 	queries := db_queries.New(pool)
 	_, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	// IMPORTANT TODO: Add OPAQUE auth
-	return c.SendStatus(fiber.StatusNotImplemented)
+	pgEmail := pgtype.Text{String: req.NewEmail, Valid: true}
+	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
+	switch session_data.Role {
+	case "student":
+		err = queries.UpdateEmailStudent(c.Context(), db_queries.UpdateEmailStudentParams{EmailAddress: pgEmail, StudentID: pgAccountID})
+	case "teacher":
+		err = queries.UpdateEmailTeacher(c.Context(), db_queries.UpdateEmailTeacherParams{EmailAddress: pgEmail, TeacherID: pgAccountID})
+	case "guardian":
+		err = queries.UpdateEmailGuardian(c.Context(), db_queries.UpdateEmailGuardianParams{EmailAddress: pgEmail, GuardianID: pgAccountID})
+	default:
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
 
-	// pgEmail := pgtype.Text{String: req.NewEmail, Valid: true}
-	// pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
-	// switch session_data.Role {
-	// case "student":
-	// 	err = queries.UpdateEmailStudent(c.Context(), db_queries.UpdateEmailStudentParams{EmailAddress: pgEmail, StudentID: pgAccountID})
-	// case "teacher":
-	// 	err = queries.UpdateEmailTeacher(c.Context(), db_queries.UpdateEmailTeacherParams{EmailAddress: pgEmail, TeacherID: pgAccountID})
-	// case "guardian":
-	// 	err = queries.UpdateEmailGuardian(c.Context(), db_queries.UpdateEmailGuardianParams{EmailAddress: pgEmail, GuardianID: pgAccountID})
-	// default:
-	// 	return c.SendStatus(fiber.StatusBadRequest)
-	// }
+	if err != nil {
+		if isUniqueViolation(err) {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		slog.Error("change email error", "err", err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
 
-	// if err != nil {
-	// 	if isUniqueViolation(err) {
-	// 		return c.SendStatus(fiber.StatusBadRequest)
-	// 	}
-	// 	slog.Error("change email error", "err", err)
-	// 	return c.SendStatus(fiber.StatusInternalServerError)
-	// }
-
-	// helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
-	// return c.SendStatus(fiber.StatusOK)
+	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 type VerifyEmailData struct {
