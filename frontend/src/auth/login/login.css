@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@reference "tailwindcss";
 
 .box {
     @apply flex w-120 p-6 rounded-2xl z-149 flex-row justify-start items-center;

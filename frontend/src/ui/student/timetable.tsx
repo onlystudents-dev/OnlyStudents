@@ -1,5 +1,5 @@
 import Navbar from "../../navbar/navbar.tsx";
-import type {Me} from "../../app.tsx";
+import type {Me} from "../../types/api.ts";
 import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import "./timetable.css";

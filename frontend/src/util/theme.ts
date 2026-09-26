@@ -1,4 +1,4 @@
-import type {Me} from "../app.tsx";
+import type {Me} from "../types/api.ts";
 
 export const themes = ["", "dark", "light"] as const;
 export type Theme = typeof themes[number];

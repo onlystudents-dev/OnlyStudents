@@ -1,6 +1,6 @@
 import "./me.css";
 import Navbar from "../../navbar/navbar.tsx";
-import type {Me} from "../../app.tsx";
+import type {Me} from "../../types/api.ts";
 import Button from "./button.tsx";
 import {
     faAddressCard,

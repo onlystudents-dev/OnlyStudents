@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@reference "tailwindcss";
 
 .button {
     @apply p-2 text-center rounded-lg cursor-pointer;

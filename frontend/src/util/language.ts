@@ -1,5 +1,5 @@
 import {match} from "@formatjs/intl-localematcher";
-import type {Me} from "../app.tsx";
+import type {Me} from "../types/api.ts";
 
 export type Language = {
     key: string,

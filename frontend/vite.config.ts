@@ -14,10 +14,49 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             {
+              name: 'opaque',
+              test: /node_modules[\\/]@serenity-kit[\\/]opaque/,
+              priority: 30
+            },
+            {
+              name: 'shared',
+              test: /src[\\/](navbar|util)[\\/]/,
+              priority: 25
+            },
+            {
               name: 'libs',
-              test: /node_modules/,
-              minSize: 100000,
-              maxSize: 500000,
+              test: /node_modules[\\/]/,
+              maxSize: 250000,
+              priority: 20,
+            },
+            {
+              name: 'auth',
+              test: /src[\\/]auth[\\/]/,
+              maxSize: 50000,
+              priority: 10,
+            },
+            {
+              name: 'guardian',
+              test: /src[\\/]ui[\\/]guardian[\\/]/,
+              maxSize: 50000,
+              priority: 10,
+            },
+            {
+              name: 'me',
+              test: /src[\\/]ui[\\/]me[\\/]/,
+              maxSize: 50000,
+              priority: 10,
+            },
+            {
+              name: 'student',
+              test: /src[\\/]ui[\\/]student[\\/]/,
+              maxSize: 50000,
+              priority: 10,
+            },
+            {
+              name: 'teacher',
+              test: /src[\\/]ui[\\/]teacher[\\/]/,
+              maxSize: 50000,
               priority: 10,
             },
           ],

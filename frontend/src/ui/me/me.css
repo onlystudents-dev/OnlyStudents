@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@reference "tailwindcss";
 
 .sidebar {
     @apply absolute w-90 left-0 bottom-0 h-full p-4 z-2;

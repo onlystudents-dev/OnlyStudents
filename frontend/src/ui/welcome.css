@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@reference "tailwindcss";
 
 .hello {
     @apply absolute top-12 left-36 text-5xl;
