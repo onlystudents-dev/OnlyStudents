@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -100,9 +101,23 @@ func main() {
 		"/homeworks",
 		"/absences",
 	}
+	indexHTML, err := os.ReadFile("frontend/dist/index.html")
+	if err != nil {
+		panic(err)
+	}
 	for _, path := range paths {
 		app.Get(path, func(c fiber.Ctx) error {
-			return c.SendFile("frontend/dist/index.html")
+			page := indexHTML
+
+			statusData, err := meapi.GetStatusData(c, pool, rdb)
+			if err == nil {
+				payload, _ := json.Marshal(statusData)
+				page = bytes.Replace(page, []byte(`"__INITIAL_STATUS__"`), payload, 1)
+			}
+
+			c.Set("Content-Type", "text/html; charset=utf-8")
+			c.Set("Cache-Control", "no-store")
+			return c.Send(page)
 		})
 	}
 

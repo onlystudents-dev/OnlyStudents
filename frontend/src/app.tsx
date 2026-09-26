@@ -34,14 +34,26 @@ export type Me = {
     theme: Theme,
 }
 
+declare global {
+    interface Window { __INITIAL_STATUS__?: Me | string }
+}
+
 export default function App() {
     const [ratelimit, setRatelimit] = useState<number>(-1);
     const [loading, setLoading] = useState(true);
     const [me, setMe] = useState<Me | null>(null);
 
     async function fetchMe() {
+        const me = window.__INITIAL_STATUS__
+        if (typeof me !== "undefined") {
+            if (typeof me === "string") return true
+
+            window.__INITIAL_STATUS__ = undefined
+            setMe(me)
+            return me
+        }
         try {
-            const meR = await fetch("/api/v1/me/status");
+            const meR = await fetch("/api/v1/me/status")
             if (meR.status === 429) {
                 const seconds = meR.headers.get("Retry-After")
                 if (seconds == null) return false
@@ -50,9 +62,9 @@ export default function App() {
                 return false
             }
             if (meR.status === 401) return true
-            const meJ = await meR.json();
-            setMe(meJ);
-            return meJ;
+            const meJ = await meR.json()
+            setMe(meJ)
+            return meJ
         } catch {/* empty */}
     }
 
@@ -130,3 +142,4 @@ export default function App() {
         </>
     )
 }
+// this thing is held together with duct tape

@@ -8,7 +8,7 @@ import {useState} from "react";
 import Skeleton from "../util/skeleton/skeleton.tsx";
 
 export default function Navbar({ me }: {me: Me}) {
-    const [pfpLoaded, setPfpLoaded] = useState(false);
+    const [pfpLoaded, setPfpLoaded] = useState(false)
 
     return (
         <>
