@@ -90,6 +90,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
 
         if (response.status === 429) {
             setRateLimit(response.headers.get("retry-after") as unknown as number)
+            setLoading(false)
             return
         } else if (!response.ok) {
             await fromResponse(response)

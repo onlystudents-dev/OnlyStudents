@@ -94,6 +94,13 @@ func main() {
 		return middlewares.SecurityHeadersMiddleware(c)
 	})
 
+	authRateMax := helpers.GetInt64EnvFallback("AUTH_RATE_MAX", 5, 1000000)
+	authRateWindow := helpers.GetInt64EnvFallback("AUTH_RATELIMIT_WINDOW", 60, 1000000)
+	apiRateMax := helpers.GetInt64EnvFallback("API_RATE_MAX", 60, 1000000)
+	apiRateWindow := helpers.GetInt64EnvFallback("API_RATELIMIT_WINDOW", 60, 1000000)
+	forgetRateMax := helpers.GetInt64EnvFallback("FORGET_RATE_MAX", 1, 1000000)
+	forgetRateWindow := helpers.GetInt64EnvFallback("FORGET_RATELIMIT_WINDOW", 120, 1000000)
+
 	// frontend
 	app.Use("/assets/fonts", static.New("frontend/dist/assets/fonts", static.Config{MaxAge: 31536000}))
 	app.Use("/assets", static.New("frontend/dist/assets", static.Config{MaxAge: 3600, Compress: true}))
@@ -113,8 +120,9 @@ func main() {
 		app.Get(path, func(c fiber.Ctx) error {
 			page := indexHTML
 
-			statusData, err := meapi.GetStatusData(c, pool, rdb)
-			if err == nil {
+			if middlewares.RateLimitExceeded(rdb, "api", c.IP(), apiRateMax) {
+				page = bytes.Replace(page, []byte(`"__INITIAL_STATUS__"`), []byte("null"), 1)
+			} else if statusData, err := meapi.GetStatusData(c, pool, rdb); err == nil {
 				payload, _ := json.Marshal(statusData)
 				page = bytes.Replace(page, []byte(`"__INITIAL_STATUS__"`), payload, 1)
 			}
@@ -134,13 +142,6 @@ func main() {
 
 		return c.SendString("Pong!")
 	})
-
-	authRateMax := helpers.GetInt64EnvFallback("AUTH_RATE_MAX", 5, 1000000)
-	authRateWindow := helpers.GetInt64EnvFallback("AUTH_RATELIMIT_WINDOW", 60, 1000000)
-	apiRateMax := helpers.GetInt64EnvFallback("API_RATE_MAX", 60, 1000000)
-	apiRateWindow := helpers.GetInt64EnvFallback("API_RATELIMIT_WINDOW", 60, 1000000)
-	forgetRateMax := helpers.GetInt64EnvFallback("FORGET_RATE_MAX", 1, 1000000)
-	forgetRateWindow := helpers.GetInt64EnvFallback("FORGET_RATELIMIT_WINDOW", 120, 1000000)
 
 	api := app.Group("/api")
 
