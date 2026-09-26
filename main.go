@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -118,18 +117,7 @@ func main() {
 	}
 	for _, path := range paths {
 		app.Get(path, func(c fiber.Ctx) error {
-			page := indexHTML
-
-			if middlewares.RateLimitExceeded(rdb, "api", c.IP(), apiRateMax) {
-				page = bytes.Replace(page, []byte(`"__INITIAL_STATUS__"`), []byte("null"), 1)
-			} else if statusData, err := meapi.GetStatusData(c, pool, rdb); err == nil {
-				payload, _ := json.Marshal(statusData)
-				page = bytes.Replace(page, []byte(`"__INITIAL_STATUS__"`), payload, 1)
-			}
-
-			c.Set("Content-Type", "text/html; charset=utf-8")
-			c.Set("Cache-Control", "no-store")
-			return c.Send(page)
+			return middlewares.FrontendMiddleware(c, pool, rdb, indexHTML, "api", apiRateMax, apiRateWindow)
 		})
 	}
 
