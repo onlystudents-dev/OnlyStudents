@@ -1,4 +1,4 @@
-package manageapi
+package teacherapi
 
 import (
 	"onlystudents/internal/helpers"

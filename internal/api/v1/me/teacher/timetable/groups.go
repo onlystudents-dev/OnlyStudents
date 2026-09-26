@@ -43,7 +43,7 @@ func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -77,7 +77,7 @@ func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -106,7 +106,7 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -135,7 +135,7 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 func ReadGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -159,7 +159,7 @@ func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -197,7 +197,7 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -227,7 +227,7 @@ func ReadStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_GROUPS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)

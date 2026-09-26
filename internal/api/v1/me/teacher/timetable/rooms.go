@@ -35,7 +35,7 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_ROOMS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_ROOMS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -70,7 +70,7 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_ROOMS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_ROOMS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -105,7 +105,7 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_ROOMS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_ROOMS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -128,7 +128,7 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_ROOMS")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_ROOMS")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
