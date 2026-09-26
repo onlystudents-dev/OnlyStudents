@@ -13,23 +13,26 @@ export default function PasswordCheck({ password, confirmPassword, setPassed }: 
     }, []);
 
     useEffect(() => {
-        if (!config?.hibpCheckEnabled || !password) {
-            setExposed(null);
-            return;
+        function Fetch() {
+            setExposed(null)
+            if (!config?.hibpCheckEnabled || !password) {
+                return
+            }
+
+            let active = true
+            const timer = setTimeout(() => {
+                isPasswordExposed(password).then(result => {
+                    if (active) setExposed(result)
+                })
+            }, 400)
+
+            return () => {
+                active = false
+                clearTimeout(timer)
+            }
         }
 
-        setExposed(null)
-        let active = true
-        const timer = setTimeout(() => {
-            isPasswordExposed(password).then(result => {
-                if (active) setExposed(result)
-            })
-        }, 400)
-
-        return () => {
-            active = false
-            clearTimeout(timer)
-        }
+        Fetch()
     }, [password, config?.hibpCheckEnabled]);
 
     const minLength = config?.minLength ?? 12
