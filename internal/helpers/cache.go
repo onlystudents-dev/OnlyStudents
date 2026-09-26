@@ -116,7 +116,7 @@ func CacheOrGetStudentHomework(ctx context.Context, rdb *redis.Client, queries d
 }
 
 func CacheOrGetCheckPermission(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, check_permission_params db_queries.CheckPermissionParams, ttl int32) (bool, error) {
-	key := fmt.Sprintf("check_permission:%d:%d", check_permission_params.SchoolID, check_permission_params.TeacherID)
+	key := fmt.Sprintf("check_permission:%s:%d:%d", check_permission_params.Name, check_permission_params.SchoolID, check_permission_params.TeacherID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() (bool, error) {
 		return queries.CheckPermission(ctx, check_permission_params)
 	})
@@ -139,10 +139,10 @@ func CacheOrGetStudentGroups(ctx context.Context, rdb *redis.Client, queries db_
 	})
 }
 
-func CacheOrGetStudentClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, StudentID int32, ttl int32) (db_queries.Class, error) {
-	key := fmt.Sprintf("student_class:%d", StudentID)
+func CacheOrGetStudentClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, classID int32, ttl int32) (db_queries.Class, error) {
+	key := fmt.Sprintf("student_class:%d", classID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.Class, error) {
-		return queries.GetClassByID(ctx, StudentID)
+		return queries.GetClassByID(ctx, classID)
 	})
 }
 
@@ -159,4 +159,8 @@ func InvalidateCachedAccount(ctx context.Context, rdb *redis.Client, role string
 	}
 
 	rdb.Del(ctx, fmt.Sprintf("%s_account:%d", role, account_id))
+}
+
+func InvalidateCachedCheckPermission(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, check_permission_params db_queries.CheckPermissionParams, ttl int32) {
+	rdb.Del(ctx, fmt.Sprintf("check_permission:%s:%d:%d", check_permission_params.Name, check_permission_params.SchoolID, check_permission_params.TeacherID))
 }

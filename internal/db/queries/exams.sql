@@ -1,7 +1,7 @@
 -- name: GetStudentExams :many
 SELECT
     e.id,
-    s.subject_name AS subject,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
     CONCAT(t.first_name, ' ', t.last_name) AS teacher,
     e.title,
@@ -11,15 +11,15 @@ SELECT
     e.end_time,
     r.name AS room
 FROM exams e
-JOIN subjects s ON s.id = e.class_subjects_id
+JOIN class_subjects csub ON csub.id = e.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = e.teacher_id
 LEFT JOIN rooms r ON r.id = e.room_id
-WHERE e.class_subjects_id IN (
-    SELECT bs.subject_id
-    FROM base_schedule bs
-    JOIN group_members gm ON gm.group_id = bs.group_id
-    WHERE gm.student_id = $1
-      AND bs.subject_id IS NOT NULL
+WHERE csub.class_id = (
+    SELECT st.classes_id
+    FROM students st
+    WHERE st.id = $1
 )
 ORDER BY e.date, e.start_time;
 

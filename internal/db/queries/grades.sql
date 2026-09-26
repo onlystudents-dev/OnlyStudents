@@ -1,7 +1,7 @@
 -- name: GetStudentGrades :many
 SELECT
     g.id,
-    s.subject_name AS subject,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
     CONCAT(t.first_name, ' ', t.last_name) AS teacher,
     ter.name AS term,
@@ -10,27 +10,31 @@ SELECT
     g.date,
     g.note
 FROM grades g
-JOIN subjects s ON s.id = g.class_subjects_id
+JOIN class_subjects csub ON csub.id = g.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = g.teacher_id
 JOIN terms ter ON ter.id = g.term_id
 JOIN grade_types gt ON gt.id = g.grade_type_id
 WHERE g.student_id = $1
-ORDER BY g.term_id, s.subject_name, g.date;
+ORDER BY g.term_id, COALESCE(cs.subject_name, s.subject_name), g.date;
 
 -- name: GetStudentFinalGrades :many
 SELECT
     fg.id,
-    s.subject_name AS subject,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
     CONCAT(t.first_name, ' ', t.last_name) AS teacher,
     ter.name AS term,
     fg.value
 FROM final_grades fg
-JOIN subjects s ON s.id = fg.class_subjects_id
+JOIN class_subjects csub ON csub.id = fg.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = fg.teacher_id
 JOIN terms ter ON ter.id = fg.term_id
 WHERE fg.student_id = $1
-ORDER BY fg.term_id, s.subject_name;
+ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name);
 
 -- name: AddGrade :exec
 INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
