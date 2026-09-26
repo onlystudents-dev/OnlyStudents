@@ -35,7 +35,7 @@ export type Me = {
 }
 
 declare global {
-    interface Window { __INITIAL_STATUS__?: Me | string }
+    interface Window { __INITIAL_STATUS__?: Me | string | null }
 }
 
 export default function App() {
@@ -47,6 +47,7 @@ export default function App() {
         const me = window.__INITIAL_STATUS__
         if (typeof me !== "undefined") {
             if (typeof me === "string") return true
+            if (me === null) return false
 
             window.__INITIAL_STATUS__ = undefined
             setMe(me)
