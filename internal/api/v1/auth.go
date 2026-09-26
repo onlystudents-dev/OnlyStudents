@@ -18,20 +18,22 @@ import (
 	"github.com/goccy/go-json"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
+
+type forgetPasswordRequest struct {
+	User int32  `json:"user"`
+	Role string `json:"role"`
+}
 
 type loginInitRequest struct {
 	User              int32             `json:"user"`
 	Role              string            `json:"role"`
 	StartLoginRequest opaquepkg.Message `json:"start_login_request"`
-}
-
-type forgetPasswordRequest struct {
-	User int32  `json:"user"`
-	Role string `json:"role"`
 }
 
 type loginInitResponse struct {
@@ -42,6 +44,20 @@ type loginInitResponse struct {
 type loginFinishRequest struct {
 	LoginHandle        string            `json:"login_handle"`
 	FinishLoginRequest opaquepkg.Message `json:"finish_login_request"`
+}
+
+type enrollInitRequest struct {
+	EnrollToken        string            `json:"enroll_token"`
+	StartEnrollRequest opaquepkg.Message `json:"start_enroll_request"`
+}
+
+type enrollInitResponse struct {
+	EnrollResponse opaquepkg.Message `json:"enroll_response"`
+}
+
+type enrollFinishRequest struct {
+	EnrollToken         string            `json:"enroll_token"`
+	FinishEnrollRequest opaquepkg.Message `json:"finish_enroll_request"`
 }
 
 func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
@@ -115,7 +131,47 @@ func LoginFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_serv
 		Expires:  time.Now().Add(duration),
 		HTTPOnly: true,
 		Secure:   helpers.GetEnvFallback("APP_ENV", "development") == "production",
-		SameSite: "Lax",
+		SameSite: "Strict",
+	})
+
+	return c.SendStatus(200)
+}
+
+func EnrollInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
+	var req enrollInitRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	ke2, err := opaquepkg.EnrollInit(c.Context(), opaque_server, rdb, req.EnrollToken, req.StartEnrollRequest)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	return c.JSON(enrollInitResponse{EnrollResponse: ke2})
+}
+
+func EnrollFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
+	var req enrollFinishRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	sessionToken, err := opaquepkg.EnrollFinish(c.Context(), opaque_server, rdb, pool, req.EnrollToken, req.FinishEnrollRequest)
+
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "WRONG_CREDENTIALS"})
+	}
+
+	duration := time.Duration(helpers.GetInt64EnvFallback("SESSION_TTL", 3600, 2592000)) * time.Second
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "session_token",
+		Value:    sessionToken,
+		Expires:  time.Now().Add(duration),
+		HTTPOnly: true,
+		Secure:   helpers.GetEnvFallback("APP_ENV", "development") == "production",
+		SameSite: "Strict",
 	})
 
 	return c.SendStatus(200)
@@ -126,6 +182,23 @@ func Logout(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	if session_token == "" {
 		return c.SendStatus(401)
+	}
+
+	if session_data, err := helpers.SessionGet(c, rdb, session_token); err == nil {
+		session_uuid, uerr := uuid.Parse(session_data.DeviceID)
+		account_uuid, aerr := uuid.Parse(session_data.AccountUUID)
+
+		if uerr == nil && aerr == nil {
+			queries := db_queries.New(pool)
+			rerr := queries.RevokeSession(c.Context(), db_queries.RevokeSessionParams{
+				ID:          pgtype.UUID{Bytes: session_uuid, Valid: true},
+				AccountUuid: pgtype.UUID{Bytes: account_uuid, Valid: true},
+			})
+
+			if rerr != nil {
+				slog.Error("revoke session", "err", rerr)
+			}
+		}
 	}
 
 	helpers.SessionDelete(c, rdb, session_token)
@@ -206,48 +279,9 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 type ResetPasswordConfirmType struct {
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"confirm_password"`
-	PendingPassword string `json:"pending_password"`
 }
 
 func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req ResetPasswordConfirmType
-
-	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(400)
-	}
-
-	if req.Password == "" || req.ConfirmPassword == "" || req.PendingPassword == "" {
-		return c.SendStatus(400)
-	}
-
-	is_password_good, err := helpers.PasswordChecks(c, req.Password, req.ConfirmPassword)
-
-	if !is_password_good {
-		return err
-	}
-
-	cacheKey := fmt.Sprintf("pending_password_reset_%s", req.PendingPassword)
-
-	dataJSON, err := rdb.GetDel(c.Context(), cacheKey).Result()
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"error": "INVALID_PASSWORD_RESET_TOKEN",
-		})
-	}
-
-	var sessionData helpers.SessionData
-	if err = json.Unmarshal([]byte(dataJSON), &sessionData); err != nil {
-		slog.Error("json unmarshall error", "err", err)
-		return c.SendStatus(500)
-	}
-
 	// IMPORTANT TODO: OPAQUE password change
 	return c.SendStatus(501)
-
-	// invalidate cached account object which has the old password hash
-	// helpers.InvalidateCachedAccount(c.Context(), rdb, sessionData.Role, sessionData.AccountID)
-
-	// return c.SendStatus(200)
 }
