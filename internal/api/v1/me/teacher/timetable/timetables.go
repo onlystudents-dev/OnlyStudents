@@ -131,7 +131,7 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -181,7 +181,7 @@ func DeleteBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -214,7 +214,7 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -264,7 +264,7 @@ func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -325,7 +325,7 @@ func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -402,7 +402,7 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -461,7 +461,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -513,7 +513,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)
@@ -565,7 +565,7 @@ func DeleteRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, status_code := helpers.ResolveManageScope(c, pool, rdb, "MANAGE_TIMETABLES")
+	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
 
 	if status_code != fiber.StatusOK {
 		return c.SendStatus(status_code)

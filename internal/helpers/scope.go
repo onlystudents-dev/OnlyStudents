@@ -17,7 +17,7 @@ type meScope struct {
 	StudentID int32
 }
 
-type manageScope struct {
+type teacherScope struct {
 	SchoolID  int32
 	ClassID   int32
 	TeacherID int32
@@ -82,10 +82,10 @@ func ResolveMeScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (meScope
 	return meScope{StudentID: studentID, SchoolID: student.SchoolID, ClassID: student.ClassesID}, nil
 }
 
-func ResolveManageScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, required_permission string) (manageScope, int) {
+func ResolveTeacherCapabilityScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, required_permission string) (teacherScope, int) {
 	session, ok := c.Locals("session").(SessionData)
 	if !ok {
-		return manageScope{}, fiber.StatusUnauthorized
+		return teacherScope{}, fiber.StatusUnauthorized
 	}
 
 	var teacherID int32
@@ -93,26 +93,26 @@ func ResolveManageScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, requ
 	case "teacher":
 		teacherID = session.AccountID
 	default:
-		return manageScope{}, fiber.StatusBadRequest
+		return teacherScope{}, fiber.StatusBadRequest
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return manageScope{}, fiber.StatusBadRequest
+		return teacherScope{}, fiber.StatusBadRequest
 	}
 
 	if school_id == 0 {
-		return manageScope{}, fiber.StatusBadRequest
+		return teacherScope{}, fiber.StatusBadRequest
 	}
 
 	has_permission := CheckPermission(c, pool, rdb, required_permission, school_id)
 
 	if !has_permission {
-		return manageScope{}, fiber.StatusForbidden
+		return teacherScope{}, fiber.StatusForbidden
 	}
 
-	return manageScope{TeacherID: teacherID, SchoolID: int32(school_id)}, fiber.StatusOK
+	return teacherScope{TeacherID: teacherID, SchoolID: int32(school_id)}, fiber.StatusOK
 }
 
 func ResolvePerson(c fiber.Ctx, queries db_queries.Queries, session_data SessionData) (int32, error) {

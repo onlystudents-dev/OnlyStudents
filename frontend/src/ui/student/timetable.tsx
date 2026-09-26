@@ -36,7 +36,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
         setLoading(true)
         const { start, end, monday, mondayTime } = getWeekRange(date)
 
-        const response = await fetch(`/api/v1/me/timetable?start_date=${start}&end_date=${end}`)
+        const response = await fetch(`/api/v1/me/student/timetable?start_date=${start}&end_date=${end}`)
 
         if (response.status === 429) {
             setRateLimit(response.headers.get("retry-after") as unknown as number)
@@ -102,8 +102,8 @@ export default function StudentTimetable({ me }: {me: Me}) {
             }
 
             await Promise.all([
-                fetchInto("/api/v1/me/timetable/room", setRooms),
-                fetchInto<Class>("/api/v1/me/class").then(clazz => fetchInto(`/api/v1/me/timetable/lesson_time?type_id=${clazz?.bell_id}`, setLessonTime)),
+                fetchInto("/api/v1/me/student/timetable/room", setRooms),
+                fetchInto<Class>("/api/v1/me/student/class").then(clazz => fetchInto(`/api/v1/me/student/timetable/lesson_time?type_id=${clazz?.bell_id}`, setLessonTime)),
             ])
         }
 

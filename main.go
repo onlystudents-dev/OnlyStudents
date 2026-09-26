@@ -12,8 +12,9 @@ import (
 	v1 "onlystudents/internal/api/v1"
 	adminapi "onlystudents/internal/api/v1/admin"
 	meapi "onlystudents/internal/api/v1/me"
-	manageapi "onlystudents/internal/api/v1/me/manage"
-	timetableapi "onlystudents/internal/api/v1/me/manage/timetable"
+	studentapi "onlystudents/internal/api/v1/me/student"
+	teacherapi "onlystudents/internal/api/v1/me/teacher"
+	timetableapi "onlystudents/internal/api/v1/me/teacher/timetable"
 	"onlystudents/internal/db"
 	"onlystudents/internal/helpers"
 	env "onlystudents/internal/helpers"
@@ -249,51 +250,55 @@ func main() {
 	})
 
 	me_group.Get("/grades", func(c fiber.Ctx) error {
-		return meapi.Grades(c, pool, rdb)
+		return studentapi.Grades(c, pool, rdb)
+	})
+
+	me_group.Get("/absences", func(c fiber.Ctx) error {
+		return studentapi.Absences(c, pool, rdb)
 	})
 
 	me_group.Get("/final_grades", func(c fiber.Ctx) error {
-		return meapi.FinalGrades(c, pool, rdb)
+		return studentapi.FinalGrades(c, pool, rdb)
 	})
 
 	me_group.Get("/exams", func(c fiber.Ctx) error {
-		return meapi.Exams(c, pool, rdb)
+		return studentapi.Exams(c, pool, rdb)
 	})
 
 	me_group.Get("/homework", func(c fiber.Ctx) error {
-		return meapi.Homework(c, pool, rdb)
+		return studentapi.Homework(c, pool, rdb)
 	})
 
 	me_group.Get("/timetable", func(c fiber.Ctx) error {
-		return meapi.ReadMyRealTimeTable(c, pool, rdb)
+		return studentapi.ReadMyRealTimeTable(c, pool, rdb)
 	})
 
 	me_group.Get("/timetable/base", func(c fiber.Ctx) error {
-		return meapi.ReadBaseSchedule(c, pool, rdb)
+		return studentapi.ReadBaseSchedule(c, pool, rdb)
 	})
 
 	me_group.Get("/timetable/lesson_time", func(c fiber.Ctx) error {
-		return meapi.ReadLessonTime(c, pool, rdb)
+		return studentapi.ReadLessonTime(c, pool, rdb)
 	})
 
 	me_group.Get("/timetable/room", func(c fiber.Ctx) error {
-		return meapi.ReadRoom(c, pool, rdb)
+		return studentapi.ReadRoom(c, pool, rdb)
 	})
 
 	me_group.Get("/timetable/custom_subject", func(c fiber.Ctx) error {
-		return meapi.ReadCustomSubject(c, pool, rdb)
+		return studentapi.ReadCustomSubject(c, pool, rdb)
 	})
 
 	me_group.Get("/class", func(c fiber.Ctx) error {
-		return meapi.ReadClass(c, pool, rdb)
+		return studentapi.ReadClass(c, pool, rdb)
 	})
 
 	me_group.Get("/groups", func(c fiber.Ctx) error {
-		return meapi.ReadGroups(c, pool, rdb)
+		return studentapi.ReadGroups(c, pool, rdb)
 	})
 
 	me_group.Get("/timetable/bell_schedule_type", func(c fiber.Ctx) error {
-		return meapi.ReadBellScheduleType(c, pool, rdb)
+		return studentapi.ReadBellScheduleType(c, pool, rdb)
 	})
 
 	manage_group := me_group.Group("/manage", func(c fiber.Ctx) error {
@@ -417,27 +422,27 @@ func main() {
 	})
 
 	manage_group.Get("/add_exam", func(c fiber.Ctx) error {
-		return manageapi.AddExam(c, pool, rdb)
+		return teacherapi.AddExam(c, pool, rdb)
 	})
 
 	manage_group.Get("/remove_exam", func(c fiber.Ctx) error {
-		return manageapi.RemoveExam(c, pool, rdb)
+		return teacherapi.RemoveExam(c, pool, rdb)
 	})
 
 	manage_group.Get("/edit_exam", func(c fiber.Ctx) error {
-		return manageapi.EditExam(c, pool, rdb)
+		return teacherapi.EditExam(c, pool, rdb)
 	})
 
 	manage_group.Get("/add_grades", func(c fiber.Ctx) error {
-		return manageapi.AddGrade(c, pool, rdb)
+		return teacherapi.AddGrade(c, pool, rdb)
 	})
 
 	manage_group.Get("/remove_grades", func(c fiber.Ctx) error {
-		return manageapi.RemoveGrade(c, pool, rdb)
+		return teacherapi.RemoveGrade(c, pool, rdb)
 	})
 
 	manage_group.Get("/edit_grades", func(c fiber.Ctx) error {
-		return manageapi.EditGrade(c, pool, rdb)
+		return teacherapi.EditGrade(c, pool, rdb)
 	})
 
 	log.Fatal(app.Listen(":8080",

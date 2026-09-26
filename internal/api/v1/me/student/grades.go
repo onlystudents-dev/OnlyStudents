@@ -1,4 +1,4 @@
-package meapi
+package studentapi
 
 import (
 	db_queries "onlystudents/internal/db/store"
