@@ -14,3 +14,53 @@ export type Me = {
     lang: string,
     theme: Theme,
 }
+
+export type Lesson = {
+    room_id: number,
+    lesson_num: number,
+    day_of_week: number,
+    effective_teacher_id: number,
+    group_id: number,
+    school_id: number,
+    custom_subject: boolean,
+    subject_id: number | null,
+    custom_subject_id: number | null,
+    subject_name: string | null,
+    is_substitution: boolean,
+    canceled: boolean,
+    has_exam: boolean,
+    has_homework: boolean,
+    teacher_first_name: string,
+    teacher_last_name: string,
+}
+
+export type Room = {
+    id: number,
+    name: string,
+    capacity: number,
+}
+
+export type Class = {
+    id: number,
+    school_id: number,
+    name: string,
+    teacher_id: number,
+    has_co_teacher_id: boolean,
+    co_teacher_id: number,
+    has_bell_id: boolean,
+    bell_id: number,
+}
+
+export type LessonTime = {
+    id: number,
+    school_id: number,
+    type_id: number,
+    lesson_number: number,
+    at_start: LessonTimeDate,
+    at_end: LessonTimeDate,
+}
+
+export type LessonTimeDate = {
+    Microseconds: number,
+    Valid: boolean,
+}

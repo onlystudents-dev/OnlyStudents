@@ -1,5 +1,5 @@
 import Navbar from "../../navbar/navbar.tsx";
-import type {Me} from "../../types/api.ts";
+import type {Class, Lesson, LessonTime, Me, Room} from "../../types/api.ts";
 import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import "./timetable.css";
@@ -8,56 +8,6 @@ import {faAngleLeft, faAngleRight, faHouseChimney, faPenToSquare} from "@fortawe
 import RateLimit from "../../util/ratelimit.tsx";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import Loading from "../../util/loading.tsx";
-
-type Lesson = {
-    room_id: number,
-    lesson_num: number,
-    day_of_week: number,
-    effective_teacher_id: number,
-    group_id: number,
-    school_id: number,
-    custom_subject: boolean,
-    subject_id: number | null,
-    custom_subject_id: number | null,
-    subject_name: string | null,
-    is_substitution: boolean,
-    canceled: boolean,
-    has_exam: boolean,
-    has_homework: boolean,
-    teacher_first_name: string,
-    teacher_last_name: string,
-}
-
-type Room = {
-    id: number,
-    name: string,
-    capacity: number,
-}
-
-type Class = {
-    id: number,
-    school_id: number,
-    name: string,
-    teacher_id: number,
-    has_co_teacher_id: boolean,
-    co_teacher_id: number,
-    has_bell_id: boolean,
-    bell_id: number,
-}
-
-type LessonTime = {
-    id: number,
-    school_id: number,
-    type_id: number,
-    lesson_number: number,
-    at_start: LessonTimeDate,
-    at_end: LessonTimeDate,
-}
-
-type LessonTimeDate = {
-    Microseconds: number,
-    Valid: boolean,
-}
 
 type day = {
     date: string,
