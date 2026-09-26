@@ -108,7 +108,7 @@ func parseDateRange(c fiber.Ctx) (time.Time, time.Time, error) {
 }
 
 func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
+	scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
@@ -160,7 +160,7 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 }
 
 func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
+	scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
@@ -209,7 +209,7 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
+	scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
@@ -243,7 +243,7 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
+	scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
@@ -270,7 +270,7 @@ func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
+	scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
@@ -296,7 +296,7 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 }
 
 func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
+	scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)

@@ -17,25 +17,6 @@ JOIN grade_types gt ON gt.id = g.grade_type_id
 WHERE g.student_id = $1
 ORDER BY g.term_id, s.subject_name, g.date;
 
--- name: GetTeacherGrades :many
-SELECT
-    g.id,
-    s.subject_name AS subject,
-    s.code AS subject_code,
-    CONCAT(t.first_name, ' ', t.last_name) AS teacher,
-    ter.name AS term,
-    gt.name AS type,
-    g.value,
-    g.date,
-    g.note
-FROM grades g
-JOIN subjects s ON s.id = g.class_subjects_id
-JOIN teachers t ON t.id = g.teacher_id
-JOIN terms ter ON ter.id = g.term_id
-JOIN grade_types gt ON gt.id = g.grade_type_id
-WHERE g.teacher_id = $1
-ORDER BY g.term_id, s.subject_name, g.date;
-
 -- name: GetStudentFinalGrades :many
 SELECT
     fg.id,

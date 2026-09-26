@@ -352,7 +352,7 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 	for _, student_request := range req.Students {
 		code := enroll_student(c, student_request, pool, rdb)
 
-		if code != 200 {
+		if code != fiber.StatusOK {
 			student_errors += 1
 		}
 	}
@@ -360,7 +360,7 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 	for _, teacher_request := range req.Teachers {
 		code := enroll_teacher(c, teacher_request, pool, rdb)
 
-		if code != 200 {
+		if code != fiber.StatusOK {
 			teacher_errors += 1
 		}
 	}
@@ -368,7 +368,7 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 	for _, guardian_request := range req.Guardians {
 		code := enroll_guardian(c, guardian_request, pool, rdb)
 
-		if code != 200 {
+		if code != fiber.StatusOK {
 			guardian_errors += 1
 		}
 	}

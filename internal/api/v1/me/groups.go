@@ -30,7 +30,7 @@ type GroupData struct {
 }
 
 func ReadClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
+	scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
@@ -63,7 +63,7 @@ func ReadClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadGroups(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveReaderScope(c, pool, rdb)
+	scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
