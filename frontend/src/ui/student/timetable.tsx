@@ -80,7 +80,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
     const [year, setYear] = useState<string>("")
 
     const [ratelimit, setRateLimit] = useState(-1)
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     const fetchWeekLessons = useCallback(async (date = new Date()) => {
         setLoading(true)

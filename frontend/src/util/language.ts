@@ -13,9 +13,10 @@ export const languages: Language[] = [
 ]
 
 let language: Record<string, Record<string, string>>
+
 export async function fetchLanguage(me: Me | null) {
-    const response = await fetch(`/assets/languages/${getLanguage(me)?.key}.json`)
-    language = await response.json()
+    const response = await fetch(`/assets/languages/${getLanguage(me)?.key}.json`);
+    language = await response.json();
 }
 
 export function getLanguage(me: Me | null, auto?: boolean) {
