@@ -37,7 +37,6 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
     const [settingEmail, setSettingEmail] = useState(false)
     const [settingEmailA, setSettingEmailA] = useState(false)
     const newEmail = useRef<HTMLInputElement>(null)
-    const emailPassword = useRef<HTMLInputElement>(null)
     const code = useRef<HTMLInputElement>(null)
 
     const [nickname, setNickname] = useState(me.nickname)
@@ -108,7 +107,6 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
                                                </div>
                                            </div>) : (<div className={`moving-content ${settingEmailA && "first"}`}>
                                                <input type="email" placeholder={getKey("NEW_EMAIL")} ref={newEmail} key={"email"} />
-                                               <input type="password" placeholder={getKey("PASSWORD")} ref={emailPassword} key={"password"} />
 
                                                <button className="absolute bottom-0 right-0" onClick={sendEmail}>
                                                    <FontAwesomeIcon icon={faPaperPlane} /> {getKey("SEND_EMAIL")}
@@ -198,7 +196,6 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
 
     async function sendEmail() {
         if (!newEmail.current?.value) return
-        if (!emailPassword.current?.value) return
         if (newEmail.current.value === me.email_address) return
         setSettingEmailA(true)
         const start = performance.now()
@@ -209,7 +206,6 @@ export default function Me({ me, fetchMe }: {me: Me, fetchMe: () => Promise<void
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                password: emailPassword.current.value,
                 new_email: newEmail.current.value,
             })
         })
