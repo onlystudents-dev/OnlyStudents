@@ -1,5 +1,5 @@
 -- name: CreateAccount :exec
-INSERT INTO accounts (id,role,student_id,teacher_id,guardian_id,email_address,email_verified,theme,lang,pfp_url,nickname) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+INSERT INTO accounts (id,role,student_id,teacher_id,guardian_id,email_address,email_verified) VALUES ($1, $2, $3, $4, $5, $6, $7);
 
 -- name: GetAccountByStudentID :one
 SELECT * FROM accounts WHERE student_id = $1 AND role = 'student';
@@ -21,34 +21,6 @@ UPDATE accounts SET email_address = $1, email_verified = false WHERE guardian_id
 
 -- name: UpdateEmailTeacher :exec
 UPDATE accounts SET email_address = $1, email_verified = false WHERE teacher_id = $2 AND role = 'teacher';
-
--- name: UpdateNicknameStudent :exec
-UPDATE accounts SET nickname = $1 WHERE student_id = $2 AND role = 'student';
-
--- name: UpdateNicknameGuardian :exec
-UPDATE accounts SET nickname = $1 WHERE guardian_id = $2 AND role = 'guardian';
-
--- name: UpdateNicknameTeacher :exec
-UPDATE accounts SET nickname = $1 WHERE teacher_id = $2 AND role = 'teacher';
-
--- name: UpdateThemeStudent :exec
-UPDATE accounts SET theme = $1 WHERE student_id = $2 AND role = 'student';
-
--- name: UpdateThemeGuardian :exec
-UPDATE accounts SET theme = $1 WHERE guardian_id = $2 AND role = 'guardian';
-
--- name: UpdateThemeTeacher :exec
-UPDATE accounts SET theme = $1 WHERE teacher_id = $2 AND role = 'teacher';
-
--- name: UpdateLangStudent :exec
-UPDATE accounts SET lang = $1 WHERE student_id = $2 AND role = 'student';
-
--- name: UpdateLangGuardian :exec
-UPDATE accounts SET lang = $1 WHERE guardian_id = $2 AND role = 'guardian';
-
--- name: UpdateLangTeacher :exec
-UPDATE accounts SET lang = $1 WHERE teacher_id = $2 AND role = 'teacher';
-
 -- name: UpdatePreferencesStudent :exec
 UPDATE accounts SET preferences = $1 WHERE student_id = $2 AND role = 'student';
 

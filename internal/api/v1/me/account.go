@@ -54,39 +54,57 @@ func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return c.SendStatus(fiber.StatusNotImplemented)
 }
 
-type changeNicknameRequest struct {
-	Nickname string `json:"nickname"`
+type Preferences struct {
+	Nickname         string `json:"nickname"`
+	Lang             string `json:"lang"`
+	Theme            string `json:"theme"`
+	PfpURL           string `json:"pfp_url"`
+	TimeTableDisplay int8   `json:"timetable_display"`
+	TimeTableNext    bool   `json:"timetable_next"`
 }
 
-type changeThemeRequest struct {
-	Theme string `json:"theme"`
-}
-
-type changeLangRequest struct {
-	Lang string `json:"lang"`
-}
-
-type changePreferencesRequest struct {
-	Preferences int32 `json:"preferences"`
+type UpdatePreferencesRequest struct {
+	NewPreferences Preferences `json:"new_preferences"`
 }
 
 type changeEmailRequest struct {
 	NewEmail string `json:"new_email"`
 }
 
-func ChangeTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func UpdatePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	var req changeThemeRequest
+	var req UpdatePreferencesRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if !slices.Contains(helpers.Themes, req.Theme) {
+	if !slices.Contains(helpers.Themes, req.NewPreferences.Theme) {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	if !slices.Contains(helpers.Languages, req.NewPreferences.Lang) {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	if len(req.NewPreferences.Nickname) < 8 || len(req.NewPreferences.Nickname) > 64 || html.EscapeString(req.NewPreferences.Nickname) != req.NewPreferences.Nickname {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	preferences_jsonb, marshal_err := json.Marshal(Preferences{
+		Nickname:         req.NewPreferences.Nickname,
+		Lang:             req.NewPreferences.Lang,
+		Theme:            req.NewPreferences.Theme,
+		PfpURL:           req.NewPreferences.PfpURL,
+		TimeTableDisplay: req.NewPreferences.TimeTableDisplay,
+		TimeTableNext:    req.NewPreferences.TimeTableNext,
+	})
+
+	if marshal_err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -96,145 +114,17 @@ func ChangeTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var err error
 	switch session_data.Role {
 	case "student":
-		err = queries.UpdateThemeStudent(c.Context(), db_queries.UpdateThemeStudentParams{Theme: req.Theme, StudentID: pgAccountID})
+		err = queries.UpdatePreferencesStudent(c.Context(), db_queries.UpdatePreferencesStudentParams{Preferences: preferences_jsonb, StudentID: pgAccountID})
 	case "teacher":
-		err = queries.UpdateThemeTeacher(c.Context(), db_queries.UpdateThemeTeacherParams{Theme: req.Theme, TeacherID: pgAccountID})
+		err = queries.UpdatePreferencesTeacher(c.Context(), db_queries.UpdatePreferencesTeacherParams{Preferences: preferences_jsonb, TeacherID: pgAccountID})
 	case "guardian":
-		err = queries.UpdateThemeGuardian(c.Context(), db_queries.UpdateThemeGuardianParams{Theme: req.Theme, GuardianID: pgAccountID})
+		err = queries.UpdatePreferencesGuardian(c.Context(), db_queries.UpdatePreferencesGuardianParams{Preferences: preferences_jsonb, GuardianID: pgAccountID})
 	default:
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	if err != nil {
-		if isUniqueViolation(err) {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		slog.Error("change nickname error", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
-	}
-
-	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
-	return c.SendStatus(fiber.StatusOK)
-}
-
-func ChangeLang(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_data, ok := c.Locals("session").(helpers.SessionData)
-
-	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
-	}
-
-	var req changeLangRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if !slices.Contains(helpers.Languages, req.Lang) {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	queries := db_queries.New(pool)
-
-	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
-	var err error
-	switch session_data.Role {
-	case "student":
-		err = queries.UpdateLangStudent(c.Context(), db_queries.UpdateLangStudentParams{Lang: req.Lang, StudentID: pgAccountID})
-	case "teacher":
-		err = queries.UpdateLangTeacher(c.Context(), db_queries.UpdateLangTeacherParams{Lang: req.Lang, TeacherID: pgAccountID})
-	case "guardian":
-		err = queries.UpdateLangGuardian(c.Context(), db_queries.UpdateLangGuardianParams{Lang: req.Lang, GuardianID: pgAccountID})
-	default:
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if err != nil {
-		if isUniqueViolation(err) {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		slog.Error("change nickname error", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
-	}
-
-	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
-	return c.SendStatus(fiber.StatusOK)
-}
-
-func ChangePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_data, ok := c.Locals("session").(helpers.SessionData)
-
-	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
-	}
-
-	var req changePreferencesRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	queries := db_queries.New(pool)
-
-	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
-	var err error
-	switch session_data.Role {
-	case "student":
-		err = queries.UpdatePreferencesStudent(c.Context(), db_queries.UpdatePreferencesStudentParams{Preferences: req.Preferences, StudentID: pgAccountID})
-	case "teacher":
-		err = queries.UpdatePreferencesTeacher(c.Context(), db_queries.UpdatePreferencesTeacherParams{Preferences: req.Preferences, TeacherID: pgAccountID})
-	case "guardian":
-		err = queries.UpdatePreferencesGuardian(c.Context(), db_queries.UpdatePreferencesGuardianParams{Preferences: req.Preferences, GuardianID: pgAccountID})
-	default:
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if err != nil {
-		if isUniqueViolation(err) {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		slog.Error("change nickname error", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
-	}
-
-	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
-	return c.SendStatus(fiber.StatusOK)
-}
-
-func ChangeNickname(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_data, ok := c.Locals("session").(helpers.SessionData)
-
-	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
-	}
-
-	var req changeNicknameRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if len(req.Nickname) < 8 || len(req.Nickname) > 64 || html.EscapeString(req.Nickname) != req.Nickname {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	queries := db_queries.New(pool)
-
-	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
-	var err error
-	switch session_data.Role {
-	case "student":
-		err = queries.UpdateNicknameStudent(c.Context(), db_queries.UpdateNicknameStudentParams{Nickname: req.Nickname, StudentID: pgAccountID})
-	case "teacher":
-		err = queries.UpdateNicknameTeacher(c.Context(), db_queries.UpdateNicknameTeacherParams{Nickname: req.Nickname, TeacherID: pgAccountID})
-	case "guardian":
-		err = queries.UpdateNicknameGuardian(c.Context(), db_queries.UpdateNicknameGuardianParams{Nickname: req.Nickname, GuardianID: pgAccountID})
-	default:
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if err != nil {
-		if isUniqueViolation(err) {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		slog.Error("change nickname error", "err", err)
+		slog.Error("update preferences error", "err", err)
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 

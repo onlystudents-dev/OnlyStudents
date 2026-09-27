@@ -217,28 +217,12 @@ func main() {
 		return v1.Logout(c, pool, rdb)
 	})
 
-	me_group.Post("/change_password", func(c fiber.Ctx) error {
+	me_group.Post("/update_preferences", func(c fiber.Ctx) error {
 		return meapi.ChangePassword(c, pool, rdb)
 	})
 
 	me_group.Post("/change_email", func(c fiber.Ctx) error {
 		return meapi.ChangeEmail(c, pool, rdb)
-	})
-
-	me_group.Post("/change_nickname", func(c fiber.Ctx) error {
-		return meapi.ChangeNickname(c, pool, rdb)
-	})
-
-	me_group.Post("/change_theme", func(c fiber.Ctx) error {
-		return meapi.ChangeTheme(c, pool, rdb)
-	})
-
-	me_group.Post("/change_lang", func(c fiber.Ctx) error {
-		return meapi.ChangeLang(c, pool, rdb)
-	})
-
-	me_group.Post("/change_preferences", func(c fiber.Ctx) error {
-		return meapi.ChangePreferences(c, pool, rdb)
 	})
 
 	me_group.Post("/verify_email", authLimit, func(c fiber.Ctx) error {
