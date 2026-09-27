@@ -237,6 +237,10 @@ func main() {
 		return meapi.ChangeLang(c, pool, rdb)
 	})
 
+	me_group.Post("/change_preferences", func(c fiber.Ctx) error {
+		return meapi.ChangePreferences(c, pool, rdb)
+	})
+
 	me_group.Post("/verify_email", authLimit, func(c fiber.Ctx) error {
 		return meapi.VerifyEmailRequest(c, pool, rdb)
 	})

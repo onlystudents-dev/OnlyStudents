@@ -147,6 +147,7 @@ CREATE TABLE accounts (
     lang VARCHAR(256) NOT NULL DEFAULT '',
     pfp_url VARCHAR(255) NOT NULL DEFAULT '/assets/default_pfp.png',
     nickname VARCHAR(255) NOT NULL DEFAULT '',
+    preferences INT NOT NULL DEFAULT -2147483648,
     CONSTRAINT chk_accounts_role CHECK (role IN ('student', 'teacher', 'guardian')),
     CONSTRAINT chk_accounts_role_link CHECK (
         (role = 'student' AND student_id IS NOT NULL AND teacher_id IS NULL AND guardian_id IS NULL) OR

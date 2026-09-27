@@ -49,6 +49,15 @@ UPDATE accounts SET lang = $1 WHERE guardian_id = $2 AND role = 'guardian';
 -- name: UpdateLangTeacher :exec
 UPDATE accounts SET lang = $1 WHERE teacher_id = $2 AND role = 'teacher';
 
+-- name: UpdatePreferencesStudent :exec
+UPDATE accounts SET preferences = $1 WHERE student_id = $2 AND role = 'student';
+
+-- name: UpdatePreferencesGuardian :exec
+UPDATE accounts SET preferences = $1 WHERE guardian_id = $2 AND role = 'guardian';
+
+-- name: UpdatePreferencesTeacher :exec
+UPDATE accounts SET preferences = $1 WHERE teacher_id = $2 AND role = 'teacher';
+
 -- name: VerifyEmailStudent :exec
 UPDATE accounts SET email_verified = true WHERE student_id = $1 AND role = 'student';
 

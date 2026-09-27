@@ -31,6 +31,7 @@ type StatusData struct {
 	EmailVerified bool           `json:"email_verified"`
 	Theme         string         `json:"theme"`
 	Lang          string         `json:"lang"`
+	Preferences   int32          `json:"preference"`
 	Children      []ChildrenData `json:"children"`
 }
 
@@ -77,6 +78,7 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			EmailVerified: account.EmailVerified,
 			Theme:         account.Theme,
 			Lang:          account.Lang,
+			Preferences:   account.Preferences,
 			Children:      []ChildrenData{},
 		}
 
@@ -111,6 +113,7 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			EmailVerified: account.EmailVerified,
 			Theme:         account.Theme,
 			Lang:          account.Lang,
+			Preferences:   account.Preferences,
 			Children:      guardian_children_data,
 		}
 
@@ -132,6 +135,7 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			EmailVerified: account.EmailVerified,
 			Theme:         account.Theme,
 			Lang:          account.Lang,
+			Preferences:   account.Preferences,
 			Children:      []ChildrenData{},
 		}
 
