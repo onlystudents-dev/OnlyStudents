@@ -61,7 +61,14 @@
     "DAYS.friday": "Friday",
     "DAYS.saturday": "Saturday",
     "DAYS.sunday": "Sunday",
-    "TERM": "Term"
+    "TERM": "Term",
+    "TIMETABLE_DISPLAY": "Show days in timetable",
+    "TIMETABLE_DISPLAY.LESSONS": "Only where there are lessons",
+    "TIMETABLE_DISPLAY.WEEKDAYS": "Weekdays",
+    "TIMETABLE_DISPLAY.ALL": "All days",
+    "TIMETABLE_NEXT": "Week to show on open",
+    "TIMETABLE_NEXT.NEXT": "The next week if you have no more lessons this week",
+    "TIMETABLE_NEXT.THIS": "Always this week"
   },
   "errors": {
     "WRONG_CREDENTIALS": "The username doesn't pair with the password!",

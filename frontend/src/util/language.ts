@@ -20,7 +20,7 @@ export async function fetchLanguage(me: Me | null) {
 }
 
 export function getLanguage(me: Me | null, auto?: boolean) {
-    const stored = !auto ? me?.lang : null;
+    const stored = !auto ? me?.preferences?.lang : null;
 
     return languages.find(o => o.key === match(
         stored ? [stored] : navigator.languages,
@@ -52,16 +52,4 @@ export async function fromResponse(response: Response, ...args: string[]) {
     }
 
     return val
-}
-
-export async function setLanguage(language: string): Promise<[Response, () => void]> {
-    return [await fetch("/api/v1/me/change_lang", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            lang: language
-        })
-    }), () => location.reload()]
 }

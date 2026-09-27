@@ -218,7 +218,7 @@ func main() {
 	})
 
 	me_group.Post("/update_preferences", func(c fiber.Ctx) error {
-		return meapi.ChangePassword(c, pool, rdb)
+		return meapi.UpdatePreferences(c, pool, rdb)
 	})
 
 	me_group.Post("/change_email", func(c fiber.Ctx) error {

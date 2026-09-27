@@ -1,6 +1,18 @@
-import {render} from 'preact'
+import { render } from 'preact'
+import { useState } from 'preact/hooks'
 import './index.css'
-import "react-toastify/dist/ReactToastify.css";
-import App from "./app.tsx";
+import "react-toastify/dist/ReactToastify.css"
+import App from './app.tsx'
 
-render(<App />, document.getElementById('root')!)
+function Root() {
+    const [reload, setReload] = useState(false)
+
+    return (
+        <App
+            key={reload}
+            reload={() => setReload(prev => !prev)}
+        />
+    )
+}
+
+render(<Root />, document.getElementById('root')!)

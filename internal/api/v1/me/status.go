@@ -2,6 +2,7 @@ package meapi
 
 import (
 	"errors"
+	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -57,9 +58,10 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 
 	var preferences Preferences
 
-	unmarshal_err := json.Unmarshal(account.Preferences, preferences)
+	unmarshal_err := json.Unmarshal(account.Preferences, &preferences)
 
 	if unmarshal_err != nil {
+		slog.Error(unmarshal_err.Error())
 		return &StatusData{}, unmarshal_err
 	}
 

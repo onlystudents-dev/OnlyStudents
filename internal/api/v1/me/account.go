@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"html"
 	"log/slog"
 	"math/big"
 	db_queries "onlystudents/internal/db/store"
@@ -88,10 +87,6 @@ func UpdatePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	}
 
 	if !slices.Contains(helpers.Languages, req.NewPreferences.Lang) {
-		return c.SendStatus(fiber.StatusBadRequest)
-	}
-
-	if len(req.NewPreferences.Nickname) < 8 || len(req.NewPreferences.Nickname) > 64 || html.EscapeString(req.NewPreferences.Nickname) != req.NewPreferences.Nickname {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 

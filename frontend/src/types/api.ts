@@ -7,12 +7,18 @@ export type Me = {
     account_id: number,
     first_name: string,
     last_name: string,
-    pfp_url: string,
     email_address: string,
     email_verified: boolean,
+    preferences: Preferences,
+}
+
+export type Preferences = {
+    pfp_url: string,
     nickname: string,
     lang: string,
     theme: Theme,
+    timetable_display: number,
+    timetable_next: boolean,
 }
 
 export type Lesson = {
