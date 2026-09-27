@@ -120,7 +120,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                     date.setDate(date.getDate() - (current - lastLesson.day_of_week))
                     date.setHours(0, 0, 0, 0)
 
-                    const end = date.getTime() + t.at_end.Microseconds / 1000
+                    const end = date.getTime() + t.at_end * 1000
 
                     if (Date.now() > end) {
                         fetchWeekLessons(addDays(7))
