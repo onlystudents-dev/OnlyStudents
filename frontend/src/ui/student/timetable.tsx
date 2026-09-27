@@ -78,11 +78,13 @@ export default function StudentTimetable({ me }: {me: Me}) {
         setSunday(createDayData(6, 0))
 
         setLoading(false)
+
+        return lessons
     }, [me])
 
     useEffect(() => {
         async function Fetch() {
-            await fetchWeekLessons()
+            const lessons = await fetchWeekLessons()
 
             async function fetchInto<T>(
                 api: string,
@@ -103,7 +105,27 @@ export default function StudentTimetable({ me }: {me: Me}) {
 
             await Promise.all([
                 fetchInto("/api/v1/me/student/timetable/room", setRooms),
-                fetchInto<Class>("/api/v1/me/student/class").then(clazz => fetchInto(`/api/v1/me/student/timetable/lesson_time?type_id=${clazz?.bell_id}`, setLessonTime)),
+                fetchInto<Class>("/api/v1/me/student/class").then(clazz => fetchInto(`/api/v1/me/student/timetable/lesson_time?type_id=${clazz?.bell_id}`, setLessonTime).then(time => {
+                    if (!time) return
+
+                    const lastLesson = lessons?.at(-1)
+                    if (!lastLesson) return
+
+                    const t = time.find(lt => lt.lesson_number === lastLesson.lesson_num)
+                    if (!t) return
+
+                    const date = new Date()
+                    const current = date.getDay() || 7
+
+                    date.setDate(date.getDate() - (current - lastLesson.day_of_week))
+                    date.setHours(0, 0, 0, 0)
+
+                    const end = date.getTime() + t.at_end.Microseconds / 1000
+
+                    if (Date.now() > end) {
+                        fetchWeekLessons(addDays(7))
+                    }
+                })),
             ])
         }
 
@@ -122,6 +144,18 @@ export default function StudentTimetable({ me }: {me: Me}) {
 
     const offset = useRef(0)
 
+    const d = (() => {
+        switch (me.preferences.timetable_display) {
+            case 1:
+                return Object.entries(days)
+                    .filter(([, day]) => day.lessons.length > 0)
+            case 2:
+                return Object.entries(days).slice(0, 5)
+            default:
+                return Object.entries(days)
+        }
+    })()
+
     return (
         <>
             <Navbar me={me} />
@@ -136,7 +170,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                         <FontAwesomeIcon icon={faAngleLeft} />
                     </span>
                 </div>
-                {Object.entries(days).filter(([, day]) => day.lessons.length > 0).map(([name, day]) => (
+                {d.map(([name, day]) => (
                     <div className="day">
                         <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>
                             <h1 className="rubik">{getKey(`DAYS.${name}`)}</h1>

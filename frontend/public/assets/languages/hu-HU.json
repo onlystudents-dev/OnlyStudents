@@ -61,7 +61,14 @@
     "DAYS.friday": "Péntek",
     "DAYS.saturday": "Szombat",
     "DAYS.sunday": "Vasárnap",
-    "TERM": "Tanév"
+    "TERM": "Tanév",
+    "TIMETABLE_DISPLAY": "Napok mutatása az órarendben",
+    "TIMETABLE_DISPLAY.LESSONS": "Csak azok, amelyeken van óra",
+    "TIMETABLE_DISPLAY.WEEKDAYS": "Hétköznapok",
+    "TIMETABLE_DISPLAY.ALL": "Összes nap",
+    "TIMETABLE_NEXT": "Melyik hét legyen megnyitva",
+    "TIMETABLE_NEXT.NEXT": "A következő ha ezen nincs már óra",
+    "TIMETABLE_NEXT.THIS": "Mindig a mai"
   },
   "errors": {
     "WRONG_CREDENTIALS": "A belépési adatok helytelenek!",

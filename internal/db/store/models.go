@@ -28,11 +28,7 @@ type Account struct {
 	GuardianID    pgtype.Int4
 	EmailAddress  pgtype.Text
 	EmailVerified bool
-	Theme         string
-	Lang          string
-	PfpUrl        string
-	Nickname      string
-	Preferences   int32
+	Preferences   []byte
 }
 
 type AccountOpaque struct {

@@ -5,7 +5,6 @@ import {lazy, Suspense, useEffect, useState} from "react";
 import Loading from "./util/loading.tsx";
 import type { Me, Role } from "./types/api.ts";
 import { fetchLanguage } from "./util/language.ts";
-import { applyTheme, getAutoTheme } from "./util/theme.ts";
 import RateLimit from "./util/ratelimit.tsx";
 
 declare global {
@@ -38,7 +37,7 @@ const features = {
 const Login = lazy(() => import("./auth/login/login.tsx"))
 const MeSettings = lazy(() => import("./ui/me/me.tsx"))
 
-export default function App() {
+export default function App({ reload }: {reload: () => void}) {
     const byFeature = (feature: keyof typeof features, me: Me) => {
         const group = features[feature] as Partial<Record<Role, typeof features.homeworks.student>>
         const Feature = group[me.role]
@@ -53,6 +52,7 @@ export default function App() {
     async function fetchMe() {
         const me = window.__INITIAL_STATUS__
         if (typeof me !== "undefined") {
+            window.__INITIAL_STATUS__ = undefined
             if (typeof me === "string") return true
             if (typeof me === "number") {
                 await fetchLanguage(null)
@@ -60,7 +60,6 @@ export default function App() {
                 return false
             }
 
-            window.__INITIAL_STATUS__ = undefined
             setMe(me)
             return me
         }
@@ -85,24 +84,22 @@ export default function App() {
             fetchMe()
                 .then(me => {
                     if (me) {
-                        applyTheme(me)
                         fetchLanguage(me)
                             .then(() => setLoading(false))
                     } else setLoading(false)
                 })
         }
 
-        applyTheme(getAutoTheme())
         Fetch()
     }, [])
 
     return (
         <>
             <Suspense fallback={<Loading />}>
-                {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={() => location.reload()} /> : loading ? <Loading /> : !me ? <Login /> : (
+                {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={async () => {setRatelimit(-1); await fetchMe()}} /> : loading ? <Loading /> : !me ? <Login /> : (
                     <Switch>
                         <Route path="/"><Home me={me} /></Route>
-                        <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} /></Route>
+                        <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} reload={reload} /></Route>
                         <Route path="/homeworks">{() => byFeature("homeworks", me)}</Route>
                         <Route path="/timetable">{() => byFeature("timetable", me)}</Route>
                         <Route path="/absences">{() => byFeature("absences", me)}</Route>

@@ -8,7 +8,18 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>window.__INITIAL_STATUS__ = "__INITIAL_STATUS__";</script>
+    <script>
+      window.__INITIAL_STATUS__ = "__INITIAL_STATUS__";
+
+      function applyTheme() {
+        const theme = typeof window.__INITIAL_STATUS__ === "object"
+                ? window.__INITIAL_STATUS__.preferences.theme
+                : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+
+      applyTheme()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

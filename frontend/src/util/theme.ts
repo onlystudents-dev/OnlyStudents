@@ -8,22 +8,10 @@ export function getAutoTheme(): Theme {
 }
 
 export function getTheme(me: Me): Theme {
-    return me.theme || getAutoTheme()
+    return me?.preferences?.theme || getAutoTheme()
 }
 
 export function applyTheme(arg: Me | Theme) {
     const theme = typeof arg === "string" ? arg : getTheme(arg);
     document.documentElement.setAttribute('data-theme', theme);
-}
-
-export async function setTheme(theme: string): Promise<[Response, () => void]> {
-    return [await fetch("/api/v1/me/change_theme", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            theme
-        })
-    }), () => applyTheme(theme as Theme)]
 }

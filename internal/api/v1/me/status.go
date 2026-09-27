@@ -2,9 +2,11 @@ package meapi
 
 import (
 	"errors"
+	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -25,13 +27,9 @@ type StatusData struct {
 	ClassID       int32          `json:"class_id"`
 	FirstName     string         `json:"first_name"`
 	LastName      string         `json:"last_name"`
-	PfpURL        string         `json:"pfp_url"`
-	Nickname      string         `json:"nickname"`
 	EmailAddress  string         `json:"email_address"`
 	EmailVerified bool           `json:"email_verified"`
-	Theme         string         `json:"theme"`
-	Lang          string         `json:"lang"`
-	Preferences   int32          `json:"preferences"`
+	Preferences   Preferences    `json:"preferences"`
 	Children      []ChildrenData `json:"children"`
 }
 
@@ -58,6 +56,15 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 		return &StatusData{}, err
 	}
 
+	var preferences Preferences
+
+	unmarshal_err := json.Unmarshal(account.Preferences, &preferences)
+
+	if unmarshal_err != nil {
+		slog.Error(unmarshal_err.Error())
+		return &StatusData{}, unmarshal_err
+	}
+
 	switch session_data.Role {
 	case "student":
 		student, err := helpers.CacheOrGetStudent(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
@@ -72,13 +79,9 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			SchoolID:      student.SchoolID,
 			FirstName:     student.FirstName,
 			LastName:      student.LastName,
-			PfpURL:        account.PfpUrl,
-			Nickname:      account.Nickname,
 			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
-			Theme:         account.Theme,
-			Lang:          account.Lang,
-			Preferences:   account.Preferences,
+			Preferences:   preferences,
 			Children:      []ChildrenData{},
 		}
 
@@ -107,13 +110,9 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			AccountID:     session_data.AccountID,
 			FirstName:     guardian.FirstName,
 			LastName:      guardian.LastName,
-			PfpURL:        account.PfpUrl,
-			Nickname:      account.Nickname,
 			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
-			Theme:         account.Theme,
-			Lang:          account.Lang,
-			Preferences:   account.Preferences,
+			Preferences:   preferences,
 			Children:      guardian_children_data,
 		}
 
@@ -129,13 +128,9 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			AccountID:     session_data.AccountID,
 			FirstName:     teacher.FirstName,
 			LastName:      teacher.LastName,
-			PfpURL:        account.PfpUrl,
-			Nickname:      account.Nickname,
 			EmailAddress:  account.EmailAddress.String,
 			EmailVerified: account.EmailVerified,
-			Theme:         account.Theme,
-			Lang:          account.Lang,
-			Preferences:   account.Preferences,
+			Preferences:   preferences,
 			Children:      []ChildrenData{},
 		}
 

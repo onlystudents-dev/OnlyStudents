@@ -167,10 +167,6 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 		GuardianID:    pgtype.Int4{Valid: false},
 		EmailAddress:  pgtype.Text{String: req.EmailAddress, Valid: true},
 		EmailVerified: false,
-		Theme:         "",
-		Lang:          "",
-		PfpUrl:        "/assets/default_pfp.png",
-		Nickname:      "",
 	})
 
 	if create_account_err != nil {
@@ -234,10 +230,6 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 		GuardianID:    pgtype.Int4{Valid: false},
 		EmailAddress:  pgtype.Text{String: req.EmailAddress, Valid: true},
 		EmailVerified: false,
-		Theme:         "",
-		Lang:          "",
-		PfpUrl:        "/assets/default_pfp.png",
-		Nickname:      "",
 	})
 
 	if create_account_err != nil {
@@ -300,10 +292,6 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 		GuardianID:    pgtype.Int4{Int32: guardian_id, Valid: true},
 		EmailAddress:  pgtype.Text{String: req.EmailAddress, Valid: true},
 		EmailVerified: false,
-		Theme:         "",
-		Lang:          "",
-		PfpUrl:        "/assets/default_pfp.png",
-		Nickname:      "",
 	})
 
 	if create_account_err != nil {
