@@ -47,7 +47,7 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) er
 }
 
 const getAccountByGuardianID = `-- name: GetAccountByGuardianID :one
-SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE guardian_id = $1 AND role = 'guardian'
+SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname, preferences FROM accounts WHERE guardian_id = $1 AND role = 'guardian'
 `
 
 func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.Int4) (Account, error) {
@@ -65,12 +65,13 @@ func (q *Queries) GetAccountByGuardianID(ctx context.Context, guardianID pgtype.
 		&i.Lang,
 		&i.PfpUrl,
 		&i.Nickname,
+		&i.Preferences,
 	)
 	return i, err
 }
 
 const getAccountByStudentID = `-- name: GetAccountByStudentID :one
-SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE student_id = $1 AND role = 'student'
+SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname, preferences FROM accounts WHERE student_id = $1 AND role = 'student'
 `
 
 func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.Int4) (Account, error) {
@@ -88,12 +89,13 @@ func (q *Queries) GetAccountByStudentID(ctx context.Context, studentID pgtype.In
 		&i.Lang,
 		&i.PfpUrl,
 		&i.Nickname,
+		&i.Preferences,
 	)
 	return i, err
 }
 
 const getAccountByTeacherID = `-- name: GetAccountByTeacherID :one
-SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE teacher_id = $1 AND role = 'teacher'
+SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname, preferences FROM accounts WHERE teacher_id = $1 AND role = 'teacher'
 `
 
 func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.Int4) (Account, error) {
@@ -111,12 +113,13 @@ func (q *Queries) GetAccountByTeacherID(ctx context.Context, teacherID pgtype.In
 		&i.Lang,
 		&i.PfpUrl,
 		&i.Nickname,
+		&i.Preferences,
 	)
 	return i, err
 }
 
 const getAccountByUUID = `-- name: GetAccountByUUID :one
-SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname FROM accounts WHERE id = $1
+SELECT id, role, student_id, teacher_id, guardian_id, email_address, email_verified, theme, lang, pfp_url, nickname, preferences FROM accounts WHERE id = $1
 `
 
 func (q *Queries) GetAccountByUUID(ctx context.Context, id pgtype.UUID) (Account, error) {
@@ -134,6 +137,7 @@ func (q *Queries) GetAccountByUUID(ctx context.Context, id pgtype.UUID) (Account
 		&i.Lang,
 		&i.PfpUrl,
 		&i.Nickname,
+		&i.Preferences,
 	)
 	return i, err
 }
@@ -261,6 +265,48 @@ type UpdateNicknameTeacherParams struct {
 
 func (q *Queries) UpdateNicknameTeacher(ctx context.Context, arg UpdateNicknameTeacherParams) error {
 	_, err := q.db.Exec(ctx, updateNicknameTeacher, arg.Nickname, arg.TeacherID)
+	return err
+}
+
+const updatePreferencesGuardian = `-- name: UpdatePreferencesGuardian :exec
+UPDATE accounts SET preferences = $1 WHERE guardian_id = $2 AND role = 'guardian'
+`
+
+type UpdatePreferencesGuardianParams struct {
+	Preferences int32
+	GuardianID  pgtype.Int4
+}
+
+func (q *Queries) UpdatePreferencesGuardian(ctx context.Context, arg UpdatePreferencesGuardianParams) error {
+	_, err := q.db.Exec(ctx, updatePreferencesGuardian, arg.Preferences, arg.GuardianID)
+	return err
+}
+
+const updatePreferencesStudent = `-- name: UpdatePreferencesStudent :exec
+UPDATE accounts SET preferences = $1 WHERE student_id = $2 AND role = 'student'
+`
+
+type UpdatePreferencesStudentParams struct {
+	Preferences int32
+	StudentID   pgtype.Int4
+}
+
+func (q *Queries) UpdatePreferencesStudent(ctx context.Context, arg UpdatePreferencesStudentParams) error {
+	_, err := q.db.Exec(ctx, updatePreferencesStudent, arg.Preferences, arg.StudentID)
+	return err
+}
+
+const updatePreferencesTeacher = `-- name: UpdatePreferencesTeacher :exec
+UPDATE accounts SET preferences = $1 WHERE teacher_id = $2 AND role = 'teacher'
+`
+
+type UpdatePreferencesTeacherParams struct {
+	Preferences int32
+	TeacherID   pgtype.Int4
+}
+
+func (q *Queries) UpdatePreferencesTeacher(ctx context.Context, arg UpdatePreferencesTeacherParams) error {
+	_, err := q.db.Exec(ctx, updatePreferencesTeacher, arg.Preferences, arg.TeacherID)
 	return err
 }
 

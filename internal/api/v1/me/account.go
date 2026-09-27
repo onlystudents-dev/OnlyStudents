@@ -66,6 +66,10 @@ type changeLangRequest struct {
 	Lang string `json:"lang"`
 }
 
+type changePreferencesRequest struct {
+	Preferences int32 `json:"preferences"`
+}
+
 type changeEmailRequest struct {
 	NewEmail string `json:"new_email"`
 }
@@ -82,7 +86,7 @@ func ChangeTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.Theme == "" || !slices.Contains(helpers.Themes, req.Theme) {
+	if !slices.Contains(helpers.Themes, req.Theme) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -125,7 +129,7 @@ func ChangeLang(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.Lang == "" || !slices.Contains(helpers.Languages, req.Lang) {
+	if !slices.Contains(helpers.Languages, req.Lang) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -140,6 +144,45 @@ func ChangeLang(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		err = queries.UpdateLangTeacher(c.Context(), db_queries.UpdateLangTeacherParams{Lang: req.Lang, TeacherID: pgAccountID})
 	case "guardian":
 		err = queries.UpdateLangGuardian(c.Context(), db_queries.UpdateLangGuardianParams{Lang: req.Lang, GuardianID: pgAccountID})
+	default:
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	if err != nil {
+		if isUniqueViolation(err) {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		slog.Error("change nickname error", "err", err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func ChangePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	session_data, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+
+	var req changePreferencesRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	queries := db_queries.New(pool)
+
+	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
+	var err error
+	switch session_data.Role {
+	case "student":
+		err = queries.UpdatePreferencesStudent(c.Context(), db_queries.UpdatePreferencesStudentParams{Preferences: req.Preferences, StudentID: pgAccountID})
+	case "teacher":
+		err = queries.UpdatePreferencesTeacher(c.Context(), db_queries.UpdatePreferencesTeacherParams{Preferences: req.Preferences, TeacherID: pgAccountID})
+	case "guardian":
+		err = queries.UpdatePreferencesGuardian(c.Context(), db_queries.UpdatePreferencesGuardianParams{Preferences: req.Preferences, GuardianID: pgAccountID})
 	default:
 		return c.SendStatus(fiber.StatusBadRequest)
 	}

@@ -32,6 +32,7 @@ type Account struct {
 	Lang          string
 	PfpUrl        string
 	Nickname      string
+	Preferences   int32
 }
 
 type AccountOpaque struct {
