@@ -106,6 +106,8 @@ export default function StudentTimetable({ me }: {me: Me}) {
             await Promise.all([
                 fetchInto("/api/v1/me/student/timetable/room", setRooms),
                 fetchInto<Class>("/api/v1/me/student/class").then(clazz => fetchInto(`/api/v1/me/student/timetable/lesson_time?type_id=${clazz?.bell_id}`, setLessonTime).then(time => {
+                    if (!me.preferences.timetable_next) return
+
                     if (!time) return
 
                     const lastLesson = lessons?.at(-1)
