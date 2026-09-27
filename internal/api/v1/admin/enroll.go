@@ -20,28 +20,30 @@ import (
 
 type EnrollStudentRequest struct {
 	// student params
-	IDNumber             int32       `json:"id_number"`
-	SchoolID             int32       `json:"school_id"`
-	PhoneNumber          pgtype.Text `json:"phone_number"`
-	FirstName            string      `json:"first_name"`
-	LastName             string      `json:"last_name"`
-	BirthFirstName       string      `json:"birth_first_name"`
-	BirthLastName        string      `json:"birth_last_name"`
-	BirthDate            pgtype.Date `json:"birth_date"`
-	BirthCity            string      `json:"birth_city"`
-	BirthCountry         string      `json:"birth_country"`
-	MotherBirthFirstName string      `json:"mother_birth_first_name"`
-	MotherBirthLastName  string      `json:"mother_birth_last_name"`
-	ClassesID            int32       `json:"classes_id"`
-	PermamentAddress     string      `json:"permanent_address"`
-	TemporaryAddress     string      `json:"temporary_address"`
-	TaxNumber            pgtype.Int4 `json:"tax_number"`
-	SsnNumber            int32       `json:"ssn_number"`
-	BankName             string      `json:"bank_name"`
-	IbanOwner            string      `json:"iban_owner"`
-	IbanNumber           string      `json:"iban_number"`
-	DocumentType         string      `json:"document_type"`
-	DocumentNumber       string      `json:"document_number"`
+	IDNumber             int32  `json:"id_number"`
+	SchoolID             int32  `json:"school_id"`
+	HasPhoneNumber       bool   `json:"has_phone_number"`
+	PhoneNumber          string `json:"phone_number"`
+	FirstName            string `json:"first_name"`
+	LastName             string `json:"last_name"`
+	BirthFirstName       string `json:"birth_first_name"`
+	BirthLastName        string `json:"birth_last_name"`
+	BirthDate            int64  `json:"birth_date"`
+	BirthCity            string `json:"birth_city"`
+	BirthCountry         string `json:"birth_country"`
+	MotherBirthFirstName string `json:"mother_birth_first_name"`
+	MotherBirthLastName  string `json:"mother_birth_last_name"`
+	ClassesID            int32  `json:"classes_id"`
+	PermamentAddress     string `json:"permanent_address"`
+	TemporaryAddress     string `json:"temporary_address"`
+	HasTaxNumber         bool   `json:"has_tax_number"`
+	TaxNumber            int32  `json:"tax_number"`
+	SsnNumber            int32  `json:"ssn_number"`
+	BankName             string `json:"bank_name"`
+	IbanOwner            string `json:"iban_owner"`
+	IbanNumber           string `json:"iban_number"`
+	DocumentType         string `json:"document_type"`
+	DocumentNumber       string `json:"document_number"`
 
 	// account params
 	EmailAddress string `json:"email_address"`
@@ -49,17 +51,17 @@ type EnrollStudentRequest struct {
 
 type EnrollTeacherRequest struct {
 	// teacher params
-	PhoneNumber      string      `json:"phone_number"`
-	Username         string      `json:"username"`
-	BirthFirstName   string      `json:"birth_first_name"`
-	BirthLastName    string      `json:"birth_last_name"`
-	BirthDate        pgtype.Date `json:"birth_date"`
-	BirthCity        string      `json:"birth_city"`
-	BirthCountry     string      `json:"birth_country"`
-	PermamentAddress string      `json:"permanent_address"`
-	TemporaryAddress string      `json:"temporary_address"`
-	FirstName        string      `json:"first_name"`
-	LastName         string      `json:"last_name"`
+	PhoneNumber      string `json:"phone_number"`
+	Username         string `json:"username"`
+	BirthFirstName   string `json:"birth_first_name"`
+	BirthLastName    string `json:"birth_last_name"`
+	BirthDate        int64  `json:"birth_date"`
+	BirthCity        string `json:"birth_city"`
+	BirthCountry     string `json:"birth_country"`
+	PermamentAddress string `json:"permanent_address"`
+	TemporaryAddress string `json:"temporary_address"`
+	FirstName        string `json:"first_name"`
+	LastName         string `json:"last_name"`
 
 	// account params
 	EmailAddress string `json:"email_address"`
@@ -67,16 +69,16 @@ type EnrollTeacherRequest struct {
 
 type EnrollGuardianRequest struct {
 	// guardian params
-	PhoneNumber      string      `json:"phone_number"`
-	FirstName        string      `json:"first_name"`
-	LastName         string      `json:"last_name"`
-	BirthFirstName   string      `json:"birth_first_name"`
-	BirthLastName    string      `json:"birth_last_name"`
-	BirthDate        pgtype.Date `json:"birth_date"`
-	BirthCity        string      `json:"birth_city"`
-	BirthCountry     string      `json:"birth_country"`
-	PermamentAddress string      `json:"permanent_address"`
-	TemporaryAddress string      `json:"temporary_address"`
+	PhoneNumber      string `json:"phone_number"`
+	FirstName        string `json:"first_name"`
+	LastName         string `json:"last_name"`
+	BirthFirstName   string `json:"birth_first_name"`
+	BirthLastName    string `json:"birth_last_name"`
+	BirthDate        int64  `json:"birth_date"`
+	BirthCity        string `json:"birth_city"`
+	BirthCountry     string `json:"birth_country"`
+	PermamentAddress string `json:"permanent_address"`
+	TemporaryAddress string `json:"temporary_address"`
 
 	// account params
 	EmailAddress string `json:"email_address"`
@@ -85,6 +87,7 @@ type EnrollGuardianRequest struct {
 type UserRegistrationEmailData struct {
 	EnrollURL string `json:"enroll_url"`
 	Name      string `json:"name"`
+	AppName   string `json:"app_name"`
 }
 
 type MassEnrollRequest struct {
@@ -113,7 +116,7 @@ func SendEnrollToken(rdb *redis.Client, ctx context.Context, enroll_token string
 			return
 		}
 		enroll_url := fmt.Sprintf("%s/enroll?enroll_token=%s", helpers.GetEnvFallback("APP_URL", "http://localhost:8080"), enroll_token)
-		if e := mailer.SendTemplateContext(bg, email, "OnlyStudents Registration", "registration.html", UserRegistrationEmailData{EnrollURL: enroll_url, Name: role}); e != nil {
+		if e := mailer.SendTemplateContext(bg, email, fmt.Sprintf("%s Registration", helpers.AppName), "registration.html", UserRegistrationEmailData{EnrollURL: enroll_url, Name: role, AppName: helpers.AppName}); e != nil {
 			slog.Error("admin enroll email failed", "account", email, "err", e)
 		}
 	}()
@@ -133,12 +136,12 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 	student_id, create_student_err := queries.CreateStudent(c.Context(), db_queries.CreateStudentParams{
 		IDNumber:             req.IDNumber,
 		SchoolID:             req.SchoolID,
-		PhoneNumber:          req.PhoneNumber,
+		PhoneNumber:          pgtype.Text{String: req.PhoneNumber, Valid: req.HasPhoneNumber},
 		FirstName:            req.FirstName,
 		LastName:             req.LastName,
 		BirthFirstName:       req.BirthFirstName,
 		BirthLastName:        req.BirthLastName,
-		BirthDate:            req.BirthDate,
+		BirthDate:            pgtype.Date{Time: time.Unix(req.BirthDate, 0), Valid: true},
 		BirthCity:            req.BirthCity,
 		BirthCountry:         req.BirthCountry,
 		MotherBirthFirstName: req.MotherBirthFirstName,
@@ -146,7 +149,7 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 		ClassesID:            req.ClassesID,
 		PermamentAddress:     req.PermamentAddress,
 		TemporaryAddress:     req.TemporaryAddress,
-		TaxNumber:            req.TaxNumber,
+		TaxNumber:            pgtype.Int4{Int32: req.TaxNumber, Valid: req.HasTaxNumber},
 		SsnNumber:            req.SsnNumber,
 		BankName:             req.BankName,
 		IbanOwner:            req.IbanOwner,
@@ -209,7 +212,7 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 		Username:         req.Username,
 		BirthFirstName:   req.BirthFirstName,
 		BirthLastName:    req.BirthLastName,
-		BirthDate:        req.BirthDate,
+		BirthDate:        pgtype.Date{Time: time.Unix(req.BirthDate, 0), Valid: true},
 		BirthCity:        req.BirthCity,
 		BirthCountry:     req.BirthCountry,
 		PermamentAddress: req.PermamentAddress,
@@ -273,7 +276,7 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 		LastName:         req.LastName,
 		BirthFirstName:   req.BirthFirstName,
 		BirthLastName:    req.BirthLastName,
-		BirthDate:        req.BirthDate,
+		BirthDate:        pgtype.Date{Time: time.Unix(req.BirthDate, 0), Valid: true},
 		BirthCity:        req.BirthCity,
 		BirthCountry:     req.BirthCountry,
 		PermamentAddress: req.PermamentAddress,

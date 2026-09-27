@@ -3,7 +3,8 @@ SELECT
     g.id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
-    CONCAT(t.first_name, ' ', t.last_name) AS teacher,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
     ter.name AS term,
     gt.name AS type,
     g.value,
@@ -24,7 +25,8 @@ SELECT
     fg.id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
-    CONCAT(t.first_name, ' ', t.last_name) AS teacher,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
     ter.name AS term,
     fg.value
 FROM final_grades fg

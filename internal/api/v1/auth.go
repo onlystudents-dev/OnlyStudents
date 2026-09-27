@@ -213,6 +213,7 @@ func Logout(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 type ResetPasswordEmailData struct {
 	ResetCode string
 	Name      string
+	AppName   string
 }
 
 func generateResetCode(length int) (string, error) {
@@ -280,7 +281,7 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			slog.Error("password reset mailer init failed", "err", e)
 			return
 		}
-		if e := mailer.SendTemplateContext(bg, email, "Reset password", "password_reset.html", ResetPasswordEmailData{ResetCode: code, Name: account.Role}); e != nil {
+		if e := mailer.SendTemplateContext(bg, email, fmt.Sprintf("%s Reset password", helpers.AppName), "password_reset.html", ResetPasswordEmailData{ResetCode: code, Name: account.Role, AppName: helpers.AppName}); e != nil {
 			slog.Error("password reset email failed", "account", email, "err", e)
 		}
 	}()

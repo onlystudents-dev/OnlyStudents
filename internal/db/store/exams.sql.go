@@ -76,7 +76,8 @@ SELECT
     e.id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
-    CONCAT(t.first_name, ' ', t.last_name) AS teacher,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
     e.title,
     e.description,
     e.date,
@@ -98,16 +99,17 @@ ORDER BY e.date, e.start_time
 `
 
 type GetStudentExamsRow struct {
-	ID          int64
-	Subject     string
-	SubjectCode pgtype.Text
-	Teacher     interface{}
-	Title       string
-	Description pgtype.Text
-	Date        pgtype.Date
-	StartTime   pgtype.Time
-	EndTime     pgtype.Time
-	Room        pgtype.Text
+	ID               int64
+	Subject          string
+	SubjectCode      pgtype.Text
+	TeacherFirstName string
+	TeacherLastName  string
+	Title            string
+	Description      pgtype.Text
+	Date             pgtype.Date
+	StartTime        pgtype.Time
+	EndTime          pgtype.Time
+	Room             pgtype.Text
 }
 
 func (q *Queries) GetStudentExams(ctx context.Context, id int32) ([]GetStudentExamsRow, error) {
@@ -123,7 +125,8 @@ func (q *Queries) GetStudentExams(ctx context.Context, id int32) ([]GetStudentEx
 			&i.ID,
 			&i.Subject,
 			&i.SubjectCode,
-			&i.Teacher,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
 			&i.Title,
 			&i.Description,
 			&i.Date,

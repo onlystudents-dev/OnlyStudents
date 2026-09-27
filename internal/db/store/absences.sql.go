@@ -16,7 +16,8 @@ SELECT
     a.id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
-    CONCAT(t.first_name, ' ', t.last_name) AS teacher,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
     a.date,
     a.type,
     a.justified,
@@ -34,15 +35,16 @@ ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id
 `
 
 type GetStudentAbsencesRow struct {
-	ID          int64
-	Subject     string
-	SubjectCode pgtype.Text
-	Teacher     interface{}
-	Date        pgtype.Date
-	Type        string
-	Justified   bool
-	Note        pgtype.Text
-	VerifiedBy  interface{}
+	ID               int64
+	Subject          string
+	SubjectCode      pgtype.Text
+	TeacherFirstName pgtype.Text
+	TeacherLastName  pgtype.Text
+	Date             pgtype.Date
+	Type             string
+	Justified        bool
+	Note             pgtype.Text
+	VerifiedBy       interface{}
 }
 
 func (q *Queries) GetStudentAbsences(ctx context.Context, studentID int32) ([]GetStudentAbsencesRow, error) {
@@ -58,7 +60,8 @@ func (q *Queries) GetStudentAbsences(ctx context.Context, studentID int32) ([]Ge
 			&i.ID,
 			&i.Subject,
 			&i.SubjectCode,
-			&i.Teacher,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
 			&i.Date,
 			&i.Type,
 			&i.Justified,

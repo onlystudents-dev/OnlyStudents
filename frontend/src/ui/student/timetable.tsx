@@ -181,7 +181,10 @@ export default function StudentTimetable({ me }: {me: Me}) {
                                 <div className="flex flex-col justify-between items-start h-full">
                                     <div className="flex flex-col">
                                         <h1 className="rubik">{lesson.subject_name}</h1>
-                                        <h2 className="poppins">{lesson.teacher_first_name} {lesson.teacher_last_name}</h2>
+                                        <h2 className="poppins">{[
+                                            lesson.has_teacher_first_name && lesson.teacher_first_name,
+                                            lesson.has_teacher_last_name && lesson.teacher_last_name,
+                                        ].filter(Boolean).join(" ")}</h2>
                                     </div>
                                     <p className="fredoka">{rooms.find(room => room.id === lesson.room_id)?.name || <Skeleton width={48} height={16} color={"var(--card-color)"} />}</p>
                                 </div>
@@ -210,18 +213,19 @@ export default function StudentTimetable({ me }: {me: Me}) {
     )
 
     function toHoursAndMinutes(lesson: Lesson) {
-        const time = lessonTime.find(lt => lt.lesson_number === lesson.lesson_num)
+        const time = lessonTime.find(lt => lt.has_lesson_number && lt.lesson_number === lesson.lesson_num)
         if (!time) return ""
 
         const language = getLanguage(me)?.key || "en-US"
 
-        const format = (microseconds: number) =>
+        const format = (seconds: number) =>
             new Intl.DateTimeFormat(language, {
                 hour: "numeric",
                 minute: "2-digit",
-            }).format(new Date(microseconds / 1000))
+                timeZone: "UTC",
+            }).format(new Date(seconds * 1000))
 
-        return `${format(time.at_start.Microseconds)}-${format(time.at_end.Microseconds)}`
+        return `${format(time.at_start)}-${format(time.at_end)}`
     }
 
     function formatUnixDate(unix: number, locale: string): string {

@@ -17,50 +17,59 @@ type ReadLessonTimeRequest struct {
 }
 
 type TimetableLesson struct {
-	ActualDate         pgtype.Date `json:"actual_date"`
-	RoomID             int32       `json:"room_id"`
-	LessonNum          int32       `json:"lesson_num"`
-	DayOfWeek          int32       `json:"day_of_week"`
-	EffectiveTeacherID int32       `json:"effective_teacher_id"`
-	TeacherFirstName   pgtype.Text `json:"teacher_first_name"`
-	TeacherLastName    pgtype.Text `json:"teacher_last_name"`
-	GroupID            int32       `json:"group_id"`
-	SchoolID           int32       `json:"school_id"`
-	CustomSubject      bool        `json:"custom_subject"`
-	SubjectID          pgtype.Int4 `json:"subject_id"`
-	CustomSubjectID    pgtype.Int4 `json:"custom_subject_id"`
-	SubjectName        string      `json:"subject_name"`
-	HasExam            bool        `json:"has_exam"`
-	HasHomework        bool        `json:"has_homework"`
-	IsSubstitution     bool        `json:"is_substitution"`
-	Canceled           bool        `json:"canceled"`
+	ActualDate          int64  `json:"actual_date"`
+	RoomID              int32  `json:"room_id"`
+	LessonNum           int32  `json:"lesson_num"`
+	DayOfWeek           int32  `json:"day_of_week"`
+	EffectiveTeacherID  int32  `json:"effective_teacher_id"`
+	HasTeacherFirstName bool   `json:"has_teacher_first_name"`
+	TeacherFirstName    string `json:"teacher_first_name"`
+	HasTeacherLastName  bool   `json:"has_teacher_last_name"`
+	TeacherLastName     string `json:"teacher_last_name"`
+	GroupID             int32  `json:"group_id"`
+	SchoolID            int32  `json:"school_id"`
+	CustomSubject       bool   `json:"custom_subject"`
+	HasSubjectID        bool   `json:"has_subject_id"`
+	SubjectID           int32  `json:"subject_id"`
+	HasCustomSubjectID  bool   `json:"has_custom_subject_id"`
+	CustomSubjectID     int32  `json:"custom_subject_id"`
+	SubjectName         string `json:"subject_name"`
+	HasExam             bool   `json:"has_exam"`
+	HasHomework         bool   `json:"has_homework"`
+	IsSubstitution      bool   `json:"is_substitution"`
+	Canceled            bool   `json:"canceled"`
 }
 
 type TimetableBaseLesson struct {
-	ID               int32       `json:"id"`
-	SchoolID         int32       `json:"school_id"`
-	TeacherID        int32       `json:"teacher_id"`
-	TeacherFirstName pgtype.Text `json:"teacher_first_name"`
-	TeacherLastName  pgtype.Text `json:"teacher_last_name"`
-	RoomID           int32       `json:"room_id"`
-	DayOfWeek        int32       `json:"day_of_week"`
-	LessonNum        int32       `json:"lesson_num"`
-	GroupID          int32       `json:"group_id"`
-	CustomSubject    bool        `json:"custom_subject"`
-	SubjectID        pgtype.Int4 `json:"subject_id"`
-	CustomSubjectID  pgtype.Int4 `json:"custom_subject_id"`
-	SubjectName      string      `json:"subject_name"`
-	HasExam          bool        `json:"has_exam"`
-	HasHomework      bool        `json:"has_homework"`
+	ID                  int32  `json:"id"`
+	SchoolID            int32  `json:"school_id"`
+	TeacherID           int32  `json:"teacher_id"`
+	HasTeacherFirstName bool   `json:"has_teacher_first_name"`
+	TeacherFirstName    string `json:"teacher_first_name"`
+	HasTeacherLastName  bool   `json:"has_teacher_last_name"`
+	TeacherLastName     string `json:"teacher_last_name"`
+	RoomID              int32  `json:"room_id"`
+	DayOfWeek           int32  `json:"day_of_week"`
+	LessonNum           int32  `json:"lesson_num"`
+	GroupID             int32  `json:"group_id"`
+	CustomSubject       bool   `json:"custom_subject"`
+	HasSubjectID        bool   `json:"has_subject_id"`
+	SubjectID           int32  `json:"subject_id"`
+	HasCustomSubjectID  bool   `json:"has_custom_subject_id"`
+	CustomSubjectID     int32  `json:"custom_subject_id"`
+	SubjectName         string `json:"subject_name"`
+	HasExam             bool   `json:"has_exam"`
+	HasHomework         bool   `json:"has_homework"`
 }
 
 type TimetableBellSchedule struct {
-	ID           int32       `json:"id"`
-	SchoolID     int32       `json:"school_id"`
-	TypeID       int32       `json:"type_id"`
-	LessonNumber pgtype.Int4 `json:"lesson_number"`
-	AtStart      pgtype.Time `json:"at_start"`
-	AtEnd        pgtype.Time `json:"at_end"`
+	ID              int32 `json:"id"`
+	SchoolID        int32 `json:"school_id"`
+	TypeID          int32 `json:"type_id"`
+	HasLessonNumber bool  `json:"has_lesson_number"`
+	LessonNumber    int32 `json:"lesson_number"`
+	AtStart         int64 `json:"at_start"`
+	AtEnd           int64 `json:"at_end"`
 }
 
 type TimetableRoom struct {
@@ -136,23 +145,27 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 
 	for _, row := range data {
 		lessons = append(lessons, TimetableLesson{
-			ActualDate:         row.ActualDate,
-			RoomID:             row.RoomID,
-			LessonNum:          row.LessonNum,
-			DayOfWeek:          row.DayOfWeek,
-			EffectiveTeacherID: row.EffectiveTeacherID,
-			TeacherFirstName:   row.TeacherFirstName,
-			TeacherLastName:    row.TeacherLastName,
-			GroupID:            row.GroupID,
-			SchoolID:           row.SchoolID,
-			CustomSubject:      row.CustomSubject,
-			SubjectID:          row.SubjectID,
-			CustomSubjectID:    row.CustomSubjectID,
-			SubjectName:        row.SubjectName,
-			HasExam:            row.HasExam,
-			HasHomework:        row.HasHomework,
-			IsSubstitution:     row.IsSubstitution,
-			Canceled:           row.Canceled,
+			ActualDate:          row.ActualDate.Time.Unix(),
+			RoomID:              row.RoomID,
+			LessonNum:           row.LessonNum,
+			DayOfWeek:           row.DayOfWeek,
+			EffectiveTeacherID:  row.EffectiveTeacherID,
+			HasTeacherFirstName: row.TeacherFirstName.Valid,
+			HasTeacherLastName:  row.TeacherLastName.Valid,
+			TeacherFirstName:    row.TeacherFirstName.String,
+			TeacherLastName:     row.TeacherLastName.String,
+			GroupID:             row.GroupID,
+			SchoolID:            row.SchoolID,
+			CustomSubject:       row.CustomSubject,
+			HasSubjectID:        row.SubjectID.Valid,
+			SubjectID:           row.SubjectID.Int32,
+			HasCustomSubjectID:  row.CustomSubjectID.Valid,
+			CustomSubjectID:     row.CustomSubjectID.Int32,
+			SubjectName:         row.SubjectName,
+			HasExam:             row.HasExam,
+			HasHomework:         row.HasHomework,
+			IsSubstitution:      row.IsSubstitution,
+			Canceled:            row.Canceled,
 		})
 	}
 
@@ -181,21 +194,25 @@ func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 
 	for _, row := range data {
 		lessons = append(lessons, TimetableBaseLesson{
-			ID:               row.ID,
-			SchoolID:         row.SchoolID,
-			TeacherID:        row.TeacherID,
-			TeacherFirstName: row.TeacherFirstName,
-			TeacherLastName:  row.TeacherLastName,
-			RoomID:           row.RoomID,
-			DayOfWeek:        row.DayOfWeek,
-			LessonNum:        row.LessonNum,
-			GroupID:          row.GroupID,
-			CustomSubject:    row.CustomSubject,
-			SubjectID:        row.SubjectID,
-			CustomSubjectID:  row.CustomSubjectID,
-			SubjectName:      row.SubjectName,
-			HasExam:          row.HasExam,
-			HasHomework:      row.HasHomework,
+			ID:                  row.ID,
+			SchoolID:            row.SchoolID,
+			TeacherID:           row.TeacherID,
+			HasTeacherFirstName: row.TeacherFirstName.Valid,
+			HasTeacherLastName:  row.TeacherLastName.Valid,
+			TeacherFirstName:    row.TeacherFirstName.String,
+			TeacherLastName:     row.TeacherLastName.String,
+			RoomID:              row.RoomID,
+			DayOfWeek:           row.DayOfWeek,
+			LessonNum:           row.LessonNum,
+			GroupID:             row.GroupID,
+			CustomSubject:       row.CustomSubject,
+			HasSubjectID:        row.SubjectID.Valid,
+			SubjectID:           row.SubjectID.Int32,
+			HasCustomSubjectID:  row.CustomSubjectID.Valid,
+			CustomSubjectID:     row.CustomSubjectID.Int32,
+			SubjectName:         row.SubjectName,
+			HasExam:             row.HasExam,
+			HasHomework:         row.HasHomework,
 		})
 	}
 
@@ -230,12 +247,13 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	for _, row := range data {
 		lesson_times = append(lesson_times, TimetableBellSchedule{
-			ID:           row.ID,
-			SchoolID:     row.SchoolID,
-			TypeID:       row.TypeID,
-			LessonNumber: row.LessonNumber,
-			AtStart:      row.AtStart,
-			AtEnd:        row.AtEnd,
+			ID:              row.ID,
+			SchoolID:        row.SchoolID,
+			TypeID:          row.TypeID,
+			HasLessonNumber: row.LessonNumber.Valid,
+			LessonNumber:    row.LessonNumber.Int32,
+			AtStart:         row.AtStart.Microseconds / 1000000,
+			AtEnd:           row.AtEnd.Microseconds / 1000000,
 		})
 	}
 
