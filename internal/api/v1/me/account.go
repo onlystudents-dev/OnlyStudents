@@ -82,7 +82,7 @@ func ChangeTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.Theme == "" || !slices.Contains(helpers.Themes, req.Theme) {
+	if !slices.Contains(helpers.Themes, req.Theme) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -125,7 +125,7 @@ func ChangeLang(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.Lang == "" || !slices.Contains(helpers.Languages, req.Lang) {
+	if !slices.Contains(helpers.Languages, req.Lang) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
