@@ -94,7 +94,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			"me": fiber.Map{
 				helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth},
 				"logout":                 helpers.Post(func(c fiber.Ctx) error { return v1.Logout(c, pool, rdb) }),
-				"update_preferences":     helpers.Post(func(c fiber.Ctx) error { return meapi.ChangePassword(c, pool, rdb) }),
+				"update_preferences":     helpers.Post(func(c fiber.Ctx) error { return meapi.UpdatePreferences(c, pool, rdb) }),
 				"change_email":           helpers.Post(func(c fiber.Ctx) error { return meapi.ChangeEmail(c, pool, rdb) }),
 				"verify_email": helpers.Post([]fiber.Handler{authLimit,
 					func(c fiber.Ctx) error { return meapi.VerifyEmailRequest(c, pool, rdb) }}),
