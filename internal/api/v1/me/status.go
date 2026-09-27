@@ -31,7 +31,7 @@ type StatusData struct {
 	EmailVerified bool           `json:"email_verified"`
 	Theme         string         `json:"theme"`
 	Lang          string         `json:"lang"`
-	Preferences   int32          `json:"preference"`
+	Preferences   int32          `json:"preferences"`
 	Children      []ChildrenData `json:"children"`
 }
 
