@@ -174,6 +174,7 @@ type VerifyEmailData struct {
 	VerifyCode       string
 	Name             string
 	ExpiresInMinutes int
+	AppName          string
 }
 
 func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -228,7 +229,7 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 			slog.Error("email verify mailer init failed", "err", e)
 			return
 		}
-		if e := mailer.SendTemplateContext(bg, email, "Verify your email", "email_verify.html", VerifyEmailData{VerifyCode: code, Name: account.Role, ExpiresInMinutes: int(expiresInMinutes)}); e != nil {
+		if e := mailer.SendTemplateContext(bg, email, fmt.Sprintf("Verify your %s email", helpers.AppName), "email_verify.html", VerifyEmailData{VerifyCode: code, Name: account.Role, ExpiresInMinutes: int(expiresInMinutes), AppName: helpers.AppName}); e != nil {
 			slog.Error("email verify email failed", "account", email, "err", e)
 		}
 	}()

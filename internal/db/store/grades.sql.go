@@ -120,7 +120,8 @@ SELECT
     fg.id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
-    CONCAT(t.first_name, ' ', t.last_name) AS teacher,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
     ter.name AS term,
     fg.value
 FROM final_grades fg
@@ -134,12 +135,13 @@ ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name)
 `
 
 type GetStudentFinalGradesRow struct {
-	ID          int64
-	Subject     string
-	SubjectCode pgtype.Text
-	Teacher     interface{}
-	Term        string
-	Value       int16
+	ID               int64
+	Subject          string
+	SubjectCode      pgtype.Text
+	TeacherFirstName string
+	TeacherLastName  string
+	Term             string
+	Value            int16
 }
 
 func (q *Queries) GetStudentFinalGrades(ctx context.Context, studentID int32) ([]GetStudentFinalGradesRow, error) {
@@ -155,7 +157,8 @@ func (q *Queries) GetStudentFinalGrades(ctx context.Context, studentID int32) ([
 			&i.ID,
 			&i.Subject,
 			&i.SubjectCode,
-			&i.Teacher,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
 			&i.Term,
 			&i.Value,
 		); err != nil {
@@ -174,7 +177,8 @@ SELECT
     g.id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
-    CONCAT(t.first_name, ' ', t.last_name) AS teacher,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
     ter.name AS term,
     gt.name AS type,
     g.value,
@@ -192,15 +196,16 @@ ORDER BY g.term_id, COALESCE(cs.subject_name, s.subject_name), g.date
 `
 
 type GetStudentGradesRow struct {
-	ID          int64
-	Subject     string
-	SubjectCode pgtype.Text
-	Teacher     interface{}
-	Term        string
-	Type        string
-	Value       int16
-	Date        pgtype.Date
-	Note        pgtype.Text
+	ID               int64
+	Subject          string
+	SubjectCode      pgtype.Text
+	TeacherFirstName string
+	TeacherLastName  string
+	Term             string
+	Type             string
+	Value            int16
+	Date             pgtype.Date
+	Note             pgtype.Text
 }
 
 func (q *Queries) GetStudentGrades(ctx context.Context, studentID int32) ([]GetStudentGradesRow, error) {
@@ -216,7 +221,8 @@ func (q *Queries) GetStudentGrades(ctx context.Context, studentID int32) ([]GetS
 			&i.ID,
 			&i.Subject,
 			&i.SubjectCode,
-			&i.Teacher,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
 			&i.Term,
 			&i.Type,
 			&i.Value,

@@ -22,6 +22,7 @@ export type Preferences = {
 }
 
 export type Lesson = {
+    actual_date: number,
     room_id: number,
     lesson_num: number,
     day_of_week: number,
@@ -29,14 +30,18 @@ export type Lesson = {
     group_id: number,
     school_id: number,
     custom_subject: boolean,
-    subject_id: number | null,
-    custom_subject_id: number | null,
-    subject_name: string | null,
+    has_subject_id: boolean,
+    subject_id: number,
+    has_custom_subject_id: boolean,
+    custom_subject_id: number,
+    subject_name: string,
     is_substitution: boolean,
     canceled: boolean,
     has_exam: boolean,
     has_homework: boolean,
+    has_teacher_first_name: boolean,
     teacher_first_name: string,
+    has_teacher_last_name: boolean,
     teacher_last_name: string,
 }
 
@@ -61,12 +66,8 @@ export type LessonTime = {
     id: number,
     school_id: number,
     type_id: number,
+    has_lesson_number: boolean,
     lesson_number: number,
-    at_start: LessonTimeDate,
-    at_end: LessonTimeDate,
-}
-
-export type LessonTimeDate = {
-    Microseconds: number,
-    Valid: boolean,
+    at_start: number,
+    at_end: number,
 }

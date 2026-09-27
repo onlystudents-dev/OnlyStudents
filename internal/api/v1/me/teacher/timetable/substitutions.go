@@ -3,6 +3,7 @@ package timetable
 import (
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -11,30 +12,30 @@ import (
 )
 
 type CanceledLessonRequest struct {
-	Date            pgtype.Date `json:"date"`
-	LessonNumber    int32       `json:"lesson_number"`
-	TeacherId       int32       `json:"teacher_id"`
-	RoomId          int32       `json:"room_id"`
-	DayOfWeek       int32       `json:"day_of_week"`
-	GroupId         int32       `json:"group_id"`
-	IsCustomSubject bool        `json:"is_custom_subject"`
-	CustomSubjectId int32       `json:"custom_subject_id"`
-	SubjectId       int32       `json:"subject_id"`
+	Date            int64 `json:"date"`
+	LessonNumber    int32 `json:"lesson_number"`
+	TeacherId       int32 `json:"teacher_id"`
+	RoomId          int32 `json:"room_id"`
+	DayOfWeek       int32 `json:"day_of_week"`
+	GroupId         int32 `json:"group_id"`
+	IsCustomSubject bool  `json:"is_custom_subject"`
+	CustomSubjectId int32 `json:"custom_subject_id"`
+	SubjectId       int32 `json:"subject_id"`
 }
 
 type SubstitutionsLessonRequest struct {
-	ID                    int32       `json:"id"`
-	Date                  pgtype.Date `json:"date"`
-	LessonNumber          int32       `json:"lesson_number"`
-	TeacherId             int32       `json:"teacher_id"`
-	RoomId                int32       `json:"room_id"`
-	DayOfWeek             int32       `json:"day_of_week"`
-	GroupId               int32       `json:"group_id"`
-	IsCustomSubject       bool        `json:"is_custom_subject"`
-	CustomSubjectId       int32       `json:"custom_subject_id"`
-	SubjectId             int32       `json:"subject_id"`
-	IsSubstitution        bool        `json:"is_substitution"`
-	SubstitutionTeacherId int32       `json:"substitution_teacher_id"`
+	ID                    int32 `json:"id"`
+	Date                  int64 `json:"date"`
+	LessonNumber          int32 `json:"lesson_number"`
+	TeacherId             int32 `json:"teacher_id"`
+	RoomId                int32 `json:"room_id"`
+	DayOfWeek             int32 `json:"day_of_week"`
+	GroupId               int32 `json:"group_id"`
+	IsCustomSubject       bool  `json:"is_custom_subject"`
+	CustomSubjectId       int32 `json:"custom_subject_id"`
+	SubjectId             int32 `json:"subject_id"`
+	IsSubstitution        bool  `json:"is_substitution"`
+	SubstitutionTeacherId int32 `json:"substitution_teacher_id"`
 }
 
 func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -44,7 +45,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.Date.Time.IsZero() || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) {
+	if req.Date == 0 || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -76,7 +77,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		CustomSubject:   req.IsCustomSubject,
 		CustomSubjectID: custom_subject_id,
 		SubjectID:       subject_id,
-		ActualDate:      req.Date,
+		ActualDate:      pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
 		LessonNum:       req.LessonNumber,
 	}
 
@@ -96,7 +97,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.Date.Time.IsZero() || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) {
+	if req.Date == 0 || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -128,7 +129,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		CustomSubject:   req.IsCustomSubject,
 		CustomSubjectID: custom_subject_id,
 		SubjectID:       subject_id,
-		ActualDate:      req.Date,
+		ActualDate:      pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
 		LessonNum:       req.LessonNumber,
 	}
 
@@ -148,7 +149,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if req.ID == 0 || req.Date.Time.IsZero() || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0 || !req.IsSubstitution || req.SubstitutionTeacherId == 0) {
+	if req.ID == 0 || req.Date == 0 || req.LessonNumber <= 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0 || !req.IsSubstitution || req.SubstitutionTeacherId == 0) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -188,7 +189,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		CustomSubject:         req.IsCustomSubject,
 		CustomSubjectID:       custom_subject_id,
 		SubjectID:             subject_id,
-		ActualDate:            req.Date,
+		ActualDate:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
 		LessonNum:             req.LessonNumber,
 		IsSubstitution:        req.IsSubstitution,
 		SubstitutionTeacherID: substitution_teacher_id,

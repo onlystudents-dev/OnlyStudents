@@ -100,7 +100,8 @@ SELECT
     h.id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
-    CONCAT(t.first_name, ' ', t.last_name) AS teacher,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
     h.title,
     h.description,
     h.due_date,
@@ -122,16 +123,17 @@ ORDER BY h.due_date, h.created_at
 `
 
 type GetStudentHomeworkRow struct {
-	ID          int64
-	Subject     string
-	SubjectCode pgtype.Text
-	Teacher     interface{}
-	Title       string
-	Description pgtype.Text
-	DueDate     pgtype.Date
-	CreatedAt   pgtype.Timestamptz
-	SubmittedAt pgtype.Timestamptz
-	GradedValue pgtype.Int2
+	ID               int64
+	Subject          string
+	SubjectCode      pgtype.Text
+	TeacherFirstName string
+	TeacherLastName  string
+	Title            string
+	Description      pgtype.Text
+	DueDate          pgtype.Date
+	CreatedAt        pgtype.Timestamptz
+	SubmittedAt      pgtype.Timestamptz
+	GradedValue      pgtype.Int2
 }
 
 func (q *Queries) GetStudentHomework(ctx context.Context, studentID int32) ([]GetStudentHomeworkRow, error) {
@@ -147,7 +149,8 @@ func (q *Queries) GetStudentHomework(ctx context.Context, studentID int32) ([]Ge
 			&i.ID,
 			&i.Subject,
 			&i.SubjectCode,
-			&i.Teacher,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
 			&i.Title,
 			&i.Description,
 			&i.DueDate,

@@ -20,7 +20,7 @@ import (
 var FakeRecord *opaque.ClientRecord
 
 func InitFakeRecord(conf *opaque.Configuration) error {
-	rec, err := conf.GetFakeRecord([]byte("onlystudents-fake-credential-id-pad-to-64-bytes-0000000000"))
+	rec, err := conf.GetFakeRecord([]byte("fake-credential-id-pad-to-64-bytes-00000000000000000000000"))
 	if err != nil {
 		return err
 	}
