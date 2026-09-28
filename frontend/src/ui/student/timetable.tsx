@@ -8,6 +8,7 @@ import {faAngleLeft, faAngleRight, faHouseChimney, faPenToSquare} from "@fortawe
 import RateLimit from "../../util/ratelimit.tsx";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import Loading from "../../util/loading.tsx";
+import {toast} from "react-toastify";
 
 type day = {
     date: string,
@@ -43,7 +44,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
             setLoading(false)
             return
         } else if (!response.ok) {
-            await fromResponse(response)
+            toast.error(await fromResponse(response))
             return
         }
 
@@ -93,7 +94,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                 const response = await fetch(api)
 
                 if (!response.ok) {
-                    await fromResponse(response)
+                    toast.error(await fromResponse(response))
                     return
                 }
 
@@ -132,7 +133,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
         }
 
         Fetch()
-    }, [fetchWeekLessons])
+    }, [fetchWeekLessons, me.preferences.timetable_next])
 
     const days: Record<string, day> = {
         monday,

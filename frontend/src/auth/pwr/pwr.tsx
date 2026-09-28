@@ -70,8 +70,8 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
             case 429: {
                 let seconds = response.headers.get("Retry-After")
                 if (!seconds) seconds = "-1"
-                toast.error(await fromResponse(response, seconds))
                 updateRemaining(Number(seconds))
+                toast.error(await fromResponse(response))
                 break
             }
             default:
@@ -106,8 +106,8 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
             case 429: {
                 let seconds = response.headers.get("Retry-After")
                 if (!seconds) seconds = "-1"
-                toast.error(await fromResponse(response, seconds))
                 updateRemaining(Number(seconds))
+                toast.error(await fromResponse(response))
                 break
             }
             default:
@@ -136,17 +136,17 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
             <div className={`content in outback ${!pwrA && "hid"} ${resetA ? "h-144" : "h-86"}`}>
                 <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("FORGOT_PASSWORD_TITLE")}</h1>
                 {!reset && <div className={`loginput fredoka out ${resetA && "hid"}`}>
-                    <select className="poppins" value={role} onChange={(e) => setRole(e.target.value)}>
+                    <select className="poppins" value={role} onChange={(e) => setRole(e.currentTarget.value)}>
                         <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
                         <option value="student">{getKey("ROLE.STUDENT")}</option>
                         <option value="teacher">{getKey("ROLE.TEACHER")}</option>
                     </select>
-                    <input className={`${red && "wrong"}`} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.target.value); checkUserID(e.target.value)}} />
+                    <input className={`${red && "wrong"}`} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.currentTarget.value); checkUserID(e.currentTarget.value)}} />
                 </div>}
                 {reset && <div className="loginput fredoka in">
-                    <input type="text" placeholder={getKey("CODE")} onChange={(e) => setCode(e.target.value)} />
-                    <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setPassword(e.target.value)} />
-                    <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    <input type="text" placeholder={getKey("CODE")} onChange={(e) => setCode(e.currentTarget.value)} />
+                    <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setPassword(e.currentTarget.value)} />
+                    <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
                     <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                 </div>}
 

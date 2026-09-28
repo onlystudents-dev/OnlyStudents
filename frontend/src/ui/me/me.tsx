@@ -19,18 +19,14 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import PasswordCheck from "../../auth/pwc.tsx";
 import Save from "../../util/save/save.tsx";
 import {applyTheme, getAutoTheme, type Theme, themes} from "../../util/theme.ts";
-import Skeleton from "../../util/skeleton/skeleton.tsx";
+import Sidebar from "../../util/sidebar/sidebar.tsx";
+import type {Dispatch, StateUpdater} from "preact/hooks";
 
 export type option = "lang" | "theme" | "timetable_display" | "timetable_next"
 
-export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Promise<void>, reload: () => void}) {
-    const ref = useRef<HTMLDivElement>(null)
-    const sref = useRef<HTMLDivElement>(null)
-
+export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () => Promise<void>, setMe: Dispatch<StateUpdater<Me | null>>, reload: () => void}) {
     const [waiting, setWaiting] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [hidden, setHidden] = useState(true)
-    const [pfpLoaded, setPfpLoaded] = useState(false)
 
     const [active, setActive] = useState<"appearance" | "user" | "security">("appearance")
 
@@ -147,9 +143,9 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
                                             <h1 className="text-center text-5xl font-bold mb-8 rubik w-140">{getKey("CHANGE_PASSWORD")}</h1>
 
                                             <div className="flex flex-col gap-4 w-full">
-                                                <input type="password" placeholder={getKey("CURRENT_PASSWORD")} onChange={(e) => setCurrentPassword(e.target.value)} />
-                                                <input type="password" placeholder={getKey("PASSWORD")} onChange={(e) => setPassword(e.target.value)} />
-                                                <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                                <input type="password" placeholder={getKey("CURRENT_PASSWORD")} onChange={(e) => setCurrentPassword(e.currentTarget.value)} />
+                                                <input type="password" placeholder={getKey("PASSWORD")} onChange={(e) => setPassword(e.currentTarget.value)} />
+                                                <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
                                                 <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                                             </div>
 
@@ -166,29 +162,12 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
                 </div>
                 {waiting && <Loading absolute />}
             </div>
-            <div className="sidebar">
-                <div className="flex flex-row gap-4">
-                    <a className="rounded-[50%] h-20 cursor-pointer" href="/me">
-                        <img className={`rounded-[inherit] max-h-full ${!pfpLoaded && "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
-                        {!pfpLoaded && <Skeleton width={40} height={40} color={"var(--bg-color)"} className="rounded-[inherit]!" />}
-                    </a>
-                    <div className="flex flex-col gap-1 justify-center min-w-0">
-                        <h1 className="text-2xl truncate">
-                            {nickname || `${me.first_name} ${me.last_name}`}
-                        </h1>
-                        <p>{getKey("SETTINGS")}</p>
-                    </div>
-                </div>
-                <br />
-                <div className="buttons" onMouseLeave={() => setHidden(true)}>
-                    <div ref={ref} className={`sbutton ${hidden && "hid"}`}></div>
-                    <div ref={sref} className={`sbutton ssbutton`}></div>
-                    <Button onClick={button => {setActive("appearance"); sreposition(button)}} onMouseEnter={reposition} icon={faUser} text={getKey("APPEARANCE_SETTINGS")} />
-                    <Button onClick={button => {setActive("user"); sreposition(button)}} onMouseEnter={reposition} icon={faUser} text={getKey("USER_SETTINGS")} />
-                    <Button onClick={button => {setActive("security"); sreposition(button)}} onMouseEnter={reposition} icon={faLock} text={getKey("SECURITY")} />
-                    <Button onClick={async (button) => {await logout(); sreposition(button)}} onMouseEnter={reposition} className="text-(--wrong-color)" icon={faRightFromBracket} text={getKey("LOGOUT")} />
-                </div>
-            </div>
+            <Sidebar me={me}>
+                <Button onClick={() => setActive("appearance")} icon={faUser} text={getKey("APPEARANCE_SETTINGS")} />
+                <Button onClick={() => setActive("user")} icon={faUser} text={getKey("USER_SETTINGS")} />
+                <Button onClick={() => setActive("security")} icon={faLock} text={getKey("SECURITY")} />
+                <Button onClick={logout} className="text-(--wrong-color)" icon={faRightFromBracket} text={getKey("LOGOUT")} />
+            </Sidebar>
         </>
     )
 
@@ -205,16 +184,22 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
                 timetable_next: diff.timetable_next === "true",
             }),
         }
-        await fetch("/api/v1/me/update_preferences", {
+        const response = await fetch("/api/v1/me/update_preferences", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ new_preferences }),
         })
+        if (!response.ok) {
+            toast.error(await fromResponse(response))
+            return false
+        }
+        setMe({ ...me, preferences: new_preferences })
         Object.entries(diff).forEach(([key, value]) => {
             methods[key as option]?.(value)
         })
+        return true
     }
 
     async function sendEmail() {
@@ -238,12 +223,6 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
                 await fetchMe()
                 setEmail(newEmail.current.value)
                 break
-            case 429: {
-                let seconds = response.headers.get("Retry-After")
-                if (!seconds) seconds = "-1"
-                toast.error(await fromResponse(response, seconds))
-                break
-            }
             default:
                 toast.error(await fromResponse(response))
         }
@@ -258,12 +237,6 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
             case 200:
                 done()
                 break
-            case 429: {
-                let seconds = response.headers.get("Retry-After")
-                if (!seconds) seconds = "-1"
-                toast.error(await fromResponse(response, seconds))
-                break
-            }
             default:
                 toast.error(await fromResponse(response))
         }
@@ -286,12 +259,6 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
                 toast.success(getKey("EMAIL_CHANGED"))
                 await fetchMe()
                 break
-            case 429: {
-                let seconds = response.headers.get("Retry-After")
-                if (!seconds) seconds = "-1"
-                toast.error(await fromResponse(response, seconds))
-                break
-            }
             default:
                 toast.error(await fromResponse(response))
         }
@@ -317,13 +284,8 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
             case 200:
                 toast.success(getKey("NICKNAME_CHANGED"))
                 setNickname(newNickname.current.value)
+                setMe({ ...me, preferences: { ...me.preferences, nickname: newNickname.current.value } })
                 break
-            case 429: {
-                let seconds = response.headers.get("Retry-After")
-                if (!seconds) seconds = "-1"
-                toast.error(await fromResponse(response, seconds))
-                break
-            }
             default:
                 toast.error(await fromResponse(response))
         }
@@ -352,12 +314,6 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
             case 200:
                 toast.success(getKey("PASSWORD_CHANGED"))
                 break
-            case 429: {
-                let seconds = response.headers.get("Retry-After")
-                if (!seconds) seconds = "-1"
-                toast.error(await fromResponse(response, seconds))
-                break
-            }
             default:
                 toast.error(await fromResponse(response))
         }
@@ -378,30 +334,5 @@ export default function Me({ me, fetchMe, reload }: {me: Me, fetchMe: () => Prom
                 toast.error(await response.text() || response.statusText);
         }
         setLoading(false)
-    }
-
-    function reposition(button: HTMLButtonElement) {
-        const current = ref.current;
-        if (!current) return;
-        setHidden(false)
-
-        const buttonRect = button.getBoundingClientRect();
-        const containerRect = current.parentElement?.getBoundingClientRect();
-
-        if (!containerRect) return;
-
-        current.style.top = `${buttonRect.top - containerRect.top}px`;
-    }
-
-    function sreposition(button: HTMLButtonElement) {
-        const current = sref.current;
-        if (!current) return;
-
-        const buttonRect = button.getBoundingClientRect();
-        const containerRect = current.parentElement?.getBoundingClientRect();
-
-        if (!containerRect) return;
-
-        current.style.top = `${buttonRect.top - containerRect.top}px`;
     }
 }

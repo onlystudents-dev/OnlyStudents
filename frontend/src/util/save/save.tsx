@@ -31,7 +31,7 @@ function getDifferences(
     );
 }
 
-export default function Save({ options, setOptions, save }: {options: Record<string, unknown>, setOptions: React.Dispatch<React.SetStateAction<Record<string, unknown>>>, save: (options: Record<string, unknown>) => void}) {
+export default function Save({ options, setOptions, save }: {options: Record<string, unknown>, setOptions: React.Dispatch<React.SetStateAction<Record<string, unknown>>>, save: (options: Record<string, unknown>) => (boolean | Promise<boolean>)}) {
     const [defaults, setDefaults] = React.useState<Record<string, unknown>>(options);
 
     const differences = getDifferences(options, defaults)
@@ -45,7 +45,7 @@ export default function Save({ options, setOptions, save }: {options: Record<str
                     <Button onClick={() => setOptions({ ...defaults })} className="breset">
                         {getKey("RESET")}
                     </Button>
-                    <Button onClick={() => {save(differences); setDefaults({ ...options })}} className="bsave">
+                    <Button onClick={() => {if (!save(differences)) return; setDefaults({ ...options })}} className="bsave">
                         {getKey("SAVE")}
                     </Button>
                 </div>
