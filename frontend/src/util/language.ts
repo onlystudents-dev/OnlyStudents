@@ -41,6 +41,13 @@ export function getKey(key: string, ...args: string[]) {
 }
 
 export async function fromResponse(response: Response, ...args: string[]) {
+    if (response.status === 429) {
+        let seconds = response.headers.get("Retry-After")
+        if (!seconds) seconds = "-1"
+        args.shift()
+        args[0] = seconds
+    }
+
     const json = await response.json()
 
     let val = language.errors[json?.error]

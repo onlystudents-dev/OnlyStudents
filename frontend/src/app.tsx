@@ -99,7 +99,7 @@ export default function App({ reload }: {reload: () => void}) {
                 {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={async () => {setRatelimit(-1); await fetchMe()}} /> : loading ? <Loading /> : !me ? <Login /> : (
                     <Switch>
                         <Route path="/"><Home me={me} /></Route>
-                        <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} reload={reload} /></Route>
+                        <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} setMe={setMe} reload={reload} /></Route>
                         <Route path="/homeworks">{() => byFeature("homeworks", me)}</Route>
                         <Route path="/timetable">{() => byFeature("timetable", me)}</Route>
                         <Route path="/absences">{() => byFeature("absences", me)}</Route>
