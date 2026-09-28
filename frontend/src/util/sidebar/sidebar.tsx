@@ -29,12 +29,12 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
     }
 
     function handleEnter(e: MouseEvent) {
-        setHidden(false);
-        setHoverTop(getTop(e));
+        setHidden(false)
+        setHoverTop(getTop(e))
     }
 
     function handleClick(e: MouseEvent) {
-        setSelectTop(getTop(e));
+        setSelectTop(getTop(e))
     }
 
     return (
@@ -67,9 +67,9 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
                 />
 
                 {Children.toArray(children).map((child) => {
-                    if (!isValidElement(child)) return child;
+                    if (!isValidElement(child)) return child
 
-                    const element = child as VNode<ClickableProps>;
+                    const element = child as VNode<ClickableProps>
 
                     return cloneElement(element, {
                         onClick: (e: MouseEvent) => {
@@ -80,7 +80,7 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
                             handleEnter(e)
                             element.props.onMouseEnter?.(e)
                         },
-                    });
+                    })
                 })}
             </div>
         </div>
