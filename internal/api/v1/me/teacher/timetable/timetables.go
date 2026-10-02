@@ -249,6 +249,7 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		GroupID:         req.GroupId,
 		CustomSubject:   req.IsCustomSubject,
 		CustomSubjectID: custom_subject_id,
+		ID:              req.Id,
 		SubjectID:       subject_id,
 	}
 
@@ -553,6 +554,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	}
 
 	params := db_queries.UpdateRealTimeLessonParams{
+		ID:              req.Id,
 		SchoolID:        scope.SchoolID,
 		TeacherID:       req.TeacherId,
 		RoomID:          req.RoomId,
