@@ -20,7 +20,7 @@ export default defineConfig({
             },
             {
               name: 'shared',
-              test: /src[\\/](navbar|util)[\\/]/,
+              test: /src[\\/](navbar|util|types)[\\/]/,
               priority: 25
             },
             {
@@ -56,6 +56,12 @@ export default defineConfig({
             {
               name: 'teacher',
               test: /src[\\/]ui[\\/]teacher[\\/]/,
+              maxSize: 50000,
+              priority: 10,
+            },
+            {
+              name: 'admin',
+              test: /src[\\/]admin[\\/]/,
               maxSize: 50000,
               priority: 10,
             },

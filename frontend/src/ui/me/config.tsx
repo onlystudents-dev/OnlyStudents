@@ -2,14 +2,13 @@ import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import React, {useState} from "react";
 import Overlay from "../../util/overlay/overlay.tsx";
-import {cx} from "../../util/cx.ts";
 
 export default function Config({ icon, text, value, children, className}: {icon: IconDefinition, text: string, value: string, children: React.ReactNode, className?: string}) {
     const [open, setOpen] = useState(false)
 
     return (
         <>
-            <div className={cx("config", className)} onClick={() => setOpen(true)}>
+            <div className={`config ${className}`} onClick={() => setOpen(true)}>
                 <p>
                     <FontAwesomeIcon icon={icon} /> {text}
                 </p>
@@ -30,7 +29,7 @@ export default function Config({ icon, text, value, children, className}: {icon:
 export function DropdownConfig({ text, icon, value, children, className, onChange }: { text: string, icon: IconDefinition, value: string, children: React.ReactNode, className?: string, onChange: (raw: string) => void }) {
     return (
         <>
-            <div className={cx("config", className)}>
+            <div className={`config ${className}}`}>
                 <p>
                     <FontAwesomeIcon icon={icon} /> {text}
                 </p>

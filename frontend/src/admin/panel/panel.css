@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+.sidebar {
+    height: 100vh !important;
+}
+
+.main {
+    @apply absolute bottom-0 right-0 h-full p-4;
+    width: calc(100% - 22.5rem);
+    height: 100vh;
+
+    .status {
+        @apply flex flex-row justify-between items-center w-full rounded-lg p-2 relative;
+    }
+
+    .status:hover {
+        background-color: var(--hover-color);
+        transition: background-color 200ms ease;
+    }
+}

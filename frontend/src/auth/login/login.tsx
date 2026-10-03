@@ -10,40 +10,39 @@ import {getKey} from "../../util/language.ts";
 import { opaqueLogin } from "../opaqueLogin.ts";
 import RoleSelect from "../roleSelect.tsx";
 import { useCountdown } from "../../util/countdown.ts";
-import {cx} from "../../util/cx.ts";
 
 export default function Login() {
-    const [pwr, setPwr] = useState(false);
-    const [pwrA, setPwrA] = useState(false);
+    const [pwr, setPwr] = useState(false)
+    const [pwrA, setPwrA] = useState(false)
     const [reset, setReset] = useState(false)
 
-    const [red, setRed] = useState(false);
-    const [wrong, setWrong] = useState(false);
+    const [red, setRed] = useState(false)
+    const [wrong, setWrong] = useState(false)
 
-    const [role, setRole] = useState("guardian");
+    const [role, setRole] = useState("guardian")
 
-    const [id, setId] = useState("");
-    const [password, setPassword] = useState("");
+    const [id, setId] = useState("")
+    const [password, setPassword] = useState("")
 
-    const [waiting, setWaiting] = useState(false);
-    const [remaining, updateRemaining] = useCountdown();
+    const [waiting, setWaiting] = useState(false)
+    const [remaining, updateRemaining] = useCountdown()
 
     const login = useCallback(async () => {
-      if (red || wrong || remaining || !id || !password) return;
-      setWaiting(true);
+      if (red || wrong || remaining || !id || !password) return
+      setWaiting(true)
       try {
         const res = await opaqueLogin({ userId: Number(id), role, password });
         switch (res.status) {
           case "ok": location.reload(); break;
-          case "wrong": toast.error(getKey("WRONG_CREDENTIALS")); setWrong(true); break;
+          case "wrong": toast.error(getKey("WRONG_CREDENTIALS")); setWrong(true); break
           case "ratelimited":
-            toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)));
-            updateRemaining(res.retryAfter);
-            break;
-          case "error": toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED")); break;
+            toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)))
+            updateRemaining(res.retryAfter)
+            break
+          case "error": toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED")); break
         }
-      } finally { setWaiting(false); }
-    }, [red, wrong, remaining, id, password, role, updateRemaining]);
+      } finally { setWaiting(false) }
+    }, [red, wrong, remaining, id, password, role, updateRemaining])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -60,12 +59,12 @@ export default function Login() {
     return (
         <>
             <div className={`box cantar ${reset ? "h-158" : "h-100"}`}>
-                <div className={cx("content out", pwrA && "hid", "h-86")}>
+                <div className={`content out ${pwrA && "hid h-86"}`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">
-<RoleSelect value={role} onChange={(r) => {setRole(r); setWrong(false)}} />
-                        <input className={cx((red || wrong) && "wrong")} type="text" placeholder={getKey("USER_ID")} value={id} onChange={(e) => {setId(e.currentTarget.value); checkUserID(e.currentTarget.value); setWrong(false)}} />
-                        <input className={cx(wrong && "wrong")} type="password" placeholder={getKey("PASSWORD")} value={password} onChange={(e) => {setPassword(e.currentTarget.value); setWrong(false)}} />
+                        <RoleSelect value={role} onChange={(r) => {setRole(r); setWrong(false)}} />
+                        <input className={`${(red || wrong) && "wrong"}`} type="text" placeholder={getKey("USER_ID")} value={id} onChange={(e) => {setId(e.currentTarget.value); checkUserID(e.currentTarget.value); setWrong(false)}} />
+                        <input className={`${wrong && "wrong"}`} type="password" placeholder={getKey("PASSWORD")} value={password} onChange={(e) => {setPassword(e.currentTarget.value); setWrong(false)}} />
                     </div>
                     <div aria-disabled className="logbutton">
                         <Button onClick={sPwr}>
@@ -87,9 +86,9 @@ export default function Login() {
 
     function checkUserID(id: string) {
         if (id && Number.isNaN(Number(id))) {
-            setRed(true);
+            setRed(true)
         } else {
-            setRed(false);
+            setRed(false)
         }
     }
 

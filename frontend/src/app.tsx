@@ -78,28 +78,42 @@ export default function App({ reload }: {reload: () => void}) {
     }
 
     useEffect(() => {
+        const path = window.location.pathname
+
         function Fetch() {
             void fetchMe()
                 .then(me => fetchLanguage(me))
                 .then(() => setLoading(false))
         }
 
-        Fetch()
+        switch (path) {
+            case "/admin":
+                void fetchLanguage(null)
+                    .then(() => setLoading(false))
+                break
+            default:
+                Fetch()
+                }
     }, [])
 
     return (
         <>
             <Suspense fallback={<Loading />}>
-                {loading ? <Loading /> : ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={() => {setRatelimit(-1); void fetchMe()}} /> : !me ? <Login /> : (
-                    <Switch>
-                        <Route path="/"><Home me={me} /></Route>
-                        <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} setMe={setMe} reload={reload} /></Route>
-                        <Route path="/homeworks">{() => byFeature("homeworks", me)}</Route>
-                        <Route path="/timetable">{() => byFeature("timetable", me)}</Route>
-                        <Route path="/absences">{() => byFeature("absences", me)}</Route>
-                        <Route path="/grades">{() => byFeature("grades", me)}</Route>
-                    </Switch>
-                )}
+                <Switch>
+                    <Route path="/admin">
+                        {loading ? <Loading /> : lazy(() => import("./admin/admin.tsx"))}
+                    </Route>
+                    {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={async () => {setRatelimit(-1); await fetchMe()}} /> : loading ? <Loading /> : !me ? <Login /> : (
+                        <>
+                            <Route path="/"><Home me={me} /></Route>
+                            <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} setMe={setMe} reload={reload} /></Route>
+                            <Route path="/homeworks">{() => byFeature("homeworks", me)}</Route>
+                            <Route path="/timetable">{() => byFeature("timetable", me)}</Route>
+                            <Route path="/absences">{() => byFeature("absences", me)}</Route>
+                            <Route path="/grades">{() => byFeature("grades", me)}</Route>
+                        </>
+                    )}
+                </Switch>
             </Suspense>
             <ToastContainer theme={"dark"} position={"bottom-right"} />
         </>

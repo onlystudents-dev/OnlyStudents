@@ -72,7 +72,16 @@
     "TIMETABLE_DISPLAY.ALL": "All days",
     "TIMETABLE_NEXT": "Week to show on open",
     "TIMETABLE_NEXT.NEXT": "The next week if you have no more lessons this week",
-    "TIMETABLE_NEXT.THIS": "Always this week"
+    "TIMETABLE_NEXT.THIS": "Always this week",
+    "ADMIN_TOKEN": "Admin token",
+    "ADMIN_STATUS": "Status",
+    "ADMIN_STATUS_DB_PING": "Database Ping",
+    "ADMIN_STATUS_REDIS_PING": "Redis Ping",
+    "ADMIN_STATUS_SCHOOL_COUNT": "School Count",
+    "ADMIN_STATUS_ACCOUNT_COUNT": "Account Count",
+    "ADMIN_STATUS_GUARDIAN_COUNT": "Guardian Count",
+    "ADMIN_STATUS_STUDENT_COUNT": "Student Count",
+    "ADMIN_STATUS_TEACHER_COUNT": "Teacher Count"
   },
   "errors": {
     "NOT_IMPLEMENTED": "This feature is not implemented yet! We are constantly working on new features!",
