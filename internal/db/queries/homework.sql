@@ -117,7 +117,6 @@ WHERE hs.homework_id = $3
 -- name: GetTeacherHomeworkSubmissions :many
 SELECT
     hs.id,
-    hs.student_id,
     st.first_name,
     st.last_name,
     hs.content,

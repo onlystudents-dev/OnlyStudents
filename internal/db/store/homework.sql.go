@@ -157,7 +157,6 @@ func (q *Queries) GetTeacherHomework(ctx context.Context, arg GetTeacherHomework
 const getTeacherHomeworkSubmissions = `-- name: GetTeacherHomeworkSubmissions :many
 SELECT
     hs.id,
-    hs.student_id,
     st.first_name,
     st.last_name,
     hs.content,
@@ -185,7 +184,6 @@ type GetTeacherHomeworkSubmissionsParams struct {
 
 type GetTeacherHomeworkSubmissionsRow struct {
 	ID          int64
-	StudentID   int32
 	FirstName   string
 	LastName    string
 	Content     pgtype.Text
@@ -204,7 +202,6 @@ func (q *Queries) GetTeacherHomeworkSubmissions(ctx context.Context, arg GetTeac
 		var i GetTeacherHomeworkSubmissionsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.StudentID,
 			&i.FirstName,
 			&i.LastName,
 			&i.Content,
