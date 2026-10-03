@@ -147,9 +147,9 @@ func Status(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	if err != nil {
 		switch err.Error() {
 		case "invalid role":
-			return c.SendStatus(fiber.StatusBadRequest)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 		default:
-			return c.SendStatus(fiber.StatusUnauthorized)
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 		}
 	}
 

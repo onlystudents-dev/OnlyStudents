@@ -24,17 +24,17 @@ func TeacherSummaryByID[request_type, Row, T any](
 	var req request_type
 
 	if err := c.Bind().Query(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if request_check_func(req) {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	queries := db_queries.New(pool)
@@ -52,14 +52,14 @@ func TeacherSummaryByID[request_type, Row, T any](
 		data, err := cache_or_get_func(c.Context(), rdb, *queries, get_id_func(req), teacher_scope.SchoolID, teacher_scope.TeacherID, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 		}
 
 		for _, row := range data {
 			summaries = append(summaries, convert(row))
 		}
 	default:
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	return c.JSON(summaries)
@@ -76,7 +76,7 @@ func TeacherSummary[Row, T any](
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	queries := db_queries.New(pool)
@@ -94,14 +94,14 @@ func TeacherSummary[Row, T any](
 		data, err := cache_or_get_func(c.Context(), rdb, *queries, teacher_scope.SchoolID, teacher_scope.TeacherID, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 		}
 
 		for _, row := range data {
 			summaries = append(summaries, convert(row))
 		}
 	default:
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	return c.JSON(summaries)
@@ -119,17 +119,17 @@ func TeacherModify[request_type any](
 	var req request_type
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if request_check_func(req) {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	teacher_scope, status_code := helpers.ResolveTeacherScope(c, pool, rdb)
@@ -149,7 +149,7 @@ func TeacherModify[request_type any](
 
 		if err != nil {
 			slog.Error("teacher accessible check err", "err", err)
-			return c.SendStatus(fiber.StatusInternalServerError)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 		}
 
 		if !teacher_accessible {
@@ -161,11 +161,11 @@ func TeacherModify[request_type any](
 
 	if err != nil {
 		slog.Error("teacher modify err", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	if rows_affected == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)

@@ -34,7 +34,7 @@ func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	log_dir := helpers.LogDir()
@@ -42,7 +42,7 @@ func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	root, err := os.OpenRoot(log_dir)
 	if err != nil {
 		slog.Error("Error opening logs folder", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 	defer root.Close()
 
@@ -67,7 +67,7 @@ func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	if err != nil {
 		slog.Error("Error reading logs folder", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.JSON(log_json)
@@ -107,7 +107,7 @@ func AdminStatus(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	queries := db_queries.New(pool)
