@@ -61,6 +61,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				},
 			})
 		}),
+		"admin_token_login": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminTokenLogin(c, pool, rdb) }),
 		"login": fiber.Map{
 			helpers.RoutesGroupMWKey: []fiber.Handler{authLimit},
 			"init":                   helpers.Post(func(c fiber.Ctx) error { return v1.LoginInit(c, pool, rdb, opaque_server) }),
