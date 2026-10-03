@@ -37,3 +37,13 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	}
 	return c.SendStatus(fiber.StatusNotImplemented)
 }
+
+// TODO: implement this
+func EditHomeworkSubmission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+	return c.SendStatus(fiber.StatusNotImplemented)
+}
