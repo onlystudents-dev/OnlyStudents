@@ -8,3 +8,8 @@ export type AdminStatusData = {
     teacher_count: number,
     guardian_count: number,
 }
+
+export type Log = {
+    name: string
+    content: string
+}
