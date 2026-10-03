@@ -117,7 +117,7 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req AddGradeRequest) int32 { return req.ClassSubjectsID },
 		func(req AddGradeRequest) bool {
-			return req.TermID == 0 || req.GradeTypeID == 0 || req.Value == 0 || req.Date == 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID == 0
+			return req.StudentID != 0 || req.TermID == 0 || req.GradeTypeID == 0 || req.Value == 0 || req.Date == 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID == 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddGradeRequest) (int64, error) {
 			return queries.TeacherAddGrade(ctx, db_queries.TeacherAddGradeParams{
