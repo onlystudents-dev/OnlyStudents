@@ -27,7 +27,7 @@ export default function Config({ icon, text, value, children, className}: {icon:
     )
 }
 
-export function DropdownConfig({ icon, text, value, children, className, options, setOptions, lkey }: {icon: IconDefinition, text: string, value: string, children: React.ReactNode, className?: string, options: Record<option, unknown>, setOptions: React.Dispatch<React.SetStateAction<Record<option, unknown>>>, lkey: option}) {
+export function DropdownConfig({ text, icon, value, children, className, options, setOptions, lkey }: { text: string, icon: IconDefinition, value: string, children: React.ReactNode, className?: string, options: Record<option, unknown>, setOptions: React.Dispatch<React.SetStateAction<Record<option, unknown>>>, lkey: option}) {
     const ref = useRef<HTMLSelectElement>(null)
 
     return (
@@ -36,7 +36,23 @@ export function DropdownConfig({ icon, text, value, children, className, options
                 <p>
                     <FontAwesomeIcon icon={icon} /> {text}
                 </p>
-                <select className="poppins" ref={ref} value={value} onChange={(e) => setOptions({...options, [lkey]: e.currentTarget.value})}>
+                <select className="poppins" ref={ref} value={value} onChange={(e) => {
+                    const raw = e.currentTarget.value
+                    const original = options[lkey]
+
+                    const newValue = (() => {
+                        switch (typeof original) {
+                            case "number":
+                                return Number(raw)
+                            case "boolean":
+                                return raw === "true"
+                            default:
+                                return raw
+                        }
+                    })()
+
+                    setOptions({ ...options, [lkey]: newValue })
+                }}>
                     {children}
                 </select>
             </div>
