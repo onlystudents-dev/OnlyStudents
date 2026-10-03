@@ -36,11 +36,11 @@ func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req CreateGroupRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.BellId == 0 || req.Name == "" {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
@@ -60,7 +60,7 @@ func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	err := queries.CreateGroup(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -70,11 +70,11 @@ func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req DeleteGroupRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.Id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
@@ -93,7 +93,7 @@ func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	err := queries.DeleteGroup(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -103,7 +103,7 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req EditGroupRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
@@ -113,7 +113,7 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	}
 
 	if req.Id == 0 || req.Name == "" {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	queries := db_queries.New(pool)
@@ -127,7 +127,7 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	err := queries.EditGroup(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -146,7 +146,7 @@ func ReadGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	data, err := queries.ReadGroup(c.Context(), scope.SchoolID)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.JSON(data)
@@ -156,7 +156,7 @@ func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	var req ActionStudentGroupRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
@@ -166,7 +166,7 @@ func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	}
 
 	if req.GroupID == 0 || req.StudentID == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	queries := db_queries.New(pool)
@@ -180,7 +180,7 @@ func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	err := queries.InsertStudentToGroup(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -190,11 +190,11 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 	var req ActionStudentGroupRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.GroupID == 0 || req.StudentID == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
@@ -214,7 +214,7 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 	err := queries.DeleteStudentFromGroup(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -224,7 +224,7 @@ func ReadStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	var req ReadStudentGroupRequest
 
 	if err := c.Bind().Query(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_GROUPS")
@@ -234,7 +234,7 @@ func ReadStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	}
 
 	if req.GroupID == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	queries := db_queries.New(pool)
@@ -247,7 +247,7 @@ func ReadStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	data, err := queries.ReadListOfStudents(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.JSON(data)

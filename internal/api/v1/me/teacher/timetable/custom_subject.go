@@ -26,11 +26,11 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	var req CreateCustomSubjectRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.Name == "" {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
@@ -49,7 +49,7 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	err := queries.CreateCustomSubject(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -59,11 +59,11 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	var req EditCustomSubjectRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.Name == "" || req.Id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
@@ -83,7 +83,7 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	err := queries.EditCustomSubject(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -93,11 +93,11 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	var req DeleteCustomSubjectRequest
 
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.Id == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
@@ -116,7 +116,7 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	err := queries.DeleteCustomSubject(c.Context(), params)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -134,7 +134,7 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	custom_subjects, err := queries.ReadCustomSubject(c.Context(), int32(scope.SchoolID))
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.JSON(custom_subjects)

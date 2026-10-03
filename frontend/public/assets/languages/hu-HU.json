@@ -75,6 +75,9 @@
     "TIMETABLE_NEXT.THIS": "Mindig a mai"
   },
   "errors": {
+    "NOT_IMPLEMENTED": "Ez a funkció még nincs készen. Folyamatosan dolgozunk rajta!",
+    "INVALID_SESSION": "Nincs érvényes belépésed!",
+    "SERVER_ERROR": "Egy szerver-oldali hiba történt. Mi is sajnáljuk.",
     "WRONG_CREDENTIALS": "A belépési adatok helytelenek!",
     "TOO_MANY_REQUESTS": "Túl sok próbálkozás, próbáld újra %1 másodperc múlva",
     "INVALID_PASSWORD_RESET_TOKEN": "Érvénytelen Jelszó-visszaállítási token!",

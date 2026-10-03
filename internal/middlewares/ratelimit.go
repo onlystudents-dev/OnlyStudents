@@ -17,12 +17,12 @@ func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client, scope string, max, wind
 
 	count, err := rdb.Incr(ctx, key).Result()
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	if count == 1 {
 		if err := rdb.Expire(ctx, key, time.Duration(window)*time.Second).Err(); err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 		}
 	}
 

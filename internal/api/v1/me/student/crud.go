@@ -21,7 +21,7 @@ func StudentSummary[Row, T any](
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	queries := db_queries.New(pool)
@@ -31,7 +31,7 @@ func StudentSummary[Row, T any](
 	account_id, err := helpers.ResolvePerson(c, *queries, session_data)
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	switch session_data.Role {
@@ -39,14 +39,14 @@ func StudentSummary[Row, T any](
 		data, err := cache_or_get_func(c.Context(), rdb, *queries, account_id, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 		}
 
 		for _, row := range data {
 			summaries = append(summaries, convert(row))
 		}
 	default:
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	return c.JSON(summaries)

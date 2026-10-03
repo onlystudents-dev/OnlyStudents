@@ -63,11 +63,11 @@ type enrollFinishRequest struct {
 func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
 	var req loginInitRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.User <= 0 || req.Role == "" || len(req.StartLoginRequest) == 0 {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	var record *opaque.ClientRecord
@@ -85,7 +85,7 @@ func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server
 
 			if derr != nil {
 				slog.Error("corrupt opaque record", "err", derr)
-				return c.SendStatus(fiber.StatusInternalServerError)
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 			}
 			record = &opaque.ClientRecord{
 				CredentialIdentifier: []byte(account.ID.String()),
@@ -96,7 +96,7 @@ func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server
 		record = opaquepkg.FakeRecord
 	default:
 		slog.Error("login init account lookup", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	ke2, handle, err := opaquepkg.LoginInit(c.Context(), opaque_server, rdb, record, req.StartLoginRequest)
@@ -110,11 +110,11 @@ func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server
 func LoginFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
 	var req loginFinishRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.LoginHandle == "" {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	sessionToken, err := opaquepkg.LoginFinish(c.Context(), opaque_server, rdb, pool, req.LoginHandle, req.FinishLoginRequest)
@@ -140,7 +140,7 @@ func LoginFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_serv
 func EnrollInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
 	var req enrollInitRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	ke2, err := opaquepkg.EnrollInit(c.Context(), opaque_server, rdb, req.EnrollToken, req.StartEnrollRequest)
@@ -154,7 +154,7 @@ func EnrollInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_serve
 func EnrollFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
 	var req enrollFinishRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	sessionToken, err := opaquepkg.EnrollFinish(c.Context(), opaque_server, rdb, pool, req.EnrollToken, req.FinishEnrollRequest)
@@ -181,7 +181,7 @@ func Logout(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_token := c.Cookies("session_token", "")
 
 	if session_token == "" {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	account_uuid_str := ""
@@ -234,11 +234,11 @@ func generateResetCode(length int) (string, error) {
 func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req forgetPasswordRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.User <= 0 || req.Role == "" {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	queries := db_queries.New(pool)
@@ -250,7 +250,7 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	code, e := generateResetCode(helpers.GetIntEnvFallback("PASSWORD_RESET_CODE_LEN", 10, 64))
 	if e != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	cacheKey := fmt.Sprintf("pending_password_reset_%s", code)
@@ -262,12 +262,12 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	dataJSON, e := json.Marshal(sessionData)
 	if e != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	ttl := time.Duration(helpers.GetInt64EnvFallback("PASSWORD_RESET_CODE_TTL", 15, 1440)) * time.Minute
 	if e := rdb.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	email := account.EmailAddress.String

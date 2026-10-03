@@ -46,11 +46,11 @@ func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	// IMPORTANT TODO: OPAQUE password change
-	return c.SendStatus(fiber.StatusNotImplemented)
+	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
 }
 
 type Preferences struct {
@@ -71,24 +71,24 @@ func UpdatePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	var req Preferences
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if !slices.Contains(helpers.Themes, req.Theme) {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if !slices.Contains(helpers.Languages, req.Lang) {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if !slices.Contains(helpers.TimeFormats, req.TimeFormat) {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	preferences_jsonb, marshal_err := json.Marshal(Preferences{
@@ -102,7 +102,7 @@ func UpdatePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	})
 
 	if marshal_err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	queries := db_queries.New(pool)
@@ -117,12 +117,12 @@ func UpdatePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	case "guardian":
 		err = queries.UpdatePreferencesGuardian(c.Context(), db_queries.UpdatePreferencesGuardianParams{Preferences: preferences_jsonb, GuardianID: pgAccountID})
 	default:
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if err != nil {
 		slog.Error("update preferences error", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
@@ -133,18 +133,18 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	var req changeEmailRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	queries := db_queries.New(pool)
 	_, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 	if err != nil {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	pgEmail := pgtype.Text{String: req.NewEmail, Valid: true}
@@ -157,15 +157,15 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	case "guardian":
 		err = queries.UpdateEmailGuardian(c.Context(), db_queries.UpdateEmailGuardianParams{EmailAddress: pgEmail, GuardianID: pgAccountID})
 	default:
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if err != nil {
 		if isUniqueViolation(err) {
-			return c.SendStatus(fiber.StatusBadRequest)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 		}
 		slog.Error("change email error", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)
@@ -183,18 +183,18 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	queries := db_queries.New(pool)
 	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	if !account.EmailAddress.Valid || account.EmailAddress.String == "" {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	if account.EmailVerified {
@@ -203,20 +203,20 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 
 	code, e := generateCode(helpers.GetIntEnvFallback("EMAIL_VERIFY_CODE_LEN", 10, 64))
 	if e != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	cacheKey := fmt.Sprintf("pending_email_verify_%s", code)
 	pending := helpers.SessionData{AccountID: session_data.AccountID, Role: session_data.Role}
 	dataJSON, e := json.Marshal(pending)
 	if e != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	expiresInMinutes := helpers.GetInt64EnvFallback("EMAIL_VERIFY_CODE_TTL", 15, 1440)
 	ttl := time.Duration(expiresInMinutes) * time.Minute
 	if e := rdb.Set(c.Context(), cacheKey, string(dataJSON), ttl).Err(); e != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	email := account.EmailAddress.String
@@ -247,16 +247,16 @@ func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	var req VerifyEmailConfirmRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.Code == "" {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	cacheKey := fmt.Sprintf("pending_email_verify_%s", req.Code)
@@ -270,11 +270,11 @@ func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	var pending helpers.SessionData
 	if err := json.Unmarshal([]byte(dataJSON), &pending); err != nil {
 		slog.Error("json unmarshal error", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	if pending.AccountID != session_data.AccountID || pending.Role != session_data.Role {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	queries := db_queries.New(pool)
@@ -287,12 +287,12 @@ func VerifyEmailConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	case "guardian":
 		err = queries.VerifyEmailGuardian(c.Context(), pgAccountID)
 	default:
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if err != nil {
 		slog.Error("verify email error", "err", err)
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)

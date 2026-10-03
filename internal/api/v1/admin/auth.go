@@ -17,32 +17,32 @@ type loginRequest struct {
 
 func AdminTokenLogin(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	if helpers.GetEnvFallback("ADMIN_TOKEN_ENABLED", "false") != "true" {
-		return c.SendStatus(fiber.StatusNotImplemented)
+		return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
 	}
 
 	admin_token, exists := os.LookupEnv("ADMIN_TOKEN")
 
 	// no default token for security
 	if !exists {
-		return c.SendStatus(fiber.StatusNotImplemented)
+		return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
 	}
 
 	var req loginRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if req.AdminToken == "" {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if subtle.ConstantTimeCompare([]byte(req.AdminToken), []byte(admin_token)) != 1 {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	session_token, err := helpers.SessionCreate(c.Context(), rdb, 999, "00000000-0000-0000-0000-000000000000;", "token", "admin")
 	if err != nil {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
 	duration := time.Duration(helpers.GetInt64EnvFallback("SESSION_TTL", 3600, 2592000)) * time.Second
