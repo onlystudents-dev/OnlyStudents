@@ -131,6 +131,12 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveGrade(c, pool, rdb) },
 					},
 
+					"final_grades": fiber.Map{
+						fiber.MethodGet:   func(c fiber.Ctx) error { return teacherapi.ListFinalGrades(c, pool, rdb) },
+						fiber.MethodPost:  func(c fiber.Ctx) error { return teacherapi.AddFinalGrade(c, pool, rdb) },
+						fiber.MethodPatch: func(c fiber.Ctx) error { return teacherapi.EditFinalGrade(c, pool, rdb) },
+					},
+
 					"exams": fiber.Map{
 						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListExams(c, pool, rdb) },
 						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddExam(c, pool, rdb) },
