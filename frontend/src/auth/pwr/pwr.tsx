@@ -10,7 +10,6 @@ import {getPasswordConfig, type PasswordConfig} from "../passwordConfig.ts";
 import RoleSelect from "../roleSelect.tsx";
 import {useCountdown} from "../../util/countdown.ts";
 import {getRetryAfter, postJSON} from "../../util/api.ts";
-import {cx} from "../../util/cx.ts";
 
 export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID, setWaiting, setResetL }: {pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void, setWaiting: React.Dispatch<React.SetStateAction<boolean>>, setResetL:  React.Dispatch<React.SetStateAction<boolean>>}) {
     const [reset, setReset] = useState(false);
@@ -75,16 +74,16 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
 
     return (
         <>
-            <div className={cx("content in outback", !pwrA && "hid", resetA ? "h-144" : "h-86")}>
+            <div className={`content in outback ${!pwrA && "hid"} ${resetA ? "h-144" : "h-86"}`}>
                 <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("FORGOT_PASSWORD_TITLE")}</h1>
-                {!reset && <div className={cx("loginput fredoka out", resetA && "hid")}>
-<RoleSelect value={role} onChange={setRole} />
-                    <input className={cx(red && "wrong")} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.currentTarget.value); checkUserID(e.currentTarget.value)}} />
+                {!reset && <div className={`loginput fredoka out ${resetA && "hid"}`}>
+                    <RoleSelect value={role} onChange={setRole} />
+                    <input className={`${red && "wrong"}`} type="text" placeholder="User ID" value={id} onChange={(e) => {setId(e.currentTarget.value); checkUserID(e.currentTarget.value)}} />
                 </div>}
                 {reset && <div className="loginput fredoka in">
                     <input type="text" placeholder={getKey("CODE")} onChange={(e) => setCode(e.currentTarget.value)} />
                     <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setPassword(e.currentTarget.value)} />
-                    <input className={cx(password !== confirmPassword && "wrong")} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
+                    <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
                     <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                 </div>}
 
@@ -94,7 +93,7 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
                     </Button>
                     <div className="flex flex-row items-center gap-4">
                         <p className="text-(--wrong-color) text-3xl fredoka">{remaining}</p>
-                        {!reset && <Button onClick={email} className={cx("outbottom", resetA && "hid")}>
+                        {!reset && <Button onClick={email} className={`outbottom ${resetA && "hid"}`}>
                             {getKey("SEND_EMAIL")} <FontAwesomeIcon icon={faPaperPlane} />
                         </Button>}
                         {reset && <Button onClick={change} className="in">

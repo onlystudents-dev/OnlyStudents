@@ -12,7 +12,6 @@ import {toast} from "react-toastify";
 import {formatSecondsToHourAndMinute, formatUnixDate} from "../../util/time.ts";
 import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
 import {getRetryAfter, readJSON} from "../../util/api.ts";
-import {cx} from "../../util/cx.ts";
 
 type DayName = typeof DAY_NAMES[number]
 
@@ -27,7 +26,7 @@ const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "satu
 
 function Badge({ icon, className }: {icon: IconDefinition, className: string}) {
     return (
-        <span className={cx(className, "rounded-full size-8 inline-flex items-center justify-center")}>
+        <span className={`rounded-full size-8 inline-flex items-center justify-center ${className}`}>
             <FontAwesomeIcon icon={icon} />
         </span>
     )
@@ -171,7 +170,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                 </div>
                 {d.map((day) => (
                     <div className="day" key={day.name}>
-                        <div className={cx("date", day.today && "rounded-2xl bg-(--border-color)")}>
+                        <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>
                             <h1 className="rubik">{getKey(`DAYS.${day.name}`)}</h1>
                             <p className="poppins">{day.date}</p>
                         </div>

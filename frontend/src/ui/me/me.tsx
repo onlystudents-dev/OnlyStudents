@@ -1,7 +1,7 @@
 import "./me.css";
 import Navbar from "../../navbar/navbar.tsx";
 import {isTimeFormat, type Me, type Preferences} from "../../types/api.ts";
-import Button from "./button.tsx";
+import Button from "../../util/sidebar/button.tsx";
 import {
     faAddressCard, faCalendarDays, faClock,
     faEnvelope, faFloppyDisk, faLanguage,
@@ -23,7 +23,6 @@ import Sidebar from "../../util/sidebar/sidebar.tsx";
 import type {Dispatch, StateUpdater} from "preact/hooks";
 import {getTimeFormat} from "../../util/time.ts";
 import {postJSON} from "../../util/api.ts";
-import {cx} from "../../util/cx.ts";
 
 type Options = Pick<Preferences, "lang" | "time_format" | "theme" | "timetable_display" | "timetable_next">
 
@@ -105,10 +104,10 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                             case "user":
                                 return (
                                     <>
-                                        <Config text={getKey("EMAIL")} icon={faEnvelope} value={email} className={cx(!me.email_verified && "bg-(--wrong-color)")} key={"email"}>
+                                        <Config text={getKey("EMAIL")} icon={faEnvelope} value={email} className={`${!me.email_verified && "bg-(--wrong-color)"}`} key={"email"}>
                                             <h1 className="text-center text-5xl font-bold mb-8 rubik">{getKey("CHANGE_EMAIL")}</h1>
                                             <div className="moving">
-                                                {settingEmail || (!cancelled && !me.email_verified) ? (<div className={cx("moving-content", !(!cancelled && !me.email_verified) && "second")}>
+                                                {settingEmail || (!cancelled && !me.email_verified) ? (<div className={`moving-content ${!(!cancelled && !me.email_verified) && "second"}`}>
                                                     <input type="text" placeholder={getKey("CODE")} ref={code} key={"code"} />
 
                                                     <button className="absolute bottom-0 left-0" onClick={() => {setSettingEmail(false); setSettingEmailA(false); setCancelled(true)}}>
@@ -122,7 +121,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                                             <FontAwesomeIcon icon={faFloppyDisk} /> {getKey("SAVE")}
                                                         </button>
                                                     </div>
-                                                </div>) : (<div className={cx("moving-content", settingEmailA && "first")}>
+                                                </div>) : (<div className={`moving-content ${settingEmailA && "first"}`}>
                                                     <input type="email" placeholder={getKey("NEW_EMAIL")} ref={newEmail} key={"email"} />
 
                                                     <button className="absolute bottom-0 right-0" onClick={sendEmail}>
@@ -151,7 +150,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                             <div className="flex flex-col gap-4 w-full">
                                                 <input type="password" placeholder={getKey("CURRENT_PASSWORD")} onChange={(e) => setCurrentPassword(e.currentTarget.value)} />
                                                 <input type="password" placeholder={getKey("PASSWORD")} onChange={(e) => setPassword(e.currentTarget.value)} />
-                                                <input className={cx(password !== confirmPassword && "wrong")} type="password" placeholder={getKey("CONFIRM_PASSWORD")} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
+                                                <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
                                                 <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                                             </div>
 
