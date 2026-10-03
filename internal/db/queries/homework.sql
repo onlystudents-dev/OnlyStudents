@@ -24,14 +24,114 @@ WHERE csub.class_id = (
 )
 ORDER BY h.due_date, h.created_at;
 
--- name: AddHomework :exec
-INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date) VALUES ($1, $2, $3, $4, $5);
+-- name: GetTeacherHomework :many
+SELECT
+    h.id,
+    csub.id AS class_subjects_id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    h.title,
+    h.description,
+    h.due_date,
+    h.created_at,
+    (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id = h.id) AS submission_count,
+    (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id = h.id AND hs.submitted_at::date <= h.due_date) AS on_time_submission_count
+FROM homework h
+JOIN class_subjects csub ON csub.id = h.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+WHERE csub.school_id = $1
+  AND csub.teacher_id = $2
+ORDER BY h.due_date, h.created_at;
 
--- name: EditHomework :exec
-UPDATE homework SET class_subjects_id = $2, teacher_id = $3, title = $4, description = $5, due_date = $6 WHERE id = $1;
+-- name: TeacherAddHomework :execrows
+INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date)
+SELECT cs.id, sqlc.arg(teacher_id), sqlc.arg(title), sqlc.arg(description), sqlc.arg(due_date)
+FROM class_subjects cs
+WHERE cs.id = sqlc.arg(class_subjects_id)
+  AND cs.school_id = sqlc.arg(school_id)
+  AND cs.teacher_id = sqlc.arg(teacher_id);
 
--- name: AddHomeworkSubmission :exec
-INSERT INTO homework_submissions (homework_id, student_id, content) VALUES ($1, $2, $3);
+-- name: TeacherEditHomework :execrows
+UPDATE homework h
+SET class_subjects_id = $2,
+    title = $3,
+    description = $4,
+    due_date = $5
+WHERE h.id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = h.class_subjects_id
+        AND cs.school_id = $6
+        AND cs.teacher_id = $7
+  )
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = $2
+        AND cs.school_id = $6
+        AND cs.teacher_id = $7
+  );
 
--- name: EditHomeworkSubmission :exec
-UPDATE homework_submissions SET content = $2, graded_value = $3 WHERE homework_id = $1 AND student_id = $4;
+-- name: TeacherDeleteHomework :execrows
+DELETE FROM homework h
+WHERE h.id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = h.class_subjects_id
+        AND cs.school_id = $2
+        AND cs.teacher_id = $3
+  );
+
+-- name: StudentUpsertHomeworkSubmission :execrows
+INSERT INTO homework_submissions (homework_id, student_id, content)
+SELECT $1, $2, $3
+WHERE EXISTS (
+    SELECT 1
+    FROM homework h
+    JOIN class_subjects csub ON csub.id = h.class_subjects_id
+    WHERE h.id = $1
+      AND csub.class_id = (SELECT st.classes_id FROM students st WHERE st.id = $2)
+)
+ON CONFLICT (homework_id, student_id) DO UPDATE
+SET content = EXCLUDED.content,
+    submitted_at = NOW();
+
+-- name: TeacherUpdateHomeworkSubmission :execrows
+UPDATE homework_submissions hs
+SET content = $1,
+    graded_value = $2
+WHERE hs.homework_id = $3
+  AND hs.student_id = $4
+  AND EXISTS (
+      SELECT 1
+      FROM homework h
+      JOIN class_subjects cs ON cs.id = h.class_subjects_id
+      WHERE h.id = hs.homework_id
+        AND cs.school_id = $5
+        AND cs.teacher_id = $6
+  );
+
+-- name: GetTeacherHomeworkSubmissions :many
+SELECT
+    hs.id,
+    hs.student_id,
+    st.first_name,
+    st.last_name,
+    hs.content,
+    hs.submitted_at,
+    hs.graded_value
+FROM homework_submissions hs
+JOIN students st ON st.id = hs.student_id
+WHERE hs.homework_id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM homework h
+      JOIN class_subjects cs ON cs.id = h.class_subjects_id
+      WHERE h.id = hs.homework_id
+        AND cs.school_id = $2
+        AND cs.teacher_id = $3
+  )
+ORDER BY hs.submitted_at, hs.student_id;

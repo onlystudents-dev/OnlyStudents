@@ -77,3 +77,228 @@ func (q *Queries) GetStudentAbsences(ctx context.Context, studentID int32) ([]Ge
 	}
 	return items, nil
 }
+
+const getTeacherAbsences = `-- name: GetTeacherAbsences :many
+SELECT
+    a.id,
+    a.student_id,
+    st.first_name,
+    st.last_name,
+    csub.id AS class_subjects_id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    a.date,
+    a.type,
+    a.justified,
+    a.note,
+    a.verified_by
+FROM absences a
+JOIN class_subjects csub ON csub.id = a.class_subjects_id
+JOIN students st ON st.id = a.student_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+WHERE csub.school_id = $1
+  AND csub.teacher_id = $2
+ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id
+`
+
+type GetTeacherAbsencesParams struct {
+	SchoolID  int32
+	TeacherID int32
+}
+
+type GetTeacherAbsencesRow struct {
+	ID              int64
+	StudentID       int32
+	FirstName       string
+	LastName        string
+	ClassSubjectsID int32
+	Subject         string
+	SubjectCode     pgtype.Text
+	Date            pgtype.Date
+	Type            string
+	Justified       bool
+	Note            pgtype.Text
+	VerifiedBy      pgtype.Int4
+}
+
+func (q *Queries) GetTeacherAbsences(ctx context.Context, arg GetTeacherAbsencesParams) ([]GetTeacherAbsencesRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherAbsences, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherAbsencesRow
+	for rows.Next() {
+		var i GetTeacherAbsencesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.StudentID,
+			&i.FirstName,
+			&i.LastName,
+			&i.ClassSubjectsID,
+			&i.Subject,
+			&i.SubjectCode,
+			&i.Date,
+			&i.Type,
+			&i.Justified,
+			&i.Note,
+			&i.VerifiedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const teacherAddAbsence = `-- name: TeacherAddAbsence :execrows
+INSERT INTO absences (student_id, class_subjects_id, date, type, note)
+SELECT st.id, cs.id, $1, $2, $3
+FROM class_subjects cs
+JOIN students st ON st.classes_id = cs.class_id
+WHERE cs.id = $4
+  AND cs.school_id = $5
+  AND cs.teacher_id = $6
+  AND st.id = $7
+  AND $2 IN ('absent', 'tardy')
+`
+
+type TeacherAddAbsenceParams struct {
+	Date            pgtype.Date
+	Type            string
+	Note            pgtype.Text
+	ClassSubjectsID int32
+	SchoolID        int32
+	TeacherID       int32
+	StudentID       int32
+}
+
+func (q *Queries) TeacherAddAbsence(ctx context.Context, arg TeacherAddAbsenceParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherAddAbsence,
+		arg.Date,
+		arg.Type,
+		arg.Note,
+		arg.ClassSubjectsID,
+		arg.SchoolID,
+		arg.TeacherID,
+		arg.StudentID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherDeleteAbsence = `-- name: TeacherDeleteAbsence :execrows
+DELETE FROM absences a
+WHERE a.id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = a.class_subjects_id
+        AND cs.school_id = $2
+        AND cs.teacher_id = $3
+  )
+`
+
+type TeacherDeleteAbsenceParams struct {
+	ID        int64
+	SchoolID  int32
+	TeacherID int32
+}
+
+func (q *Queries) TeacherDeleteAbsence(ctx context.Context, arg TeacherDeleteAbsenceParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherDeleteAbsence, arg.ID, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherEditAbsence = `-- name: TeacherEditAbsence :execrows
+UPDATE absences a
+SET class_subjects_id = $2,
+    date = $3,
+    type = $4,
+    note = $5
+WHERE a.id = $1
+  AND $4 IN ('absent', 'tardy')
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = a.class_subjects_id
+        AND cs.school_id = $6
+        AND cs.teacher_id = $7
+  )
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = $2
+        AND cs.school_id = $6
+        AND cs.teacher_id = $7
+  )
+`
+
+type TeacherEditAbsenceParams struct {
+	ID              int64
+	ClassSubjectsID pgtype.Int4
+	Date            pgtype.Date
+	Type            string
+	Note            pgtype.Text
+	SchoolID        int32
+	TeacherID       int32
+}
+
+func (q *Queries) TeacherEditAbsence(ctx context.Context, arg TeacherEditAbsenceParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherEditAbsence,
+		arg.ID,
+		arg.ClassSubjectsID,
+		arg.Date,
+		arg.Type,
+		arg.Note,
+		arg.SchoolID,
+		arg.TeacherID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherVerifyAbsence = `-- name: TeacherVerifyAbsence :execrows
+UPDATE absences a
+SET justified = $1,
+    verified_by = CASE WHEN $1 THEN $2 ELSE NULL END
+WHERE a.id = $3
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = a.class_subjects_id
+        AND cs.school_id = $4
+        AND cs.teacher_id = $2
+  )
+`
+
+type TeacherVerifyAbsenceParams struct {
+	Justified bool
+	TeacherID pgtype.Int4
+	ID        int64
+	SchoolID  int32
+}
+
+func (q *Queries) TeacherVerifyAbsence(ctx context.Context, arg TeacherVerifyAbsenceParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherVerifyAbsence,
+		arg.Justified,
+		arg.TeacherID,
+		arg.ID,
+		arg.SchoolID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
