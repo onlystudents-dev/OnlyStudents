@@ -12,7 +12,7 @@ import (
 )
 
 type loginRequest struct {
-	AdminToken string `json:"AdminToken"`
+	AdminToken string `json:"admin_token"`
 }
 
 func AdminTokenLogin(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
