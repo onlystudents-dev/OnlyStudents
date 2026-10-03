@@ -43,9 +43,7 @@ type RemoveExamRequest struct {
 	ExamID int64 `json:"exam_id"`
 }
 
-type ListExamsRequest struct {
-	ExamID int64 `json:"exam_id"`
-}
+type ListExamsRequest struct{}
 
 type ExamSummary struct {
 	ID             int64  `json:"id"`
