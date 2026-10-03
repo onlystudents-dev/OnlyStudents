@@ -11,90 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const addHomework = `-- name: AddHomework :exec
-INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date) VALUES ($1, $2, $3, $4, $5)
-`
-
-type AddHomeworkParams struct {
-	ClassSubjectsID int32
-	TeacherID       int32
-	Title           string
-	Description     pgtype.Text
-	DueDate         pgtype.Date
-}
-
-func (q *Queries) AddHomework(ctx context.Context, arg AddHomeworkParams) error {
-	_, err := q.db.Exec(ctx, addHomework,
-		arg.ClassSubjectsID,
-		arg.TeacherID,
-		arg.Title,
-		arg.Description,
-		arg.DueDate,
-	)
-	return err
-}
-
-const addHomeworkSubmission = `-- name: AddHomeworkSubmission :exec
-INSERT INTO homework_submissions (homework_id, student_id, content) VALUES ($1, $2, $3)
-`
-
-type AddHomeworkSubmissionParams struct {
-	HomeworkID int32
-	StudentID  int32
-	Content    pgtype.Text
-}
-
-func (q *Queries) AddHomeworkSubmission(ctx context.Context, arg AddHomeworkSubmissionParams) error {
-	_, err := q.db.Exec(ctx, addHomeworkSubmission, arg.HomeworkID, arg.StudentID, arg.Content)
-	return err
-}
-
-const editHomework = `-- name: EditHomework :exec
-UPDATE homework SET class_subjects_id = $2, teacher_id = $3, title = $4, description = $5, due_date = $6 WHERE id = $1
-`
-
-type EditHomeworkParams struct {
-	ID              int64
-	ClassSubjectsID int32
-	TeacherID       int32
-	Title           string
-	Description     pgtype.Text
-	DueDate         pgtype.Date
-}
-
-func (q *Queries) EditHomework(ctx context.Context, arg EditHomeworkParams) error {
-	_, err := q.db.Exec(ctx, editHomework,
-		arg.ID,
-		arg.ClassSubjectsID,
-		arg.TeacherID,
-		arg.Title,
-		arg.Description,
-		arg.DueDate,
-	)
-	return err
-}
-
-const editHomeworkSubmission = `-- name: EditHomeworkSubmission :exec
-UPDATE homework_submissions SET content = $2, graded_value = $3 WHERE homework_id = $1 AND student_id = $4
-`
-
-type EditHomeworkSubmissionParams struct {
-	HomeworkID  int32
-	Content     pgtype.Text
-	GradedValue pgtype.Int2
-	StudentID   int32
-}
-
-func (q *Queries) EditHomeworkSubmission(ctx context.Context, arg EditHomeworkSubmissionParams) error {
-	_, err := q.db.Exec(ctx, editHomeworkSubmission,
-		arg.HomeworkID,
-		arg.Content,
-		arg.GradedValue,
-		arg.StudentID,
-	)
-	return err
-}
-
 const getStudentHomework = `-- name: GetStudentHomework :many
 SELECT
     h.id,
@@ -166,4 +82,315 @@ func (q *Queries) GetStudentHomework(ctx context.Context, studentID int32) ([]Ge
 		return nil, err
 	}
 	return items, nil
+}
+
+const getTeacherHomework = `-- name: GetTeacherHomework :many
+SELECT
+    h.id,
+    csub.id AS class_subjects_id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    h.title,
+    h.description,
+    h.due_date,
+    h.created_at,
+    (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id = h.id) AS submission_count,
+    (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id = h.id AND hs.submitted_at::date <= h.due_date) AS on_time_submission_count
+FROM homework h
+JOIN class_subjects csub ON csub.id = h.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+WHERE csub.school_id = $1
+  AND csub.teacher_id = $2
+ORDER BY h.due_date, h.created_at
+`
+
+type GetTeacherHomeworkParams struct {
+	SchoolID  int32
+	TeacherID int32
+}
+
+type GetTeacherHomeworkRow struct {
+	ID                    int64
+	ClassSubjectsID       int32
+	Subject               string
+	SubjectCode           pgtype.Text
+	Title                 string
+	Description           pgtype.Text
+	DueDate               pgtype.Date
+	CreatedAt             pgtype.Timestamptz
+	SubmissionCount       int64
+	OnTimeSubmissionCount int64
+}
+
+func (q *Queries) GetTeacherHomework(ctx context.Context, arg GetTeacherHomeworkParams) ([]GetTeacherHomeworkRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherHomework, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherHomeworkRow
+	for rows.Next() {
+		var i GetTeacherHomeworkRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClassSubjectsID,
+			&i.Subject,
+			&i.SubjectCode,
+			&i.Title,
+			&i.Description,
+			&i.DueDate,
+			&i.CreatedAt,
+			&i.SubmissionCount,
+			&i.OnTimeSubmissionCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTeacherHomeworkSubmissions = `-- name: GetTeacherHomeworkSubmissions :many
+SELECT
+    hs.id,
+    st.first_name,
+    st.last_name,
+    hs.content,
+    hs.submitted_at,
+    hs.graded_value
+FROM homework_submissions hs
+JOIN students st ON st.id = hs.student_id
+WHERE hs.homework_id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM homework h
+      JOIN class_subjects cs ON cs.id = h.class_subjects_id
+      WHERE h.id = hs.homework_id
+        AND cs.school_id = $2
+        AND cs.teacher_id = $3
+  )
+ORDER BY hs.submitted_at, hs.student_id
+`
+
+type GetTeacherHomeworkSubmissionsParams struct {
+	HomeworkID int32
+	SchoolID   int32
+	TeacherID  int32
+}
+
+type GetTeacherHomeworkSubmissionsRow struct {
+	ID          int64
+	FirstName   string
+	LastName    string
+	Content     pgtype.Text
+	SubmittedAt pgtype.Timestamptz
+	GradedValue pgtype.Int2
+}
+
+func (q *Queries) GetTeacherHomeworkSubmissions(ctx context.Context, arg GetTeacherHomeworkSubmissionsParams) ([]GetTeacherHomeworkSubmissionsRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherHomeworkSubmissions, arg.HomeworkID, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherHomeworkSubmissionsRow
+	for rows.Next() {
+		var i GetTeacherHomeworkSubmissionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.Content,
+			&i.SubmittedAt,
+			&i.GradedValue,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const studentUpsertHomeworkSubmission = `-- name: StudentUpsertHomeworkSubmission :execrows
+INSERT INTO homework_submissions (homework_id, student_id, content)
+SELECT $1, $2, $3
+WHERE EXISTS (
+    SELECT 1
+    FROM homework h
+    JOIN class_subjects csub ON csub.id = h.class_subjects_id
+    WHERE h.id = $1
+      AND csub.class_id = (SELECT st.classes_id FROM students st WHERE st.id = $2)
+)
+ON CONFLICT (homework_id, student_id) DO UPDATE
+SET content = EXCLUDED.content,
+    submitted_at = NOW()
+`
+
+type StudentUpsertHomeworkSubmissionParams struct {
+	HomeworkID int32
+	StudentID  int32
+	Content    pgtype.Text
+}
+
+func (q *Queries) StudentUpsertHomeworkSubmission(ctx context.Context, arg StudentUpsertHomeworkSubmissionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, studentUpsertHomeworkSubmission, arg.HomeworkID, arg.StudentID, arg.Content)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherAddHomework = `-- name: TeacherAddHomework :execrows
+INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date)
+SELECT cs.id, $1, $2, $3, $4
+FROM class_subjects cs
+WHERE cs.id = $5
+  AND cs.school_id = $6
+  AND cs.teacher_id = $1
+`
+
+type TeacherAddHomeworkParams struct {
+	TeacherID       int32
+	Title           string
+	Description     pgtype.Text
+	DueDate         pgtype.Date
+	ClassSubjectsID int32
+	SchoolID        int32
+}
+
+func (q *Queries) TeacherAddHomework(ctx context.Context, arg TeacherAddHomeworkParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherAddHomework,
+		arg.TeacherID,
+		arg.Title,
+		arg.Description,
+		arg.DueDate,
+		arg.ClassSubjectsID,
+		arg.SchoolID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherDeleteHomework = `-- name: TeacherDeleteHomework :execrows
+DELETE FROM homework h
+WHERE h.id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = h.class_subjects_id
+        AND cs.school_id = $2
+        AND cs.teacher_id = $3
+  )
+`
+
+type TeacherDeleteHomeworkParams struct {
+	ID        int64
+	SchoolID  int32
+	TeacherID int32
+}
+
+func (q *Queries) TeacherDeleteHomework(ctx context.Context, arg TeacherDeleteHomeworkParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherDeleteHomework, arg.ID, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherEditHomework = `-- name: TeacherEditHomework :execrows
+UPDATE homework h
+SET class_subjects_id = $2,
+    title = $3,
+    description = $4,
+    due_date = $5
+WHERE h.id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = h.class_subjects_id
+        AND cs.school_id = $6
+        AND cs.teacher_id = $7
+  )
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = $2
+        AND cs.school_id = $6
+        AND cs.teacher_id = $7
+  )
+`
+
+type TeacherEditHomeworkParams struct {
+	ID              int64
+	ClassSubjectsID int32
+	Title           string
+	Description     pgtype.Text
+	DueDate         pgtype.Date
+	SchoolID        int32
+	TeacherID       int32
+}
+
+func (q *Queries) TeacherEditHomework(ctx context.Context, arg TeacherEditHomeworkParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherEditHomework,
+		arg.ID,
+		arg.ClassSubjectsID,
+		arg.Title,
+		arg.Description,
+		arg.DueDate,
+		arg.SchoolID,
+		arg.TeacherID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherUpdateHomeworkSubmission = `-- name: TeacherUpdateHomeworkSubmission :execrows
+UPDATE homework_submissions hs
+SET content = $1,
+    graded_value = $2
+WHERE hs.homework_id = $3
+  AND hs.student_id = $4
+  AND EXISTS (
+      SELECT 1
+      FROM homework h
+      JOIN class_subjects cs ON cs.id = h.class_subjects_id
+      WHERE h.id = hs.homework_id
+        AND cs.school_id = $5
+        AND cs.teacher_id = $6
+  )
+`
+
+type TeacherUpdateHomeworkSubmissionParams struct {
+	Content     pgtype.Text
+	GradedValue pgtype.Int2
+	HomeworkID  int32
+	StudentID   int32
+	SchoolID    int32
+	TeacherID   int32
+}
+
+func (q *Queries) TeacherUpdateHomeworkSubmission(ctx context.Context, arg TeacherUpdateHomeworkSubmissionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherUpdateHomeworkSubmission,
+		arg.Content,
+		arg.GradedValue,
+		arg.HomeworkID,
+		arg.StudentID,
+		arg.SchoolID,
+		arg.TeacherID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

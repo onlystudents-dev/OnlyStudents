@@ -11,66 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const addExam = `-- name: AddExam :exec
-INSERT INTO exams (class_subjects_id, teacher_id, title, description, date, start_time, end_time, room_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-`
-
-type AddExamParams struct {
-	ClassSubjectsID int32
-	TeacherID       int32
-	Title           string
-	Description     pgtype.Text
-	Date            pgtype.Date
-	StartTime       pgtype.Time
-	EndTime         pgtype.Time
-	RoomID          pgtype.Int4
-}
-
-func (q *Queries) AddExam(ctx context.Context, arg AddExamParams) error {
-	_, err := q.db.Exec(ctx, addExam,
-		arg.ClassSubjectsID,
-		arg.TeacherID,
-		arg.Title,
-		arg.Description,
-		arg.Date,
-		arg.StartTime,
-		arg.EndTime,
-		arg.RoomID,
-	)
-	return err
-}
-
-const editExam = `-- name: EditExam :exec
-UPDATE exams SET class_subjects_id = $2, teacher_id = $3, title = $4, description = $5, date = $6, start_time = $7, end_time = $8, room_id = $9 WHERE id = $1
-`
-
-type EditExamParams struct {
-	ID              int64
-	ClassSubjectsID int32
-	TeacherID       int32
-	Title           string
-	Description     pgtype.Text
-	Date            pgtype.Date
-	StartTime       pgtype.Time
-	EndTime         pgtype.Time
-	RoomID          pgtype.Int4
-}
-
-func (q *Queries) EditExam(ctx context.Context, arg EditExamParams) error {
-	_, err := q.db.Exec(ctx, editExam,
-		arg.ID,
-		arg.ClassSubjectsID,
-		arg.TeacherID,
-		arg.Title,
-		arg.Description,
-		arg.Date,
-		arg.StartTime,
-		arg.EndTime,
-		arg.RoomID,
-	)
-	return err
-}
-
 const getStudentExams = `-- name: GetStudentExams :many
 SELECT
     e.id,
@@ -142,4 +82,203 @@ func (q *Queries) GetStudentExams(ctx context.Context, id int32) ([]GetStudentEx
 		return nil, err
 	}
 	return items, nil
+}
+
+const getTeacherExams = `-- name: GetTeacherExams :many
+SELECT
+    e.id,
+    csub.id AS class_subjects_id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    e.title,
+    e.description,
+    e.date,
+    e.start_time,
+    e.end_time,
+    r.id AS room_id,
+    r.name AS room
+FROM exams e
+JOIN class_subjects csub ON csub.id = e.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+LEFT JOIN rooms r ON r.id = e.room_id
+WHERE csub.school_id = $1
+  AND csub.teacher_id = $2
+ORDER BY e.date, e.start_time
+`
+
+type GetTeacherExamsParams struct {
+	SchoolID  int32
+	TeacherID int32
+}
+
+type GetTeacherExamsRow struct {
+	ID              int64
+	ClassSubjectsID int32
+	Subject         string
+	SubjectCode     pgtype.Text
+	Title           string
+	Description     pgtype.Text
+	Date            pgtype.Date
+	StartTime       pgtype.Time
+	EndTime         pgtype.Time
+	RoomID          pgtype.Int4
+	Room            pgtype.Text
+}
+
+func (q *Queries) GetTeacherExams(ctx context.Context, arg GetTeacherExamsParams) ([]GetTeacherExamsRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherExams, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherExamsRow
+	for rows.Next() {
+		var i GetTeacherExamsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClassSubjectsID,
+			&i.Subject,
+			&i.SubjectCode,
+			&i.Title,
+			&i.Description,
+			&i.Date,
+			&i.StartTime,
+			&i.EndTime,
+			&i.RoomID,
+			&i.Room,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const teacherAddExam = `-- name: TeacherAddExam :execrows
+INSERT INTO exams (class_subjects_id, teacher_id, title, description, date, start_time, end_time, room_id)
+SELECT cs.id, $1, $2, $3, $4, $5, $6, $7
+FROM class_subjects cs
+WHERE cs.id = $8
+  AND cs.school_id = $9
+  AND cs.teacher_id = $1
+  AND ($7 IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = $7 AND r.school_id = $9))
+`
+
+type TeacherAddExamParams struct {
+	TeacherID       int32
+	Title           string
+	Description     pgtype.Text
+	Date            pgtype.Date
+	StartTime       pgtype.Time
+	EndTime         pgtype.Time
+	RoomID          pgtype.Int4
+	ClassSubjectsID int32
+	SchoolID        int32
+}
+
+func (q *Queries) TeacherAddExam(ctx context.Context, arg TeacherAddExamParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherAddExam,
+		arg.TeacherID,
+		arg.Title,
+		arg.Description,
+		arg.Date,
+		arg.StartTime,
+		arg.EndTime,
+		arg.RoomID,
+		arg.ClassSubjectsID,
+		arg.SchoolID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherDeleteExam = `-- name: TeacherDeleteExam :execrows
+DELETE FROM exams e
+WHERE e.id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = e.class_subjects_id
+        AND cs.school_id = $2
+        AND cs.teacher_id = $3
+  )
+`
+
+type TeacherDeleteExamParams struct {
+	ID        int64
+	SchoolID  int32
+	TeacherID int32
+}
+
+func (q *Queries) TeacherDeleteExam(ctx context.Context, arg TeacherDeleteExamParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherDeleteExam, arg.ID, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherEditExam = `-- name: TeacherEditExam :execrows
+UPDATE exams e
+SET class_subjects_id = $2,
+    title = $3,
+    description = $4,
+    date = $5,
+    start_time = $6,
+    end_time = $7,
+    room_id = $8
+WHERE e.id = $1
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = e.class_subjects_id
+        AND cs.school_id = $9
+        AND cs.teacher_id = $10
+  )
+  AND EXISTS (
+      SELECT 1
+      FROM class_subjects cs
+      WHERE cs.id = $2
+        AND cs.school_id = $9
+        AND cs.teacher_id = $10
+  )
+  AND ($8 IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = $8 AND r.school_id = $9))
+`
+
+type TeacherEditExamParams struct {
+	ID              int64
+	ClassSubjectsID int32
+	Title           string
+	Description     pgtype.Text
+	Date            pgtype.Date
+	StartTime       pgtype.Time
+	EndTime         pgtype.Time
+	RoomID          pgtype.Int4
+	SchoolID        int32
+	TeacherID       int32
+}
+
+func (q *Queries) TeacherEditExam(ctx context.Context, arg TeacherEditExamParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherEditExam,
+		arg.ID,
+		arg.ClassSubjectsID,
+		arg.Title,
+		arg.Description,
+		arg.Date,
+		arg.StartTime,
+		arg.EndTime,
+		arg.RoomID,
+		arg.SchoolID,
+		arg.TeacherID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

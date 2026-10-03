@@ -11,13 +11,13 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type meScope struct {
+type MeScope struct {
 	SchoolID  int32
 	ClassID   int32
 	StudentID int32
 }
 
-type teacherScope struct {
+type TeacherScope struct {
 	SchoolID  int32
 	ClassID   int32
 	TeacherID int32
@@ -51,10 +51,10 @@ func CheckPermission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, permiss
 	return has
 }
 
-func ResolveMeScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (meScope, error) {
+func ResolveMeScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (MeScope, error) {
 	session, ok := c.Locals("session").(SessionData)
 	if !ok {
-		return meScope{}, errors.New("invalid scope")
+		return MeScope{}, errors.New("invalid scope")
 	}
 
 	queries := db_queries.New(pool)
@@ -67,25 +67,25 @@ func ResolveMeScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (meScope
 	case "guardian":
 		id, err := ResolvePerson(c, *queries, session)
 		if err != nil {
-			return meScope{}, errors.New("invalid scope")
+			return MeScope{}, errors.New("invalid scope")
 		}
 		studentID = id
 	default:
-		return meScope{}, errors.New("invalid scope")
+		return MeScope{}, errors.New("invalid scope")
 	}
 
 	student, err := CacheOrGetStudent(c.Context(), rdb, *queries, studentID, ttl)
 	if err != nil {
-		return meScope{}, errors.New("invalid scope")
+		return MeScope{}, errors.New("invalid scope")
 	}
 
-	return meScope{StudentID: studentID, SchoolID: student.SchoolID, ClassID: student.ClassesID}, nil
+	return MeScope{StudentID: studentID, SchoolID: student.SchoolID, ClassID: student.ClassesID}, nil
 }
 
-func ResolveTeacherCapabilityScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, required_permission string) (teacherScope, int) {
+func ResolveTeacherCapabilityScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, required_permission string) (TeacherScope, int) {
 	session, ok := c.Locals("session").(SessionData)
 	if !ok {
-		return teacherScope{}, fiber.StatusUnauthorized
+		return TeacherScope{}, fiber.StatusUnauthorized
 	}
 
 	var teacherID int32
@@ -93,32 +93,32 @@ func ResolveTeacherCapabilityScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.C
 	case "teacher":
 		teacherID = session.AccountID
 	default:
-		return teacherScope{}, fiber.StatusBadRequest
+		return TeacherScope{}, fiber.StatusBadRequest
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return teacherScope{}, fiber.StatusBadRequest
+		return TeacherScope{}, fiber.StatusBadRequest
 	}
 
 	if school_id == 0 {
-		return teacherScope{}, fiber.StatusBadRequest
+		return TeacherScope{}, fiber.StatusBadRequest
 	}
 
 	has_permission := CheckPermission(c, pool, rdb, required_permission, school_id)
 
 	if !has_permission {
-		return teacherScope{}, fiber.StatusForbidden
+		return TeacherScope{}, fiber.StatusForbidden
 	}
 
-	return teacherScope{TeacherID: teacherID, SchoolID: int32(school_id)}, fiber.StatusOK
+	return TeacherScope{TeacherID: teacherID, SchoolID: int32(school_id)}, fiber.StatusOK
 }
 
-func ResolveTeacherScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (teacherScope, int) {
+func ResolveTeacherScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (TeacherScope, int) {
 	session, ok := c.Locals("session").(SessionData)
 	if !ok {
-		return teacherScope{}, fiber.StatusUnauthorized
+		return TeacherScope{}, fiber.StatusUnauthorized
 	}
 
 	var teacherID int32
@@ -126,17 +126,17 @@ func ResolveTeacherScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (te
 	case "teacher":
 		teacherID = session.AccountID
 	default:
-		return teacherScope{}, fiber.StatusBadRequest
+		return TeacherScope{}, fiber.StatusBadRequest
 	}
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
 	if err != nil {
-		return teacherScope{}, fiber.StatusBadRequest
+		return TeacherScope{}, fiber.StatusBadRequest
 	}
 
 	if school_id == 0 {
-		return teacherScope{}, fiber.StatusBadRequest
+		return TeacherScope{}, fiber.StatusBadRequest
 	}
 
 	queries := db_queries.New(pool)
@@ -147,10 +147,10 @@ func ResolveTeacherScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (te
 	})
 
 	if err != nil || !is_school_member {
-		return teacherScope{}, fiber.StatusForbidden
+		return TeacherScope{}, fiber.StatusForbidden
 	}
 
-	return teacherScope{TeacherID: teacherID, SchoolID: int32(school_id)}, fiber.StatusOK
+	return TeacherScope{TeacherID: teacherID, SchoolID: int32(school_id)}, fiber.StatusOK
 }
 
 func ResolvePerson(c fiber.Ctx, queries db_queries.Queries, session_data SessionData) (int32, error) {

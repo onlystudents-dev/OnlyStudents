@@ -125,27 +125,42 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					helpers.RoutesGroupMWKey: []fiber.Handler{role("teacher")},
 
 					"grades": fiber.Map{
+						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListGrades(c, pool, rdb) },
 						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddGrade(c, pool, rdb) },
 						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditGrade(c, pool, rdb) },
 						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveGrade(c, pool, rdb) },
 					},
 
+					"final_grades": fiber.Map{
+						fiber.MethodGet:   func(c fiber.Ctx) error { return teacherapi.ListFinalGrades(c, pool, rdb) },
+						fiber.MethodPost:  func(c fiber.Ctx) error { return teacherapi.AddFinalGrade(c, pool, rdb) },
+						fiber.MethodPatch: func(c fiber.Ctx) error { return teacherapi.EditFinalGrade(c, pool, rdb) },
+					},
+
 					"exams": fiber.Map{
+						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListExams(c, pool, rdb) },
 						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddExam(c, pool, rdb) },
 						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditExam(c, pool, rdb) },
 						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveExam(c, pool, rdb) },
 					},
 
 					"absences": fiber.Map{
+						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListAbsences(c, pool, rdb) },
 						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddAbsence(c, pool, rdb) },
 						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditAbsence(c, pool, rdb) },
 						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveAbsence(c, pool, rdb) },
 					},
 
 					"homework": fiber.Map{
+						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListHomework(c, pool, rdb) },
 						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddHomework(c, pool, rdb) },
 						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditHomework(c, pool, rdb) },
 						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveHomework(c, pool, rdb) },
+					},
+
+					"homework_submissions": fiber.Map{
+						fiber.MethodGet:   func(c fiber.Ctx) error { return teacherapi.ListHomeworkSubmissions(c, pool, rdb) },
+						fiber.MethodPatch: func(c fiber.Ctx) error { return teacherapi.UpdateHomeworkSubmission(c, pool, rdb) },
 					},
 
 					"timetable": fiber.Map{
