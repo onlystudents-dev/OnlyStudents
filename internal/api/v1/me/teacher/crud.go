@@ -23,7 +23,7 @@ func TeacherSummaryByID[request_type, Row, T any](
 ) error {
 	var req request_type
 
-	if err := c.Bind().Body(&req); err != nil {
+	if err := c.Bind().Query(&req); err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
