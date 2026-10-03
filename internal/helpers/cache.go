@@ -156,7 +156,7 @@ func CacheOrGetTeacherHomework(ctx context.Context, rdb *redis.Client, queries d
 }
 
 func CacheOrGetTeacherHomeworkSubmissions(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, homeworkID int32, accountID int32, schoolID int32, ttl int32) ([]db_queries.GetTeacherHomeworkSubmissionsRow, error) {
-	key := fmt.Sprintf("teacher_homeworkSubmissions:%d:%d", schoolID, accountID)
+	key := fmt.Sprintf("teacher_homework_submissions:%d:%d:%d", homeworkID, schoolID, accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherHomeworkSubmissionsRow, error) {
 		return queries.GetTeacherHomeworkSubmissions(ctx, db_queries.GetTeacherHomeworkSubmissionsParams{
 			HomeworkID: homeworkID,
