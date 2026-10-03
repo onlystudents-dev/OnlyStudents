@@ -13,7 +13,6 @@ import (
 )
 
 type AddExamRequest struct {
-	Subject         string `json:"subject"`
 	Title           string `json:"title"`
 	HasDescription  bool   `json:"has_description"`
 	Description     string `json:"description"`
@@ -27,7 +26,6 @@ type AddExamRequest struct {
 
 type EditExamRequest struct {
 	ExamID          int64  `json:"exam_id"`
-	Subject         string `json:"subject"`
 	Title           string `json:"title"`
 	HasDescription  bool   `json:"has_description"`
 	Description     string `json:"description"`
@@ -83,7 +81,7 @@ func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify[AddExamRequest](c, pool, rdb, true,
 		func(req AddExamRequest) int32 { return req.ClassSubjectsID },
 		func(req AddExamRequest) bool {
-			return req.Subject == "" || req.Title == "" || (req.HasDescription && req.Description == "") || req.Date == 0 || req.StartTime == 0 || req.EndTime == 0 || (req.HasRoomID && req.RoomID == 0) || req.ClassSubjectsID == 0
+			return req.Title == "" || (req.HasDescription && req.Description == "") || req.Date == 0 || req.StartTime == 0 || req.EndTime == 0 || (req.HasRoomID && req.RoomID == 0) || req.ClassSubjectsID == 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddExamRequest) (int64, error) {
 			return queries.TeacherAddExam(ctx, db_queries.TeacherAddExamParams{
@@ -117,7 +115,7 @@ func EditExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify[EditExamRequest](c, pool, rdb, true,
 		func(req EditExamRequest) int32 { return req.ClassSubjectsID },
 		func(req EditExamRequest) bool {
-			return req.ExamID == 0 || req.Subject == "" || req.Title == "" || (req.HasDescription && req.Description == "") || req.Date == 0 || req.StartTime == 0 || req.EndTime == 0 || (req.HasRoomID && req.RoomID == 0) || req.ClassSubjectsID == 0
+			return req.ExamID == 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.Date == 0 || req.StartTime == 0 || req.EndTime == 0 || (req.HasRoomID && req.RoomID == 0) || req.ClassSubjectsID == 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditExamRequest) (int64, error) {
 			return queries.TeacherEditExam(ctx, db_queries.TeacherEditExamParams{
