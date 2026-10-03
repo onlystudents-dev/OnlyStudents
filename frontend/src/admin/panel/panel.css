@@ -9,8 +9,23 @@
     width: calc(100% - 22.5rem);
     height: 100vh;
 
+    .box {
+        @apply border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2;
+    }
+
     .status {
         @apply flex flex-row justify-between items-center w-full rounded-lg p-2 relative;
+    }
+
+    .logselect {
+        @apply flex flex-row justify-between items-center w-full rounded-lg p-2 cursor-pointer relative h-8 mb-4 bg-(--hover-color);
+        transition: background-color 300ms ease;
+        select {
+            @apply absolute text-start pl-2 inset-0 w-full outline-none;
+            option {
+                @apply w-full;
+            }
+        }
     }
 
     .status:hover {

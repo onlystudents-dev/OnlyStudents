@@ -81,7 +81,8 @@
     "ADMIN_STATUS_ACCOUNT_COUNT": "Fiókok száma",
     "ADMIN_STATUS_GUARDIAN_COUNT": "Gondviselők száma",
     "ADMIN_STATUS_STUDENT_COUNT": "Diákok száma",
-    "ADMIN_STATUS_TEACHER_COUNT": "Tanárok száma"
+    "ADMIN_STATUS_TEACHER_COUNT": "Tanárok száma",
+    "ADMIN_LOGS": "Logok"
   },
   "errors": {
     "NOT_IMPLEMENTED": "Ez a funkció még nincs készen. Folyamatosan dolgozunk rajta!",
