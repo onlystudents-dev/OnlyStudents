@@ -182,18 +182,15 @@ export default function StudentTimetable({ me }: {me: Me}) {
                         </div>
                         {day.lessons.map((lesson) => (
                             <div className="lesson">
-                                <div className="flex flex-col justify-between items-start h-full">
-                                    <div className="flex flex-col">
-                                        <h1 className="rubik">{lesson.subject_name}</h1>
-                                        <h2 className="poppins">{[
+                                <div className="flex flex-row justify-between items-start w-full gap-2">
+                                    <div className="flex flex-col min-w-0">
+                                        <h1 className="rubik truncate">{lesson.subject_name}</h1>
+                                        <h2 className="poppins truncate">{[
                                             lesson.has_teacher_first_name && lesson.teacher_first_name,
                                             lesson.has_teacher_last_name && lesson.teacher_last_name,
                                         ].filter(Boolean).join(" ")}</h2>
                                     </div>
-                                    <p className="fredoka">{rooms.find(room => room.id === lesson.room_id)?.name || <Skeleton width={48} height={16} color={"var(--card-color)"} />}</p>
-                                </div>
-                                <div className="flex flex-col justify-between items-end h-full">
-                                    <div className="flex flex-col gap-1">
+                                    <div className="flex flex-col gap-1 items-end shrink-0">
                                         {lesson.has_exam && <span className="bg-(--wrong-base-color) text-(--wrong-color) rounded-full size-8 inline-flex items-center justify-center">
                                             <FontAwesomeIcon icon={faPenToSquare} />
                                         </span>}
@@ -201,7 +198,15 @@ export default function StudentTimetable({ me }: {me: Me}) {
                                             <FontAwesomeIcon icon={faHouseChimney} />
                                         </span>}
                                     </div>
-                                    <h2>{toHoursAndMinutes(lesson) || <Skeleton width={96} height={16} color={"var(--hover-color)"} />}</h2>
+                                </div>
+
+                                <div className="flex flex-row justify-between items-end w-full gap-2">
+                                    <div className="min-w-0">
+                                        <p className="fredoka truncate">{rooms.find(room => room.id === lesson.room_id)?.name || <Skeleton width={48} height={16} color={"var(--card-color)"} />}</p>
+                                    </div>
+                                    <div className="whitespace-nowrap shrink-0 text-right">
+                                        <h2>{toHoursAndMinutes(lesson) || <Skeleton width={96} height={16} color={"var(--hover-color)"} />}</h2>
+                                    </div>
                                 </div>
                             </div>
                         ))}

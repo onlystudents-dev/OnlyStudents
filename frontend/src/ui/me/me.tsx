@@ -183,14 +183,6 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
         const preferences = {
             ...me.preferences,
             ...diff,
-
-            ...(diff.timetable_display !== undefined && {
-                timetable_display: Number(diff.timetable_display),
-            }),
-
-            ...(diff.timetable_next !== undefined && {
-                timetable_next: diff.timetable_next === "true",
-            }),
         }
         const response = await fetch("/api/v1/me/update_preferences", {
             method: "POST",
