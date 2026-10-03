@@ -12,6 +12,13 @@ export type Me = {
     preferences: Preferences,
 }
 
+export const timeFormats = ["", "h12", "h23"] as const
+export type TimeFormat = typeof timeFormats[number]
+
+export function isTimeFormat(value: string): value is TimeFormat {
+    return timeFormats.some(format => format === value)
+}
+
 export type Preferences = {
     pfp_url: string,
     nickname: string,
@@ -19,7 +26,7 @@ export type Preferences = {
     theme: Theme,
     timetable_display: number,
     timetable_next: boolean,
-    time_format: "" | "h12" | "h23",
+    time_format: TimeFormat,
 }
 
 export type Lesson = {

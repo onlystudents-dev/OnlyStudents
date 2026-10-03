@@ -6,6 +6,7 @@ import { useState } from "preact/hooks";
 import { getKey } from "../language.ts";
 import type { Me } from "../../types/api.ts";
 import {Children} from "preact/compat";
+import {cx} from "../cx.ts";
 
 type ClickableProps = {
     onClick?: (e: MouseEvent) => void;
@@ -23,7 +24,7 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
         const button = e.currentTarget as Element
         const container = button.closest(".buttons")
 
-        if (!button || !container) return 0
+        if (!container) return 0
 
         return button.getBoundingClientRect().top - container.getBoundingClientRect().top
     }
@@ -41,7 +42,7 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
         <div className="sidebar">
             <div className="flex flex-row gap-4">
                 <div className="rounded-[50%] h-20 cursor-pointer">
-                    <img className={`rounded-[inherit] max-h-full ${pfpLoaded ? "" : "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
+                    <img className={cx("rounded-[inherit] max-h-full", !pfpLoaded && "hidden")} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
                     {!pfpLoaded && <Skeleton width={40} height={40} color="var(--bg-color)" className="rounded-[inherit]!"/>}
                 </div>
 

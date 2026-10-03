@@ -9,7 +9,7 @@ export default function PasswordCheck({ password, confirmPassword, setPassed }: 
     const [exposed, setExposed] = useState<boolean | null>(null);
 
     useEffect(() => {
-        getPasswordConfig().then(setConfig);
+        void getPasswordConfig().then(setConfig);
     }, []);
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export default function PasswordCheck({ password, confirmPassword, setPassed }: 
 
             let active = true
             const timer = setTimeout(() => {
-                isPasswordExposed(password).then(result => {
+                void isPasswordExposed(password).then(result => {
                     if (active) setExposed(result)
                 })
             }, 400)

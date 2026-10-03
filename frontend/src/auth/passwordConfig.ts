@@ -1,3 +1,5 @@
+import {readJSON} from "../util/api.ts";
+
 export type PasswordConfig = {
     minLength: number;
     maxLength: number;
@@ -25,7 +27,7 @@ export async function getPasswordConfig(): Promise<PasswordConfig> {
         const response = await fetch("/api/config");
         if (!response.ok) return DEFAULT_CONFIG;
 
-        const json = await response.json();
+        const json = await readJSON<{ password?: unknown } | null>(response);
         return normalize(json?.password);
     } catch {
         return DEFAULT_CONFIG;
@@ -33,6 +35,8 @@ export async function getPasswordConfig(): Promise<PasswordConfig> {
 }
 
 export async function isPasswordExposed(password: string): Promise<boolean | null> {
+    // crypto.subtle is undefined on insecure (plain http) origins even though the DOM types say otherwise
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!password || !globalThis.crypto?.subtle) return null;
 
     try {
@@ -48,7 +52,7 @@ export async function isPasswordExposed(password: string): Promise<boolean | nul
         const body = await response.text();
         const suffix = hash.slice(5);
 
-        return body.split("\n").some(line => line.split(":")[0].trim() === suffix);
+        return body.split("\n").some(line => line.split(":")[0]?.trim() === suffix);
     } catch {
         return null;
     }

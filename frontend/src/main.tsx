@@ -15,4 +15,7 @@ function Root() {
     )
 }
 
-render(<Root />, document.getElementById('root')!)
+const root = document.getElementById('root')
+if (!root) throw new Error("#root element not found")
+
+render(<Root />, root)
