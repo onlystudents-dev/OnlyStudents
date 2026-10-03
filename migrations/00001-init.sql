@@ -143,7 +143,7 @@ CREATE TABLE accounts (
     guardian_id INT REFERENCES guardians (id) ON DELETE CASCADE,
     email_address VARCHAR(256),
     email_verified BOOLEAN NOT NULL DEFAULT false,
-    preferences jsonb NOT NULL DEFAULT '{"pfp_url": "/assets/default_pfp.png", "nickname": "", "lang": "", "theme": "", "timetable_display": 1, "timetable_next": true}'::jsonb,
+    preferences jsonb NOT NULL DEFAULT '{"pfp_url": "/assets/default_pfp.png", "nickname": "", "lang": "", "time_format": "", "theme": "", "timetable_display": 1, "timetable_next": true}'::jsonb,
     CONSTRAINT chk_accounts_role CHECK (role IN ('student', 'teacher', 'guardian')),
     CONSTRAINT chk_accounts_role_link CHECK (
         (role = 'student' AND student_id IS NOT NULL AND teacher_id IS NULL AND guardian_id IS NULL) OR

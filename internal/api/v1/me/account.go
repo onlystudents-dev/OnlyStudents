@@ -56,14 +56,11 @@ func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 type Preferences struct {
 	Nickname         string `json:"nickname"`
 	Lang             string `json:"lang"`
+	TimeFormat       string `json:"time_format"`
 	Theme            string `json:"theme"`
 	PfpURL           string `json:"pfp_url"`
 	TimeTableDisplay int8   `json:"timetable_display"`
 	TimeTableNext    bool   `json:"timetable_next"`
-}
-
-type UpdatePreferencesRequest struct {
-	NewPreferences Preferences `json:"new_preferences"`
 }
 
 type changeEmailRequest struct {
@@ -77,26 +74,31 @@ func UpdatePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	var req UpdatePreferencesRequest
+	var req Preferences
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if !slices.Contains(helpers.Themes, req.NewPreferences.Theme) {
+	if !slices.Contains(helpers.Themes, req.Theme) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if !slices.Contains(helpers.Languages, req.NewPreferences.Lang) {
+	if !slices.Contains(helpers.Languages, req.Lang) {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	if !slices.Contains(helpers.TimeFormats, req.TimeFormat) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	preferences_jsonb, marshal_err := json.Marshal(Preferences{
-		Nickname:         req.NewPreferences.Nickname,
-		Lang:             req.NewPreferences.Lang,
-		Theme:            req.NewPreferences.Theme,
-		PfpURL:           req.NewPreferences.PfpURL,
-		TimeTableDisplay: req.NewPreferences.TimeTableDisplay,
-		TimeTableNext:    req.NewPreferences.TimeTableNext,
+		Nickname:         req.Nickname,
+		Lang:             req.Lang,
+		TimeFormat:       req.TimeFormat,
+		Theme:            req.Theme,
+		PfpURL:           req.PfpURL,
+		TimeTableDisplay: req.TimeTableDisplay,
+		TimeTableNext:    req.TimeTableNext,
 	})
 
 	if marshal_err != nil {
