@@ -10,6 +10,8 @@ import Skeleton from "../../util/skeleton/skeleton.tsx";
 import Loading from "../../util/loading.tsx";
 import {toast} from "react-toastify";
 import {formatSecondsToHourAndMinute, formatUnixDate} from "../../util/time.ts";
+import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
+import {getRetryAfter} from "../../util/api.ts";
 
 type day = {
     date: string,
@@ -17,17 +19,21 @@ type day = {
     today: boolean
 }
 
+const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
+
+function Badge({ icon, className }: {icon: IconDefinition, className: string}) {
+    return (
+        <span className={`${className} rounded-full size-8 inline-flex items-center justify-center`}>
+            <FontAwesomeIcon icon={icon} />
+        </span>
+    )
+}
+
 export default function StudentTimetable({ me }: {me: Me}) {
     const [rooms, setRooms] = useState<Room[]>([])
     const [lessonTime, setLessonTime] = useState<LessonTime[]>([])
 
-    const [monday, setMonday] = useState<day>({date: "", lessons: [], today: false})
-    const [tuesday, setTuesday] = useState<day>({date: "", lessons: [], today: false})
-    const [wednesday, setWednesday] = useState<day>({date: "", lessons: [], today: false})
-    const [thursday, setThursday] = useState<day>({date: "", lessons: [], today: false})
-    const [friday, setFriday] = useState<day>({date: "", lessons: [], today: false})
-    const [saturday, setSaturday] = useState<day>({date: "", lessons: [], today: false})
-    const [sunday, setSunday] = useState<day>({date: "", lessons: [], today: false})
+    const [days, setDays] = useState<day[]>(() => DAY_NAMES.map(() => ({date: "", lessons: [], today: false})))
 
     const [year, setYear] = useState<string>("")
 
@@ -41,11 +47,12 @@ export default function StudentTimetable({ me }: {me: Me}) {
         const response = await fetch(`/api/v1/me/student/timetable?start_date=${start}&end_date=${end}`)
 
         if (response.status === 429) {
-            setRateLimit(response.headers.get("retry-after") as unknown as number)
+            setRateLimit(getRetryAfter(response))
             setLoading(false)
             return
         } else if (!response.ok) {
             toast.error(await fromResponse(response))
+            setLoading(false)
             return
         }
 
@@ -71,13 +78,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
             }
         }
 
-        setMonday(createDayData(0, 1))
-        setTuesday(createDayData(1, 2))
-        setWednesday(createDayData(2, 3))
-        setThursday(createDayData(3, 4))
-        setFriday(createDayData(4, 5))
-        setSaturday(createDayData(5, 6))
-        setSunday(createDayData(6, 0))
+        setDays(DAY_NAMES.map((_, i) => createDayData(i, (i + 1) % 7)))
 
         setLoading(false)
 
@@ -136,27 +137,18 @@ export default function StudentTimetable({ me }: {me: Me}) {
         Fetch()
     }, [fetchWeekLessons, me.preferences.timetable_next])
 
-    const days: Record<string, day> = {
-        monday,
-        tuesday,
-        wednesday,
-        thursday,
-        friday,
-        saturday,
-        sunday,
-    }
-
     const offset = useRef(0)
+
+    const entries = DAY_NAMES.map((name, i) => [name, days[i]] as const)
 
     const d = (() => {
         switch (me.preferences.timetable_display) {
             case 1:
-                return Object.entries(days)
-                    .filter(([, day]) => day.lessons.length > 0)
+                return entries.filter(([, day]) => day.lessons.length > 0)
             case 2:
-                return Object.entries(days).slice(0, 5)
+                return entries.slice(0, 5)
             default:
-                return Object.entries(days)
+                return entries
         }
     })()
 
@@ -191,12 +183,8 @@ export default function StudentTimetable({ me }: {me: Me}) {
                                         ].filter(Boolean).join(" ")}</h2>
                                     </div>
                                     <div className="flex flex-col gap-1 items-end shrink-0">
-                                        {lesson.has_exam && <span className="bg-(--wrong-base-color) text-(--wrong-color) rounded-full size-8 inline-flex items-center justify-center">
-                                            <FontAwesomeIcon icon={faPenToSquare} />
-                                        </span>}
-                                        {lesson.has_homework && <span className="bg-(--warning-base-color) text-(--warning-color) rounded-full size-8 inline-flex items-center justify-center">
-                                            <FontAwesomeIcon icon={faHouseChimney} />
-                                        </span>}
+                                        {lesson.has_exam && <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />}
+                                        {lesson.has_homework && <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />}
                                     </div>
                                 </div>
 

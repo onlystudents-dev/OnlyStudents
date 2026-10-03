@@ -1,34 +1,16 @@
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTriangleExclamation} from "@fortawesome/free-solid-svg-icons";
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useEffect} from "react";
 import {getKey} from "./language.ts";
 import Overlay from "./overlay/overlay.tsx";
+import {useCountdown} from "./countdown.ts";
 
 export default function RateLimit({ retry, expire, standalone }: {retry: number, expire: () => void, standalone?: boolean}) {
-    const [remaining, setRemaining] = useState("");
-
-    const timerRef = useRef<number | null>(null);
-
-    const updateRemaining = useCallback(function step(remaining: number) {
-        if (timerRef.current != null) {
-            clearTimeout(timerRef.current)
-        }
-
-        if (remaining < 0) {
-            expire()
-            return
-        }
-
-        setRemaining(String(remaining));
-
-        timerRef.current = setTimeout(() => {
-            step(remaining - 1)
-        }, 1000)
-    }, [expire])
+    const [remaining, start] = useCountdown(expire)
 
     useEffect(() => {
-        updateRemaining(retry)
-    }, [updateRemaining, retry])
+        start(retry)
+    }, [start, retry])
 
     return (
         <>

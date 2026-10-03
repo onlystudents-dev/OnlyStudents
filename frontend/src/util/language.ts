@@ -1,5 +1,6 @@
 import {match} from "@formatjs/intl-localematcher";
 import type {Me} from "../types/api.ts";
+import {getRetryAfter} from "./api.ts";
 
 export type Language = {
     key: string,
@@ -29,34 +30,23 @@ export function getLanguage(me: Me | null, auto?: boolean) {
     ))
 }
 
+function fill(template: string, args: string[]) {
+    return args.reduce((val, arg, i) => val.replace(`%${i + 1}`, arg), template)
+}
+
 export function getKey(key: string, ...args: string[]) {
-    let val = language.messages[key]
-    if (!val) return ""
-    let i = 0
-    for (const arg of args) {
-        i++
-        val = val.replace(`%${i}`, arg)
-    }
-    return val
+    const val = language.messages[key]
+    return val ? fill(val, args) : ""
 }
 
 export async function fromResponse(response: Response, ...args: string[]) {
     if (response.status === 429) {
-        let seconds = response.headers.get("Retry-After")
-        if (!seconds) seconds = "-1"
         args.shift()
-        args[0] = seconds
+        args[0] = String(getRetryAfter(response))
     }
 
     const json = await response.json()
 
-    let val = language.errors[json?.error]
-    if (!val) return JSON.stringify(json)
-    let i = 0
-    for (const arg of args) {
-        i++
-        val = val.replace(`%${i}`, arg)
-    }
-
-    return val
+    const val = language.errors[json?.error]
+    return val ? fill(val, args) : JSON.stringify(json)
 }

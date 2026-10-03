@@ -22,6 +22,7 @@ import {applyTheme, getAutoTheme, type Theme, themes} from "../../util/theme.ts"
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import type {Dispatch, StateUpdater} from "preact/hooks";
 import {getTimeFormat} from "../../util/time.ts";
+import {postJSON} from "../../util/api.ts";
 
 export type option = "lang" | "time_format" | "theme" | "timetable_display" | "timetable_next"
 
@@ -179,22 +180,29 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
         </>
     )
 
-    async function save(diff: Record<string, unknown>) {
-        const preferences = {
-            ...me.preferences,
-            ...diff,
+    async function busy(task: () => Promise<void>) {
+        setWaiting(true)
+        try {
+            await task()
+        } finally {
+            setWaiting(false)
         }
-        const response = await fetch("/api/v1/me/update_preferences", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(preferences),
-        })
-        if (!response.ok) {
+    }
+
+    async function post(url: string, body?: unknown, success?: string) {
+        const response = await postJSON(url, body)
+        if (response.status !== 200) {
             toast.error(await fromResponse(response))
             return false
         }
+        if (success) toast.success(getKey(success))
+        return true
+    }
+
+    async function save(diff: Record<string, unknown>) {
+        const preferences = { ...me.preferences, ...diff }
+        if (!await post("/api/v1/me/update_preferences", preferences)) return false
+
         setMe({ ...me, preferences })
         Object.entries(diff).forEach(([key, value]) => {
             methods[key as option]?.(value)
@@ -203,133 +211,64 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
     }
 
     async function sendEmail() {
-        if (!newEmail.current?.value) return
-        if (newEmail.current.value === me.email_address) return
+        const value = newEmail.current?.value
+        if (!value || value === me.email_address) return
+
         setSettingEmailA(true)
         const start = performance.now()
-        setWaiting(true)
-        const response = await fetch("/api/v1/me/change_email", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                new_email: newEmail.current.value,
-            })
+        await busy(async () => {
+            if (!await post("/api/v1/me/change_email", { new_email: value })) return
+            await resend(() => setTimeout(() => setSettingEmail(true), Math.max(500 - (performance.now() - start), 0)))
+            await fetchMe()
+            setEmail(value)
         })
-        switch (response.status) {
-            case 200:
-                await resend(() => setTimeout(() => setSettingEmail(true), Math.max(500 - (performance.now() - start), 0)))
-                await fetchMe()
-                setEmail(newEmail.current.value)
-                break
-            default:
-                toast.error(await fromResponse(response))
-        }
-        setWaiting(false)
     }
 
     async function resend(done: () => void = () => {}) {
-        const response = await fetch("/api/v1/me/verify_email", {
-            method: "POST",
-        })
-        switch (response.status) {
-            case 200:
-                done()
-                break
-            default:
-                toast.error(await fromResponse(response))
-        }
+        if (await post("/api/v1/me/verify_email")) done()
     }
 
     async function updateEmail() {
-        if (!code.current?.value) return
-        setWaiting(true)
-        const response = await fetch("/api/v1/me/verify_email_confirm", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                code: code.current.value,
-            })
+        const value = code.current?.value
+        if (!value) return
+
+        await busy(async () => {
+            if (await post("/api/v1/me/verify_email_confirm", { code: value }, "EMAIL_CHANGED")) await fetchMe()
         })
-        switch (response.status) {
-            case 200:
-                toast.success(getKey("EMAIL_CHANGED"))
-                await fetchMe()
-                break
-            default:
-                toast.error(await fromResponse(response))
-        }
-        setWaiting(false)
     }
 
     async function updateNickname() {
-        if (!newNickname.current?.value && newNickname.current?.value !== "") return
-        setWaiting(true)
-        const response = await fetch("/api/v1/me/update_preferences", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                ...me.preferences,
-                nickname: newNickname.current.value,
-            })
+        const value = newNickname.current?.value
+        if (value === undefined) return
+
+        const preferences = { ...me.preferences, nickname: value }
+        await busy(async () => {
+            if (!await post("/api/v1/me/update_preferences", preferences, "NICKNAME_CHANGED")) return
+            setNickname(value)
+            setMe({ ...me, preferences })
         })
-        switch (response.status) {
-            case 200:
-                toast.success(getKey("NICKNAME_CHANGED"))
-                setNickname(newNickname.current.value)
-                setMe({ ...me, preferences: { ...me.preferences, nickname: newNickname.current.value } })
-                break
-            default:
-                toast.error(await fromResponse(response))
-        }
-        setWaiting(false)
     }
 
     async function updatePassword() {
-        if (!currentPassword) return
-        if (!password) return
-        if (currentPassword === password) return
-        if (!confirmPassword) return
-        if (!passed) return
-        setWaiting(true)
-        const response = await fetch("/api/v1/me/change_password", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
+        if (!currentPassword || !password || !confirmPassword || !passed || currentPassword === password) return
+
+        await busy(async () => {
+            await post("/api/v1/me/change_password", {
                 current_password: currentPassword,
                 new_password: password,
                 confirm_new_password: confirmPassword,
-            })
+            }, "PASSWORD_CHANGED")
         })
-        switch (response.status) {
-            case 200:
-                toast.success(getKey("PASSWORD_CHANGED"))
-                break
-            default:
-                toast.error(await fromResponse(response))
-        }
-        setWaiting(false)
     }
 
     async function logout() {
         setLoading(true)
-        const response = await fetch("/api/v1/me/logout", {
-            method: "POST",
-        });
+        const response = await postJSON("/api/v1/me/logout")
 
-        switch (response.status) {
-            case 200:
-                location.reload();
-                break;
-            default:
-                toast.error(await response.text() || response.statusText);
+        if (response.status === 200) {
+            location.reload()
+        } else {
+            toast.error(await response.text() || response.statusText)
         }
         setLoading(false)
     }

@@ -1,6 +1,6 @@
 import "./login.css";
 import Button from "../../util/button/button.tsx";
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight, faQuestion} from "@fortawesome/free-solid-svg-icons";
 import PasswordReset from "../pwr/pwr.tsx";
@@ -8,6 +8,8 @@ import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
 import {getKey} from "../../util/language.ts";
 import { opaqueLogin } from "../opaqueLogin.ts";
+import RoleSelect from "../roleSelect.tsx";
+import { useCountdown } from "../../util/countdown.ts";
 
 export default function Login() {
     const [pwr, setPwr] = useState(false);
@@ -23,26 +25,7 @@ export default function Login() {
     const [password, setPassword] = useState("");
 
     const [waiting, setWaiting] = useState(false);
-    const [remaining, setRemaining] = useState("");
-
-    const timerRef = useRef<number | null>(null);
-
-    const updateRemaining = useCallback(function step(remaining: number) {
-        if (timerRef.current) {
-            clearTimeout(timerRef.current)
-        }
-
-        if (remaining < 0) {
-            setRemaining("")
-            return
-        }
-
-        setRemaining(String(remaining))
-
-        timerRef.current = setTimeout(() => {
-            step(remaining - 1)
-        }, 1000)
-    }, [])
+    const [remaining, updateRemaining] = useCountdown();
 
     const login = useCallback(async () => {
       if (red || wrong || remaining || !id || !password) return;
@@ -79,11 +62,7 @@ export default function Login() {
                 <div className={`content out ${pwrA && "hid"} h-86`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">
-                        <select className="poppins" value={role} onChange={(e) => {setRole(e.currentTarget.value); setWrong(false)}}>
-                            <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
-                            <option value="student">{getKey("ROLE.STUDENT")}</option>
-                            <option value="teacher">{getKey("ROLE.TEACHER")}</option>
-                        </select>
+<RoleSelect value={role} onChange={(r) => {setRole(r); setWrong(false)}} />
                         <input className={`${(red || wrong) && "wrong"}`} type="text" placeholder={getKey("USER_ID")} value={id} onChange={(e) => {setId(e.currentTarget.value); checkUserID(e.currentTarget.value); setWrong(false)}} />
                         <input className={`${wrong && "wrong"}`} type="password" placeholder={getKey("PASSWORD")} value={password} onChange={(e) => {setPassword(e.currentTarget.value); setWrong(false)}} />
                     </div>

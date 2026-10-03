@@ -1,8 +1,13 @@
+import {getRetryAfter, postJSON} from "../util/api.ts";
+
 export type OpaqueLoginResult =
   | { status: "ok" }
   | { status: "wrong" }
   | { status: "error"; error?: string }
   | { status: "ratelimited"; retryAfter: number };
+
+const ratelimited = (res: Response): OpaqueLoginResult => ({ status: "ratelimited", retryAfter: getRetryAfter(res) });
+const readError = async (res: Response): Promise<string | undefined> => (await res.json().catch(() => null))?.error;
 
 export async function opaqueLogin(params: {
   userId: number; role: string; password: string;
@@ -14,12 +19,11 @@ export async function opaqueLogin(params: {
     const { clientLoginState, startLoginRequest } =
       client.startLogin({ password: params.password });
 
-    const initRes = await fetch("/api/login/init", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user: params.userId, role: params.role, start_login_request: startLoginRequest }),
+    const initRes = await postJSON("/api/login/init", {
+      user: params.userId, role: params.role, start_login_request: startLoginRequest,
     });
-    if (initRes.status === 429) return { status: "ratelimited", retryAfter: Number(initRes.headers.get("Retry-After") ?? "-1") };
-    if (!initRes.ok) return { status: "error", error: (await initRes.json().catch(() => null))?.error };
+    if (initRes.status === 429) return ratelimited(initRes);
+    if (!initRes.ok) return { status: "error", error: await readError(initRes) };
 
     const { login_response, login_handle } = await initRes.json();
 
@@ -29,13 +33,12 @@ export async function opaqueLogin(params: {
     });
     if (!result) return { status: "wrong" };
 
-    const finRes = await fetch("/api/login/finish", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ login_handle, finish_login_request: result.finishLoginRequest }),
+    const finRes = await postJSON("/api/login/finish", {
+      login_handle, finish_login_request: result.finishLoginRequest,
     });
-    if (finRes.status === 429) return { status: "ratelimited", retryAfter: Number(finRes.headers.get("Retry-After") ?? "-1") };
+    if (finRes.status === 429) return ratelimited(finRes);
     if (!finRes.ok) {
-      const error = (await finRes.json().catch(() => null))?.error;
+      const error = await readError(finRes);
       return { status: error === "WRONG_CREDENTIALS" ? "wrong" : "error", error };
     }
     return { status: "ok" };
