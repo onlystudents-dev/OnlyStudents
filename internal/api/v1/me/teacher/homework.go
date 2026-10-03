@@ -34,13 +34,12 @@ type EditHomeworkRequest struct {
 }
 
 type UpdateHomeworkSubmissionRequest struct {
-	HomeworkID      int32  `json:"homework_id"`
-	StudentID       int32  `json:"student_id"`
-	HasContent      bool   `json:"has_content"`
-	Content         string `json:"content"`
-	HasGradedValue  bool   `json:"has_graded_value"`
-	GradedValue     int16  `json:"graded_value"`
-	ClassSubjectsID int32  `json:"class_subjects_id"`
+	HomeworkID     int32  `json:"homework_id"`
+	StudentID      int32  `json:"student_id"`
+	HasContent     bool   `json:"has_content"`
+	Content        string `json:"content"`
+	HasGradedValue bool   `json:"has_graded_value"`
+	GradedValue    int16  `json:"graded_value"`
 }
 
 type RemoveHomeworkRequest struct {
@@ -158,10 +157,10 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func UpdateHomeworkSubmission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req UpdateHomeworkSubmissionRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb, false,
+		func(req UpdateHomeworkSubmissionRequest) int32 { return 0 },
 		func(req UpdateHomeworkSubmissionRequest) bool {
-			return req.HomeworkID == 0 || req.StudentID == 0 || (req.HasContent && req.Content == "") || (req.HasGradedValue && req.GradedValue == 0) || req.ClassSubjectsID == 0
+			return req.HomeworkID == 0 || req.StudentID == 0 || (req.HasContent && req.Content == "") || (req.HasGradedValue && req.GradedValue == 0)
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req UpdateHomeworkSubmissionRequest) (int64, error) {
 			return queries.TeacherUpdateHomeworkSubmission(ctx, db_queries.TeacherUpdateHomeworkSubmissionParams{
