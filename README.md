@@ -1,5 +1,5 @@
 # OnlyStudents
-This is a student diary app, mimicking ekreta.hu, but modern, fast and just better.
+This is a student diary app, mimicking e-kreta.hu, but modern, fast and just better.
 
 # WARNING
 This is pre-alpha software, untested, and does have a ton of breaking API and other changes constantly. There is no versioning system yet either.
