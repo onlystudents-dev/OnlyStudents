@@ -35,8 +35,6 @@ type RemoveAbsenceRequest struct {
 	AbsenceID int64 `json:"absence_id"`
 }
 
-type ListAbsencesRequest struct{}
-
 type AbsenceSummary struct {
 	ID             int64       `json:"id"`
 	Subject        string      `json:"subject"`
