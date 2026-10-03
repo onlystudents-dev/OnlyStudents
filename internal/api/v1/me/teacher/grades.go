@@ -19,9 +19,6 @@ type AddGradeRequest struct {
 	Date            int64  `json:"date"`
 	HasNote         bool   `json:"has_note"`
 	Note            string `json:"note"`
-	Title           string `json:"title"`
-	HasDescription  bool   `json:"has_description"`
-	Description     string `json:"description"`
 	StudentID       int32  `json:"student_id"`
 	ClassSubjectsID int32  `json:"class_subjects_id"`
 }
@@ -41,9 +38,6 @@ type EditGradeRequest struct {
 	Date            int64  `json:"date"`
 	HasNote         bool   `json:"has_note"`
 	Note            string `json:"note"`
-	Title           string `json:"title"`
-	HasDescription  bool   `json:"has_description"`
-	Description     string `json:"description"`
 	ClassSubjectsID int32  `json:"class_subjects_id"`
 }
 
@@ -123,7 +117,7 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req AddGradeRequest) int32 { return req.ClassSubjectsID },
 		func(req AddGradeRequest) bool {
-			return req.TermID == 0 || req.GradeTypeID == 0 || req.Value == 0 || req.Date == 0 || (req.HasNote && req.Note == "") || req.Title == "" || (req.HasDescription && req.Description == "") || req.ClassSubjectsID == 0
+			return req.TermID == 0 || req.GradeTypeID == 0 || req.Value == 0 || req.Date == 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID == 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddGradeRequest) (int64, error) {
 			return queries.TeacherAddGrade(ctx, db_queries.TeacherAddGradeParams{
@@ -175,7 +169,7 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req EditGradeRequest) int32 { return req.ClassSubjectsID },
 		func(req EditGradeRequest) bool {
-			return req.GradeID == 0 || req.TermID == 0 || req.GradeTypeID == 0 || req.Value == 0 || req.Date == 0 || (req.HasNote && req.Note == "") || req.Title == "" || (req.HasDescription && req.Description == "") || req.ClassSubjectsID == 0
+			return req.GradeID == 0 || req.TermID == 0 || req.GradeTypeID == 0 || req.Value == 0 || req.Date == 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID == 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditGradeRequest) (int64, error) {
 			return queries.TeacherEditGrade(ctx, db_queries.TeacherEditGradeParams{
