@@ -12,6 +12,7 @@ var TimeFormats = []string{"", "h12", "h23"}
 var Themes = []string{"", "dark", "light"}
 var FrontendPaths = []string{
 	"/",
+	"/admin",
 	"/me",
 	"/timetable",
 	"/grades",

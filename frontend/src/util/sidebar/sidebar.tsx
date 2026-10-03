@@ -6,14 +6,13 @@ import { useState } from "preact/hooks";
 import { getKey } from "../language.ts";
 import type { Me } from "../../types/api.ts";
 import {Children} from "preact/compat";
-import {cx} from "../cx.ts";
 
 type ClickableProps = {
     onClick?: (e: MouseEvent) => void;
     onMouseEnter?: (e: MouseEvent) => void;
 };
 
-export default function Sidebar({ children, me }: { children: ComponentChildren; me: Me }) {
+export default function Sidebar({ children, me }: { children: ComponentChildren; me?: Me }) {
     const [hoverTop, setHoverTop] = useState(0)
     const [selectTop, setSelectTop] = useState(0)
 
@@ -40,21 +39,23 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
 
     return (
         <div className="sidebar">
-            <div className="flex flex-row gap-4">
-                <div className="rounded-[50%] h-20 cursor-pointer">
-                    <img className={cx("rounded-[inherit] max-h-full", !pfpLoaded && "hidden")} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
-                    {!pfpLoaded && <Skeleton width={40} height={40} color="var(--bg-color)" className="rounded-[inherit]!"/>}
+            {me && <>
+                <div className="flex flex-row gap-4">
+                    <div className="rounded-[50%] h-20 cursor-pointer">
+                        <img className={`rounded-[inherit] max-h-full ${pfpLoaded ? "" : "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
+                        {!pfpLoaded && <Skeleton width={40} height={40} color="var(--bg-color)" className="rounded-[inherit]!"/>}
+                    </div>
+
+                    <div className="flex flex-col gap-1 justify-center min-w-0">
+                        <h1 className="text-2xl truncate">
+                            {me.preferences.nickname || `${me.first_name} ${me.last_name}`}
+                        </h1>
+                        <p>{getKey("SETTINGS")}</p>
+                    </div>
                 </div>
 
-                <div className="flex flex-col gap-1 justify-center min-w-0">
-                    <h1 className="text-2xl truncate">
-                        {me.preferences.nickname || `${me.first_name} ${me.last_name}`}
-                    </h1>
-                    <p>{getKey("SETTINGS")}</p>
-                </div>
-            </div>
-
-            <br />
+                <br />
+            </>}
 
             <div className="buttons" onMouseLeave={() => setHidden(true)}>
                 <div

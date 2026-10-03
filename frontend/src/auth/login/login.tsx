@@ -13,37 +13,37 @@ import { useCountdown } from "../../util/countdown.ts";
 import {cx} from "../../util/cx.ts";
 
 export default function Login() {
-    const [pwr, setPwr] = useState(false);
-    const [pwrA, setPwrA] = useState(false);
+    const [pwr, setPwr] = useState(false)
+    const [pwrA, setPwrA] = useState(false)
     const [reset, setReset] = useState(false)
 
-    const [red, setRed] = useState(false);
-    const [wrong, setWrong] = useState(false);
+    const [red, setRed] = useState(false)
+    const [wrong, setWrong] = useState(false)
 
-    const [role, setRole] = useState("guardian");
+    const [role, setRole] = useState("guardian")
 
-    const [id, setId] = useState("");
-    const [password, setPassword] = useState("");
+    const [id, setId] = useState("")
+    const [password, setPassword] = useState("")
 
-    const [waiting, setWaiting] = useState(false);
-    const [remaining, updateRemaining] = useCountdown();
+    const [waiting, setWaiting] = useState(false)
+    const [remaining, updateRemaining] = useCountdown()
 
     const login = useCallback(async () => {
-      if (red || wrong || remaining || !id || !password) return;
-      setWaiting(true);
+      if (red || wrong || remaining || !id || !password) return
+      setWaiting(true)
       try {
         const res = await opaqueLogin({ userId: Number(id), role, password });
         switch (res.status) {
           case "ok": location.reload(); break;
-          case "wrong": toast.error(getKey("WRONG_CREDENTIALS")); setWrong(true); break;
+          case "wrong": toast.error(getKey("WRONG_CREDENTIALS")); setWrong(true); break
           case "ratelimited":
-            toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)));
-            updateRemaining(res.retryAfter);
-            break;
-          case "error": toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED")); break;
+            toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)))
+            updateRemaining(res.retryAfter)
+            break
+          case "error": toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED")); break
         }
-      } finally { setWaiting(false); }
-    }, [red, wrong, remaining, id, password, role, updateRemaining]);
+      } finally { setWaiting(false) }
+    }, [red, wrong, remaining, id, password, role, updateRemaining])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -87,9 +87,9 @@ export default function Login() {
 
     function checkUserID(id: string) {
         if (id && Number.isNaN(Number(id))) {
-            setRed(true);
+            setRed(true)
         } else {
-            setRed(false);
+            setRed(false)
         }
     }
 

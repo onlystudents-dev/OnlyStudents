@@ -68,7 +68,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
             <Save options={options} setOptions={setOptions} save={save} />
             {loading && <Loading />}
             <div className="main">
-                <div className="configs border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2">
+                <div className="border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2">
                     {(() => {
                         switch(active) {
                             case "appearance":

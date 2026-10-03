@@ -1,6 +1,6 @@
 import type {Theme} from "../util/theme.ts";
 
-export type Role = "student" | "teacher" | "guardian" | "admin";
+export type Role = "student" | "teacher" | "guardian" | "admin"
 
 export type Me = {
     role: Role,
