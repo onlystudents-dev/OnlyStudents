@@ -68,10 +68,10 @@ export default function AdminLogin() {
             if (e.key === "Enter") await login()
         }
 
-        window.addEventListener("keydown", handleKeyDown)
+        window.addEventListener("keydown", e => void handleKeyDown(e))
 
         return () => {
-            window.removeEventListener("keydown", handleKeyDown)
+            window.removeEventListener("keydown", e => void handleKeyDown(e))
         }
     }, [login])
 

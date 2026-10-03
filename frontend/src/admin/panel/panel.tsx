@@ -15,6 +15,9 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                 <div className="border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2">
                     {(() => {
                         switch(active) {
+                            // i hate these new checks
+                            // i when i add more i dont want to add this again so its staying
+                            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                             case "status":
                                 return (
                                     <>

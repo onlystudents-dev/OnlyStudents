@@ -13,7 +13,7 @@ export default function Admin() {
     const [status, setStatus] = useState<AdminStatusData | null>(null)
 
     useEffect(() => {
-        fetch("/api/v1/admin/status").then(async response => {
+        void fetch("/api/v1/admin/status").then(async response => {
             switch (response.status) {
                 case 200: {
                     const json: AdminStatusData = await response.json()
