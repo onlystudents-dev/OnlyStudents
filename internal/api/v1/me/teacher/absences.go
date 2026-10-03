@@ -68,7 +68,7 @@ func ListAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func AddAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify[AddAbsenceRequest](c, pool, rdb, true,
+	return TeacherModify(c, pool, rdb, true,
 		func(req AddAbsenceRequest) int32 { return req.ClassSubjectsID },
 		func(req AddAbsenceRequest) bool {
 			return req.Date == 0 || req.Type == "" || req.StudentID == 0 || req.ClassSubjectsID == 0 || (req.HasNote && req.Note == "")
@@ -87,7 +87,7 @@ func AddAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func RemoveAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify[RemoveAbsenceRequest](c, pool, rdb, false,
+	return TeacherModify(c, pool, rdb, false,
 		func(req RemoveAbsenceRequest) int32 { return 0 },
 		func(req RemoveAbsenceRequest) bool { return req.AbsenceID == 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveAbsenceRequest) (int64, error) {
@@ -100,7 +100,7 @@ func RemoveAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func EditAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify[EditAbsenceRequest](c, pool, rdb, true,
+	return TeacherModify(c, pool, rdb, true,
 		func(req EditAbsenceRequest) int32 { return req.ClassSubjectsID },
 		func(req EditAbsenceRequest) bool {
 			return req.AbsenceID == 0 || req.Date == 0 || req.Type == "" || req.StudentID == 0 || req.ClassSubjectsID == 0 || (req.HasNote && req.Note == "")
