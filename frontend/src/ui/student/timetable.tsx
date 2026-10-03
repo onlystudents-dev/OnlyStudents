@@ -11,9 +11,13 @@ import Loading from "../../util/loading.tsx";
 import {toast} from "react-toastify";
 import {formatSecondsToHourAndMinute, formatUnixDate} from "../../util/time.ts";
 import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
-import {getRetryAfter} from "../../util/api.ts";
+import {getRetryAfter, readJSON} from "../../util/api.ts";
+import {cx} from "../../util/cx.ts";
+
+type DayName = typeof DAY_NAMES[number]
 
 type day = {
+    name: DayName,
     date: string,
     lessons: Lesson[],
     today: boolean
@@ -23,7 +27,7 @@ const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "satu
 
 function Badge({ icon, className }: {icon: IconDefinition, className: string}) {
     return (
-        <span className={`${className} rounded-full size-8 inline-flex items-center justify-center`}>
+        <span className={cx(className, "rounded-full size-8 inline-flex items-center justify-center")}>
             <FontAwesomeIcon icon={icon} />
         </span>
     )
@@ -33,7 +37,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
     const [rooms, setRooms] = useState<Room[]>([])
     const [lessonTime, setLessonTime] = useState<LessonTime[]>([])
 
-    const [days, setDays] = useState<day[]>(() => DAY_NAMES.map(() => ({date: "", lessons: [], today: false})))
+    const [days, setDays] = useState<day[]>(() => DAY_NAMES.map(name => ({name, date: "", lessons: [], today: false})))
 
     const [year, setYear] = useState<string>("")
 
@@ -62,23 +66,24 @@ export default function StudentTimetable({ me }: {me: Me}) {
             setYear(`${monday.getFullYear() - 1}-${monday.getFullYear()}`)
         }
 
-        const lessons: Lesson[] = await response.json()
+        const lessons = await readJSON<Lesson[]>(response)
         const daySeconds = 86400
         const language = getLanguage(me)?.key || "en-US"
         const now = new Date()
 
-        const createDayData = (dayOffset: number, dayOfWeek: number) => {
+        const createDayData = (name: DayName, dayOffset: number, dayOfWeek: number): day => {
             const targetDate = new Date(monday)
             targetDate.setDate(monday.getDate() + dayOffset)
 
             return {
+                name,
                 date: formatUnixDate(mondayTime + daySeconds * dayOffset, language),
                 lessons: lessons.filter(lesson => lesson.day_of_week === dayOfWeek),
                 today: targetDate.toDateString() === now.toDateString(),
             }
         }
 
-        setDays(DAY_NAMES.map((_, i) => createDayData(i, (i + 1) % 7)))
+        setDays(DAY_NAMES.map((name, i) => createDayData(name, i, (i + 1) % 7)))
 
         setLoading(false)
 
@@ -100,7 +105,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                     return
                 }
 
-                const json = await response.json() as T
+                const json = await readJSON<T>(response)
 
                 if (method) method(json)
                 return json
@@ -128,27 +133,25 @@ export default function StudentTimetable({ me }: {me: Me}) {
                     const end = date.getTime() + t.at_end * 1000
 
                     if (Date.now() > end) {
-                        fetchWeekLessons(addDays(7))
+                        void fetchWeekLessons(addDays(7))
                     }
                 })),
             ])
         }
 
-        Fetch()
+        void Fetch()
     }, [fetchWeekLessons, me.preferences.timetable_next])
 
     const offset = useRef(0)
 
-    const entries = DAY_NAMES.map((name, i) => [name, days[i]] as const)
-
     const d = (() => {
         switch (me.preferences.timetable_display) {
             case 1:
-                return entries.filter(([, day]) => day.lessons.length > 0)
+                return days.filter(day => day.lessons.length > 0)
             case 2:
-                return entries.slice(0, 5)
+                return days.slice(0, 5)
             default:
-                return entries
+                return days
         }
     })()
 
@@ -166,10 +169,10 @@ export default function StudentTimetable({ me }: {me: Me}) {
                         <FontAwesomeIcon icon={faAngleLeft} />
                     </span>
                 </div>
-                {d.map(([name, day]) => (
-                    <div className="day">
-                        <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>
-                            <h1 className="rubik">{getKey(`DAYS.${name}`)}</h1>
+                {d.map((day) => (
+                    <div className="day" key={day.name}>
+                        <div className={cx("date", day.today && "rounded-2xl bg-(--border-color)")}>
+                            <h1 className="rubik">{getKey(`DAYS.${day.name}`)}</h1>
                             <p className="poppins">{day.date}</p>
                         </div>
                         {day.lessons.map((lesson) => (
@@ -201,7 +204,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                     </div>
                 ))}
                 <div className="flex flex-col justify-center h-14">
-                    <span className="icon" onClick={() => fetchWeekLessons(addDays(+7))}>
+                    <span className="icon" onClick={() => fetchWeekLessons(addDays(7))}>
                         <FontAwesomeIcon icon={faAngleRight} />
                     </span>
                 </div>

@@ -20,19 +20,14 @@ function isEqual(a: unknown, b: unknown): boolean {
     );
 }
 
-function getDifferences(
-    options: Record<string, unknown> = {},
-    defaults: Record<string, unknown> = {},
-): Record<string, unknown> {
+function getDifferences<T extends Record<string, unknown>>(options: T, defaults: T): Partial<T> {
     return Object.fromEntries(
-        Object.entries(options).filter(([key, value]) =>
-            key in defaults ? !isEqual(value, defaults[key]) : true
-        )
-    );
+        Object.entries(options).filter(([key, value]) => !isEqual(value, defaults[key]))
+    ) as Partial<T>;
 }
 
-export default function Save({ options, setOptions, save }: {options: Record<string, unknown>, setOptions: React.Dispatch<React.SetStateAction<Record<string, unknown>>>, save: (options: Record<string, unknown>) => (boolean | Promise<boolean>)}) {
-    const [defaults, setDefaults] = React.useState<Record<string, unknown>>(options);
+export default function Save<T extends Record<string, unknown>>({ options, setOptions, save }: {options: T, setOptions: React.Dispatch<React.SetStateAction<T>>, save: (diff: Partial<T>) => (boolean | Promise<boolean>)}) {
+    const [defaults, setDefaults] = React.useState<T>(options);
 
     const differences = getDifferences(options, defaults)
     const count = Object.keys(differences).length
@@ -40,7 +35,7 @@ export default function Save({ options, setOptions, save }: {options: Record<str
     return (
         <>
             <div className={`save ${isEqual(options, defaults) ? "hid" : ""} fredoka`}>
-                <p className="ml-2">{getKey("UNSAVED_CHANGES", count as unknown as string, count !== 1 ? getKey("MULTIPLE") : "")}</p>
+                <p className="ml-2">{getKey("UNSAVED_CHANGES", String(count), count !== 1 ? getKey("MULTIPLE") : "")}</p>
                 <div className="buttons rubik">
                     <Button onClick={() => setOptions({ ...defaults })} className="breset">
                         {getKey("RESET")}

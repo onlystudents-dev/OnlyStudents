@@ -1,6 +1,6 @@
 import {match} from "@formatjs/intl-localematcher";
 import type {Me} from "../types/api.ts";
-import {getRetryAfter} from "./api.ts";
+import {type ApiError, getRetryAfter, readJSON} from "./api.ts";
 
 export type Language = {
     key: string,
@@ -13,15 +13,20 @@ export const languages: Language[] = [
     {"key": "hu-HU", "name": "Magyar", "emoji": "\uD83C\uDDED\uD83C\uDDFA"}
 ]
 
-let language: Record<string, Record<string, string>>
+type LanguageFile = {
+    messages: Record<string, string>,
+    errors: Record<string, string>,
+}
+
+let language: LanguageFile = { messages: {}, errors: {} }
 
 export async function fetchLanguage(me: Me | null) {
-    const response = await fetch(`/assets/languages/${getLanguage(me)?.key}.json`);
-    language = await response.json();
+    const response = await fetch(`/assets/languages/${getLanguage(me)?.key ?? "en-US"}.json`);
+    language = await readJSON<LanguageFile>(response);
 }
 
 export function getLanguage(me: Me | null, auto?: boolean) {
-    const stored = !auto ? me?.preferences?.lang : null;
+    const stored = !auto ? me?.preferences.lang : null;
 
     return languages.find(o => o.key === match(
         stored ? [stored] : navigator.languages,
@@ -45,8 +50,8 @@ export async function fromResponse(response: Response, ...args: string[]) {
         args[0] = String(getRetryAfter(response))
     }
 
-    const json = await response.json()
+    const json = await readJSON<ApiError | null>(response).catch(() => null)
 
-    const val = language.errors[json?.error]
+    const val = json?.error ? language.errors[json.error] : undefined
     return val ? fill(val, args) : JSON.stringify(json)
 }

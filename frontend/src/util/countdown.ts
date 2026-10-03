@@ -1,5 +1,9 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 
+/**
+ * Second-by-second countdown. `start(n)` shows n, n-1, ... 0 and then calls `onExpire`
+ * (a negative start expires immediately). `remaining` is "" while idle.
+ */
 export function useCountdown(onExpire?: () => void) {
     const [remaining, setRemaining] = useState("")
     const timer = useRef<number | null>(null)

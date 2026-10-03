@@ -21,11 +21,17 @@
       "react-dom": ["./node_modules/preact/compat/"]
     },
 
+    /* Type checking */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true
   },
   "include": ["src"]

@@ -6,6 +6,7 @@ import type {Me} from "../types/api.ts";
 import {getKey} from "../util/language.ts";
 import {useState} from "react";
 import Skeleton from "../util/skeleton/skeleton.tsx";
+import {cx} from "../util/cx.ts";
 
 const links = [
     {href: "/", icon: faHouseChimney, key: "HOME"},
@@ -30,7 +31,7 @@ export default function Navbar({ me }: {me: Me}) {
                 </div>
                 <div className="flex flex-row-reverse items-center gap-2">
                     <a className="rounded-[50%] h-10 cursor-pointer" href="/me">
-                        <img className={`rounded-[inherit] max-h-full ${!pfpLoaded && "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
+                        <img className={cx("rounded-[inherit] max-h-full", !pfpLoaded && "hidden")} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
                         {!pfpLoaded && <Skeleton width={40} height={40} color={"var(--bg-color)"} className="rounded-[inherit]!" />}
                     </a>
                 </div>

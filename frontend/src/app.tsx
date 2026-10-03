@@ -6,6 +6,7 @@ import Loading from "./util/loading.tsx";
 import type { Me, Role } from "./types/api.ts";
 import { fetchLanguage } from "./util/language.ts";
 import RateLimit from "./util/ratelimit.tsx";
+import { readJSON } from "./util/api.ts";
 
 declare global {
     interface Window { __INITIAL_STATUS__?: Me | string | number }
@@ -49,45 +50,38 @@ export default function App({ reload }: {reload: () => void}) {
     const [loading, setLoading] = useState(true)
     const [me, setMe] = useState<Me | null>(null)
 
-    async function fetchMe() {
-        const me = window.__INITIAL_STATUS__
-        if (typeof me !== "undefined") {
+    async function fetchMe(): Promise<Me | null> {
+        const initial = window.__INITIAL_STATUS__
+        if (initial !== undefined) {
             window.__INITIAL_STATUS__ = undefined
-            if (typeof me === "string") return true
-            if (typeof me === "number") {
-                await fetchLanguage(null)
-                setRatelimit(me)
-                return false
-            }
+            if (typeof initial === "number") setRatelimit(initial)
+            if (typeof initial !== "object") return null
 
-            setMe(me)
-            return me
+            setMe(initial)
+            return initial
         }
         try {
-            const meR = await fetch("/api/v1/me/status")
-            if (meR.status === 429) {
-                const seconds = meR.headers.get("Retry-After")
-                if (seconds == null) return false
-                await fetchLanguage(null)
-                setRatelimit(Number(seconds))
-                return false
+            const response = await fetch("/api/v1/me/status")
+            if (response.status === 429) {
+                const seconds = response.headers.get("Retry-After")
+                if (seconds != null) setRatelimit(Number(seconds))
+                return null
             }
-            if (meR.status === 401) return true
-            const meJ = await meR.json()
-            setMe(meJ)
-            return meJ
-        } catch {/* empty */}
+            if (response.status === 401) return null
+
+            const me = await readJSON<Me>(response)
+            setMe(me)
+            return me
+        } catch {
+            return null
+        }
     }
 
     useEffect(() => {
         function Fetch() {
-            fetchMe()
-                .then(me => {
-                    if (me) {
-                        fetchLanguage(me)
-                            .then(() => setLoading(false))
-                    } else setLoading(false)
-                })
+            void fetchMe()
+                .then(me => fetchLanguage(me))
+                .then(() => setLoading(false))
         }
 
         Fetch()
@@ -96,7 +90,7 @@ export default function App({ reload }: {reload: () => void}) {
     return (
         <>
             <Suspense fallback={<Loading />}>
-                {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={async () => {setRatelimit(-1); await fetchMe()}} /> : loading ? <Loading /> : !me ? <Login /> : (
+                {loading ? <Loading /> : ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={() => {setRatelimit(-1); void fetchMe()}} /> : !me ? <Login /> : (
                     <Switch>
                         <Route path="/"><Home me={me} /></Route>
                         <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} setMe={setMe} reload={reload} /></Route>
