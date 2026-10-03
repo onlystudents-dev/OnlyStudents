@@ -66,7 +66,7 @@ func convertAbsence(row db_queries.GetTeacherAbsencesRow) AbsenceSummary {
 }
 
 func ListAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherSummary[db_queries.GetTeacherAbsencesRow, AbsenceSummary](c, pool, rdb, "ABSENCES_CACHE_TTL", helpers.CacheOrGetTeacherAbsences, convertAbsence)
+	return TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", helpers.CacheOrGetTeacherAbsences, convertAbsence)
 }
 
 func AddAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
