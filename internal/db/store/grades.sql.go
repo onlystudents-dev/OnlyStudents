@@ -301,6 +301,7 @@ WHERE cs.id = $4
   AND cs.school_id = $5
   AND cs.teacher_id = $2
   AND st.id = $6
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $1 AND sy.school_id = $5)
 `
 
 type TeacherAddFinalGradeParams struct {
@@ -336,6 +337,8 @@ WHERE cs.id = $7
   AND cs.school_id = $8
   AND cs.teacher_id = $1
   AND st.id = $9
+  AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = $3 AND gt.school_id = $8)
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $2 AND sy.school_id = $8)
 `
 
 type TeacherAddGradeParams struct {
@@ -440,6 +443,7 @@ WHERE fg.id = $1
         AND cs.school_id = $5
         AND cs.teacher_id = $6
   )
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $5)
 `
 
 type TeacherEditFinalGradeParams struct {
@@ -489,6 +493,8 @@ WHERE g.id = $1
         AND cs.school_id = $8
         AND cs.teacher_id = $9
   )
+  AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = $4 AND gt.school_id = $8)
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $8)
 `
 
 type TeacherEditGradeParams struct {

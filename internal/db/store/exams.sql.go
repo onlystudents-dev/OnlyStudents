@@ -165,6 +165,7 @@ FROM class_subjects cs
 WHERE cs.id = $8
   AND cs.school_id = $9
   AND cs.teacher_id = $1
+  AND ($7 IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = $7 AND r.school_id = $9))
 `
 
 type TeacherAddExamParams struct {
@@ -247,6 +248,7 @@ WHERE e.id = $1
         AND cs.school_id = $9
         AND cs.teacher_id = $10
   )
+  AND ($8 IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = $8 AND r.school_id = $9))
 `
 
 type TeacherEditExamParams struct {

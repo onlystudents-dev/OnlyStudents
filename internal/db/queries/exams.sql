@@ -52,7 +52,8 @@ SELECT cs.id, sqlc.arg(teacher_id), sqlc.arg(title), sqlc.arg(description), sqlc
 FROM class_subjects cs
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
-  AND cs.teacher_id = sqlc.arg(teacher_id);
+  AND cs.teacher_id = sqlc.arg(teacher_id)
+  AND (sqlc.arg(room_id) IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = sqlc.arg(room_id) AND r.school_id = sqlc.arg(school_id)));
 
 -- name: TeacherEditExam :execrows
 UPDATE exams e
@@ -77,7 +78,8 @@ WHERE e.id = $1
       WHERE cs.id = $2
         AND cs.school_id = $9
         AND cs.teacher_id = $10
-  );
+  )
+  AND ($8 IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = $8 AND r.school_id = $9));
 
 -- name: TeacherDeleteExam :execrows
 DELETE FROM exams e

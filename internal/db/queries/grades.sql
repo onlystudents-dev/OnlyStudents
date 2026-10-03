@@ -95,7 +95,9 @@ JOIN students st ON st.classes_id = cs.class_id
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id)
-  AND st.id = sqlc.arg(student_id);
+  AND st.id = sqlc.arg(student_id)
+  AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = sqlc.arg(grade_type_id) AND gt.school_id = sqlc.arg(school_id))
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = sqlc.arg(term_id) AND sy.school_id = sqlc.arg(school_id));
 
 -- name: TeacherAddFinalGrade :execrows
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
@@ -105,7 +107,8 @@ JOIN students st ON st.classes_id = cs.class_id
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id)
-  AND st.id = sqlc.arg(student_id);
+  AND st.id = sqlc.arg(student_id)
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = sqlc.arg(term_id) AND sy.school_id = sqlc.arg(school_id));
 
 -- name: TeacherEditGrade :execrows
 UPDATE grades g
@@ -129,7 +132,9 @@ WHERE g.id = $1
       WHERE cs.id = $2
         AND cs.school_id = $8
         AND cs.teacher_id = $9
-  );
+  )
+  AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = $4 AND gt.school_id = $8)
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $8);
 
 -- name: TeacherEditFinalGrade :execrows
 UPDATE final_grades fg
@@ -150,7 +155,8 @@ WHERE fg.id = $1
       WHERE cs.id = $2
         AND cs.school_id = $5
         AND cs.teacher_id = $6
-  );
+  )
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $5);
 
 -- name: TeacherDeleteGrade :execrows
 DELETE FROM grades g
