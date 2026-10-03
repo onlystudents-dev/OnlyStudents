@@ -27,7 +27,7 @@ func TeacherSummaryByID[request_type, Row, T any](
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if !request_check_func(req) {
+	if request_check_func(req) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -122,7 +122,7 @@ func TeacherModify[request_type any](
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if !request_check_func(req) {
+	if request_check_func(req) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
