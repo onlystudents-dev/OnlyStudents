@@ -9,6 +9,7 @@ import RateLimit from "../../util/ratelimit.tsx";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import Loading from "../../util/loading.tsx";
 import {toast} from "react-toastify";
+import {formatSecondsToHourAndMinute, formatUnixDate} from "../../util/time.ts";
 
 type day = {
     date: string,
@@ -219,23 +220,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
         const time = lessonTime.find(lt => lt.has_lesson_number && lt.lesson_number === lesson.lesson_num)
         if (!time) return ""
 
-        const language = getLanguage(me)?.key || "en-US"
-
-        const format = (seconds: number) =>
-            new Intl.DateTimeFormat(language, {
-                hour: "numeric",
-                minute: "2-digit",
-                timeZone: "UTC",
-            }).format(new Date(seconds * 1000))
-
-        return `${format(time.at_start)}-${format(time.at_end)}`
-    }
-
-    function formatUnixDate(unix: number, locale: string): string {
-        return new Intl.DateTimeFormat(locale, {
-            month: "short",
-            day: "numeric",
-        }).format(new Date(unix * 1000))
+        return `${formatSecondsToHourAndMinute(time.at_start, me)}-${formatSecondsToHourAndMinute(time.at_end, me)}`
     }
 
     function getWeekRange(date: Date) {

@@ -3,7 +3,7 @@ import Navbar from "../../navbar/navbar.tsx";
 import type {Me} from "../../types/api.ts";
 import Button from "./button.tsx";
 import {
-    faAddressCard, faCalendarDays,
+    faAddressCard, faCalendarDays, faClock,
     faEnvelope, faFloppyDisk, faLanguage,
     faLock, faPaintRoller, faPaperPlane,
     faRightFromBracket, faRotateLeft, faTable,
@@ -21,8 +21,9 @@ import Save from "../../util/save/save.tsx";
 import {applyTheme, getAutoTheme, type Theme, themes} from "../../util/theme.ts";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import type {Dispatch, StateUpdater} from "preact/hooks";
+import {getTimeFormat} from "../../util/time.ts";
 
-export type option = "lang" | "theme" | "timetable_display" | "timetable_next"
+export type option = "lang" | "time_format" | "theme" | "timetable_display" | "timetable_next"
 
 export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () => Promise<void>, setMe: Dispatch<StateUpdater<Me | null>>, reload: () => void}) {
     const [waiting, setWaiting] = useState(false)
@@ -47,6 +48,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
 
     const [options, setOptions] = useState<Record<option, unknown>>({
         lang: me.preferences.lang,
+        time_format: me.preferences.time_format,
         theme: me.preferences.theme,
         timetable_display: me.preferences.timetable_display,
         timetable_next: me.preferences.timetable_next,
@@ -56,6 +58,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
 
     const methods: Record<option, (value: unknown) => void> = {
         lang: reload,
+        time_format: reload,
         theme: (value) => applyTheme(value as Theme),
         timetable_display: () => {},
         timetable_next: () => {},
@@ -78,6 +81,11 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                             {languages.map((language) => (
                                                 <option value={language.key}>{language.emoji} {language.name}</option>
                                             ))}
+                                        </DropdownConfig>
+                                        <DropdownConfig text={getKey("TIME_FORMAT")} icon={faClock} value={options.time_format as string} options={options} setOptions={setOptions} lkey={"time_format"}>
+                                            <option value="">{getKey("AUTO_TIME_FORMAT", getKey(getTimeFormat(getLanguage(me)) ? "24_TIME_FORMAT" : "12_TIME_FORMAT"))}</option>
+                                            <option value="h12">{getKey("12_TIME_FORMAT")}</option>
+                                            <option value="h23">{getKey("24_TIME_FORMAT")}</option>
                                         </DropdownConfig>
                                         <DropdownConfig text={getKey("THEME")} icon={faPaintRoller} value={options.theme as string} options={options} setOptions={setOptions} lkey={"theme"}>
                                             <option value="">{getKey("AUTOTHEME", getKey(`THEMES.${getAutoTheme()}`))}</option>
@@ -172,7 +180,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
     )
 
     async function save(diff: Record<string, unknown>) {
-        const new_preferences = {
+        const preferences = {
             ...me.preferences,
             ...diff,
 
@@ -189,13 +197,13 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ new_preferences }),
+            body: JSON.stringify(preferences),
         })
         if (!response.ok) {
             toast.error(await fromResponse(response))
             return false
         }
-        setMe({ ...me, preferences: new_preferences })
+        setMe({ ...me, preferences })
         Object.entries(diff).forEach(([key, value]) => {
             methods[key as option]?.(value)
         })
@@ -274,10 +282,8 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                new_preferences: {
-                    ...me.preferences,
-                    nickname: newNickname.current.value,
-                }
+                ...me.preferences,
+                nickname: newNickname.current.value,
             })
         })
         switch (response.status) {

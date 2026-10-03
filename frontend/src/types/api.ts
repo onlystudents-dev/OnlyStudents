@@ -19,6 +19,7 @@ export type Preferences = {
     theme: Theme,
     timetable_display: number,
     timetable_next: boolean,
+    time_format: "" | "h12" | "h23",
 }
 
 export type Lesson = {
