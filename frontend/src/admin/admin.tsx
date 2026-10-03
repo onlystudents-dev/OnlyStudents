@@ -16,7 +16,7 @@ export default function Admin() {
         void fetch("/api/v1/admin/status").then(async response => {
             switch (response.status) {
                 case 200: {
-                    const json: AdminStatusData = await response.json()
+                    const json = await response.json() as AdminStatusData
                     setStatus(json)
                     break
                 }
