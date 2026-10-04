@@ -44,7 +44,7 @@ func TeacherSummaryByID[request_type, Row, T any](
 	teacher_scope, status_code := helpers.ResolveTeacherScope(c, pool, rdb)
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	switch session_data.Role {
@@ -86,7 +86,7 @@ func TeacherSummary[Row, T any](
 	teacher_scope, status_code := helpers.ResolveTeacherScope(c, pool, rdb)
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	switch session_data.Role {
@@ -135,7 +135,7 @@ func TeacherModify[request_type any](
 	teacher_scope, status_code := helpers.ResolveTeacherScope(c, pool, rdb)
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -153,7 +153,7 @@ func TeacherModify[request_type any](
 		}
 
 		if !teacher_accessible {
-			return c.SendStatus(fiber.StatusForbidden)
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "FORBIDDEN"})
 		}
 	}
 

@@ -36,7 +36,7 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -69,7 +69,7 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -103,7 +103,7 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -126,7 +126,7 @@ func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT")
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)

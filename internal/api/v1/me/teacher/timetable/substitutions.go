@@ -52,7 +52,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_SUBSTITUTIONS")
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -104,7 +104,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_SUBSTITUTIONS")
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)
@@ -156,7 +156,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_SUBSTITUTIONS")
 
 	if status_code != fiber.StatusOK {
-		return c.SendStatus(status_code)
+		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)
