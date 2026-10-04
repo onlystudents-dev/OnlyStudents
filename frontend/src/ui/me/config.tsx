@@ -25,18 +25,3 @@ export default function Config({ icon, text, value, children, className}: {icon:
         </>
     )
 }
-
-export function DropdownConfig({ text, icon, value, children, className, onChange }: { text: string, icon: IconDefinition, value: string, children: React.ReactNode, className?: string, onChange: (raw: string) => void }) {
-    return (
-        <>
-            <div className={`config ${className}}`}>
-                <p>
-                    <FontAwesomeIcon icon={icon} /> {text}
-                </p>
-                <select className="poppins" value={value} onChange={(e) => onChange(e.currentTarget.value)}>
-                    {children}
-                </select>
-            </div>
-        </>
-    )
-}

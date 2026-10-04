@@ -14,22 +14,20 @@
     }
 
     .status {
-        @apply flex flex-row justify-between items-center w-full rounded-lg p-2 relative;
+        @apply cursor-default!;
     }
 
-    .logselect {
-        @apply flex flex-row justify-between items-center w-full rounded-lg p-2 cursor-pointer relative h-8 mb-4 bg-(--hover-color);
-        transition: background-color 300ms ease;
+    .sselect {
+        @apply h-8 mb-4 bg-(--hover-color) cursor-pointer;
         select {
-            @apply absolute text-start pl-2 inset-0 w-full outline-none;
-            option {
-                @apply w-full;
-            }
+            @apply text-start! pr-2 pl-2;
         }
     }
 
-    .status:hover {
-        background-color: var(--hover-color);
-        transition: background-color 200ms ease;
+    .enroll {
+        @apply cursor-default! h-12 pr-1;
+        input {
+            @apply w-80 rounded-lg bg-(--card-color) outline-none h-10 p-2;
+        }
     }
 }

@@ -1,7 +1,7 @@
 import "./me.css";
 import Navbar from "../../navbar/navbar.tsx";
 import {isTimeFormat, type Me, type Preferences} from "../../types/api.ts";
-import Button from "../../util/sidebar/button.tsx";
+import Button, {DropdownConfig} from "../../util/sidebar/config.tsx";
 import {
     faAddressCard, faCalendarDays, faClock,
     faEnvelope, faFloppyDisk, faLanguage,
@@ -13,7 +13,7 @@ import {
 import {useRef, useState} from "react";
 import Loading from "../../util/loading.tsx";
 import {fromResponse, getKey, getLanguage, languages} from "../../util/language.ts";
-import Config, {DropdownConfig} from "./config.tsx";
+import Config from "./config.tsx";
 import {toast} from "react-toastify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import PasswordCheck from "../../auth/pwc.tsx";

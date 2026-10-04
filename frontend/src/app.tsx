@@ -8,6 +8,7 @@ import { fetchLanguage } from "./util/language.ts";
 import RateLimit from "./util/ratelimit.tsx";
 import { readJSON } from "./util/api.ts";
 import type {FeatureProps} from "./types/props.ts";
+import {applyTheme} from "./util/theme.ts";
 
 declare global {
     interface Window { __INITIAL_STATUS__?: Me | string | number }
@@ -122,7 +123,7 @@ export default function App({ reload }: {reload: () => void}) {
                     <Route path="/admin">
                         {loading ? <Loading /> : lazy(() => import("./admin/admin.tsx"))}
                     </Route>
-                    {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={async () => {setRatelimit(-1); await fetchMe()}} /> : loading ? <Loading /> : !me ? <Login /> : (
+                    {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={async () => {setRatelimit(-1); await fetchMe().then(me => {if (me !== null) applyTheme(me)})}} /> : loading ? <Loading /> : !me ? <Login /> : (
                         <>
                             <Route path="/"><Home me={me} /></Route>
                             <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} setMe={setMe} reload={reload} /></Route>
