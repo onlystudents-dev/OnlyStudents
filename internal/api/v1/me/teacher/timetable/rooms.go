@@ -1,6 +1,7 @@
 package timetable
 
 import (
+	"context"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -24,123 +25,62 @@ type DeleteRoomRequest struct {
 	Id int32 `json:"id"`
 }
 
+type RoomSummary struct {
+	ID       int32  `json:"id"`
+	Name     string `json:"name"`
+	Capacity int32  `json:"capacity"`
+}
+
+func convertRoom(row db_queries.ReadRoomRow) RoomSummary {
+	return RoomSummary{
+		ID:       row.ID,
+		Name:     row.Name,
+		Capacity: row.Capacity,
+	}
+}
+
 func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req CreateRoomRequest
-
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	if req.Name == "" || req.Capacity <= 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_ROOMS")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	params := db_queries.CreateRoomParams{
-		SchoolID: scope.SchoolID,
-		Name:     req.Name,
-		Capacity: req.Capacity,
-	}
-
-	err := queries.CreateRoom(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
-
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_ROOMS",
+		func(req CreateRoomRequest) bool {
+			return req.Name == "" || req.Capacity <= 0
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateRoomRequest) (int64, error) {
+			return queries.CreateRoom(ctx, db_queries.CreateRoomParams{
+				SchoolID: teacher_scope.SchoolID,
+				Name:     req.Name,
+				Capacity: req.Capacity,
+			})
+		})
 }
 
 func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req EditRoomRequest
-
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	if req.Capacity == 0 || req.Id == 0 || req.Name == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_ROOMS")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	params := db_queries.EditRoomParams{
-		Name:     req.Name,
-		Capacity: req.Capacity,
-		ID:       req.Id,
-		SchoolID: scope.SchoolID,
-	}
-
-	err := queries.EditRoom(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_ROOMS",
+		func(req EditRoomRequest) bool {
+			return req.Capacity <= 0 || req.Id <= 0 || req.Name == ""
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditRoomRequest) (int64, error) {
+			return queries.EditRoom(ctx, db_queries.EditRoomParams{
+				ID:       req.Id,
+				SchoolID: teacher_scope.SchoolID,
+				Name:     req.Name,
+				Capacity: req.Capacity,
+			})
+		})
 }
 
 func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req DeleteRoomRequest
-
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	if req.Id == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_ROOMS")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	params := db_queries.DeleteRoomParams{
-		SchoolID: scope.SchoolID,
-		ID:       req.Id,
-	}
-
-	err := queries.DeleteRoom(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_ROOMS",
+		func(req DeleteRoomRequest) bool {
+			return req.Id <= 0
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteRoomRequest) (int64, error) {
+			return queries.DeleteRoom(ctx, db_queries.DeleteRoomParams{
+				ID:       req.Id,
+				SchoolID: teacher_scope.SchoolID,
+			})
+		})
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_ROOMS")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	rooms, err := queries.ReadRoom(c.Context(), scope.SchoolID)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.JSON(rooms)
+	return TeacherTimeTableSummary(c, pool, rdb, "MANAGE_ROOMS", "ROOMS_CACHE_TTL", helpers.CacheOrGetRooms, convertRoom)
 }

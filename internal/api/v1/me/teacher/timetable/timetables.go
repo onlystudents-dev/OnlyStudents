@@ -1,6 +1,7 @@
 package timetable
 
 import (
+	"context"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"strconv"
@@ -128,264 +129,143 @@ type RealTimeLessonResponse struct {
 	Canceled            bool   `json:"canceled"`
 }
 
+func convertBaseScheduleClass(row db_queries.ReadBaseScheduleClassRow) BaseScheduleLessonResponse {
+	return BaseScheduleLessonResponse{
+		ID:                  row.ID,
+		SchoolID:            row.SchoolID,
+		TeacherID:           row.TeacherID,
+		HasTeacherFirstName: row.TeacherFirstName.Valid,
+		HasTeacherLastName:  row.TeacherLastName.Valid,
+		TeacherFirstName:    row.TeacherFirstName.String,
+		TeacherLastName:     row.TeacherLastName.String,
+		RoomID:              row.RoomID,
+		DayOfWeek:           row.DayOfWeek,
+		LessonNum:           row.LessonNum,
+		GroupID:             row.GroupID,
+		CustomSubject:       row.CustomSubject,
+		HasSubjectID:        row.SubjectID.Valid,
+		SubjectID:           row.SubjectID.Int32,
+		HasCustomSubjectID:  row.CustomSubjectID.Valid,
+		CustomSubjectID:     row.CustomSubjectID.Int32,
+		SubjectName:         row.SubjectName,
+		HasExam:             row.HasExam,
+		HasHomework:         row.HasHomework,
+	}
+}
+
+func convertBaseScheduleGroup(row db_queries.ReadBaseScheduleGroupRow) BaseScheduleLessonResponse {
+	return BaseScheduleLessonResponse{
+		ID:                  row.ID,
+		SchoolID:            row.SchoolID,
+		TeacherID:           row.TeacherID,
+		HasTeacherFirstName: row.TeacherFirstName.Valid,
+		HasTeacherLastName:  row.TeacherLastName.Valid,
+		TeacherFirstName:    row.TeacherFirstName.String,
+		TeacherLastName:     row.TeacherLastName.String,
+		RoomID:              row.RoomID,
+		DayOfWeek:           row.DayOfWeek,
+		LessonNum:           row.LessonNum,
+		GroupID:             row.GroupID,
+		CustomSubject:       row.CustomSubject,
+		HasSubjectID:        row.SubjectID.Valid,
+		SubjectID:           row.SubjectID.Int32,
+		HasCustomSubjectID:  row.CustomSubjectID.Valid,
+		CustomSubjectID:     row.CustomSubjectID.Int32,
+		SubjectName:         row.SubjectName,
+		HasExam:             row.HasExam,
+		HasHomework:         row.HasHomework,
+	}
+}
+
 func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req CreateBaseScheduleLessonRequest
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+		func(req CreateBaseScheduleLessonRequest) bool {
+			return req.TeacherId <= 0 || req.DayOfWeek <= 0 || req.LessonNumber <= 0 || req.RoomId <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || (req.IsCustomSubject == false && req.SubjectId <= 0)
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateBaseScheduleLessonRequest) (int64, error) {
+			var custom_subject_id pgtype.Int4
+			var subject_id pgtype.Int4
 
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
+			if req.IsCustomSubject {
+				custom_subject_id = pgtype.Int4{Int32: req.CustomSubjectId, Valid: true}
+				subject_id = pgtype.Int4{Valid: false}
+			} else {
+				custom_subject_id = pgtype.Int4{Valid: false}
+				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
+			}
 
-	if req.TeacherId == 0 || req.DayOfWeek == 0 || req.LessonNumber <= 0 || req.RoomId == 0 || req.GroupId == 0 || (req.IsCustomSubject == true && req.CustomSubjectId == 0) || (req.IsCustomSubject == false && req.SubjectId == 0) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	var custom_subject_id pgtype.Int4
-	var subject_id pgtype.Int4
-
-	if req.IsCustomSubject {
-		custom_subject_id = pgtype.Int4{Int32: req.CustomSubjectId, Valid: true}
-		subject_id = pgtype.Int4{Valid: false}
-	} else {
-		custom_subject_id = pgtype.Int4{Valid: false}
-		subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
-	}
-
-	params := db_queries.CreateBaseScheduleParams{
-		SchoolID:        scope.SchoolID,
-		TeacherID:       req.TeacherId,
-		RoomID:          req.RoomId,
-		DayOfWeek:       req.DayOfWeek,
-		GroupID:         req.GroupId,
-		CustomSubject:   req.IsCustomSubject,
-		CustomSubjectID: custom_subject_id,
-		SubjectID:       subject_id,
-	}
-
-	err := queries.CreateBaseSchedule(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+			return queries.CreateBaseSchedule(c.Context(), db_queries.CreateBaseScheduleParams{
+				SchoolID:        teacher_scope.SchoolID,
+				TeacherID:       req.TeacherId,
+				RoomID:          req.RoomId,
+				DayOfWeek:       req.DayOfWeek,
+				GroupID:         req.GroupId,
+				CustomSubject:   req.IsCustomSubject,
+				CustomSubjectID: custom_subject_id,
+				SubjectID:       subject_id,
+			})
+		})
 }
 
 func DeleteBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req DeleteBaseScheduleLessonRequest
-
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	if req.Id == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	params := db_queries.DeleteBaseScheduleParams{
-		ID:       req.Id,
-		SchoolID: scope.SchoolID,
-	}
-
-	err := queries.DeleteBaseSchedule(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+		func(req DeleteBaseScheduleLessonRequest) bool {
+			return req.Id <= 0
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteBaseScheduleLessonRequest) (int64, error) {
+			return queries.DeleteBaseSchedule(c.Context(), db_queries.DeleteBaseScheduleParams{
+				ID:       req.Id,
+				SchoolID: teacher_scope.SchoolID,
+			})
+		})
 }
 
 func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req EditBaseScheduleLessonRequest
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+		func(req EditBaseScheduleLessonRequest) bool {
+			return req.Id <= 0 || req.TeacherId <= 0 || req.DayOfWeek <= 0 || req.LessonNumber <= 0 || req.RoomId <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || (req.IsCustomSubject == false && req.SubjectId <= 0)
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditBaseScheduleLessonRequest) (int64, error) {
+			var custom_subject_id pgtype.Int4
+			var subject_id pgtype.Int4
 
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
+			if req.IsCustomSubject {
+				custom_subject_id = pgtype.Int4{Int32: req.CustomSubjectId, Valid: true}
+				subject_id = pgtype.Int4{Valid: false}
+			} else {
+				custom_subject_id = pgtype.Int4{Valid: false}
+				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
+			}
 
-	if req.Id == 0 || req.TeacherId == 0 || req.DayOfWeek == 0 || req.LessonNumber <= 0 || req.RoomId == 0 || req.GroupId == 0 || (req.IsCustomSubject == true && req.CustomSubjectId == 0) || (req.IsCustomSubject == false && req.SubjectId == 0) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	var custom_subject_id pgtype.Int4
-	var subject_id pgtype.Int4
-
-	if req.IsCustomSubject {
-		custom_subject_id = pgtype.Int4{Int32: req.CustomSubjectId, Valid: true}
-		subject_id = pgtype.Int4{Valid: false}
-	} else {
-		custom_subject_id = pgtype.Int4{Valid: false}
-		subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
-	}
-
-	params := db_queries.UpdateBaseScheduleParams{
-		SchoolID:        scope.SchoolID,
-		TeacherID:       req.TeacherId,
-		RoomID:          req.RoomId,
-		DayOfWeek:       req.DayOfWeek,
-		GroupID:         req.GroupId,
-		CustomSubject:   req.IsCustomSubject,
-		CustomSubjectID: custom_subject_id,
-		ID:              req.Id,
-		SubjectID:       subject_id,
-	}
-
-	err := queries.UpdateBaseSchedule(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+			return queries.UpdateBaseSchedule(c.Context(), db_queries.UpdateBaseScheduleParams{
+				SchoolID:        teacher_scope.SchoolID,
+				TeacherID:       req.TeacherId,
+				RoomID:          req.RoomId,
+				DayOfWeek:       req.DayOfWeek,
+				GroupID:         req.GroupId,
+				CustomSubject:   req.IsCustomSubject,
+				CustomSubjectID: custom_subject_id,
+				ID:              req.Id,
+				SubjectID:       subject_id,
+			})
+		})
 }
 
 func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req ReadBaseScheduleClassRequest
-
-	if err := c.Bind().Query(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	if req.ClassId == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	params := db_queries.ReadBaseScheduleClassParams{
-		ClassID:  req.ClassId,
-		SchoolID: int32(scope.SchoolID),
-	}
-
-	data, err := queries.ReadBaseScheduleClass(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	lessons := make([]BaseScheduleLessonResponse, 0, len(data))
-
-	for _, row := range data {
-		lessons = append(lessons, BaseScheduleLessonResponse{
-			ID:                  row.ID,
-			SchoolID:            row.SchoolID,
-			TeacherID:           row.TeacherID,
-			HasTeacherFirstName: row.TeacherFirstName.Valid,
-			HasTeacherLastName:  row.TeacherLastName.Valid,
-			TeacherFirstName:    row.TeacherFirstName.String,
-			TeacherLastName:     row.TeacherLastName.String,
-			RoomID:              row.RoomID,
-			DayOfWeek:           row.DayOfWeek,
-			LessonNum:           row.LessonNum,
-			GroupID:             row.GroupID,
-			CustomSubject:       row.CustomSubject,
-			HasSubjectID:        row.SubjectID.Valid,
-			SubjectID:           row.SubjectID.Int32,
-			HasCustomSubjectID:  row.CustomSubjectID.Valid,
-			CustomSubjectID:     row.CustomSubjectID.Int32,
-			SubjectName:         row.SubjectName,
-			HasExam:             row.HasExam,
-			HasHomework:         row.HasHomework,
-		})
-	}
-
-	return c.JSON(lessons)
+	return TeacherTimeTableSummaryByID(c, pool, rdb, "MANAGE_TIMETABLES", "BASE_SCHEDULE_CLASS_CACHE_TTL",
+		func(req ReadBaseScheduleClassRequest) bool { return req.ClassId <= 0 },
+		func(req ReadBaseScheduleClassRequest) int32 { return req.ClassId },
+		helpers.CacheOrGetBaseScheduleClass, convertBaseScheduleClass)
 }
 
 func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req ReadBaseScheduleGroupRequest
-
-	if err := c.Bind().Query(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
-
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	if school_id == 0 || req.GroupId == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	params := db_queries.ReadBaseScheduleGroupParams{
-		SchoolID: scope.SchoolID,
-		GroupID:  req.GroupId,
-	}
-
-	data, err := queries.ReadBaseScheduleGroup(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	lessons := make([]BaseScheduleLessonResponse, 0, len(data))
-
-	for _, row := range data {
-		lessons = append(lessons, BaseScheduleLessonResponse{
-			ID:                  row.ID,
-			SchoolID:            row.SchoolID,
-			TeacherID:           row.TeacherID,
-			HasTeacherFirstName: row.TeacherFirstName.Valid,
-			HasTeacherLastName:  row.TeacherLastName.Valid,
-			TeacherFirstName:    row.TeacherFirstName.String,
-			TeacherLastName:     row.TeacherLastName.String,
-			RoomID:              row.RoomID,
-			DayOfWeek:           row.DayOfWeek,
-			LessonNum:           row.LessonNum,
-			GroupID:             row.GroupID,
-			CustomSubject:       row.CustomSubject,
-			HasSubjectID:        row.SubjectID.Valid,
-			SubjectID:           row.SubjectID.Int32,
-			HasCustomSubjectID:  row.CustomSubjectID.Valid,
-			CustomSubjectID:     row.CustomSubjectID.Int32,
-			SubjectName:         row.SubjectName,
-			HasExam:             row.HasExam,
-			HasHomework:         row.HasHomework,
-		})
-	}
-
-	return c.JSON(lessons)
+	return TeacherTimeTableSummaryByID(c, pool, rdb, "MANAGE_TIMETABLES", "BASE_SCHEDULE_GROUP_CACHE_TTL",
+		func(req ReadBaseScheduleGroupRequest) bool { return req.GroupId <= 0 },
+		func(req ReadBaseScheduleGroupRequest) int32 { return req.GroupId },
+		helpers.CacheOrGetBaseScheduleGroup, convertBaseScheduleGroup)
 }
 
+// TODO: figure this out
 func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var req ReadRealTimetableRequest
 
@@ -399,7 +279,7 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	if school_id == 0 || req.ClassId == 0 || req.Start == "" || req.End == "" {
+	if school_id <= 0 || req.ClassId <= 0 || req.Start == "" || req.End == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
@@ -472,139 +352,79 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 }
 
 func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req CreateRealTimeLessonRequest
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+		func(req CreateRealTimeLessonRequest) bool {
+			return req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || req.ActualDate <= 0 || req.LessonNumber <= 0
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateRealTimeLessonRequest) (int64, error) {
+			var custom_subject_id pgtype.Int4
+			var subject_id pgtype.Int4
 
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
+			if req.IsCustomSubject {
+				custom_subject_id = pgtype.Int4{Int32: req.CustomSubjectId, Valid: true}
+				subject_id = pgtype.Int4{Valid: false}
+			} else {
+				custom_subject_id = pgtype.Int4{Valid: false}
+				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
+			}
 
-	if req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) || req.ActualDate == 0 || req.LessonNumber <= 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	var custom_subject_id pgtype.Int4
-	var subject_id pgtype.Int4
-
-	if req.IsCustomSubject {
-		custom_subject_id = pgtype.Int4{Int32: req.CustomSubjectId, Valid: true}
-		subject_id = pgtype.Int4{Valid: false}
-	} else {
-		custom_subject_id = pgtype.Int4{Valid: false}
-		subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
-	}
-
-	params := db_queries.CreateRealTimeLessonParams{
-		SchoolID:        scope.SchoolID,
-		TeacherID:       req.TeacherId,
-		RoomID:          req.RoomId,
-		DayOfWeek:       req.DayOfWeek,
-		GroupID:         req.GroupId,
-		CustomSubject:   req.IsCustomSubject,
-		CustomSubjectID: custom_subject_id,
-		SubjectID:       subject_id,
-		ActualDate:      pgtype.Date{Time: time.Unix(req.ActualDate, 0), Valid: true},
-		LessonNum:       req.LessonNumber,
-	}
-
-	err := queries.CreateRealTimeLesson(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+			return queries.CreateRealTimeLesson(c.Context(), db_queries.CreateRealTimeLessonParams{
+				SchoolID:        teacher_scope.SchoolID,
+				TeacherID:       req.TeacherId,
+				RoomID:          req.RoomId,
+				DayOfWeek:       req.DayOfWeek,
+				GroupID:         req.GroupId,
+				CustomSubject:   req.IsCustomSubject,
+				CustomSubjectID: custom_subject_id,
+				SubjectID:       subject_id,
+				ActualDate:      pgtype.Date{Time: time.Unix(req.ActualDate, 0), Valid: true},
+				LessonNum:       req.LessonNumber,
+			})
+		})
 }
 
 func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req UpdateRealTimeLessonRequest
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+		func(req UpdateRealTimeLessonRequest) bool {
+			return req.Id <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || req.ActualDate <= 0 || req.LessonNumber <= 0
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req UpdateRealTimeLessonRequest) (int64, error) {
+			var custom_subject_id pgtype.Int4
+			var subject_id pgtype.Int4
 
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
+			if req.IsCustomSubject {
+				custom_subject_id = pgtype.Int4{Int32: req.CustomSubjectId, Valid: true}
+				subject_id = pgtype.Int4{Valid: false}
+			} else {
+				custom_subject_id = pgtype.Int4{Valid: false}
+				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
+			}
 
-	if req.Id == 0 || req.TeacherId == 0 || req.RoomId == 0 || req.DayOfWeek == 0 || req.GroupId == 0 || (req.IsCustomSubject == false && req.SubjectId == 0) || (req.IsCustomSubject == true && req.CustomSubjectId == 0) || req.ActualDate == 0 || req.LessonNumber <= 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	var custom_subject_id pgtype.Int4
-	var subject_id pgtype.Int4
-
-	if req.IsCustomSubject {
-		custom_subject_id = pgtype.Int4{Int32: req.CustomSubjectId, Valid: true}
-		subject_id = pgtype.Int4{Valid: false}
-	} else {
-		custom_subject_id = pgtype.Int4{Valid: false}
-		subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
-	}
-
-	params := db_queries.UpdateRealTimeLessonParams{
-		ID:              req.Id,
-		SchoolID:        scope.SchoolID,
-		TeacherID:       req.TeacherId,
-		RoomID:          req.RoomId,
-		DayOfWeek:       req.DayOfWeek,
-		GroupID:         req.GroupId,
-		CustomSubject:   req.IsCustomSubject,
-		CustomSubjectID: custom_subject_id,
-		SubjectID:       subject_id,
-		ActualDate:      pgtype.Date{Time: time.Unix(req.ActualDate, 0), Valid: true},
-		LessonNum:       req.LessonNumber,
-	}
-
-	err := queries.UpdateRealTimeLesson(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+			return queries.UpdateRealTimeLesson(c.Context(), db_queries.UpdateRealTimeLessonParams{
+				ID:              req.Id,
+				SchoolID:        teacher_scope.SchoolID,
+				TeacherID:       req.TeacherId,
+				RoomID:          req.RoomId,
+				DayOfWeek:       req.DayOfWeek,
+				GroupID:         req.GroupId,
+				CustomSubject:   req.IsCustomSubject,
+				CustomSubjectID: custom_subject_id,
+				SubjectID:       subject_id,
+				ActualDate:      pgtype.Date{Time: time.Unix(req.ActualDate, 0), Valid: true},
+				LessonNum:       req.LessonNumber,
+			})
+		})
 }
 
 func DeleteRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req DeleteRealTimeLessonRequest
-
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	if req.Id == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, "MANAGE_TIMETABLES")
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	queries := db_queries.New(pool)
-
-	params := db_queries.DeleteRealTimeLessonParams{
-		SchoolID: scope.SchoolID,
-		ID:       req.Id,
-	}
-
-	err := queries.DeleteRealTimeLesson(c.Context(), params)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+		func(req DeleteRealTimeLessonRequest) bool {
+			return req.Id <= 0
+		},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteRealTimeLessonRequest) (int64, error) {
+			return queries.DeleteRealTimeLesson(c.Context(), db_queries.DeleteRealTimeLessonParams{
+				SchoolID: teacher_scope.SchoolID,
+				ID:       req.Id,
+			})
+		})
 }

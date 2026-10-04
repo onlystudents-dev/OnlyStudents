@@ -97,7 +97,7 @@ func convertHomeworkSubmission(row db_queries.GetTeacherHomeworkSubmissionsRow) 
 
 func ListHomeworkSubmissions(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherSummaryByID(c, pool, rdb, "HOMEWORK_SUBMISSIONS_CACHE_TTL",
-		func(req ListHomeworkSubmissionsRequest) bool { return req.HomeworkID == 0 },
+		func(req ListHomeworkSubmissionsRequest) bool { return req.HomeworkID <= 0 },
 		func(req ListHomeworkSubmissionsRequest) int32 { return req.HomeworkID },
 		helpers.CacheOrGetTeacherHomeworkSubmissions, convertHomeworkSubmission)
 }
@@ -110,7 +110,7 @@ func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req AddHomeworkRequest) int32 { return req.ClassSubjectsID },
 		func(req AddHomeworkRequest) bool {
-			return req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate == 0 || req.ClassSubjectsID == 0
+			return req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddHomeworkRequest) (int64, error) {
 			return queries.TeacherAddHomework(ctx, db_queries.TeacherAddHomeworkParams{
@@ -127,7 +127,7 @@ func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func RemoveHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, false,
 		func(req RemoveHomeworkRequest) int32 { return 0 },
-		func(req RemoveHomeworkRequest) bool { return req.HomeworkID == 0 },
+		func(req RemoveHomeworkRequest) bool { return req.HomeworkID <= 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveHomeworkRequest) (int64, error) {
 			return queries.TeacherDeleteHomework(ctx, db_queries.TeacherDeleteHomeworkParams{
 				ID:        req.HomeworkID,
@@ -141,7 +141,7 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req EditHomeworkRequest) int32 { return req.ClassSubjectsID },
 		func(req EditHomeworkRequest) bool {
-			return req.HomeworkID == 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate == 0 || req.ClassSubjectsID == 0
+			return req.HomeworkID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditHomeworkRequest) (int64, error) {
 			return queries.TeacherEditHomework(ctx, db_queries.TeacherEditHomeworkParams{
@@ -160,7 +160,7 @@ func UpdateHomeworkSubmission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client
 	return TeacherModify(c, pool, rdb, false,
 		func(req UpdateHomeworkSubmissionRequest) int32 { return 0 },
 		func(req UpdateHomeworkSubmissionRequest) bool {
-			return req.HomeworkID == 0 || req.StudentID == 0 || (req.HasContent && req.Content == "") || (req.HasGradedValue && req.GradedValue == 0)
+			return req.HomeworkID <= 0 || req.StudentID <= 0 || (req.HasContent && req.Content == "") || (req.HasGradedValue && req.GradedValue == 0)
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req UpdateHomeworkSubmissionRequest) (int64, error) {
 			return queries.TeacherUpdateHomeworkSubmission(ctx, db_queries.TeacherUpdateHomeworkSubmissionParams{

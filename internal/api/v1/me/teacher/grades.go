@@ -117,7 +117,7 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req AddGradeRequest) int32 { return req.ClassSubjectsID },
 		func(req AddGradeRequest) bool {
-			return req.StudentID == 0 || req.TermID == 0 || req.GradeTypeID == 0 || req.Value == 0 || req.Date == 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID == 0
+			return req.StudentID <= 0 || req.TermID <= 0 || req.GradeTypeID <= 0 || req.Value <= 0 || req.Date <= 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddGradeRequest) (int64, error) {
 			return queries.TeacherAddGrade(ctx, db_queries.TeacherAddGradeParams{
@@ -138,7 +138,7 @@ func AddFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req AddFinalGradeRequest) int32 { return req.ClassSubjectsID },
 		func(req AddFinalGradeRequest) bool {
-			return req.TermID == 0 || req.Value == 0 || req.ClassSubjectsID == 0
+			return req.TermID <= 0 || req.Value <= 0 || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddFinalGradeRequest) (int64, error) {
 			return queries.TeacherAddFinalGrade(ctx, db_queries.TeacherAddFinalGradeParams{
@@ -155,7 +155,7 @@ func AddFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 func RemoveGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, false,
 		func(req RemoveGradeRequest) int32 { return 0 },
-		func(req RemoveGradeRequest) bool { return req.GradeID == 0 },
+		func(req RemoveGradeRequest) bool { return req.GradeID <= 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveGradeRequest) (int64, error) {
 			return queries.TeacherDeleteGrade(ctx, db_queries.TeacherDeleteGradeParams{
 				ID:        req.GradeID,
@@ -169,7 +169,7 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req EditGradeRequest) int32 { return req.ClassSubjectsID },
 		func(req EditGradeRequest) bool {
-			return req.GradeID == 0 || req.TermID == 0 || req.GradeTypeID == 0 || req.Value == 0 || req.Date == 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID == 0
+			return req.GradeID <= 0 || req.TermID <= 0 || req.GradeTypeID <= 0 || req.Value <= 0 || req.Date <= 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditGradeRequest) (int64, error) {
 			return queries.TeacherEditGrade(ctx, db_queries.TeacherEditGradeParams{
@@ -190,7 +190,7 @@ func EditFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb, true,
 		func(req EditFinalGradeRequest) int32 { return req.ClassSubjectsID },
 		func(req EditFinalGradeRequest) bool {
-			return req.FinalGradeID == 0 || req.TermID == 0 || req.Value == 0 || req.ClassSubjectsID == 0
+			return req.FinalGradeID <= 0 || req.TermID <= 0 || req.Value <= 0 || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditFinalGradeRequest) (int64, error) {
 			return queries.TeacherEditFinalGrade(ctx, db_queries.TeacherEditFinalGradeParams{

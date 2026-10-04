@@ -207,6 +207,74 @@ func CacheOrGetStudentClass(ctx context.Context, rdb *redis.Client, queries db_q
 	})
 }
 
+func CacheOrGetBellScheduleTypes(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]db_queries.ReadBellScheduleTypeRow, error) {
+	key := fmt.Sprintf("bell_schedule_types:%d", schoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBellScheduleTypeRow, error) {
+		return queries.ReadBellScheduleType(ctx, schoolID)
+	})
+}
+
+func CacheOrGetCustomSubjects(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
+	key := fmt.Sprintf("custom_subjects:%d", schoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadCustomSubjectRow, error) {
+		return queries.ReadCustomSubject(ctx, schoolID)
+	})
+}
+
+func CacheOrGetGroups(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]db_queries.Group, error) {
+	key := fmt.Sprintf("groups:%d", schoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.Group, error) {
+		return queries.ReadGroup(ctx, schoolID)
+	})
+}
+
+func CacheOrGetStudentsInGroup(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, groupID int32, schoolID int32, accountID int32, ttl int32) ([]db_queries.ReadListOfStudentsRow, error) {
+	key := fmt.Sprintf("students_in_group:%d:%d", schoolID, groupID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadListOfStudentsRow, error) {
+		return queries.ReadListOfStudents(ctx, db_queries.ReadListOfStudentsParams{
+			SchoolID: schoolID,
+			GroupID:  groupID,
+		})
+	})
+}
+
+func CacheOrGetLessonTime(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, typeID int32, schoolID int32, accountID int32, ttl int32) ([]db_queries.BellSchedule, error) {
+	key := fmt.Sprintf("lesson_time:%d:%d", schoolID, typeID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.BellSchedule, error) {
+		return queries.ReadLessonTime(ctx, db_queries.ReadLessonTimeParams{
+			SchoolID: schoolID,
+			TypeID:   typeID,
+		})
+	})
+}
+
+func CacheOrGetRooms(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]db_queries.ReadRoomRow, error) {
+	key := fmt.Sprintf("rooms:%d", schoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRoomRow, error) {
+		return queries.ReadRoom(ctx, schoolID)
+	})
+}
+
+func CacheOrGetBaseScheduleClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, classID int32, schoolID int32, accountID int32, ttl int32) ([]db_queries.ReadBaseScheduleClassRow, error) {
+	key := fmt.Sprintf("base_schedule_classes:%d", schoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBaseScheduleClassRow, error) {
+		return queries.ReadBaseScheduleClass(ctx, db_queries.ReadBaseScheduleClassParams{
+			SchoolID: schoolID,
+			ClassID:  classID,
+		})
+	})
+}
+
+func CacheOrGetBaseScheduleGroup(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, groupID int32, schoolID int32, accountID int32, ttl int32) ([]db_queries.ReadBaseScheduleGroupRow, error) {
+	key := fmt.Sprintf("base_schedule_groups:%d", schoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBaseScheduleGroupRow, error) {
+		return queries.ReadBaseScheduleGroup(ctx, db_queries.ReadBaseScheduleGroupParams{
+			SchoolID: schoolID,
+			GroupID:  groupID,
+		})
+	})
+}
+
 func InvalidateCachedAccount(ctx context.Context, rdb *redis.Client, role string, account_id int32) {
 	switch role {
 	case "student":
