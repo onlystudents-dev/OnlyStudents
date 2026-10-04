@@ -14,8 +14,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache Bun dependencies
-        uses: https://data.forgejo.org/actions/cache@v3
+      - name: Restore Bun cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('frontend/bun.lock') }}
@@ -51,8 +51,8 @@ jobs:
         with:
           fetch-depth: 0   # gitleaks needs full history
 
-      - name: Cache Go modules
-        uses: https://data.forgejo.org/actions/cache@v3
+      - name: Restore Go cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/go/pkg/mod
