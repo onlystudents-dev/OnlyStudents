@@ -85,6 +85,7 @@
     "ADMIN_LOGS": "Logok"
   },
   "errors": {
+    "FORBIDDEN": "Nincs jogod ennek az erőforrásnak az eléréséhez vagy megváltoztatásához!",
     "NOT_IMPLEMENTED": "Ez a funkció még nincs készen. Folyamatosan dolgozunk rajta!",
     "INVALID_SESSION": "Nincs érvényes belépésed!",
     "SERVER_ERROR": "Egy szerver-oldali hiba történt. Mi is sajnáljuk.",

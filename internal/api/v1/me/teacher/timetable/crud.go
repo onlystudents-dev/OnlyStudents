@@ -1,4 +1,4 @@
-package teacherapi
+package timetable
 
 import (
 	"context"
@@ -11,10 +11,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func TeacherSummaryByID[request_type, Row, T any](
+func TeacherTimeTableSummaryByID[request_type, Row, T any](
 	c fiber.Ctx,
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
+	required_permission string,
 	cache_key string,
 	request_check_func func(request_type) bool,
 	get_id_func func(request_type) int32,
@@ -41,7 +42,7 @@ func TeacherSummaryByID[request_type, Row, T any](
 
 	var summaries []T
 
-	teacher_scope, status_code := helpers.ResolveTeacherScope(c, pool, rdb)
+	teacher_scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, required_permission)
 
 	if status_code != fiber.StatusOK {
 		return helpers.ErrorByStatusCode(c, status_code)
@@ -65,10 +66,11 @@ func TeacherSummaryByID[request_type, Row, T any](
 	return c.JSON(summaries)
 }
 
-func TeacherSummary[Row, T any](
+func TeacherTimeTableSummary[Row, T any](
 	c fiber.Ctx,
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
+	required_permission string,
 	cache_key string,
 	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]Row, error),
 	convert func(row Row) T,
@@ -83,7 +85,7 @@ func TeacherSummary[Row, T any](
 
 	var summaries []T
 
-	teacher_scope, status_code := helpers.ResolveTeacherScope(c, pool, rdb)
+	teacher_scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, required_permission)
 
 	if status_code != fiber.StatusOK {
 		return helpers.ErrorByStatusCode(c, status_code)
@@ -107,12 +109,11 @@ func TeacherSummary[Row, T any](
 	return c.JSON(summaries)
 }
 
-func TeacherModify[request_type any](
+func TeacherTimeTableModify[request_type any](
 	c fiber.Ctx,
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
-	teacher_student_check bool,
-	class_subjects_func func(request_type) int32,
+	required_permission string,
 	request_check_func func(request_type) bool,
 	query_func func(context.Context, helpers.TeacherScope, *db_queries.Queries, request_type) (int64, error),
 ) error {
@@ -132,30 +133,13 @@ func TeacherModify[request_type any](
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
-	teacher_scope, status_code := helpers.ResolveTeacherScope(c, pool, rdb)
+	teacher_scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, required_permission)
 
 	if status_code != fiber.StatusOK {
 		return helpers.ErrorByStatusCode(c, status_code)
 	}
 
 	queries := db_queries.New(pool)
-
-	if teacher_student_check {
-		teacher_accessible, err := queries.TeacherTeachesStudent(c.Context(), db_queries.TeacherTeachesStudentParams{
-			SchoolID:  teacher_scope.SchoolID,
-			TeacherID: teacher_scope.TeacherID,
-			ID:        class_subjects_func(req),
-		})
-
-		if err != nil {
-			slog.Error("teacher accessible check err", "err", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-		}
-
-		if !teacher_accessible {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "FORBIDDEN"})
-		}
-	}
 
 	rows_affected, err := query_func(c.Context(), teacher_scope, queries, req)
 

@@ -23,6 +23,7 @@ import (
 	"github.com/bytemare/opaque"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -172,7 +173,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateBellScheduleType(c, pool, rdb) },
 							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditBellScheduleType(c, pool, rdb) },
 							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteBellScheduleType(c, pool, rdb) },
-							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadBellScheduleType(c, pool, rdb) },
+							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadBellScheduleTypes(c, pool, rdb) },
 						},
 						"lesson_time": fiber.Map{
 							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateLessonTime(c, pool, rdb) },
@@ -184,7 +185,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateCustomSubject(c, pool, rdb) },
 							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditCustomSubject(c, pool, rdb) },
 							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteCustomSubject(c, pool, rdb) },
-							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadCustomSubject(c, pool, rdb) },
+							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadCustomSubjects(c, pool, rdb) },
 						},
 						"room": fiber.Map{
 							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateRoom(c, pool, rdb) },
@@ -200,7 +201,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 							"student": fiber.Map{
 								fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.InsertStudentToGroup(c, pool, rdb) },
 								fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteStudentFromGroup(c, pool, rdb) },
-								fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadStudentFromGroup(c, pool, rdb) },
+								fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadStudentsInGroup(c, pool, rdb) },
 							},
 						},
 						"base_schedule": fiber.Map{
@@ -295,12 +296,19 @@ func main() {
 		return middlewares.SecurityHeadersMiddleware(c)
 	})
 
+	app.Use(compress.New(compress.Config{
+		Next: func(c fiber.Ctx) bool {
+			return strings.HasPrefix(c.Path(), "/assets/fonts")
+		},
+		Level: compress.LevelDefault,
+	}))
+
 	apiRateMax := helpers.GetInt64EnvFallback("API_RATE_MAX", 60, 1000000)
 	apiRateWindow := helpers.GetInt64EnvFallback("API_RATELIMIT_WINDOW", 60, 1000000)
 
 	// frontend
 	app.Use("/assets/fonts", static.New("frontend/dist/assets/fonts", static.Config{MaxAge: 31536000}))
-	app.Use("/assets", static.New("frontend/dist/assets", static.Config{MaxAge: 3600, Compress: true}))
+	app.Use("/assets", static.New("frontend/dist/assets", static.Config{MaxAge: 3600}))
 	indexHTML, err := os.ReadFile("frontend/dist/index.html")
 	if err != nil {
 		panic(err)

@@ -2,6 +2,7 @@ package studentapi
 
 import (
 	"context"
+	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -50,4 +51,63 @@ func StudentSummary[Row, T any](
 	}
 
 	return c.JSON(summaries)
+}
+
+func StudentModify[request_type any](
+	c fiber.Ctx,
+	pool *pgxpool.Pool,
+	rdb *redis.Client,
+	request_check_func func(request_type) bool,
+	query_func func(context.Context, int32, *db_queries.Queries, request_type) (int64, error),
+) error {
+	var req request_type
+
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	if request_check_func(req) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+	}
+
+	session_data, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
+	}
+
+	queries := db_queries.New(pool)
+
+	account_id, resolve_err := helpers.ResolvePerson(c, *queries, session_data)
+
+	if resolve_err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+	}
+
+	var rows_affected int64
+	var err error
+
+	switch session_data.Role {
+	case "student", "guardian":
+		rows_affected, err = query_func(c.Context(), account_id, queries, req)
+	default:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	if err != nil {
+		slog.Error("student modify err", "err", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	if rows_affected == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }

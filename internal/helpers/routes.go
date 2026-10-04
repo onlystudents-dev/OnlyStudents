@@ -88,3 +88,20 @@ func register(r fiber.Router, node fiber.Map, prefix string, inherited []fiber.H
 		}
 	}
 }
+
+func ErrorByStatusCode(c fiber.Ctx, status_code int) error {
+	switch status_code {
+	case 400:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	case 401:
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+	case 403:
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "FORBIDDEN"})
+	case 500:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	case 501:
+		return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
+	default:
+		return c.SendStatus(status_code)
+	}
+}
