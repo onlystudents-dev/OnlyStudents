@@ -10,8 +10,10 @@ import {getKey} from "../../util/language.ts";
 import { opaqueLogin } from "../opaqueLogin.ts";
 import RoleSelect from "../roleSelect.tsx";
 import { useCountdown } from "../../util/countdown.ts";
+import type {Me} from "../../types/api.ts";
+import Overlay from "../../util/overlay/overlay.tsx";
 
-export default function Login() {
+export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>}) {
     const [pwr, setPwr] = useState(false)
     const [pwrA, setPwrA] = useState(false)
     const [reset, setReset] = useState(false)
@@ -33,7 +35,13 @@ export default function Login() {
       try {
         const res = await opaqueLogin({ userId: Number(id), role, password });
         switch (res.status) {
-          case "ok": location.reload(); break;
+          case "ok":
+              if (fetchMe !== undefined) {
+                  await fetchMe()
+              } else {
+                  location.reload()
+              }
+              break
           case "wrong": toast.error(getKey("WRONG_CREDENTIALS")); setWrong(true); break
           case "ratelimited":
             toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)))
@@ -42,7 +50,7 @@ export default function Login() {
           case "error": toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED")); break
         }
       } finally { setWaiting(false) }
-    }, [red, wrong, remaining, id, password, role, updateRemaining])
+    }, [red, wrong, remaining, id, password, role, fetchMe, updateRemaining])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -81,6 +89,7 @@ export default function Login() {
                 {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} setWaiting={setWaiting} setResetL={setReset} />}
             </div>
             {waiting && <Loading />}
+            {fetchMe !== undefined && <Overlay z={148} />}
         </>
     )
 

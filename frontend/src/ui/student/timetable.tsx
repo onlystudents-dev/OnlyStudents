@@ -1,5 +1,5 @@
 import Navbar from "../../navbar/navbar.tsx";
-import type {Class, Lesson, LessonTime, Me, Room} from "../../types/api.ts";
+import type {Class, Lesson, LessonTime, Room} from "../../types/api.ts";
 import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import "./timetable.css";
@@ -12,6 +12,9 @@ import {toast} from "react-toastify";
 import {formatSecondsToHourAndMinute, formatUnixDate} from "../../util/time.ts";
 import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
 import {getRetryAfter, readJSON} from "../../util/api.ts";
+import type {FeatureProps} from "../../types/props.ts";
+
+const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
 
 type DayName = typeof DAY_NAMES[number]
 
@@ -22,8 +25,6 @@ type day = {
     today: boolean
 }
 
-const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
-
 function Badge({ icon, className }: {icon: IconDefinition, className: string}) {
     return (
         <span className={`rounded-full size-8 inline-flex items-center justify-center ${className}`}>
@@ -32,88 +33,132 @@ function Badge({ icon, className }: {icon: IconDefinition, className: string}) {
     )
 }
 
-export default function StudentTimetable({ me }: {me: Me}) {
+function getWeekRange(date: Date) {
+    const day = date.getDay()
+    const diffToMonday = day === 0 ? -6 : 1 - day
+
+    const monday = new Date(date)
+    monday.setDate(date.getDate() + diffToMonday)
+    monday.setHours(0, 0, 0, 0)
+
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+
+    const toISODate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+
+    return { start: toISODate(monday), end: toISODate(sunday), monday, mondayTime: Math.floor(monday.getTime() / 1000) }
+}
+
+export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
     const [lessonTime, setLessonTime] = useState<LessonTime[]>([])
-
     const [days, setDays] = useState<day[]>(() => DAY_NAMES.map(name => ({name, date: "", lessons: [], today: false})))
-
     const [year, setYear] = useState<string>("")
-
     const [ratelimit, setRateLimit] = useState(-1)
     const [loading, setLoading] = useState(true)
 
-    const fetchWeekLessons = useCallback(async (date = new Date()) => {
+    const meRef = useRef(me)
+    const unauthorizedRef = useRef(unauthorized)
+    useEffect(() => {
+        meRef.current = me
+        unauthorizedRef.current = unauthorized
+    })
+
+    const weekOffset = useRef(0)
+
+    const fetchWeekLessons = useCallback(async (target: number) => {
         setLoading(true)
+
+        const date = new Date()
+        date.setDate(date.getDate() + target * 7)
         const { start, end, monday, mondayTime } = getWeekRange(date)
 
-        const response = await fetch(`/api/v1/me/student/timetable?start_date=${start}&end_date=${end}`)
+        // why on earth would it cry because of while true
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        while (true) {
+            const response = await fetch(`/api/v1/me/student/timetable?start_date=${start}&end_date=${end}`)
 
-        if (response.status === 429) {
-            setRateLimit(getRetryAfter(response))
-            setLoading(false)
-            return
-        } else if (!response.ok) {
-            toast.error(await fromResponse(response))
-            setLoading(false)
-            return
-        }
-
-        if (monday.getMonth() >= 7) {
-            setYear(`${monday.getFullYear()}-${monday.getFullYear() + 1}`)
-        } else {
-            setYear(`${monday.getFullYear() - 1}-${monday.getFullYear()}`)
-        }
-
-        const lessons = await readJSON<Lesson[]>(response)
-        const daySeconds = 86400
-        const language = getLanguage(me)?.key || "en-US"
-        const now = new Date()
-
-        const createDayData = (name: DayName, dayOffset: number, dayOfWeek: number): day => {
-            const targetDate = new Date(monday)
-            targetDate.setDate(monday.getDate() + dayOffset)
-
-            return {
-                name,
-                date: formatUnixDate(mondayTime + daySeconds * dayOffset, language),
-                lessons: lessons.filter(lesson => lesson.day_of_week === dayOfWeek),
-                today: targetDate.toDateString() === now.toDateString(),
+            if (response.status === 429) {
+                setRateLimit(getRetryAfter(response))
+                setLoading(false)
+                return
             }
+
+            if (response.status === 401) {
+                setLoading(false)
+                const me = await unauthorizedRef.current()
+                if (me?.role !== "student") return
+                setLoading(true)
+                await Promise.all([
+                    fetchInto("/api/v1/me/student/timetable/room", setRooms),
+                    fetchInto<Class>("/api/v1/me/student/class").then(clazz => fetchInto(`/api/v1/me/student/timetable/lesson_time?type_id=${clazz?.bell_id}`, setLessonTime)),
+                ])
+                continue
+            }
+
+            if (!response.ok) {
+                toast.error(await fromResponse(response))
+                setLoading(false)
+                return
+            }
+
+            weekOffset.current = target
+
+            if (monday.getMonth() >= 7) {
+                setYear(`${monday.getFullYear()}-${monday.getFullYear() + 1}`)
+            } else {
+                setYear(`${monday.getFullYear() - 1}-${monday.getFullYear()}`)
+            }
+
+            const lessons = await readJSON<Lesson[]>(response)
+            const daySeconds = 86400
+            const language = getLanguage(meRef.current)?.key || "en-US"
+            const now = new Date()
+
+            const createDayData = (name: DayName, dayOffset: number, dayOfWeek: number): day => {
+                const targetDate = new Date(monday)
+                targetDate.setDate(monday.getDate() + dayOffset)
+
+                return {
+                    name,
+                    date: formatUnixDate(mondayTime + daySeconds * dayOffset, language),
+                    lessons: lessons.filter(lesson => lesson.day_of_week === dayOfWeek),
+                    today: targetDate.toDateString() === now.toDateString(),
+                }
+            }
+
+            setDays(DAY_NAMES.map((name, i) => createDayData(name, i, (i + 1) % 7)))
+
+            setLoading(false)
+            return lessons
+        }
+    }, [])
+
+    async function fetchInto<T>(
+        api: string,
+        method?: React.Dispatch<React.SetStateAction<T>>
+    ) {
+        const response = await fetch(api)
+
+        if (!response.ok) {
+            toast.error(await fromResponse(response))
+            return
         }
 
-        setDays(DAY_NAMES.map((name, i) => createDayData(name, i, (i + 1) % 7)))
+        const json = await readJSON<T>(response)
 
-        setLoading(false)
-
-        return lessons
-    }, [me])
+        if (method) method(json)
+        return json
+    }
 
     useEffect(() => {
         async function Fetch() {
-            const lessons = await fetchWeekLessons()
-
-            async function fetchInto<T>(
-                api: string,
-                method?: React.Dispatch<React.SetStateAction<T>>
-            ) {
-                const response = await fetch(api)
-
-                if (!response.ok) {
-                    toast.error(await fromResponse(response))
-                    return
-                }
-
-                const json = await readJSON<T>(response)
-
-                if (method) method(json)
-                return json
-            }
+            const lessons = await fetchWeekLessons(0)
 
             await Promise.all([
                 fetchInto("/api/v1/me/student/timetable/room", setRooms),
                 fetchInto<Class>("/api/v1/me/student/class").then(clazz => fetchInto(`/api/v1/me/student/timetable/lesson_time?type_id=${clazz?.bell_id}`, setLessonTime).then(time => {
-                    if (!me.preferences.timetable_next) return
+                    if (!meRef.current.preferences.timetable_next) return
 
                     if (!time) return
 
@@ -132,16 +177,14 @@ export default function StudentTimetable({ me }: {me: Me}) {
                     const end = date.getTime() + t.at_end * 1000
 
                     if (Date.now() > end) {
-                        void fetchWeekLessons(addDays(7))
+                        void fetchWeekLessons(1)
                     }
                 })),
             ])
         }
 
         void Fetch()
-    }, [fetchWeekLessons, me.preferences.timetable_next])
-
-    const offset = useRef(0)
+    }, [fetchWeekLessons])
 
     const d = (() => {
         switch (me.preferences.timetable_display) {
@@ -164,7 +207,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
             </div>
             <div className="w-full h-fit p-4 gap-4 flex flex-row justify-center items-stretch">
                 <div className="flex flex-col justify-center h-14">
-                    <span className="icon" onClick={() => fetchWeekLessons(addDays(-7))}>
+                    <span className="icon" onClick={() => fetchWeekLessons(weekOffset.current - 1)}>
                         <FontAwesomeIcon icon={faAngleLeft} />
                     </span>
                 </div>
@@ -175,7 +218,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                             <p className="poppins">{day.date}</p>
                         </div>
                         {day.lessons.map((lesson) => (
-                            <div className="lesson">
+                            <div className="lesson" key={lesson.actual_date + lesson.lesson_num}>
                                 <div className="flex flex-row justify-between items-start w-full gap-2">
                                     <div className="flex flex-col min-w-0">
                                         <h1 className="rubik truncate">{lesson.subject_name}</h1>
@@ -203,7 +246,7 @@ export default function StudentTimetable({ me }: {me: Me}) {
                     </div>
                 ))}
                 <div className="flex flex-col justify-center h-14">
-                    <span className="icon" onClick={() => fetchWeekLessons(addDays(7))}>
+                    <span className="icon" onClick={() => fetchWeekLessons(weekOffset.current + 1)}>
                         <FontAwesomeIcon icon={faAngleRight} />
                     </span>
                 </div>
@@ -216,30 +259,5 @@ export default function StudentTimetable({ me }: {me: Me}) {
         if (!time) return ""
 
         return `${formatSecondsToHourAndMinute(time.at_start, me)}-${formatSecondsToHourAndMinute(time.at_end, me)}`
-    }
-
-    function getWeekRange(date: Date) {
-        const day = date.getDay()
-        const diffToMonday = day === 0 ? -6 : 1 - day
-
-        const monday = new Date(date)
-        monday.setDate(date.getDate() + diffToMonday)
-        monday.setHours(0, 0, 0, 0)
-
-        const sunday = new Date(monday)
-        sunday.setDate(monday.getDate() + 6)
-
-        const toISODate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-
-        return { start: toISODate(monday), end: toISODate(sunday), monday, mondayTime: Math.floor(monday.getTime() / 1000) }
-    }
-
-    function addDays(days: number, date = new Date()) {
-        offset.current += days
-
-        const newDate = new Date(date)
-        newDate.setDate(newDate.getDate() + offset.current)
-
-        return newDate
     }
 }

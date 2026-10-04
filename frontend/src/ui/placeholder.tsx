@@ -1,6 +1,6 @@
 import Navbar from "../navbar/navbar.tsx";
-import type {Me} from "../types/api.ts";
+import type {FeatureProps} from "../types/props.ts";
 
-export default function Placeholder({ me }: {me: Me}) {
+export default function Placeholder({ me }: FeatureProps) {
     return <Navbar me={me} />
 }
