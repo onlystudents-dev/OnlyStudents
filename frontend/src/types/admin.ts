@@ -9,7 +9,127 @@ export type AdminStatusData = {
     guardian_count: number,
 }
 
-export type Log = {
-    name: string
-    content: string
+export type School = {
+    id: number,
+    name: string,
+    city: string,
+    address_line: string,
+    zip_code: string,
 }
+
+export type Log = {
+    name: string,
+    content: string,
+}
+
+export type EnrollGuardianRequest = {
+    phone_number: string,
+    first_name: string,
+    last_name: string,
+    birth_first_name: string,
+    birth_last_name: string,
+    birth_date: number,
+    birth_city: string,
+    birth_country: string,
+    permanent_address: string,
+    temporary_address: string,
+    email_address: string,
+}
+
+export type EnrollStudentRequest = {
+    id_number: number,
+    school_id: number,
+    has_phone_number: boolean,
+    phone_number: string,
+    first_name: string,
+    last_name: string,
+    birth_first_name: string,
+    birth_last_name: string,
+    birth_date: number,
+    birth_city: string,
+    birth_country: string,
+    mother_birth_first_name: string,
+    mother_birth_last_name: string,
+    classes_id: number,
+    permanent_address: string,
+    temporary_address: string,
+    has_tax_number: boolean,
+    tax_number: number,
+    ssn_number: number,
+    bank_name: string,
+    iban_owner: string,
+    iban_number: string,
+    document_type: string,
+    document_number: string,
+    email_address: string,
+}
+
+export type EnrollTeacherRequest = {
+    phone_number: string,
+    first_name: string,
+    last_name: string,
+    birth_first_name: string,
+    birth_last_name: string,
+    birth_date: number,
+    birth_city: string,
+    birth_country: string,
+    permanent_address: string,
+    temporary_address: string,
+    email_address: string,
+}
+
+export const enrollKeys = {
+    student: {
+        school_id: "number",
+        id_number: "number",
+        first_name: "string",
+        last_name: "string",
+        birth_first_name: "string",
+        birth_last_name: "string",
+        birth_date: "date",
+        birth_city: "string",
+        birth_country: "string",
+        mother_birth_first_name: "string",
+        mother_birth_last_name: "string",
+        email_address: "email",
+        has_phone_number: "boolean",
+        phone_number: "tel",
+        classes_id: "number",
+        permanent_address: "string",
+        temporary_address: "string",
+        has_tax_number: "boolean",
+        tax_number: "number",
+        ssn_number: "number",
+        bank_name: "string",
+        iban_owner: "string",
+        iban_number: "string",
+        document_type: "string",
+        document_number: "string",
+    },
+    teacher: {
+        first_name: "string",
+        last_name: "string",
+        birth_first_name: "string",
+        birth_last_name: "string",
+        birth_date: "date",
+        birth_city: "string",
+        birth_country: "string",
+        phone_number: "tel",
+        email_address: "email",
+        permanent_address: "string",
+        temporary_address: "string",
+    },
+    guardian: {
+        first_name: "string",
+        last_name: "string",
+        birth_first_name: "string",
+        birth_last_name: "string",
+        birth_date: "date",
+        birth_city: "string",
+        birth_country: "string",
+        phone_number: "tel",
+        email_address: "email",
+        permanent_address: "string",
+        temporary_address: "string",
+    },
+} as const

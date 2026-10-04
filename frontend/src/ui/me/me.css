@@ -4,22 +4,6 @@
     @apply absolute bottom-0 right-0 h-full p-4;
     width: calc(100% - 22.5rem);
 
-    .config {
-        @apply flex flex-row justify-between items-center w-full rounded-lg p-2 cursor-pointer relative;
-        transition: background-color 300ms ease;
-        select {
-            @apply absolute text-end inset-0 w-full outline-none;
-            option {
-                @apply w-full;
-            }
-        }
-    }
-
-    .config:hover {
-        background-color: var(--hover-color);
-        transition: background-color 200ms ease;
-    }
-
     .configure {
         @apply flex flex-col min-w-120 min-h-80 z-151 rounded-2xl p-7 overflow-hidden;
         border: var(--txt-color) solid 4px;
