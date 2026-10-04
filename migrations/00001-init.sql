@@ -6,7 +6,6 @@ CREATE TABLE school_type (
 CREATE TABLE teachers (
     id SERIAL PRIMARY KEY,
     phone_number VARCHAR(256) NOT NULL UNIQUE,
-    username VARCHAR(256) NOT NULL,
     birth_first_name VARCHAR(256) NOT NULL,
     birth_last_name VARCHAR(256) NOT NULL,
     birth_date DATE NOT NULL,

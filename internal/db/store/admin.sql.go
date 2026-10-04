@@ -9,6 +9,44 @@ import (
 	"context"
 )
 
+const adminListSchools = `-- name: AdminListSchools :many
+SELECT name, city, address_line, zip_code, id FROM schools
+`
+
+type AdminListSchoolsRow struct {
+	Name        string
+	City        string
+	AddressLine string
+	ZipCode     string
+	ID          int32
+}
+
+func (q *Queries) AdminListSchools(ctx context.Context) ([]AdminListSchoolsRow, error) {
+	rows, err := q.db.Query(ctx, adminListSchools)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminListSchoolsRow
+	for rows.Next() {
+		var i AdminListSchoolsRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.City,
+			&i.AddressLine,
+			&i.ZipCode,
+			&i.ID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAdminDebugData = `-- name: GetAdminDebugData :one
 SELECT
   (SELECT COUNT(*) FROM accounts) AS account_count,

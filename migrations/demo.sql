@@ -2,11 +2,11 @@ INSERT INTO school_type (id, name) VALUES
     (1, 'Default');
 
 INSERT INTO teachers (
-    id, phone_number, username,
+    id, phone_number,
     birth_first_name, birth_last_name, birth_date, birth_city, birth_country,
     permament_address, temporary_address, first_name, last_name
 ) VALUES (
-             1, '+0000000000', 'principal',
+             1, '+0000000000',
              'Principal', 'Principal', '1970-01-01', 'City', 'HU',
              'Addr', 'Addr', 'Principal', 'Principal'
          );

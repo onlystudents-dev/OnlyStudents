@@ -12,12 +12,11 @@ import (
 )
 
 const createTeacher = `-- name: CreateTeacher :one
-INSERT INTO teachers (phone_number,username,birth_first_name,birth_last_name,birth_date,birth_city,birth_country,permament_address,temporary_address,first_name,last_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id
+INSERT INTO teachers (phone_number,birth_first_name,birth_last_name,birth_date,birth_city,birth_country,permament_address,temporary_address,first_name,last_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
 `
 
 type CreateTeacherParams struct {
 	PhoneNumber      string
-	Username         string
 	BirthFirstName   string
 	BirthLastName    string
 	BirthDate        pgtype.Date
@@ -32,7 +31,6 @@ type CreateTeacherParams struct {
 func (q *Queries) CreateTeacher(ctx context.Context, arg CreateTeacherParams) (int32, error) {
 	row := q.db.QueryRow(ctx, createTeacher,
 		arg.PhoneNumber,
-		arg.Username,
 		arg.BirthFirstName,
 		arg.BirthLastName,
 		arg.BirthDate,
@@ -49,7 +47,7 @@ func (q *Queries) CreateTeacher(ctx context.Context, arg CreateTeacherParams) (i
 }
 
 const getTeacher = `-- name: GetTeacher :one
-SELECT id, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers WHERE id = $1
+SELECT id, phone_number, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers WHERE id = $1
 `
 
 func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
@@ -58,7 +56,6 @@ func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.PhoneNumber,
-		&i.Username,
 		&i.BirthFirstName,
 		&i.BirthLastName,
 		&i.BirthDate,
@@ -73,7 +70,7 @@ func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
 }
 
 const listTeachers = `-- name: ListTeachers :many
-SELECT id, phone_number, username, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers ORDER BY id
+SELECT id, phone_number, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers ORDER BY id
 `
 
 func (q *Queries) ListTeachers(ctx context.Context) ([]Teacher, error) {
@@ -88,7 +85,6 @@ func (q *Queries) ListTeachers(ctx context.Context) ([]Teacher, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.PhoneNumber,
-			&i.Username,
 			&i.BirthFirstName,
 			&i.BirthLastName,
 			&i.BirthDate,

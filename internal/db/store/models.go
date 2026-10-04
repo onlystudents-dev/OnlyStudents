@@ -315,7 +315,6 @@ type Subject struct {
 type Teacher struct {
 	ID               int32
 	PhoneNumber      string
-	Username         string
 	BirthFirstName   string
 	BirthLastName    string
 	BirthDate        pgtype.Date
