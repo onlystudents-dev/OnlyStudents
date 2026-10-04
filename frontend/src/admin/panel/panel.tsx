@@ -11,7 +11,7 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
     const [active, setActive] = useState<"status" | "logs">("status")
 
     const [logs, setLogs] = useState<Log[] | null>(null)
-    const [activeLog, setActiveLog] = useState(logs?.[0]?.name)
+    const [activeLog, setActiveLog] = useState(logs?.[0]?.name || "")
     const logsRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -99,6 +99,6 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
         const logs = await response.json() as Log[]
 
         setLogs(logs)
-        setActiveLog(logs[0]?.name)
+        if (!activeLog) setActiveLog(logs[0]?.name || "")
     }
 }
