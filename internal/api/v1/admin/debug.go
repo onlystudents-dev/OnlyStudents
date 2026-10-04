@@ -30,6 +30,14 @@ type AdminStatusData struct {
 	GuardianCount  int64  `json:"guardian_count"`
 }
 
+type SchoolSummary struct {
+	ID          int32  `json:"id"`
+	Name        string `json:"name"`
+	City        string `json:"city"`
+	AddressLine string `json:"address_line"`
+	ZipCode     string `json:"zip_code"`
+}
+
 func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
@@ -101,6 +109,36 @@ func GetRedisStatus(c fiber.Ctx, rdb *redis.Client) string {
 	}
 
 	return redis_db_status
+}
+
+func AdminListSchools(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+	}
+
+	queries := db_queries.New(pool)
+
+	summaries := []SchoolSummary{}
+
+	schools, err := queries.AdminListSchools(c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	for _, row := range schools {
+		summaries = append(summaries, SchoolSummary{
+			ID:          row.ID,
+			Name:        row.Name,
+			City:        row.City,
+			AddressLine: row.AddressLine,
+			ZipCode:     row.ZipCode,
+		})
+	}
+
+	return c.JSON(summaries)
 }
 
 func AdminStatus(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {

@@ -52,7 +52,6 @@ type EnrollStudentRequest struct {
 type EnrollTeacherRequest struct {
 	// teacher params
 	PhoneNumber      string `json:"phone_number"`
-	Username         string `json:"username"`
 	BirthFirstName   string `json:"birth_first_name"`
 	BirthLastName    string `json:"birth_last_name"`
 	BirthDate        int64  `json:"birth_date"`
@@ -209,7 +208,6 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 
 	teacher_id, create_teacher_err := queries.CreateTeacher(c.Context(), db_queries.CreateTeacherParams{
 		PhoneNumber:      req.PhoneNumber,
-		Username:         req.Username,
 		BirthFirstName:   req.BirthFirstName,
 		BirthLastName:    req.BirthLastName,
 		BirthDate:        pgtype.Date{Time: time.Unix(req.BirthDate, 0), Valid: true},

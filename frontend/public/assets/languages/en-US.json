@@ -89,7 +89,7 @@
     "NOT_IMPLEMENTED": "This feature is not implemented yet! We are constantly working on new features!",
     "INVALID_SESSION": "You do not have a valid session!",
     "SERVER_ERROR": "A server-side errror happened. We are sad too.",
-    "WRONG_CREDENTIALS": "The username doesn't pair with the password!",
+    "WRONG_CREDENTIALS": "The ID doesn't pair with the password!",
     "TOO_MANY_REQUESTS": "Too many attempts, try again in %1 seconds.",
     "INVALID_PASSWORD_RESET_TOKEN": "Invalid Password Reset Token!",
     "INVALID_VERIFICATION_CODE": "Invalid Verification Code!"

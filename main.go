@@ -95,6 +95,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					"teacher":  helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollTeacher(c, pool, rdb, opaque_server) }),
 					"guardian": helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollGuardian(c, pool, rdb, opaque_server) }),
 				},
+				"schools": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListSchools(c, pool, rdb) }),
 			},
 			"me": fiber.Map{
 				helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth},
