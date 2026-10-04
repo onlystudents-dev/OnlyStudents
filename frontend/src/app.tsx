@@ -1,12 +1,13 @@
 import {Route, Switch} from "wouter";
 import Home from "./home.tsx";
 import {ToastContainer} from "react-toastify";
-import {lazy, Suspense, useEffect, useState} from "react";
+import React, {lazy, Suspense, useEffect, useRef, useState} from "react";
 import Loading from "./util/loading.tsx";
 import type { Me, Role } from "./types/api.ts";
 import { fetchLanguage } from "./util/language.ts";
 import RateLimit from "./util/ratelimit.tsx";
 import { readJSON } from "./util/api.ts";
+import type {FeatureProps} from "./types/props.ts";
 
 declare global {
     interface Window { __INITIAL_STATUS__?: Me | string | number }
@@ -33,17 +34,36 @@ const features = {
     teacher: lazy(() => import("./ui/teacher/grades.tsx")),
     guardian: lazy(() => import("./ui/guardian/grades.tsx"))
   },
-};
+}
 
 const Login = lazy(() => import("./auth/login/login.tsx"))
 const MeSettings = lazy(() => import("./ui/me/me.tsx"))
 
 export default function App({ reload }: {reload: () => void}) {
+    const [popupLogin, setPopupLogin] = useState(false)
+    const loginResolver = useRef<((me: Me | null) => void) | null>(null)
+
     const byFeature = (feature: keyof typeof features, me: Me) => {
-        const group = features[feature] as Partial<Record<Role, typeof features.homeworks.student>>
+        const group = features[feature] as Partial<Record<Role, React.ComponentType<FeatureProps>>>
         const Feature = group[me.role]
         if (!Feature) return <p className="poppins">Not available for your role.</p>
-        return <Feature me={me} />
+        return <Feature me={me} unauthorized={unauthorized} />
+    }
+
+    function unauthorized() {
+        setPopupLogin(true)
+
+        return new Promise<Me | null>(resolve => {
+            loginResolver.current = resolve
+        })
+    }
+
+    async function popupLoginF() {
+        const me = await fetchMe()
+        setPopupLogin(false)
+        loginResolver.current?.(me)
+        loginResolver.current = null
+        return me
     }
 
     const [ratelimit, setRatelimit] = useState<number>(-1)
@@ -67,9 +87,8 @@ export default function App({ reload }: {reload: () => void}) {
                 if (seconds != null) setRatelimit(Number(seconds))
                 return null
             }
-            if (response.status === 401) return null
 
-            const me = await readJSON<Me>(response)
+            const me = response.status === 401 ? null : await readJSON<Me>(response)
             setMe(me)
             return me
         } catch {
@@ -93,7 +112,7 @@ export default function App({ reload }: {reload: () => void}) {
                 break
             default:
                 Fetch()
-                }
+        }
     }, [])
 
     return (
@@ -107,14 +126,21 @@ export default function App({ reload }: {reload: () => void}) {
                         <>
                             <Route path="/"><Home me={me} /></Route>
                             <Route path="/me"><MeSettings me={me} fetchMe={fetchMe} setMe={setMe} reload={reload} /></Route>
-                            <Route path="/homeworks">{() => byFeature("homeworks", me)}</Route>
-                            <Route path="/timetable">{() => byFeature("timetable", me)}</Route>
-                            <Route path="/absences">{() => byFeature("absences", me)}</Route>
-                            <Route path="/grades">{() => byFeature("grades", me)}</Route>
+                            <Route path="/homeworks">{byFeature("homeworks", me)}</Route>
+                            <Route path="/timetable">{byFeature("timetable", me)}</Route>
+                            <Route path="/absences">{byFeature("absences", me)}</Route>
+                            <Route path="/grades">{byFeature("grades", me)}</Route>
                         </>
                     )}
                 </Switch>
             </Suspense>
+
+            {me && popupLogin && (
+                <Suspense fallback={null}>
+                    <Login fetchMe={popupLoginF} />
+                </Suspense>
+            )}
+
             <ToastContainer theme={"dark"} position={"bottom-right"} />
         </>
     )
