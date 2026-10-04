@@ -1,9 +1,8 @@
 package studentapi
 
 import (
-	"log/slog"
+	"context"
 	db_queries "onlystudents/internal/db/store"
-	"onlystudents/internal/helpers"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -22,42 +21,17 @@ type SubmitAbsenceRequest struct {
 }
 
 func SubmitHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req SubmitHomeworkRequest
-
-	if err := c.Bind().Query(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	session_data, ok := c.Locals("session").(helpers.SessionData)
-
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
-	}
-
-	queries := db_queries.New(pool)
-
-	account_id, err := helpers.ResolvePerson(c, *queries, session_data)
-
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	rows_affected, homework_submit_err := queries.StudentUpsertHomeworkSubmission(c.Context(), db_queries.StudentUpsertHomeworkSubmissionParams{
-		HomeworkID: req.HomeworkID,
-		StudentID:  account_id,
-		Content:    pgtype.Text{String: req.Content, Valid: true},
-	})
-
-	if homework_submit_err != nil {
-		slog.Error("submit homework db err", "err", homework_submit_err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	if rows_affected == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	return c.SendStatus(fiber.StatusOK)
+	return StudentModify(c, pool, rdb,
+		func(req SubmitHomeworkRequest) bool {
+			return req.HomeworkID <= 0 || req.Content == ""
+		},
+		func(ctx context.Context, account_id int32, queries *db_queries.Queries, req SubmitHomeworkRequest) (int64, error) {
+			return queries.StudentUpsertHomeworkSubmission(c.Context(), db_queries.StudentUpsertHomeworkSubmissionParams{
+				HomeworkID: req.HomeworkID,
+				StudentID:  account_id,
+				Content:    pgtype.Text{String: req.Content, Valid: true},
+			})
+		})
 }
 
 func SubmitAbsenceReason(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
