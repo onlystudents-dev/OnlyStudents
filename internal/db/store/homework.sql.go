@@ -30,13 +30,20 @@ LEFT JOIN subjects s ON s.id = csub.subject_id
 LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = h.teacher_id
 LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $1
-WHERE csub.class_id = (
-    SELECT st.classes_id
-    FROM students st
-    WHERE st.id = $1
-)
+WHERE csub.school_id = $2
+  AND csub.class_id = (
+      SELECT ss.classes_id
+      FROM student_school ss
+      WHERE ss.student_id = $1
+        AND ss.school_id = $2
+  )
 ORDER BY h.due_date, h.created_at
 `
+
+type GetStudentHomeworkParams struct {
+	StudentID int32
+	SchoolID  int32
+}
 
 type GetStudentHomeworkRow struct {
 	ID               int64
@@ -52,8 +59,8 @@ type GetStudentHomeworkRow struct {
 	GradedValue      pgtype.Int2
 }
 
-func (q *Queries) GetStudentHomework(ctx context.Context, studentID int32) ([]GetStudentHomeworkRow, error) {
-	rows, err := q.db.Query(ctx, getStudentHomework, studentID)
+func (q *Queries) GetStudentHomework(ctx context.Context, arg GetStudentHomeworkParams) ([]GetStudentHomeworkRow, error) {
+	rows, err := q.db.Query(ctx, getStudentHomework, arg.StudentID, arg.SchoolID)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +233,13 @@ WHERE EXISTS (
     FROM homework h
     JOIN class_subjects csub ON csub.id = h.class_subjects_id
     WHERE h.id = $1
-      AND csub.class_id = (SELECT st.classes_id FROM students st WHERE st.id = $2)
+      AND csub.school_id = $4
+      AND csub.class_id = (
+          SELECT ss.classes_id
+          FROM student_school ss
+          WHERE ss.student_id = $2
+            AND ss.school_id = $4
+      )
 )
 ON CONFLICT (homework_id, student_id) DO UPDATE
 SET content = EXCLUDED.content,
@@ -237,10 +250,16 @@ type StudentUpsertHomeworkSubmissionParams struct {
 	HomeworkID int32
 	StudentID  int32
 	Content    pgtype.Text
+	SchoolID   int32
 }
 
 func (q *Queries) StudentUpsertHomeworkSubmission(ctx context.Context, arg StudentUpsertHomeworkSubmissionParams) (int64, error) {
-	result, err := q.db.Exec(ctx, studentUpsertHomeworkSubmission, arg.HomeworkID, arg.StudentID, arg.Content)
+	result, err := q.db.Exec(ctx, studentUpsertHomeworkSubmission,
+		arg.HomeworkID,
+		arg.StudentID,
+		arg.Content,
+		arg.SchoolID,
+	)
 	if err != nil {
 		return 0, err
 	}

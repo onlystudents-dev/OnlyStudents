@@ -12,25 +12,30 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type SchoolMembership struct {
+	SchoolID int32 `json:"school_id"`
+	ClassID  int32 `json:"class_id"`
+}
+
 type ChildrenData struct {
-	AccountID int32  `json:"account_id"`
-	SchoolID  int32  `json:"school_id"`
-	ClassID   int32  `json:"class_id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	AccountID         int32              `json:"account_id"`
+	SchoolMemberships []SchoolMembership `json:"school_memberships"`
+	ClassID           int32              `json:"class_id"`
+	FirstName         string             `json:"first_name"`
+	LastName          string             `json:"last_name"`
 }
 
 type StatusData struct {
-	Role          string         `json:"role"`
-	AccountID     int32          `json:"account_id"`
-	SchoolID      int32          `json:"school_id"`
-	ClassID       int32          `json:"class_id"`
-	FirstName     string         `json:"first_name"`
-	LastName      string         `json:"last_name"`
-	EmailAddress  string         `json:"email_address"`
-	EmailVerified bool           `json:"email_verified"`
-	Preferences   Preferences    `json:"preferences"`
-	Children      []ChildrenData `json:"children"`
+	Role              string             `json:"role"`
+	AccountID         int32              `json:"account_id"`
+	ClassID           int32              `json:"class_id"`
+	FirstName         string             `json:"first_name"`
+	LastName          string             `json:"last_name"`
+	EmailAddress      string             `json:"email_address"`
+	EmailVerified     bool               `json:"email_verified"`
+	Preferences       Preferences        `json:"preferences"`
+	Children          []ChildrenData     `json:"children"`
+	SchoolMemberships []SchoolMembership `json:"school_memberships"`
 }
 
 func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusData, error) {
@@ -65,6 +70,8 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 		return &StatusData{}, unmarshal_err
 	}
 
+	school_memberships_ttl := helpers.GetInt32EnvFallback("SCHOOL_MEMBERSHIPS_CACHE_TTL", 5*60, 604800)
+
 	switch session_data.Role {
 	case "student":
 		student, err := helpers.CacheOrGetStudent(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
@@ -73,16 +80,31 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			return &StatusData{}, err
 		}
 
+		school_memberships, err := helpers.CacheOrListStudentMemberships(c.Context(), rdb, *queries, status_data.AccountID, school_memberships_ttl)
+
+		if err != nil {
+			return &StatusData{}, err
+		}
+
+		school_memberships_data := []SchoolMembership{}
+
+		for _, school_membership := range school_memberships {
+			school_memberships_data = append(school_memberships_data, SchoolMembership{
+				SchoolID: school_membership.SchoolID,
+				ClassID:  school_membership.ClassesID,
+			})
+		}
+
 		status_data = StatusData{
-			Role:          session_data.Role,
-			AccountID:     session_data.AccountID,
-			SchoolID:      student.SchoolID,
-			FirstName:     student.FirstName,
-			LastName:      student.LastName,
-			EmailAddress:  account.EmailAddress.String,
-			EmailVerified: account.EmailVerified,
-			Preferences:   preferences,
-			Children:      []ChildrenData{},
+			Role:              session_data.Role,
+			AccountID:         session_data.AccountID,
+			SchoolMemberships: school_memberships_data,
+			FirstName:         student.FirstName,
+			LastName:          student.LastName,
+			EmailAddress:      account.EmailAddress.String,
+			EmailVerified:     account.EmailVerified,
+			Preferences:       preferences,
+			Children:          []ChildrenData{},
 		}
 
 	case "guardian":
@@ -92,12 +114,27 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 		guardian_children_data := []ChildrenData{}
 
 		for _, children := range guardian_children {
+			school_memberships, err := helpers.CacheOrListStudentMemberships(c.Context(), rdb, *queries, children.ID, school_memberships_ttl)
+
+			if err != nil {
+				return &StatusData{}, err
+			}
+
+			school_memberships_data := []SchoolMembership{}
+
+			for _, school_membership := range school_memberships {
+				school_memberships_data = append(school_memberships_data, SchoolMembership{
+					SchoolID: school_membership.SchoolID,
+					ClassID:  school_membership.ClassesID,
+				})
+			}
+
 			guardian_children_data = append(guardian_children_data, ChildrenData{
-				AccountID: children.ID,
-				SchoolID:  children.SchoolID,
-				ClassID:   children.ClassID,
-				FirstName: children.FirstName,
-				LastName:  children.LastName,
+				AccountID:         children.ID,
+				SchoolMemberships: school_memberships_data,
+				ClassID:           children.ClassID,
+				FirstName:         children.FirstName,
+				LastName:          children.LastName,
 			})
 		}
 
@@ -106,14 +143,15 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 		}
 
 		status_data = StatusData{
-			Role:          session_data.Role,
-			AccountID:     session_data.AccountID,
-			FirstName:     guardian.FirstName,
-			LastName:      guardian.LastName,
-			EmailAddress:  account.EmailAddress.String,
-			EmailVerified: account.EmailVerified,
-			Preferences:   preferences,
-			Children:      guardian_children_data,
+			Role:              session_data.Role,
+			AccountID:         session_data.AccountID,
+			FirstName:         guardian.FirstName,
+			LastName:          guardian.LastName,
+			EmailAddress:      account.EmailAddress.String,
+			EmailVerified:     account.EmailVerified,
+			Preferences:       preferences,
+			SchoolMemberships: []SchoolMembership{},
+			Children:          guardian_children_data,
 		}
 
 	case "teacher":
@@ -123,15 +161,30 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			return &StatusData{}, err
 		}
 
+		school_memberships, err := helpers.CacheOrListTeacherMemberships(c.Context(), rdb, *queries, teacher.ID, school_memberships_ttl)
+
+		if err != nil {
+			return &StatusData{}, err
+		}
+
+		school_memberships_data := []SchoolMembership{}
+
+		for _, school_membership := range school_memberships {
+			school_memberships_data = append(school_memberships_data, SchoolMembership{
+				SchoolID: school_membership.SchoolID,
+			})
+		}
+
 		status_data = StatusData{
-			Role:          session_data.Role,
-			AccountID:     session_data.AccountID,
-			FirstName:     teacher.FirstName,
-			LastName:      teacher.LastName,
-			EmailAddress:  account.EmailAddress.String,
-			EmailVerified: account.EmailVerified,
-			Preferences:   preferences,
-			Children:      []ChildrenData{},
+			Role:              session_data.Role,
+			AccountID:         session_data.AccountID,
+			FirstName:         teacher.FirstName,
+			LastName:          teacher.LastName,
+			EmailAddress:      account.EmailAddress.String,
+			EmailVerified:     account.EmailVerified,
+			Preferences:       preferences,
+			SchoolMemberships: school_memberships_data,
+			Children:          []ChildrenData{},
 		}
 
 	default:

@@ -66,10 +66,34 @@ func CacheOrGetStudent(ctx context.Context, rdb *redis.Client, queries db_querie
 	})
 }
 
+func CacheOrGetStudentMembership(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) (db_queries.StudentSchool, error) {
+	key := fmt.Sprintf("student_membership:%d:%d", schoolID, accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.StudentSchool, error) {
+		return queries.GetStudentMembership(ctx, db_queries.GetStudentMembershipParams{
+			StudentID: accountID,
+			SchoolID:  schoolID,
+		})
+	})
+}
+
+func CacheOrListStudentMemberships(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.StudentSchool, error) {
+	key := fmt.Sprintf("student_memberships:%d", accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.StudentSchool, error) {
+		return queries.ListStudentMemberships(ctx, accountID)
+	})
+}
+
 func CacheOrGetTeacher(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) (db_queries.Teacher, error) {
 	key := fmt.Sprintf("teacher:%d", accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.Teacher, error) {
 		return queries.GetTeacher(ctx, accountID)
+	})
+}
+
+func CacheOrListTeacherMemberships(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.TeacherSchool, error) {
+	key := fmt.Sprintf("teacher_memberships:%d", accountID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.TeacherSchool, error) {
+		return queries.ListTeacherSchoolMemberships(ctx, accountID)
 	})
 }
 
@@ -87,10 +111,13 @@ func CacheOrGetGuardianChildren(ctx context.Context, rdb *redis.Client, queries 
 	})
 }
 
-func CacheOrGetStudentGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentGradesRow, error) {
-	key := fmt.Sprintf("student_grades:%d", accountID)
+func CacheOrGetStudentGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]db_queries.GetStudentGradesRow, error) {
+	key := fmt.Sprintf("student_grades:%d:%d", schoolID, accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentGradesRow, error) {
-		return queries.GetStudentGrades(ctx, accountID)
+		return queries.GetStudentGrades(ctx, db_queries.GetStudentGradesParams{
+			SchoolID:  schoolID,
+			StudentID: accountID,
+		})
 	})
 }
 
@@ -104,10 +131,13 @@ func CacheOrGetTeacherGrades(ctx context.Context, rdb *redis.Client, queries db_
 	})
 }
 
-func CacheOrGetStudentFinalGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentFinalGradesRow, error) {
-	key := fmt.Sprintf("student_final_grades:%d", accountID)
+func CacheOrGetStudentFinalGrades(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]db_queries.GetStudentFinalGradesRow, error) {
+	key := fmt.Sprintf("student_final_grades:%d:%d", schoolID, accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentFinalGradesRow, error) {
-		return queries.GetStudentFinalGrades(ctx, accountID)
+		return queries.GetStudentFinalGrades(ctx, db_queries.GetStudentFinalGradesParams{
+			SchoolID:  schoolID,
+			StudentID: accountID,
+		})
 	})
 }
 
@@ -121,10 +151,13 @@ func CacheOrGetTeacherFinalGrades(ctx context.Context, rdb *redis.Client, querie
 	})
 }
 
-func CacheOrGetStudentExams(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentExamsRow, error) {
-	key := fmt.Sprintf("student_exams:%d", accountID)
+func CacheOrGetStudentExams(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]db_queries.GetStudentExamsRow, error) {
+	key := fmt.Sprintf("student_exams:%d:%d", schoolID, accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentExamsRow, error) {
-		return queries.GetStudentExams(ctx, accountID)
+		return queries.GetStudentExams(ctx, db_queries.GetStudentExamsParams{
+			SchoolID:  schoolID,
+			StudentID: accountID,
+		})
 	})
 }
 
@@ -138,10 +171,13 @@ func CacheOrGetTeacherExams(ctx context.Context, rdb *redis.Client, queries db_q
 	})
 }
 
-func CacheOrGetStudentHomework(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentHomeworkRow, error) {
-	key := fmt.Sprintf("student_homework:%d", accountID)
+func CacheOrGetStudentHomework(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]db_queries.GetStudentHomeworkRow, error) {
+	key := fmt.Sprintf("student_homework:%d:%d", schoolID, accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentHomeworkRow, error) {
-		return queries.GetStudentHomework(ctx, accountID)
+		return queries.GetStudentHomework(ctx, db_queries.GetStudentHomeworkParams{
+			SchoolID:  schoolID,
+			StudentID: accountID,
+		})
 	})
 }
 
@@ -173,10 +209,13 @@ func CacheOrGetCheckPermission(ctx context.Context, rdb *redis.Client, queries d
 	})
 }
 
-func CacheOrGetStudentAbsences(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.GetStudentAbsencesRow, error) {
+func CacheOrGetStudentAbsences(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID, accountID int32, ttl int32) ([]db_queries.GetStudentAbsencesRow, error) {
 	key := fmt.Sprintf("student_absences:%d", accountID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentAbsencesRow, error) {
-		return queries.GetStudentAbsences(ctx, accountID)
+		return queries.GetStudentAbsences(ctx, db_queries.GetStudentAbsencesParams{
+			StudentID: accountID,
+			SchoolID:  schoolID,
+		})
 	})
 }
 

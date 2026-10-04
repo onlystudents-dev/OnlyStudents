@@ -17,11 +17,13 @@ LEFT JOIN subjects s ON s.id = csub.subject_id
 LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = e.teacher_id
 LEFT JOIN rooms r ON r.id = e.room_id
-WHERE csub.class_id = (
-    SELECT st.classes_id
-    FROM students st
-    WHERE st.id = $1
-)
+WHERE csub.school_id = sqlc.arg(school_id)
+  AND csub.class_id = (
+      SELECT ss.classes_id
+      FROM student_school ss
+      WHERE ss.student_id = sqlc.arg(student_id)
+        AND ss.school_id = sqlc.arg(school_id)
+  )
 ORDER BY e.date, e.start_time;
 
 -- name: GetTeacherExams :many

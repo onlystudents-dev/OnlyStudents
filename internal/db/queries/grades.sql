@@ -17,7 +17,8 @@ LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = g.teacher_id
 JOIN terms ter ON ter.id = g.term_id
 JOIN grade_types gt ON gt.id = g.grade_type_id
-WHERE g.student_id = $1
+WHERE g.student_id = sqlc.arg(student_id)
+  AND csub.school_id = sqlc.arg(school_id)
 ORDER BY g.term_id, COALESCE(cs.subject_name, s.subject_name), g.date;
 
 -- name: GetStudentFinalGrades :many
@@ -35,7 +36,8 @@ LEFT JOIN subjects s ON s.id = csub.subject_id
 LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = fg.teacher_id
 JOIN terms ter ON ter.id = fg.term_id
-WHERE fg.student_id = $1
+WHERE fg.student_id = sqlc.arg(student_id)
+  AND csub.school_id = sqlc.arg(school_id)
 ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name);
 
 -- name: GetTeacherGrades :many
@@ -89,25 +91,25 @@ ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name), fg.id;
 
 -- name: TeacherAddGrade :execrows
 INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
-SELECT st.id, cs.id, sqlc.arg(teacher_id), sqlc.arg(term_id), sqlc.arg(grade_type_id), sqlc.arg(value), sqlc.arg(date), sqlc.arg(note)
+SELECT ss.student_id, cs.id, sqlc.arg(teacher_id), sqlc.arg(term_id), sqlc.arg(grade_type_id), sqlc.arg(value), sqlc.arg(date), sqlc.arg(note)
 FROM class_subjects cs
-JOIN students st ON st.classes_id = cs.class_id
+JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id)
-  AND st.id = sqlc.arg(student_id)
+  AND ss.student_id = sqlc.arg(student_id)
   AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = sqlc.arg(grade_type_id) AND gt.school_id = sqlc.arg(school_id))
   AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = sqlc.arg(term_id) AND sy.school_id = sqlc.arg(school_id));
 
 -- name: TeacherAddFinalGrade :execrows
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
-SELECT st.id, cs.id, sqlc.arg(term_id), sqlc.arg(teacher_id), sqlc.arg(value)
+SELECT ss.student_id, cs.id, sqlc.arg(term_id), sqlc.arg(teacher_id), sqlc.arg(value)
 FROM class_subjects cs
-JOIN students st ON st.classes_id = cs.class_id
+JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id)
-  AND st.id = sqlc.arg(student_id)
+  AND ss.student_id = sqlc.arg(student_id)
   AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = sqlc.arg(term_id) AND sy.school_id = sqlc.arg(school_id));
 
 -- name: TeacherEditGrade :execrows

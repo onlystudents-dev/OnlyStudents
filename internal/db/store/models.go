@@ -275,8 +275,6 @@ type Session struct {
 
 type Student struct {
 	ID                   int32
-	IDNumber             int32
-	SchoolID             int32
 	PhoneNumber          pgtype.Text
 	FirstName            string
 	LastName             string
@@ -287,7 +285,6 @@ type Student struct {
 	BirthCountry         string
 	MotherBirthFirstName string
 	MotherBirthLastName  string
-	ClassesID            int32
 	PermamentAddress     string
 	TemporaryAddress     string
 	TaxNumber            pgtype.Int4
@@ -304,6 +301,14 @@ type StudentCitizenship struct {
 	UserID       int32
 	DocumentType string
 	Country      string
+}
+
+type StudentSchool struct {
+	ID        int32
+	StudentID int32
+	SchoolID  int32
+	ClassesID int32
+	IDNumber  int32
 }
 
 type Subject struct {

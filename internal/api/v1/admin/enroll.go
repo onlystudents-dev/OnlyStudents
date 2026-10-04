@@ -127,14 +127,18 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 
-	queries := db_queries.New(pool)
+	tx, err := pool.Begin(c.Context())
+	if err != nil {
+		return 500
+	}
+	defer tx.Rollback(c.Context())
+
+	queries := db_queries.New(pool).WithTx(tx)
 
 	student_id, create_student_err := queries.CreateStudent(c.Context(), db_queries.CreateStudentParams{
-		IDNumber:             req.IDNumber,
-		SchoolID:             req.SchoolID,
 		PhoneNumber:          pgtype.Text{String: req.PhoneNumber, Valid: req.HasPhoneNumber},
 		FirstName:            req.FirstName,
 		LastName:             req.LastName,
@@ -145,7 +149,6 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 		BirthCountry:         req.BirthCountry,
 		MotherBirthFirstName: req.MotherBirthFirstName,
 		MotherBirthLastName:  req.MotherBirthLastName,
-		ClassesID:            req.ClassesID,
 		PermamentAddress:     req.PermamentAddress,
 		TemporaryAddress:     req.TemporaryAddress,
 		TaxNumber:            pgtype.Int4{Int32: req.TaxNumber, Valid: req.HasTaxNumber},
@@ -158,7 +161,18 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 	})
 
 	if create_student_err != nil {
-		return 500
+		return fiber.StatusInternalServerError
+	}
+
+	rows_affected, create_student_membership_err := queries.CreateStudentMembership(c.Context(), db_queries.CreateStudentMembershipParams{
+		StudentID: student_id,
+		IDNumber:  req.IDNumber,
+		ClassesID: req.ClassesID,
+		SchoolID:  req.SchoolID,
+	})
+
+	if rows_affected == 0 || create_student_membership_err != nil {
+		return fiber.StatusInternalServerError
 	}
 
 	create_account_err := queries.CreateAccount(c.Context(), db_queries.CreateAccountParams{
@@ -172,12 +186,12 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 	})
 
 	if create_account_err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 
 	SendEnrollToken(rdb, c.Context(), enroll_token, req.EmailAddress, "student", account_uuid)
 
-	return 200
+	return fiber.StatusOK
 }
 
 func EnrollStudent(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaque.Server) error {
@@ -201,7 +215,7 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 
 	queries := db_queries.New(pool)
@@ -220,7 +234,7 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 	})
 
 	if create_teacher_err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 
 	create_account_err := queries.CreateAccount(c.Context(), db_queries.CreateAccountParams{
@@ -234,12 +248,12 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 	})
 
 	if create_account_err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 
 	SendEnrollToken(rdb, c.Context(), enroll_token, req.EmailAddress, "teacher", account_uuid)
 
-	return 200
+	return fiber.StatusOK
 }
 
 func EnrollTeacher(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaque.Server) error {
@@ -263,7 +277,7 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 
 	queries := db_queries.New(pool)
@@ -282,7 +296,7 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 	})
 
 	if create_guardian_err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 
 	create_account_err := queries.CreateAccount(c.Context(), db_queries.CreateAccountParams{
@@ -296,12 +310,12 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 	})
 
 	if create_account_err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 
 	SendEnrollToken(rdb, c.Context(), enroll_token, req.EmailAddress, "guardian", account_uuid)
 
-	return 200
+	return fiber.StatusOK
 }
 
 func EnrollGuardian(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaque.Server) error {

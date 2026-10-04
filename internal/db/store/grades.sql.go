@@ -27,8 +27,14 @@ LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = fg.teacher_id
 JOIN terms ter ON ter.id = fg.term_id
 WHERE fg.student_id = $1
+  AND csub.school_id = $2
 ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name)
 `
+
+type GetStudentFinalGradesParams struct {
+	StudentID int32
+	SchoolID  int32
+}
 
 type GetStudentFinalGradesRow struct {
 	ID               int64
@@ -40,8 +46,8 @@ type GetStudentFinalGradesRow struct {
 	Value            int16
 }
 
-func (q *Queries) GetStudentFinalGrades(ctx context.Context, studentID int32) ([]GetStudentFinalGradesRow, error) {
-	rows, err := q.db.Query(ctx, getStudentFinalGrades, studentID)
+func (q *Queries) GetStudentFinalGrades(ctx context.Context, arg GetStudentFinalGradesParams) ([]GetStudentFinalGradesRow, error) {
+	rows, err := q.db.Query(ctx, getStudentFinalGrades, arg.StudentID, arg.SchoolID)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +94,14 @@ JOIN teachers t ON t.id = g.teacher_id
 JOIN terms ter ON ter.id = g.term_id
 JOIN grade_types gt ON gt.id = g.grade_type_id
 WHERE g.student_id = $1
+  AND csub.school_id = $2
 ORDER BY g.term_id, COALESCE(cs.subject_name, s.subject_name), g.date
 `
+
+type GetStudentGradesParams struct {
+	StudentID int32
+	SchoolID  int32
+}
 
 type GetStudentGradesRow struct {
 	ID               int64
@@ -104,8 +116,8 @@ type GetStudentGradesRow struct {
 	Note             pgtype.Text
 }
 
-func (q *Queries) GetStudentGrades(ctx context.Context, studentID int32) ([]GetStudentGradesRow, error) {
-	rows, err := q.db.Query(ctx, getStudentGrades, studentID)
+func (q *Queries) GetStudentGrades(ctx context.Context, arg GetStudentGradesParams) ([]GetStudentGradesRow, error) {
+	rows, err := q.db.Query(ctx, getStudentGrades, arg.StudentID, arg.SchoolID)
 	if err != nil {
 		return nil, err
 	}
@@ -294,13 +306,13 @@ func (q *Queries) GetTeacherGrades(ctx context.Context, arg GetTeacherGradesPara
 
 const teacherAddFinalGrade = `-- name: TeacherAddFinalGrade :execrows
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
-SELECT st.id, cs.id, $1, $2, $3
+SELECT ss.student_id, cs.id, $1, $2, $3
 FROM class_subjects cs
-JOIN students st ON st.classes_id = cs.class_id
+JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = $4
   AND cs.school_id = $5
   AND cs.teacher_id = $2
-  AND st.id = $6
+  AND ss.student_id = $6
   AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $1 AND sy.school_id = $5)
 `
 
@@ -330,13 +342,13 @@ func (q *Queries) TeacherAddFinalGrade(ctx context.Context, arg TeacherAddFinalG
 
 const teacherAddGrade = `-- name: TeacherAddGrade :execrows
 INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
-SELECT st.id, cs.id, $1, $2, $3, $4, $5, $6
+SELECT ss.student_id, cs.id, $1, $2, $3, $4, $5, $6
 FROM class_subjects cs
-JOIN students st ON st.classes_id = cs.class_id
+JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = $7
   AND cs.school_id = $8
   AND cs.teacher_id = $1
-  AND st.id = $9
+  AND ss.student_id = $9
   AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = $3 AND gt.school_id = $8)
   AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $2 AND sy.school_id = $8)
 `

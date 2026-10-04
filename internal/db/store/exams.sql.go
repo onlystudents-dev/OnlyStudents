@@ -30,13 +30,20 @@ LEFT JOIN subjects s ON s.id = csub.subject_id
 LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = e.teacher_id
 LEFT JOIN rooms r ON r.id = e.room_id
-WHERE csub.class_id = (
-    SELECT st.classes_id
-    FROM students st
-    WHERE st.id = $1
-)
+WHERE csub.school_id = $1
+  AND csub.class_id = (
+      SELECT ss.classes_id
+      FROM student_school ss
+      WHERE ss.student_id = $2
+        AND ss.school_id = $1
+  )
 ORDER BY e.date, e.start_time
 `
+
+type GetStudentExamsParams struct {
+	SchoolID  int32
+	StudentID int32
+}
 
 type GetStudentExamsRow struct {
 	ID               int64
@@ -52,8 +59,8 @@ type GetStudentExamsRow struct {
 	Room             pgtype.Text
 }
 
-func (q *Queries) GetStudentExams(ctx context.Context, id int32) ([]GetStudentExamsRow, error) {
-	rows, err := q.db.Query(ctx, getStudentExams, id)
+func (q *Queries) GetStudentExams(ctx context.Context, arg GetStudentExamsParams) ([]GetStudentExamsRow, error) {
+	rows, err := q.db.Query(ctx, getStudentExams, arg.SchoolID, arg.StudentID)
 	if err != nil {
 		return nil, err
 	}

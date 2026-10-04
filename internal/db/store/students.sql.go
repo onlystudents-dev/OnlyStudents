@@ -12,12 +12,10 @@ import (
 )
 
 const createStudent = `-- name: CreateStudent :one
-INSERT INTO students (id_number,school_id,phone_number,first_name,last_name,birth_first_name,birth_last_name,birth_date,birth_city,birth_country,mother_birth_first_name,mother_birth_last_name,classes_id,permament_address,temporary_address,tax_number,ssn_number,bank_name,iban_owner,iban_number,document_type,document_number) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING id
+INSERT INTO students (phone_number,first_name,last_name,birth_first_name,birth_last_name,birth_date,birth_city,birth_country,mother_birth_first_name,mother_birth_last_name,permament_address,temporary_address,tax_number,ssn_number,bank_name,iban_owner,iban_number,document_type,document_number) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING id
 `
 
 type CreateStudentParams struct {
-	IDNumber             int32
-	SchoolID             int32
 	PhoneNumber          pgtype.Text
 	FirstName            string
 	LastName             string
@@ -28,7 +26,6 @@ type CreateStudentParams struct {
 	BirthCountry         string
 	MotherBirthFirstName string
 	MotherBirthLastName  string
-	ClassesID            int32
 	PermamentAddress     string
 	TemporaryAddress     string
 	TaxNumber            pgtype.Int4
@@ -42,8 +39,6 @@ type CreateStudentParams struct {
 
 func (q *Queries) CreateStudent(ctx context.Context, arg CreateStudentParams) (int32, error) {
 	row := q.db.QueryRow(ctx, createStudent,
-		arg.IDNumber,
-		arg.SchoolID,
 		arg.PhoneNumber,
 		arg.FirstName,
 		arg.LastName,
@@ -54,7 +49,6 @@ func (q *Queries) CreateStudent(ctx context.Context, arg CreateStudentParams) (i
 		arg.BirthCountry,
 		arg.MotherBirthFirstName,
 		arg.MotherBirthLastName,
-		arg.ClassesID,
 		arg.PermamentAddress,
 		arg.TemporaryAddress,
 		arg.TaxNumber,
@@ -71,7 +65,7 @@ func (q *Queries) CreateStudent(ctx context.Context, arg CreateStudentParams) (i
 }
 
 const getStudent = `-- name: GetStudent :one
-SELECT id, id_number, school_id, phone_number, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, mother_birth_first_name, mother_birth_last_name, classes_id, permament_address, temporary_address, tax_number, ssn_number, bank_name, iban_owner, iban_number, document_type, document_number FROM students WHERE id = $1
+SELECT id, phone_number, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, mother_birth_first_name, mother_birth_last_name, permament_address, temporary_address, tax_number, ssn_number, bank_name, iban_owner, iban_number, document_type, document_number FROM students WHERE id = $1
 `
 
 func (q *Queries) GetStudent(ctx context.Context, id int32) (Student, error) {
@@ -79,8 +73,6 @@ func (q *Queries) GetStudent(ctx context.Context, id int32) (Student, error) {
 	var i Student
 	err := row.Scan(
 		&i.ID,
-		&i.IDNumber,
-		&i.SchoolID,
 		&i.PhoneNumber,
 		&i.FirstName,
 		&i.LastName,
@@ -91,7 +83,6 @@ func (q *Queries) GetStudent(ctx context.Context, id int32) (Student, error) {
 		&i.BirthCountry,
 		&i.MotherBirthFirstName,
 		&i.MotherBirthLastName,
-		&i.ClassesID,
 		&i.PermamentAddress,
 		&i.TemporaryAddress,
 		&i.TaxNumber,
@@ -103,52 +94,4 @@ func (q *Queries) GetStudent(ctx context.Context, id int32) (Student, error) {
 		&i.DocumentNumber,
 	)
 	return i, err
-}
-
-const listStudents = `-- name: ListStudents :many
-SELECT id, id_number, school_id, phone_number, first_name, last_name, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, mother_birth_first_name, mother_birth_last_name, classes_id, permament_address, temporary_address, tax_number, ssn_number, bank_name, iban_owner, iban_number, document_type, document_number FROM students ORDER BY id
-`
-
-func (q *Queries) ListStudents(ctx context.Context) ([]Student, error) {
-	rows, err := q.db.Query(ctx, listStudents)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Student
-	for rows.Next() {
-		var i Student
-		if err := rows.Scan(
-			&i.ID,
-			&i.IDNumber,
-			&i.SchoolID,
-			&i.PhoneNumber,
-			&i.FirstName,
-			&i.LastName,
-			&i.BirthFirstName,
-			&i.BirthLastName,
-			&i.BirthDate,
-			&i.BirthCity,
-			&i.BirthCountry,
-			&i.MotherBirthFirstName,
-			&i.MotherBirthLastName,
-			&i.ClassesID,
-			&i.PermamentAddress,
-			&i.TemporaryAddress,
-			&i.TaxNumber,
-			&i.SsnNumber,
-			&i.BankName,
-			&i.IbanOwner,
-			&i.IbanNumber,
-			&i.DocumentType,
-			&i.DocumentNumber,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
