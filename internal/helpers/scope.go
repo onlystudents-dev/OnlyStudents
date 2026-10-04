@@ -63,9 +63,7 @@ func ResolveMeScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (MeScope
 	var err error
 
 	switch session.Role {
-	case "student":
-		studentID = session.AccountID
-	case "guardian":
+	case "student", "guardian":
 		schoolID, classID, studentID, err = ResolvePerson(c, rdb, *queries, session)
 		if err != nil {
 			return MeScope{}, errors.New("invalid scope")
