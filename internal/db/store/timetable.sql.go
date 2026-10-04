@@ -11,8 +11,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const addCanceledLesson = `-- name: AddCanceledLesson :exec
-INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true) ON CONFLICT (school_id, room_id, actual_date, lesson_num, group_id) DO UPDATE SET canceled = true
+const addCanceledLesson = `-- name: AddCanceledLesson :execrows
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled)
+SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true
+FROM schools s
+WHERE s.id = $1
+  AND EXISTS (SELECT 1 FROM teacher_school ts WHERE ts.teacher_id = $2 AND ts.school_id = $1)
+  AND EXISTS (SELECT 1 FROM rooms r WHERE r.id = $3 AND r.school_id = $1)
+  AND EXISTS (SELECT 1 FROM groups g WHERE g.id = $5 AND g.school_id = $1)
+  AND (NOT $6 OR EXISTS (SELECT 1 FROM custom_subjects cs WHERE cs.id = $7 AND cs.school_id = $1))
+ON CONFLICT (school_id, room_id, actual_date, lesson_num, group_id) DO UPDATE SET canceled = true
 `
 
 type AddCanceledLessonParams struct {
@@ -28,8 +36,8 @@ type AddCanceledLessonParams struct {
 	LessonNum       int32
 }
 
-func (q *Queries) AddCanceledLesson(ctx context.Context, arg AddCanceledLessonParams) error {
-	_, err := q.db.Exec(ctx, addCanceledLesson,
+func (q *Queries) AddCanceledLesson(ctx context.Context, arg AddCanceledLessonParams) (int64, error) {
+	result, err := q.db.Exec(ctx, addCanceledLesson,
 		arg.SchoolID,
 		arg.TeacherID,
 		arg.RoomID,
@@ -41,11 +49,21 @@ func (q *Queries) AddCanceledLesson(ctx context.Context, arg AddCanceledLessonPa
 		arg.ActualDate,
 		arg.LessonNum,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const createBaseSchedule = `-- name: CreateBaseSchedule :exec
-INSERT INTO base_schedule (school_id, teacher_id, room_id, day_of_week, lesson_num, group_id, custom_subject, subject_id, custom_subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+const createBaseSchedule = `-- name: CreateBaseSchedule :execrows
+INSERT INTO base_schedule (school_id, teacher_id, room_id, day_of_week, lesson_num, group_id, custom_subject, subject_id, custom_subject_id)
+SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9
+FROM schools s
+WHERE s.id = $1
+  AND EXISTS (SELECT 1 FROM teacher_school ts WHERE ts.teacher_id = $2 AND ts.school_id = $1)
+  AND EXISTS (SELECT 1 FROM rooms r WHERE r.id = $3 AND r.school_id = $1)
+  AND EXISTS (SELECT 1 FROM groups g WHERE g.id = $6 AND g.school_id = $1)
+  AND (NOT $7 OR EXISTS (SELECT 1 FROM custom_subjects cs WHERE cs.id = $9 AND cs.school_id = $1))
 `
 
 type CreateBaseScheduleParams struct {
@@ -60,8 +78,8 @@ type CreateBaseScheduleParams struct {
 	CustomSubjectID pgtype.Int4
 }
 
-func (q *Queries) CreateBaseSchedule(ctx context.Context, arg CreateBaseScheduleParams) error {
-	_, err := q.db.Exec(ctx, createBaseSchedule,
+func (q *Queries) CreateBaseSchedule(ctx context.Context, arg CreateBaseScheduleParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createBaseSchedule,
 		arg.SchoolID,
 		arg.TeacherID,
 		arg.RoomID,
@@ -72,10 +90,13 @@ func (q *Queries) CreateBaseSchedule(ctx context.Context, arg CreateBaseSchedule
 		arg.SubjectID,
 		arg.CustomSubjectID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const createBellScheduleType = `-- name: CreateBellScheduleType :exec
+const createBellScheduleType = `-- name: CreateBellScheduleType :execrows
 INSERT INTO bell_schedule_type (school_id, name) VALUES ($1, $2)
 `
 
@@ -84,12 +105,15 @@ type CreateBellScheduleTypeParams struct {
 	Name     string
 }
 
-func (q *Queries) CreateBellScheduleType(ctx context.Context, arg CreateBellScheduleTypeParams) error {
-	_, err := q.db.Exec(ctx, createBellScheduleType, arg.SchoolID, arg.Name)
-	return err
+func (q *Queries) CreateBellScheduleType(ctx context.Context, arg CreateBellScheduleTypeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createBellScheduleType, arg.SchoolID, arg.Name)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const createCustomSubject = `-- name: CreateCustomSubject :exec
+const createCustomSubject = `-- name: CreateCustomSubject :execrows
 INSERT INTO custom_subjects (school_id, subject_name) VALUES ($1, $2)
 `
 
@@ -98,13 +122,20 @@ type CreateCustomSubjectParams struct {
 	SubjectName string
 }
 
-func (q *Queries) CreateCustomSubject(ctx context.Context, arg CreateCustomSubjectParams) error {
-	_, err := q.db.Exec(ctx, createCustomSubject, arg.SchoolID, arg.SubjectName)
-	return err
+func (q *Queries) CreateCustomSubject(ctx context.Context, arg CreateCustomSubjectParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createCustomSubject, arg.SchoolID, arg.SubjectName)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const createGroup = `-- name: CreateGroup :exec
-INSERT INTO groups (school_id, bell_id, group_name) VALUES ($1, $2, $3)
+const createGroup = `-- name: CreateGroup :execrows
+INSERT INTO groups (school_id, bell_id, group_name)
+SELECT $1, $2, $3
+FROM schools s
+WHERE s.id = $1
+  AND EXISTS (SELECT 1 FROM bell_schedule_type bst WHERE bst.id = $2 AND bst.school_id = $1)
 `
 
 type CreateGroupParams struct {
@@ -113,13 +144,20 @@ type CreateGroupParams struct {
 	GroupName string
 }
 
-func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) error {
-	_, err := q.db.Exec(ctx, createGroup, arg.SchoolID, arg.BellID, arg.GroupName)
-	return err
+func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createGroup, arg.SchoolID, arg.BellID, arg.GroupName)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const createLessonTime = `-- name: CreateLessonTime :exec
-INSERT INTO bell_schedule (school_id, type_id, lesson_number, at_start, at_end) VALUES ($1, $2, $3, $4, $5)
+const createLessonTime = `-- name: CreateLessonTime :execrows
+INSERT INTO bell_schedule (school_id, type_id, lesson_number, at_start, at_end)
+SELECT $1, $2, $3, $4, $5
+FROM schools s
+WHERE s.id = $1
+  AND EXISTS (SELECT 1 FROM bell_schedule_type bst WHERE bst.id = $2 AND bst.school_id = $1)
 `
 
 type CreateLessonTimeParams struct {
@@ -130,19 +168,29 @@ type CreateLessonTimeParams struct {
 	AtEnd        pgtype.Time
 }
 
-func (q *Queries) CreateLessonTime(ctx context.Context, arg CreateLessonTimeParams) error {
-	_, err := q.db.Exec(ctx, createLessonTime,
+func (q *Queries) CreateLessonTime(ctx context.Context, arg CreateLessonTimeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createLessonTime,
 		arg.SchoolID,
 		arg.TypeID,
 		arg.LessonNumber,
 		arg.AtStart,
 		arg.AtEnd,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const createRealTimeLesson = `-- name: CreateRealTimeLesson :exec
-INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+const createRealTimeLesson = `-- name: CreateRealTimeLesson :execrows
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num)
+SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+FROM schools s
+WHERE s.id = $1
+  AND EXISTS (SELECT 1 FROM teacher_school ts WHERE ts.teacher_id = $2 AND ts.school_id = $1)
+  AND EXISTS (SELECT 1 FROM rooms r WHERE r.id = $3 AND r.school_id = $1)
+  AND EXISTS (SELECT 1 FROM groups g WHERE g.id = $5 AND g.school_id = $1)
+  AND (NOT $6 OR EXISTS (SELECT 1 FROM custom_subjects cs WHERE cs.id = $7 AND cs.school_id = $1))
 `
 
 type CreateRealTimeLessonParams struct {
@@ -158,8 +206,8 @@ type CreateRealTimeLessonParams struct {
 	LessonNum       int32
 }
 
-func (q *Queries) CreateRealTimeLesson(ctx context.Context, arg CreateRealTimeLessonParams) error {
-	_, err := q.db.Exec(ctx, createRealTimeLesson,
+func (q *Queries) CreateRealTimeLesson(ctx context.Context, arg CreateRealTimeLessonParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createRealTimeLesson,
 		arg.SchoolID,
 		arg.TeacherID,
 		arg.RoomID,
@@ -171,10 +219,13 @@ func (q *Queries) CreateRealTimeLesson(ctx context.Context, arg CreateRealTimeLe
 		arg.ActualDate,
 		arg.LessonNum,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const createRoom = `-- name: CreateRoom :exec
+const createRoom = `-- name: CreateRoom :execrows
 INSERT INTO rooms (school_id, name, capacity) VALUES ($1, $2, $3)
 `
 
@@ -184,12 +235,15 @@ type CreateRoomParams struct {
 	Capacity int32
 }
 
-func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
-	_, err := q.db.Exec(ctx, createRoom, arg.SchoolID, arg.Name, arg.Capacity)
-	return err
+func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createRoom, arg.SchoolID, arg.Name, arg.Capacity)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteBaseSchedule = `-- name: DeleteBaseSchedule :exec
+const deleteBaseSchedule = `-- name: DeleteBaseSchedule :execrows
 DELETE FROM base_schedule WHERE id = $1 AND school_id = $2
 `
 
@@ -198,12 +252,15 @@ type DeleteBaseScheduleParams struct {
 	SchoolID int32
 }
 
-func (q *Queries) DeleteBaseSchedule(ctx context.Context, arg DeleteBaseScheduleParams) error {
-	_, err := q.db.Exec(ctx, deleteBaseSchedule, arg.ID, arg.SchoolID)
-	return err
+func (q *Queries) DeleteBaseSchedule(ctx context.Context, arg DeleteBaseScheduleParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteBaseSchedule, arg.ID, arg.SchoolID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteBellScheduleType = `-- name: DeleteBellScheduleType :exec
+const deleteBellScheduleType = `-- name: DeleteBellScheduleType :execrows
 DELETE FROM bell_schedule_type WHERE school_id = $1 AND id = $2
 `
 
@@ -212,12 +269,15 @@ type DeleteBellScheduleTypeParams struct {
 	ID       int32
 }
 
-func (q *Queries) DeleteBellScheduleType(ctx context.Context, arg DeleteBellScheduleTypeParams) error {
-	_, err := q.db.Exec(ctx, deleteBellScheduleType, arg.SchoolID, arg.ID)
-	return err
+func (q *Queries) DeleteBellScheduleType(ctx context.Context, arg DeleteBellScheduleTypeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteBellScheduleType, arg.SchoolID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteCustomSubject = `-- name: DeleteCustomSubject :exec
+const deleteCustomSubject = `-- name: DeleteCustomSubject :execrows
 DELETE FROM custom_subjects WHERE school_id = $1 AND id = $2
 `
 
@@ -226,12 +286,15 @@ type DeleteCustomSubjectParams struct {
 	ID       int32
 }
 
-func (q *Queries) DeleteCustomSubject(ctx context.Context, arg DeleteCustomSubjectParams) error {
-	_, err := q.db.Exec(ctx, deleteCustomSubject, arg.SchoolID, arg.ID)
-	return err
+func (q *Queries) DeleteCustomSubject(ctx context.Context, arg DeleteCustomSubjectParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteCustomSubject, arg.SchoolID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteGroup = `-- name: DeleteGroup :exec
+const deleteGroup = `-- name: DeleteGroup :execrows
 DELETE FROM groups WHERE school_id = $1 AND id = $2
 `
 
@@ -240,12 +303,15 @@ type DeleteGroupParams struct {
 	ID       int32
 }
 
-func (q *Queries) DeleteGroup(ctx context.Context, arg DeleteGroupParams) error {
-	_, err := q.db.Exec(ctx, deleteGroup, arg.SchoolID, arg.ID)
-	return err
+func (q *Queries) DeleteGroup(ctx context.Context, arg DeleteGroupParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteGroup, arg.SchoolID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteLessonTime = `-- name: DeleteLessonTime :exec
+const deleteLessonTime = `-- name: DeleteLessonTime :execrows
 DELETE FROM bell_schedule WHERE school_id = $1 AND id = $2
 `
 
@@ -254,12 +320,15 @@ type DeleteLessonTimeParams struct {
 	ID       int32
 }
 
-func (q *Queries) DeleteLessonTime(ctx context.Context, arg DeleteLessonTimeParams) error {
-	_, err := q.db.Exec(ctx, deleteLessonTime, arg.SchoolID, arg.ID)
-	return err
+func (q *Queries) DeleteLessonTime(ctx context.Context, arg DeleteLessonTimeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteLessonTime, arg.SchoolID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteRealTimeLesson = `-- name: DeleteRealTimeLesson :exec
+const deleteRealTimeLesson = `-- name: DeleteRealTimeLesson :execrows
 DELETE FROM time_table WHERE school_id = $1 AND id = $2
 `
 
@@ -268,12 +337,15 @@ type DeleteRealTimeLessonParams struct {
 	ID       int32
 }
 
-func (q *Queries) DeleteRealTimeLesson(ctx context.Context, arg DeleteRealTimeLessonParams) error {
-	_, err := q.db.Exec(ctx, deleteRealTimeLesson, arg.SchoolID, arg.ID)
-	return err
+func (q *Queries) DeleteRealTimeLesson(ctx context.Context, arg DeleteRealTimeLessonParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteRealTimeLesson, arg.SchoolID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteRoom = `-- name: DeleteRoom :exec
+const deleteRoom = `-- name: DeleteRoom :execrows
 DELETE FROM rooms WHERE school_id = $1 AND id = $2
 `
 
@@ -282,12 +354,15 @@ type DeleteRoomParams struct {
 	ID       int32
 }
 
-func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) error {
-	_, err := q.db.Exec(ctx, deleteRoom, arg.SchoolID, arg.ID)
-	return err
+func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteRoom, arg.SchoolID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const deleteStudentFromGroup = `-- name: DeleteStudentFromGroup :exec
+const deleteStudentFromGroup = `-- name: DeleteStudentFromGroup :execrows
 DELETE FROM group_members WHERE group_id = $1 AND student_id = $2 AND school_id = $3
 `
 
@@ -297,12 +372,15 @@ type DeleteStudentFromGroupParams struct {
 	SchoolID  int32
 }
 
-func (q *Queries) DeleteStudentFromGroup(ctx context.Context, arg DeleteStudentFromGroupParams) error {
-	_, err := q.db.Exec(ctx, deleteStudentFromGroup, arg.GroupID, arg.StudentID, arg.SchoolID)
-	return err
+func (q *Queries) DeleteStudentFromGroup(ctx context.Context, arg DeleteStudentFromGroupParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteStudentFromGroup, arg.GroupID, arg.StudentID, arg.SchoolID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const editBellScheduleType = `-- name: EditBellScheduleType :exec
+const editBellScheduleType = `-- name: EditBellScheduleType :execrows
 UPDATE bell_schedule_type SET name = $1 WHERE id = $2 AND school_id = $3
 `
 
@@ -312,12 +390,15 @@ type EditBellScheduleTypeParams struct {
 	SchoolID int32
 }
 
-func (q *Queries) EditBellScheduleType(ctx context.Context, arg EditBellScheduleTypeParams) error {
-	_, err := q.db.Exec(ctx, editBellScheduleType, arg.Name, arg.ID, arg.SchoolID)
-	return err
+func (q *Queries) EditBellScheduleType(ctx context.Context, arg EditBellScheduleTypeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, editBellScheduleType, arg.Name, arg.ID, arg.SchoolID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const editCustomSubject = `-- name: EditCustomSubject :exec
+const editCustomSubject = `-- name: EditCustomSubject :execrows
 UPDATE custom_subjects SET subject_name = $1 WHERE school_id = $2 AND id = $3
 `
 
@@ -327,12 +408,15 @@ type EditCustomSubjectParams struct {
 	ID          int32
 }
 
-func (q *Queries) EditCustomSubject(ctx context.Context, arg EditCustomSubjectParams) error {
-	_, err := q.db.Exec(ctx, editCustomSubject, arg.SubjectName, arg.SchoolID, arg.ID)
-	return err
+func (q *Queries) EditCustomSubject(ctx context.Context, arg EditCustomSubjectParams) (int64, error) {
+	result, err := q.db.Exec(ctx, editCustomSubject, arg.SubjectName, arg.SchoolID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const editGroup = `-- name: EditGroup :exec
+const editGroup = `-- name: EditGroup :execrows
 UPDATE groups SET group_name = $1 WHERE school_id = $2 AND id = $3
 `
 
@@ -342,12 +426,15 @@ type EditGroupParams struct {
 	ID        int32
 }
 
-func (q *Queries) EditGroup(ctx context.Context, arg EditGroupParams) error {
-	_, err := q.db.Exec(ctx, editGroup, arg.GroupName, arg.SchoolID, arg.ID)
-	return err
+func (q *Queries) EditGroup(ctx context.Context, arg EditGroupParams) (int64, error) {
+	result, err := q.db.Exec(ctx, editGroup, arg.GroupName, arg.SchoolID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const editLessonTime = `-- name: EditLessonTime :exec
+const editLessonTime = `-- name: EditLessonTime :execrows
 UPDATE bell_schedule set lesson_number = $1, at_start = $2, at_end = $3 WHERE id = $4 AND school_id = $5
 `
 
@@ -359,18 +446,21 @@ type EditLessonTimeParams struct {
 	SchoolID     int32
 }
 
-func (q *Queries) EditLessonTime(ctx context.Context, arg EditLessonTimeParams) error {
-	_, err := q.db.Exec(ctx, editLessonTime,
+func (q *Queries) EditLessonTime(ctx context.Context, arg EditLessonTimeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, editLessonTime,
 		arg.LessonNumber,
 		arg.AtStart,
 		arg.AtEnd,
 		arg.ID,
 		arg.SchoolID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const editRoom = `-- name: EditRoom :exec
+const editRoom = `-- name: EditRoom :execrows
 UPDATE rooms SET name = $1, capacity = $2 WHERE school_id = $3 AND id = $4
 `
 
@@ -381,18 +471,26 @@ type EditRoomParams struct {
 	ID       int32
 }
 
-func (q *Queries) EditRoom(ctx context.Context, arg EditRoomParams) error {
-	_, err := q.db.Exec(ctx, editRoom,
+func (q *Queries) EditRoom(ctx context.Context, arg EditRoomParams) (int64, error) {
+	result, err := q.db.Exec(ctx, editRoom,
 		arg.Name,
 		arg.Capacity,
 		arg.SchoolID,
 		arg.ID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const insertStudentToGroup = `-- name: InsertStudentToGroup :exec
-INSERT INTO group_members (school_id, group_id, student_id) VALUES ($1, $2, $3)
+const insertStudentToGroup = `-- name: InsertStudentToGroup :execrows
+INSERT INTO group_members (school_id, group_id, student_id)
+SELECT $1, $2, $3
+FROM schools s
+WHERE s.id = $1
+  AND EXISTS (SELECT 1 FROM groups g WHERE g.id = $2 AND g.school_id = $1)
+  AND EXISTS (SELECT 1 FROM students st WHERE st.id = $3 AND st.school_id = $1)
 `
 
 type InsertStudentToGroupParams struct {
@@ -401,17 +499,37 @@ type InsertStudentToGroupParams struct {
 	StudentID int32
 }
 
-func (q *Queries) InsertStudentToGroup(ctx context.Context, arg InsertStudentToGroupParams) error {
-	_, err := q.db.Exec(ctx, insertStudentToGroup, arg.SchoolID, arg.GroupID, arg.StudentID)
-	return err
+func (q *Queries) InsertStudentToGroup(ctx context.Context, arg InsertStudentToGroupParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertStudentToGroup, arg.SchoolID, arg.GroupID, arg.StudentID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const manageSubsitutionLesson = `-- name: ManageSubsitutionLesson :exec
-UPDATE time_table SET teacher_id = $2, room_id = $3, day_of_week = $4, group_id = $5, custom_subject = $6, custom_subject_id = $7, subject_id = $8, actual_date = $9, lesson_num = $10, is_substitution = $11, substitution_teacher_id = $12 WHERE school_id = $1 AND id = $13
+const manageSubsitutionLesson = `-- name: ManageSubsitutionLesson :execrows
+UPDATE time_table t
+SET teacher_id = $1,
+    room_id = $2,
+    day_of_week = $3,
+    group_id = $4,
+    custom_subject = $5,
+    custom_subject_id = $6,
+    subject_id = $7,
+    actual_date = $8,
+    lesson_num = $9,
+    is_substitution = $10,
+    substitution_teacher_id = $11
+WHERE t.school_id = $12
+  AND t.id = $13
+  AND EXISTS (SELECT 1 FROM teacher_school ts WHERE ts.teacher_id = $1 AND ts.school_id = $12)
+  AND EXISTS (SELECT 1 FROM rooms r WHERE r.id = $2 AND r.school_id = $12)
+  AND EXISTS (SELECT 1 FROM groups g WHERE g.id = $4 AND g.school_id = $12)
+  AND (NOT $5 OR EXISTS (SELECT 1 FROM custom_subjects cs WHERE cs.id = $6 AND cs.school_id = $12))
+  AND (NOT $10 OR EXISTS (SELECT 1 FROM teacher_school ts2 WHERE ts2.teacher_id = $11 AND ts2.school_id = $12))
 `
 
 type ManageSubsitutionLessonParams struct {
-	SchoolID              int32
 	TeacherID             int32
 	RoomID                int32
 	DayOfWeek             int32
@@ -423,12 +541,12 @@ type ManageSubsitutionLessonParams struct {
 	LessonNum             int32
 	IsSubstitution        bool
 	SubstitutionTeacherID pgtype.Int4
+	SchoolID              int32
 	ID                    int32
 }
 
-func (q *Queries) ManageSubsitutionLesson(ctx context.Context, arg ManageSubsitutionLessonParams) error {
-	_, err := q.db.Exec(ctx, manageSubsitutionLesson,
-		arg.SchoolID,
+func (q *Queries) ManageSubsitutionLesson(ctx context.Context, arg ManageSubsitutionLessonParams) (int64, error) {
+	result, err := q.db.Exec(ctx, manageSubsitutionLesson,
 		arg.TeacherID,
 		arg.RoomID,
 		arg.DayOfWeek,
@@ -440,13 +558,17 @@ func (q *Queries) ManageSubsitutionLesson(ctx context.Context, arg ManageSubsitu
 		arg.LessonNum,
 		arg.IsSubstitution,
 		arg.SubstitutionTeacherID,
+		arg.SchoolID,
 		arg.ID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const readBaseScheduleClass = `-- name: ReadBaseScheduleClass :many
-SELECT DISTINCT bs.id, bs.school_id, bs.teacher_id, bs.room_id, bs.day_of_week, bs.lesson_num, bs.group_id, bs.custom_subject, bs.subject_id, bs.custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name, EXISTS (SELECT 1 FROM exams e JOIN class_subjects csub ON csub.id = e.class_subjects_id WHERE csub.class_id = $1 AND csub.subject_id = bs.subject_id) AS has_exam, EXISTS (SELECT 1 FROM homework hw JOIN class_subjects csub ON csub.id = hw.class_subjects_id WHERE csub.class_id = $1 AND csub.subject_id = bs.subject_id) AS has_homework, teach.first_name AS teacher_first_name, teach.last_name AS teacher_last_name FROM base_schedule bs JOIN groups g ON bs.group_id = g.id JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id LEFT JOIN subjects sub ON sub.id = bs.subject_id LEFT JOIN custom_subjects cs ON cs.id = bs.custom_subject_id LEFT JOIN teachers teach ON teach.id = bs.teacher_id WHERE s.classes_id = $1 AND s.school_id = $2
+SELECT DISTINCT bs.id, bs.school_id, bs.teacher_id, bs.room_id, bs.day_of_week, bs.lesson_num, bs.group_id, bs.custom_subject, bs.subject_id, bs.custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name, EXISTS (SELECT 1 FROM exams e JOIN class_subjects csub ON csub.id = e.class_subjects_id WHERE csub.class_id = $1 AND csub.subject_id = bs.subject_id) AS has_exam, EXISTS (SELECT 1 FROM homework hw JOIN class_subjects csub ON csub.id = hw.class_subjects_id WHERE csub.class_id = $1 AND csub.subject_id = bs.subject_id) AS has_homework, teach.first_name AS teacher_first_name, teach.last_name AS teacher_last_name FROM base_schedule bs JOIN groups g ON bs.group_id = g.id JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id LEFT JOIN subjects sub ON sub.id = bs.subject_id LEFT JOIN custom_subjects cs ON cs.id = bs.custom_subject_id LEFT JOIN teachers teach ON teach.id = bs.teacher_id WHERE s.classes_id = $1 AND s.school_id = $2 AND bs.school_id = $2 AND gm.school_id = $2
 `
 
 type ReadBaseScheduleClassParams struct {
@@ -695,7 +817,7 @@ func (q *Queries) ReadLessonTime(ctx context.Context, arg ReadLessonTimeParams) 
 }
 
 const readListOfStudents = `-- name: ReadListOfStudents :many
-SELECT s.id, s.first_name, s.last_name FROM students AS s INNER JOIN group_members AS g_m ON g_m.student_id = s.id WHERE g_m.group_id = $1 AND g_m.school_id = $2
+SELECT s.id, s.first_name, s.last_name FROM students AS s INNER JOIN group_members AS g_m ON g_m.student_id = s.id WHERE g_m.group_id = $1 AND g_m.school_id = $2 AND s.school_id = $2
 `
 
 type ReadListOfStudentsParams struct {
@@ -730,14 +852,14 @@ func (q *Queries) ReadListOfStudents(ctx context.Context, arg ReadListOfStudents
 }
 
 const readRealTimeTable = `-- name: ReadRealTimeTable :many
-SELECT d.actual_date::date AS actual_date, COALESCE(t.room_id, b.room_id) AS room_id, b.lesson_num, b.day_of_week, COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) AS effective_teacher_id, COALESCE(t.group_id, b.group_id) AS group_id, COALESCE(t.school_id, b.school_id) AS school_id, COALESCE(t.custom_subject, b.custom_subject) AS custom_subject, COALESCE(t.subject_id, b.subject_id) AS subject_id, COALESCE(t.custom_subject_id, b.custom_subject_id) AS custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name, COALESCE(t.is_substitution, FALSE) AS is_substitution, COALESCE(t.canceled, FALSE) AS canceled, EXISTS (SELECT 1 FROM exams e JOIN class_subjects csub ON csub.id = e.class_subjects_id WHERE csub.subject_id = COALESCE(t.subject_id, b.subject_id) AND csub.class_id IN (SELECT s.classes_id FROM group_members gm JOIN students s ON s.id = gm.student_id WHERE gm.group_id = COALESCE(t.group_id, b.group_id)) AND e.date = d.actual_date::date) AS has_exam, EXISTS (SELECT 1 FROM homework hw JOIN class_subjects csub ON csub.id = hw.class_subjects_id WHERE csub.subject_id = COALESCE(t.subject_id, b.subject_id) AND csub.class_id IN (SELECT s.classes_id FROM group_members gm JOIN students s ON s.id = gm.student_id WHERE gm.group_id = COALESCE(t.group_id, b.group_id)) AND hw.due_date = d.actual_date::date) AS has_homework, teach.first_name AS teacher_first_name, teach.last_name AS teacher_last_name FROM base_schedule b JOIN generate_series(CAST($1 AS date), CAST($2 AS date), interval '1 day') AS d(actual_date) ON EXTRACT(ISODOW FROM d.actual_date) = b.day_of_week LEFT JOIN time_table t ON t.school_id = b.school_id AND t.group_id = b.group_id AND t.day_of_week = b.day_of_week AND t.lesson_num = b.lesson_num AND t.actual_date = d.actual_date::date LEFT JOIN subjects sub ON sub.id = COALESCE(t.subject_id, b.subject_id) LEFT JOIN custom_subjects cs ON cs.id = COALESCE(t.custom_subject_id, b.custom_subject_id) LEFT JOIN teachers teach ON teach.id = COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) WHERE b.group_id IN ( SELECT g.id FROM groups g JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $3 AND s.school_id = $4) ORDER BY d.actual_date, b.lesson_num
+SELECT d.actual_date::date AS actual_date, COALESCE(t.room_id, b.room_id) AS room_id, b.lesson_num, b.day_of_week, COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) AS effective_teacher_id, COALESCE(t.group_id, b.group_id) AS group_id, COALESCE(t.school_id, b.school_id) AS school_id, COALESCE(t.custom_subject, b.custom_subject) AS custom_subject, COALESCE(t.subject_id, b.subject_id) AS subject_id, COALESCE(t.custom_subject_id, b.custom_subject_id) AS custom_subject_id, COALESCE(sub.subject_name, cs.subject_name) AS subject_name, COALESCE(t.is_substitution, FALSE) AS is_substitution, COALESCE(t.canceled, FALSE) AS canceled, EXISTS (SELECT 1 FROM exams e JOIN class_subjects csub ON csub.id = e.class_subjects_id WHERE csub.subject_id = COALESCE(t.subject_id, b.subject_id) AND csub.class_id IN (SELECT s.classes_id FROM group_members gm JOIN students s ON s.id = gm.student_id WHERE gm.group_id = COALESCE(t.group_id, b.group_id)) AND e.date = d.actual_date::date) AS has_exam, EXISTS (SELECT 1 FROM homework hw JOIN class_subjects csub ON csub.id = hw.class_subjects_id WHERE csub.subject_id = COALESCE(t.subject_id, b.subject_id) AND csub.class_id IN (SELECT s.classes_id FROM group_members gm JOIN students s ON s.id = gm.student_id WHERE gm.group_id = COALESCE(t.group_id, b.group_id)) AND hw.due_date = d.actual_date::date) AS has_homework, teach.first_name AS teacher_first_name, teach.last_name AS teacher_last_name FROM base_schedule b JOIN generate_series(CAST($1 AS date), CAST($2 AS date), interval '1 day') AS d(actual_date) ON EXTRACT(ISODOW FROM d.actual_date) = b.day_of_week LEFT JOIN time_table t ON t.school_id = b.school_id AND t.group_id = b.group_id AND t.day_of_week = b.day_of_week AND t.lesson_num = b.lesson_num AND t.actual_date = d.actual_date::date LEFT JOIN subjects sub ON sub.id = COALESCE(t.subject_id, b.subject_id) LEFT JOIN custom_subjects cs ON cs.id = COALESCE(t.custom_subject_id, b.custom_subject_id) LEFT JOIN teachers teach ON teach.id = COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id) WHERE b.school_id = $3 AND b.group_id IN ( SELECT g.id FROM groups g JOIN group_members gm ON g.id = gm.group_id JOIN students s ON gm.student_id = s.id WHERE s.classes_id = $4 AND s.school_id = $3) ORDER BY d.actual_date, b.lesson_num
 `
 
 type ReadRealTimeTableParams struct {
 	StartDate pgtype.Date
 	EndDate   pgtype.Date
-	ClassesID int32
 	SchoolID  int32
+	ClassesID int32
 }
 
 type ReadRealTimeTableRow struct {
@@ -764,8 +886,8 @@ func (q *Queries) ReadRealTimeTable(ctx context.Context, arg ReadRealTimeTablePa
 	rows, err := q.db.Query(ctx, readRealTimeTable,
 		arg.StartDate,
 		arg.EndDate,
-		arg.ClassesID,
 		arg.SchoolID,
+		arg.ClassesID,
 	)
 	if err != nil {
 		return nil, err
@@ -833,8 +955,16 @@ func (q *Queries) ReadRoom(ctx context.Context, schoolID int32) ([]ReadRoomRow, 
 	return items, nil
 }
 
-const removeCanceledLesson = `-- name: RemoveCanceledLesson :exec
-INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false) ON CONFLICT (school_id, room_id, actual_date, lesson_num, group_id) DO UPDATE SET canceled = false
+const removeCanceledLesson = `-- name: RemoveCanceledLesson :execrows
+INSERT INTO time_table (school_id, teacher_id, room_id, day_of_week, group_id, custom_subject, custom_subject_id, subject_id, actual_date, lesson_num, canceled)
+SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false
+FROM schools s
+WHERE s.id = $1
+  AND EXISTS (SELECT 1 FROM teacher_school ts WHERE ts.teacher_id = $2 AND ts.school_id = $1)
+  AND EXISTS (SELECT 1 FROM rooms r WHERE r.id = $3 AND r.school_id = $1)
+  AND EXISTS (SELECT 1 FROM groups g WHERE g.id = $5 AND g.school_id = $1)
+  AND (NOT $6 OR EXISTS (SELECT 1 FROM custom_subjects cs WHERE cs.id = $7 AND cs.school_id = $1))
+ON CONFLICT (school_id, room_id, actual_date, lesson_num, group_id) DO UPDATE SET canceled = false
 `
 
 type RemoveCanceledLessonParams struct {
@@ -850,8 +980,8 @@ type RemoveCanceledLessonParams struct {
 	LessonNum       int32
 }
 
-func (q *Queries) RemoveCanceledLesson(ctx context.Context, arg RemoveCanceledLessonParams) error {
-	_, err := q.db.Exec(ctx, removeCanceledLesson,
+func (q *Queries) RemoveCanceledLesson(ctx context.Context, arg RemoveCanceledLessonParams) (int64, error) {
+	result, err := q.db.Exec(ctx, removeCanceledLesson,
 		arg.SchoolID,
 		arg.TeacherID,
 		arg.RoomID,
@@ -863,11 +993,28 @@ func (q *Queries) RemoveCanceledLesson(ctx context.Context, arg RemoveCanceledLe
 		arg.ActualDate,
 		arg.LessonNum,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const updateBaseSchedule = `-- name: UpdateBaseSchedule :exec
-UPDATE base_schedule SET teacher_id = $1, day_of_week = $2, lesson_num = $3, room_id = $4, group_id = $5, custom_subject = $6, subject_id = $7, custom_subject_id = $8 WHERE id = $9 AND school_id = $10
+const updateBaseSchedule = `-- name: UpdateBaseSchedule :execrows
+UPDATE base_schedule bs
+SET teacher_id = $1,
+    day_of_week = $2,
+    lesson_num = $3,
+    room_id = $4,
+    group_id = $5,
+    custom_subject = $6,
+    subject_id = $7,
+    custom_subject_id = $8
+WHERE bs.id = $9
+  AND bs.school_id = $10
+  AND EXISTS (SELECT 1 FROM teacher_school ts WHERE ts.teacher_id = $1 AND ts.school_id = $10)
+  AND EXISTS (SELECT 1 FROM rooms r WHERE r.id = $4 AND r.school_id = $10)
+  AND EXISTS (SELECT 1 FROM groups g WHERE g.id = $5 AND g.school_id = $10)
+  AND (NOT $6 OR EXISTS (SELECT 1 FROM custom_subjects cs WHERE cs.id = $8 AND cs.school_id = $10))
 `
 
 type UpdateBaseScheduleParams struct {
@@ -883,8 +1030,8 @@ type UpdateBaseScheduleParams struct {
 	SchoolID        int32
 }
 
-func (q *Queries) UpdateBaseSchedule(ctx context.Context, arg UpdateBaseScheduleParams) error {
-	_, err := q.db.Exec(ctx, updateBaseSchedule,
+func (q *Queries) UpdateBaseSchedule(ctx context.Context, arg UpdateBaseScheduleParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateBaseSchedule,
 		arg.TeacherID,
 		arg.DayOfWeek,
 		arg.LessonNum,
@@ -896,11 +1043,29 @@ func (q *Queries) UpdateBaseSchedule(ctx context.Context, arg UpdateBaseSchedule
 		arg.ID,
 		arg.SchoolID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-const updateRealTimeLesson = `-- name: UpdateRealTimeLesson :exec
-UPDATE time_table SET teacher_id = $1, room_id = $2, day_of_week = $3, group_id = $4, custom_subject = $5, custom_subject_id = $6, subject_id = $7, actual_date = $8, lesson_num = $9 WHERE school_id = $10 AND id = $11
+const updateRealTimeLesson = `-- name: UpdateRealTimeLesson :execrows
+UPDATE time_table t
+SET teacher_id = $1,
+    room_id = $2,
+    day_of_week = $3,
+    group_id = $4,
+    custom_subject = $5,
+    custom_subject_id = $6,
+    subject_id = $7,
+    actual_date = $8,
+    lesson_num = $9
+WHERE t.school_id = $10
+  AND t.id = $11
+  AND EXISTS (SELECT 1 FROM teacher_school ts WHERE ts.teacher_id = $1 AND ts.school_id = $10)
+  AND EXISTS (SELECT 1 FROM rooms r WHERE r.id = $2 AND r.school_id = $10)
+  AND EXISTS (SELECT 1 FROM groups g WHERE g.id = $4 AND g.school_id = $10)
+  AND (NOT $5 OR EXISTS (SELECT 1 FROM custom_subjects cs WHERE cs.id = $6 AND cs.school_id = $10))
 `
 
 type UpdateRealTimeLessonParams struct {
@@ -917,8 +1082,8 @@ type UpdateRealTimeLessonParams struct {
 	ID              int32
 }
 
-func (q *Queries) UpdateRealTimeLesson(ctx context.Context, arg UpdateRealTimeLessonParams) error {
-	_, err := q.db.Exec(ctx, updateRealTimeLesson,
+func (q *Queries) UpdateRealTimeLesson(ctx context.Context, arg UpdateRealTimeLessonParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateRealTimeLesson,
 		arg.TeacherID,
 		arg.RoomID,
 		arg.DayOfWeek,
@@ -931,5 +1096,8 @@ func (q *Queries) UpdateRealTimeLesson(ctx context.Context, arg UpdateRealTimeLe
 		arg.SchoolID,
 		arg.ID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
