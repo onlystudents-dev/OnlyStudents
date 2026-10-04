@@ -256,7 +256,7 @@ func CacheOrGetRooms(ctx context.Context, rdb *redis.Client, queries db_queries.
 }
 
 func CacheOrGetBaseScheduleClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, classID int32, schoolID int32, accountID int32, ttl int32) ([]db_queries.ReadBaseScheduleClassRow, error) {
-	key := fmt.Sprintf("base_schedule_classes:%d", schoolID)
+	key := fmt.Sprintf("base_schedule_classes:%d:%d", schoolID, classID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBaseScheduleClassRow, error) {
 		return queries.ReadBaseScheduleClass(ctx, db_queries.ReadBaseScheduleClassParams{
 			SchoolID: schoolID,
@@ -266,7 +266,7 @@ func CacheOrGetBaseScheduleClass(ctx context.Context, rdb *redis.Client, queries
 }
 
 func CacheOrGetBaseScheduleGroup(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, groupID int32, schoolID int32, accountID int32, ttl int32) ([]db_queries.ReadBaseScheduleGroupRow, error) {
-	key := fmt.Sprintf("base_schedule_groups:%d", schoolID)
+	key := fmt.Sprintf("base_schedule_groups:%d:%d", schoolID, groupID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBaseScheduleGroupRow, error) {
 		return queries.ReadBaseScheduleGroup(ctx, db_queries.ReadBaseScheduleGroupParams{
 			SchoolID: schoolID,
