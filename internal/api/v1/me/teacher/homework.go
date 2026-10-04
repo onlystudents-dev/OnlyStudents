@@ -107,8 +107,7 @@ func ListHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req AddHomeworkRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb,
 		func(req AddHomeworkRequest) bool {
 			return req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
 		},
@@ -125,8 +124,7 @@ func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func RemoveHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, false,
-		func(req RemoveHomeworkRequest) int32 { return 0 },
+	return TeacherModify(c, pool, rdb,
 		func(req RemoveHomeworkRequest) bool { return req.HomeworkID <= 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveHomeworkRequest) (int64, error) {
 			return queries.TeacherDeleteHomework(ctx, db_queries.TeacherDeleteHomeworkParams{
@@ -138,8 +136,7 @@ func RemoveHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req EditHomeworkRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb,
 		func(req EditHomeworkRequest) bool {
 			return req.HomeworkID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
 		},
@@ -157,8 +154,7 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func UpdateHomeworkSubmission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, false,
-		func(req UpdateHomeworkSubmissionRequest) int32 { return 0 },
+	return TeacherModify(c, pool, rdb,
 		func(req UpdateHomeworkSubmissionRequest) bool {
 			return req.HomeworkID <= 0 || req.StudentID <= 0 || (req.HasContent && req.Content == "") || (req.HasGradedValue && req.GradedValue == 0)
 		},

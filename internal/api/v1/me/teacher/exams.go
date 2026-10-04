@@ -78,8 +78,7 @@ func ListExams(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req AddExamRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb,
 		func(req AddExamRequest) bool {
 			return req.Title == "" || (req.HasDescription && req.Description == "") || req.Date <= 0 || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
 		},
@@ -99,8 +98,7 @@ func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func RemoveExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, false,
-		func(req RemoveExamRequest) int32 { return 0 },
+	return TeacherModify(c, pool, rdb,
 		func(req RemoveExamRequest) bool { return req.ExamID <= 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveExamRequest) (int64, error) {
 			return queries.TeacherDeleteExam(ctx, db_queries.TeacherDeleteExamParams{
@@ -112,8 +110,7 @@ func RemoveExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func EditExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req EditExamRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb,
 		func(req EditExamRequest) bool {
 			return req.ExamID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.Date <= 0 || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
 		},

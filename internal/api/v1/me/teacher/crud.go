@@ -111,8 +111,6 @@ func TeacherModify[request_type any](
 	c fiber.Ctx,
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
-	teacher_student_check bool,
-	class_subjects_func func(request_type) int32,
 	request_check_func func(request_type) bool,
 	query_func func(context.Context, helpers.TeacherScope, *db_queries.Queries, request_type) (int64, error),
 ) error {
@@ -139,23 +137,6 @@ func TeacherModify[request_type any](
 	}
 
 	queries := db_queries.New(pool)
-
-	if teacher_student_check {
-		teacher_accessible, err := queries.TeacherTeachesStudent(c.Context(), db_queries.TeacherTeachesStudentParams{
-			SchoolID:  teacher_scope.SchoolID,
-			TeacherID: teacher_scope.TeacherID,
-			ID:        class_subjects_func(req),
-		})
-
-		if err != nil {
-			slog.Error("teacher accessible check err", "err", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-		}
-
-		if !teacher_accessible {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "FORBIDDEN"})
-		}
-	}
 
 	rows_affected, err := query_func(c.Context(), teacher_scope, queries, req)
 
