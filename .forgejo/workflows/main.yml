@@ -1,0 +1,44 @@
+name: Warm Cache
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  frontend:
+    runs-on: bun
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('frontend/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+  backend:
+    runs-on: go
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-${{ runner.os }}-${{ hashFiles('go.sum') }}
+          restore-keys: go-${{ runner.os }}-
+
+      - name: Download dependencies
+        run: go mod download -x
