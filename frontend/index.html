@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnlyStudents</title>
+    <style>
+        :root {
+          --bg-color: #ffffff;
+          --txt-color: #111111;
+          --hover-color: #e8e8e8;
+          --card-color: #fcfcfc;
+          --border-color: #d0d0d0;
+          --wrong-color: #ed474a;
+          --wrong-base-color: rgb(207 41 44 / 0.5);
+          --warning-color: #ff8200;
+          --warning-base-color: rgb(255 130 0 / 0.5);
+          --right-color: #1ab369;
+        }
+    </style>
   </head>
   <body>
     <div id="root"></div>
@@ -12,10 +26,10 @@
       window.__INITIAL_STATUS__ = "__INITIAL_STATUS__";
 
       function applyTheme() {
-        const theme = typeof window.__INITIAL_STATUS__ === "object"
-                ? window.__INITIAL_STATUS__.preferences.theme
-                : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        document.documentElement.setAttribute('data-theme', theme);
+          const theme = typeof window.__INITIAL_STATUS__ === "object" && window.__INITIAL_STATUS__.preferences.theme
+                  ? window.__INITIAL_STATUS__.preferences.theme
+                  : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          document.documentElement.setAttribute('data-theme', theme);
       }
 
       applyTheme()

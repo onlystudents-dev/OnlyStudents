@@ -15,6 +15,7 @@ var httpMethods = map[string]struct{}{
 }
 
 func Get(v any) fiber.Map    { return fiber.Map{fiber.MethodGet: v} }
+func Put(v any) fiber.Map    { return fiber.Map{fiber.MethodPut: v} }
 func Post(v any) fiber.Map   { return fiber.Map{fiber.MethodPost: v} }
 func Patch(v any) fiber.Map  { return fiber.Map{fiber.MethodPatch: v} }
 func Delete(v any) fiber.Map { return fiber.Map{fiber.MethodDelete: v} }

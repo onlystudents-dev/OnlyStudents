@@ -349,6 +349,11 @@ type Term struct {
 	IsActive      bool
 }
 
+type Theme struct {
+	Name   string
+	Colors []byte
+}
+
 type TimeTable struct {
 	ID                    int32
 	SchoolID              int32

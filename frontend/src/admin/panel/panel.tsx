@@ -10,7 +10,7 @@ import Loading from "../../util/loading.tsx";
 type enrollable = "guardian" | "student" | "teacher"
 
 export default function AdminPanel({ status }: {status: AdminStatusData}) {
-    const [active, setActive] = useState<"status" | "logs" | "enroll">("status")
+    const [active, setActive] = useState<"status" | "logs" | "enroll" | "themes">("status")
 
     const [logs, setLogs] = useState<Log[] | null>(null)
     const [activeLog, setActiveLog] = useState(logs?.[0]?.name || "")
@@ -109,6 +109,14 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                                                 }
                                             })}
                                         </div>
+                                    </div>
+                                </>
+                            )
+                        case "themes":
+                            return (
+                                <>
+                                    <div className="box flex-wrap">
+
                                     </div>
                                 </>
                             )
