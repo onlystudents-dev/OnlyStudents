@@ -26,3 +26,9 @@ For testing/development, `DEMO_MODE=true` can be used right now which registers 
 # Demo Mode Credentials ( https://onlystudents.hu )
 - Student/Teacher/Guardian ID 1, Password: test
 - Email Change/Password reset does not work to combat spam!
+
+# Mirrors
+
+[![Forgejo](https://img.shields.io/badge/Forgejo-git.jgj52.dev-f54927)](https://git.jgj52.dev/OnlyStudents/OnlyStudents)
+[![GitHub](https://img.shields.io/badge/GitHub-github.com-181717)](https://github.com/onlystudents-dev/OnlyStudents)
+[![Codeberg](https://img.shields.io/badge/Codeberg-codeberg.org-2185D0)](https://codeberg.org/OnlyStudents/OnlyStudents)
