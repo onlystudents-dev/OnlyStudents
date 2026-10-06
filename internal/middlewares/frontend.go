@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	meapi "onlystudents/internal/api/v1/me"
 	"strconv"
 	"time"
+
+	meapi "onlystudents/internal/api/v1/me"
+	"onlystudents/internal/helpers"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
@@ -29,7 +31,8 @@ func FrontendMiddleware(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, inde
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 		}
 	}
-	page := indexHTML
+
+	page := helpers.InjectThemes(c.Context(), rdb, indexHTML)
 
 	if count > max {
 		ttl, err := rdb.TTL(c.Context(), fmt.Sprintf("ratelimit:%s:%s", "api", c.IP())).Result()

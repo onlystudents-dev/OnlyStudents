@@ -96,6 +96,11 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					"guardian": helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollGuardian(c, pool, rdb, opaque_server) }),
 				},
 				"schools": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListSchools(c, pool, rdb) }),
+				"theme": fiber.Map{
+					fiber.MethodPut:    func(c fiber.Ctx) error { return adminapi.AdminSetTheme(c, pool, rdb) },
+					fiber.MethodDelete: func(c fiber.Ctx) error { return adminapi.AdminDeleteTheme(c, pool, rdb) },
+				},
+				"themes": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminGetThemes(c, pool) }),
 			},
 			"me": fiber.Map{
 				helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth},
@@ -310,15 +315,25 @@ func main() {
 	// frontend
 	app.Use("/assets/fonts", static.New("frontend/dist/assets/fonts", static.Config{MaxAge: 31536000}))
 	app.Use("/assets", static.New("frontend/dist/assets", static.Config{MaxAge: 3600}))
+
 	indexHTML, err := os.ReadFile("frontend/dist/index.html")
 	if err != nil {
 		panic(err)
 	}
+
+	initCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if err := helpers.InitCss(initCtx, pool, rdb, indexHTML); err != nil {
+		cancel()
+		panic(fmt.Sprintf("Failed to initialize themes: %s", err))
+	}
+	cancel()
+
 	for _, path := range helpers.FrontendPaths {
 		app.Get(path, func(c fiber.Ctx) error {
 			return middlewares.FrontendMiddleware(c, pool, rdb, indexHTML, "api", apiRateMax, apiRateWindow)
 		})
 	}
+	// frontEND
 
 	api := app.Group("/api")
 	helpers.RegisterRoutes(api, buildRoutes(pool, rdb, opaque_server))
