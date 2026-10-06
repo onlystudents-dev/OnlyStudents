@@ -13,14 +13,14 @@ import (
 )
 
 type SchoolMembership struct {
-	SchoolID int32 `json:"school_id"`
-	ClassID  int32 `json:"class_id"`
+	SchoolID   int32  `json:"school_id"`
+	SchoolName string `json:"school_name"`
+	ClassID    int32  `json:"class_id"`
 }
 
 type ChildrenData struct {
 	AccountID         int32              `json:"account_id"`
 	SchoolMemberships []SchoolMembership `json:"school_memberships"`
-	ClassID           int32              `json:"class_id"`
 	FirstName         string             `json:"first_name"`
 	LastName          string             `json:"last_name"`
 }
@@ -89,8 +89,9 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 
 		for _, school_membership := range school_memberships {
 			school_memberships_data = append(school_memberships_data, SchoolMembership{
-				SchoolID: school_membership.SchoolID,
-				ClassID:  school_membership.ClassesID,
+				SchoolID:   school_membership.SchoolID,
+				ClassID:    school_membership.ClassesID,
+				SchoolName: school_membership.SchoolName,
 			})
 		}
 
@@ -123,15 +124,15 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 
 			for _, school_membership := range school_memberships {
 				school_memberships_data = append(school_memberships_data, SchoolMembership{
-					SchoolID: school_membership.SchoolID,
-					ClassID:  school_membership.ClassesID,
+					SchoolID:   school_membership.SchoolID,
+					ClassID:    school_membership.ClassesID,
+					SchoolName: school_membership.SchoolName,
 				})
 			}
 
 			guardian_children_data = append(guardian_children_data, ChildrenData{
 				AccountID:         children.ID,
 				SchoolMemberships: school_memberships_data,
-				ClassID:           children.ClassID,
 				FirstName:         children.FirstName,
 				LastName:          children.LastName,
 			})
@@ -170,7 +171,8 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 
 		for _, school_membership := range school_memberships {
 			school_memberships_data = append(school_memberships_data, SchoolMembership{
-				SchoolID: school_membership.SchoolID,
+				SchoolID:   school_membership.SchoolID,
+				SchoolName: school_membership.SchoolName,
 			})
 		}
 

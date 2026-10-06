@@ -10,6 +10,8 @@ export type Me = {
     email_address: string,
     email_verified: boolean,
     preferences: Preferences,
+    school_memberships: SchoolMembership[],
+    children?: GuardianChildren[],
 }
 
 export const timeFormats = ["", "h12", "h23"] as const
@@ -27,6 +29,19 @@ export type Preferences = {
     timetable_display: number,
     timetable_next: boolean,
     time_format: TimeFormat,
+}
+
+export type SchoolMembership = {
+    school_id: number,
+    school_name: string,
+    class_id: number,
+}
+
+export type GuardianChildren = {
+    account_id: number,
+    school_memberships: SchoolMembership[],
+    first_name: string,
+    last_name: string,
 }
 
 export type Lesson = {

@@ -39,6 +39,8 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
               if (fetchMe !== undefined) {
                   await fetchMe()
               } else {
+                  localStorage.removeItem("child_id")
+                  localStorage.removeItem("school_id")
                   location.reload()
               }
               break
@@ -70,7 +72,7 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
                 <div className={`content out ${pwrA && "hid h-86"}`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">
-                        <RoleSelect value={role} onChange={(r) => {setRole(r); setWrong(false)}} />
+                        <RoleSelect value={role} onChange={(r) => { setRole(r); setWrong(false) }} />
                         <input className={`${(red || wrong) && "wrong"}`} type="text" placeholder={getKey("USER_ID")} value={id} onChange={(e) => {setId(e.currentTarget.value); checkUserID(e.currentTarget.value); setWrong(false)}} />
                         <input className={`${wrong && "wrong"}`} type="password" placeholder={getKey("PASSWORD")} value={password} onChange={(e) => {setPassword(e.currentTarget.value); setWrong(false)}} />
                     </div>

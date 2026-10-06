@@ -70,19 +70,51 @@ func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
 }
 
 const listTeacherSchoolMemberships = `-- name: ListTeacherSchoolMemberships :many
-SELECT id, teacher_id, school_id FROM teacher_school WHERE teacher_id = $1
+SELECT ts.id, teacher_id, school_id, school.id, name, zip_code, city, address_line, school_type, principal_id, phone_number, email_address, school.name AS school_name FROM teacher_school ts
+JOIN schools school ON school.id = ts.school_id
+WHERE teacher_id = $1
 `
 
-func (q *Queries) ListTeacherSchoolMemberships(ctx context.Context, teacherID int32) ([]TeacherSchool, error) {
+type ListTeacherSchoolMembershipsRow struct {
+	ID           int32
+	TeacherID    int32
+	SchoolID     int32
+	ID_2         int32
+	Name         string
+	ZipCode      string
+	City         string
+	AddressLine  string
+	SchoolType   int32
+	PrincipalID  int32
+	PhoneNumber  string
+	EmailAddress string
+	SchoolName   string
+}
+
+func (q *Queries) ListTeacherSchoolMemberships(ctx context.Context, teacherID int32) ([]ListTeacherSchoolMembershipsRow, error) {
 	rows, err := q.db.Query(ctx, listTeacherSchoolMemberships, teacherID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []TeacherSchool
+	var items []ListTeacherSchoolMembershipsRow
 	for rows.Next() {
-		var i TeacherSchool
-		if err := rows.Scan(&i.ID, &i.TeacherID, &i.SchoolID); err != nil {
+		var i ListTeacherSchoolMembershipsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TeacherID,
+			&i.SchoolID,
+			&i.ID_2,
+			&i.Name,
+			&i.ZipCode,
+			&i.City,
+			&i.AddressLine,
+			&i.SchoolType,
+			&i.PrincipalID,
+			&i.PhoneNumber,
+			&i.EmailAddress,
+			&i.SchoolName,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

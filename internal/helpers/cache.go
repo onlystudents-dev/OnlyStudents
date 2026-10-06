@@ -76,9 +76,9 @@ func CacheOrGetStudentMembership(ctx context.Context, rdb *redis.Client, queries
 	})
 }
 
-func CacheOrListStudentMemberships(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.StudentSchool, error) {
+func CacheOrListStudentMemberships(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.ListStudentMembershipsRow, error) {
 	key := fmt.Sprintf("student_memberships:%d", accountID)
-	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.StudentSchool, error) {
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ListStudentMembershipsRow, error) {
 		return queries.ListStudentMemberships(ctx, accountID)
 	})
 }
@@ -90,9 +90,9 @@ func CacheOrGetTeacher(ctx context.Context, rdb *redis.Client, queries db_querie
 	})
 }
 
-func CacheOrListTeacherMemberships(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.TeacherSchool, error) {
+func CacheOrListTeacherMemberships(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]db_queries.ListTeacherSchoolMembershipsRow, error) {
 	key := fmt.Sprintf("teacher_memberships:%d", accountID)
-	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.TeacherSchool, error) {
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ListTeacherSchoolMembershipsRow, error) {
 		return queries.ListTeacherSchoolMemberships(ctx, accountID)
 	})
 }

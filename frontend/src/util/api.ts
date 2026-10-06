@@ -8,6 +8,13 @@ export function postJSON(url: string, body?: unknown) {
     })
 }
 
+export function fetchWithSchool(url: string) {
+    const school = localStorage.getItem("school_id")
+    return fetch(url, {
+        headers: school ? { "X-School": school } : {}
+    })
+}
+
 export function getRetryAfter(response: Response): number {
     const raw = response.headers.get("Retry-After")
     if (!raw) return -1
