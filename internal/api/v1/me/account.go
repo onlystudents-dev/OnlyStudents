@@ -42,17 +42,6 @@ func generateCode(length int) (string, error) {
 	return string(code), nil
 }
 
-func ChangePassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	_, ok := c.Locals("session").(helpers.SessionData)
-
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	// IMPORTANT TODO: OPAQUE password change
-	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
-}
-
 type Preferences struct {
 	Nickname         string `json:"nickname"`
 	Lang             string `json:"lang"`

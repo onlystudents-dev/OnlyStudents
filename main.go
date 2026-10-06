@@ -94,6 +94,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					"student":  helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollStudent(c, pool, rdb, opaque_server) }),
 					"teacher":  helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollTeacher(c, pool, rdb, opaque_server) }),
 					"guardian": helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollGuardian(c, pool, rdb, opaque_server) }),
+					"mass":     helpers.Post(func(c fiber.Ctx) error { return adminapi.MassEnroll(c, pool, rdb, opaque_server) }),
 				},
 				"schools": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListSchools(c, pool, rdb) }),
 				"theme": fiber.Map{
@@ -116,12 +117,18 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				"student": fiber.Map{
 					helpers.RoutesGroupMWKey: []fiber.Handler{role("student", "guardian")},
 					"grades":                 helpers.Get(func(c fiber.Ctx) error { return studentapi.Grades(c, pool, rdb) }),
-					"absences":               helpers.Get(func(c fiber.Ctx) error { return studentapi.Absences(c, pool, rdb) }),
-					"final_grades":           helpers.Get(func(c fiber.Ctx) error { return studentapi.FinalGrades(c, pool, rdb) }),
-					"exams":                  helpers.Get(func(c fiber.Ctx) error { return studentapi.Exams(c, pool, rdb) }),
-					"homework":               helpers.Get(func(c fiber.Ctx) error { return studentapi.Homework(c, pool, rdb) }),
-					"class":                  helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadClass(c, pool, rdb) }),
-					"groups":                 helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadGroups(c, pool, rdb) }),
+					"absences": fiber.Map{
+						fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Absences(c, pool, rdb) },
+						"submit_reason": helpers.Post(func(c fiber.Ctx) error { return studentapi.SubmitAbsenceReason(c, pool, rdb) }),
+					},
+					"final_grades": helpers.Get(func(c fiber.Ctx) error { return studentapi.FinalGrades(c, pool, rdb) }),
+					"exams":        helpers.Get(func(c fiber.Ctx) error { return studentapi.Exams(c, pool, rdb) }),
+					"homework": fiber.Map{
+						fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Homework(c, pool, rdb) },
+						"submit":        helpers.Post(func(c fiber.Ctx) error { return studentapi.SubmitHomework(c, pool, rdb) }),
+					},
+					"class":  helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadClass(c, pool, rdb) }),
+					"groups": helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadGroups(c, pool, rdb) }),
 					"timetable": fiber.Map{
 						fiber.MethodGet:      func(c fiber.Ctx) error { return studentapi.ReadMyRealTimeTable(c, pool, rdb) },
 						"base":               helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadBaseSchedule(c, pool, rdb) }),

@@ -154,7 +154,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                                 <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                                             </div>
 
-                                            <button className="absolute bottom-7 right-7" onClick={updatePassword}>
+                                            <button disabled className="absolute bottom-7 right-7" onClick={updatePassword}>
                                                 <FontAwesomeIcon icon={faFloppyDisk} /> {getKey("SAVE")}
                                             </button>
                                         </Config>
