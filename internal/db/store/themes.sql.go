@@ -9,24 +9,6 @@ import (
 	"context"
 )
 
-const createTheme = `-- name: CreateTheme :one
-INSERT INTO themes (name, colors)
-VALUES ($1, $2)
-    RETURNING name, colors
-`
-
-type CreateThemeParams struct {
-	Name   string
-	Colors []byte
-}
-
-func (q *Queries) CreateTheme(ctx context.Context, arg CreateThemeParams) (Theme, error) {
-	row := q.db.QueryRow(ctx, createTheme, arg.Name, arg.Colors)
-	var i Theme
-	err := row.Scan(&i.Name, &i.Colors)
-	return i, err
-}
-
 const deleteTheme = `-- name: DeleteTheme :execrows
 DELETE FROM themes
 WHERE name = $1
@@ -79,20 +61,21 @@ func (q *Queries) ListThemes(ctx context.Context) ([]Theme, error) {
 	return items, nil
 }
 
-const updateTheme = `-- name: UpdateTheme :one
-UPDATE themes
-SET colors = $2
-WHERE name = $1
-    RETURNING name, colors
+const upsertTheme = `-- name: UpsertTheme :one
+INSERT INTO themes (name, colors)
+VALUES ($1, $2)
+    ON CONFLICT (name)
+DO UPDATE SET colors = EXCLUDED.colors
+           RETURNING name, colors
 `
 
-type UpdateThemeParams struct {
+type UpsertThemeParams struct {
 	Name   string
 	Colors []byte
 }
 
-func (q *Queries) UpdateTheme(ctx context.Context, arg UpdateThemeParams) (Theme, error) {
-	row := q.db.QueryRow(ctx, updateTheme, arg.Name, arg.Colors)
+func (q *Queries) UpsertTheme(ctx context.Context, arg UpsertThemeParams) (Theme, error) {
+	row := q.db.QueryRow(ctx, upsertTheme, arg.Name, arg.Colors)
 	var i Theme
 	err := row.Scan(&i.Name, &i.Colors)
 	return i, err

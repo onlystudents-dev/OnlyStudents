@@ -149,7 +149,7 @@ func SetTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, name string, c
 		return err
 	}
 
-	_, err = queries.UpdateTheme(ctx, db_queries.UpdateThemeParams{
+	_, err = queries.UpsertTheme(ctx, db_queries.UpsertThemeParams{
 		Name:   name,
 		Colors: colorsBytes,
 	})

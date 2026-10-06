@@ -1,5 +1,8 @@
 -- name: ListStudentMemberships :many
-SELECT * FROM student_school WHERE student_id = $1 ORDER BY school_id;
+SELECT *, school.name AS school_name FROM student_school ss
+JOIN schools school ON school.id = ss.school_id
+WHERE student_id = $1
+ORDER BY school_id;
 
 -- name: ListStudentMembershipsBySchool :many
 SELECT

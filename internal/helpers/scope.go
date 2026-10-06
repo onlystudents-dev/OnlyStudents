@@ -151,7 +151,7 @@ func ResolvePerson(c fiber.Ctx, rdb *redis.Client, queries db_queries.Queries, s
 	case "student":
 		student_id = session_data.AccountID
 	case "guardian":
-		requested_student_id_str := c.Query("student_id")
+		requested_student_id_str := c.Get("X-Child")
 
 		requested_student_id, err := strconv.ParseInt(requested_student_id_str, 10, 32)
 
