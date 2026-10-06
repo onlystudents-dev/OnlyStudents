@@ -97,8 +97,8 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				},
 				"schools": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListSchools(c, pool, rdb) }),
 				"theme": fiber.Map{
-					fiber.MethodPut:    func(c fiber.Ctx) error { return adminapi.AdminSetTheme(c, pool) },
-					fiber.MethodDelete: func(c fiber.Ctx) error { return adminapi.AdminDeleteTheme(c, pool) },
+					fiber.MethodPut:    func(c fiber.Ctx) error { return adminapi.AdminSetTheme(c, pool, rdb) },
+					fiber.MethodDelete: func(c fiber.Ctx) error { return adminapi.AdminDeleteTheme(c, pool, rdb) },
 				},
 				"themes": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminGetThemes(c, pool) }),
 			},
@@ -322,7 +322,7 @@ func main() {
 	}
 
 	initCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	if err := helpers.InitCss(initCtx, pool, indexHTML); err != nil {
+	if err := helpers.InitCss(initCtx, pool, rdb, indexHTML); err != nil {
 		cancel()
 		panic(fmt.Sprintf("Failed to initialize themes: %s", err))
 	}

@@ -4,15 +4,21 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
-	"sync"
 
 	db_queries "onlystudents/internal/db/store"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
+)
+
+const (
+	redisKeyDynamicCSS    = "theme:dynamic_css"
+	redisKeyRootColorKeys = "theme:root_color_keys"
 )
 
 type Theme struct {
@@ -21,10 +27,6 @@ type Theme struct {
 }
 
 var (
-	mu            sync.RWMutex
-	dynamicCSS    []byte
-	rootColorKeys []string
-
 	styleTagRegex  = regexp.MustCompile(`(?si)<style[^>]*>(.*?)</style>`)
 	rootBlockRegex = regexp.MustCompile(`(?s):root\s*\{([^}]+)\}`)
 	cssVarRegex    = regexp.MustCompile(`--([a-zA-Z0-9_-]+)\s*:`)
@@ -63,17 +65,26 @@ func parseRootKeys(html []byte) []string {
 	return keys
 }
 
-func (t Theme) IsValid() error {
+func (t Theme) IsValid(ctx context.Context, rdb *redis.Client) error {
 	if strings.TrimSpace(t.Name) == "" {
 		return fmt.Errorf("theme name cannot be empty")
 	}
 
-	mu.RLock()
-	requiredKeys := rootColorKeys
-	mu.RUnlock()
+	data, err := rdb.Get(ctx, redisKeyRootColorKeys).Bytes()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return fmt.Errorf("root color keys are not initialized")
+		}
+		return fmt.Errorf("failed to fetch root color keys from redis: %w", err)
+	}
+
+	var requiredKeys []string
+	if err := json.Unmarshal(data, &requiredKeys); err != nil {
+		return fmt.Errorf("failed to decode root color keys: %w", err)
+	}
 
 	if len(requiredKeys) == 0 {
-		return fmt.Errorf("root color keys are not initialized")
+		return fmt.Errorf("root color keys are empty")
 	}
 
 	normalized := make(map[string]string, len(t.Colors))
@@ -125,9 +136,10 @@ func GetThemes(ctx context.Context, pool *pgxpool.Pool) ([]Theme, error) {
 	return result, nil
 }
 
-func SetTheme(c fiber.Ctx, pool *pgxpool.Pool, name string, colors map[string]string) error {
+func SetTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, name string, colors map[string]string) error {
+	ctx := c.Context()
 	theme := Theme{Name: name, Colors: colors}
-	if err := theme.IsValid(); err != nil {
+	if err := theme.IsValid(ctx, rdb); err != nil {
 		return err
 	}
 
@@ -137,7 +149,7 @@ func SetTheme(c fiber.Ctx, pool *pgxpool.Pool, name string, colors map[string]st
 		return err
 	}
 
-	_, err = queries.UpdateTheme(c.Context(), db_queries.UpdateThemeParams{
+	_, err = queries.UpdateTheme(ctx, db_queries.UpdateThemeParams{
 		Name:   name,
 		Colors: colorsBytes,
 	})
@@ -145,18 +157,19 @@ func SetTheme(c fiber.Ctx, pool *pgxpool.Pool, name string, colors map[string]st
 		return err
 	}
 
-	return RefreshCSS(c.Context(), pool)
+	return RefreshCSS(ctx, pool, rdb)
 }
 
-func DeleteTheme(c fiber.Ctx, pool *pgxpool.Pool, name string) error {
+func DeleteTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, name string) error {
+	ctx := c.Context()
 	queries := db_queries.New(pool)
-	if _, err := queries.DeleteTheme(c.Context(), name); err != nil {
+	if _, err := queries.DeleteTheme(ctx, name); err != nil {
 		return err
 	}
-	return RefreshCSS(c.Context(), pool)
+	return RefreshCSS(ctx, pool, rdb)
 }
 
-func rebuildCSS(themes []Theme) {
+func rebuildCSS(ctx context.Context, rdb *redis.Client, themes []Theme) error {
 	var builder strings.Builder
 	for _, theme := range themes {
 		builder.WriteString(fmt.Sprintf("[data-theme=%q]{", theme.Name))
@@ -169,39 +182,38 @@ func rebuildCSS(themes []Theme) {
 		builder.WriteString("}")
 	}
 
-	mu.Lock()
-	dynamicCSS = []byte(builder.String())
-	mu.Unlock()
+	return rdb.Set(ctx, redisKeyDynamicCSS, builder.String(), 0).Err()
 }
 
-func RefreshCSS(ctx context.Context, pool *pgxpool.Pool) error {
+func RefreshCSS(ctx context.Context, pool *pgxpool.Pool, rdb *redis.Client) error {
 	themes, err := GetThemes(ctx, pool)
 	if err != nil {
 		return err
 	}
-	rebuildCSS(themes)
-	return nil
+	return rebuildCSS(ctx, rdb, themes)
 }
 
-func InitCss(ctx context.Context, pool *pgxpool.Pool, indexHTML []byte) error {
+func InitCss(ctx context.Context, pool *pgxpool.Pool, rdb *redis.Client, indexHTML []byte) error {
 	keys := parseRootKeys(indexHTML)
 	if len(keys) == 0 {
 		return fmt.Errorf("failed to parse :root color variables from index.html <style>")
 	}
 
-	mu.Lock()
-	rootColorKeys = keys
-	mu.Unlock()
+	keysJSON, err := json.Marshal(keys)
+	if err != nil {
+		return fmt.Errorf("failed to marshal root color keys: %w", err)
+	}
 
-	return RefreshCSS(ctx, pool)
+	if err := rdb.Set(ctx, redisKeyRootColorKeys, keysJSON, 0).Err(); err != nil {
+		return fmt.Errorf("failed to persist root color keys to redis: %w", err)
+	}
+
+	return RefreshCSS(ctx, pool, rdb)
 }
 
-func InjectThemes(html []byte) []byte {
-	mu.RLock()
-	css := dynamicCSS
-	mu.RUnlock()
-
-	if len(css) == 0 {
+func InjectThemes(ctx context.Context, rdb *redis.Client, html []byte) []byte {
+	css, err := rdb.Get(ctx, redisKeyDynamicCSS).Bytes()
+	if err != nil || len(css) == 0 {
 		return html
 	}
 

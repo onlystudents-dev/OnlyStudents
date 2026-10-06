@@ -32,7 +32,7 @@ func FrontendMiddleware(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, inde
 		}
 	}
 
-	page := helpers.InjectThemes(indexHTML)
+	page := helpers.InjectThemes(c.Context(), rdb, indexHTML)
 
 	if count > max {
 		ttl, err := rdb.TTL(c.Context(), fmt.Sprintf("ratelimit:%s:%s", "api", c.IP())).Result()

@@ -141,7 +141,7 @@ func AdminListSchools(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 	return c.JSON(summaries)
 }
 
-func AdminSetTheme(c fiber.Ctx, pool *pgxpool.Pool) error {
+func AdminSetTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	var body struct {
 		Name   string            `json:"name"`
 		Colors map[string]string `json:"colors"`
@@ -156,15 +156,15 @@ func AdminSetTheme(c fiber.Ctx, pool *pgxpool.Pool) error {
 		Colors: body.Colors,
 	}
 
-	if err := helpers.SetTheme(c, pool, theme.Name, theme.Colors); err != nil {
+	if err := helpers.SetTheme(c, pool, rdb, theme.Name, theme.Colors); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func AdminDeleteTheme(c fiber.Ctx, pool *pgxpool.Pool) error {
-	err := helpers.DeleteTheme(c, pool, string(c.Body()))
+func AdminDeleteTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	err := helpers.DeleteTheme(c, pool, rdb, string(c.Body()))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
