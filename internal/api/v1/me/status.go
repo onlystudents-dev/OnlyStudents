@@ -28,7 +28,6 @@ type ChildrenData struct {
 type StatusData struct {
 	Role              string             `json:"role"`
 	AccountID         int32              `json:"account_id"`
-	ClassID           int32              `json:"class_id"`
 	FirstName         string             `json:"first_name"`
 	LastName          string             `json:"last_name"`
 	EmailAddress      string             `json:"email_address"`
