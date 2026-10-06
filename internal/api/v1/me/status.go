@@ -80,7 +80,7 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			return &StatusData{}, err
 		}
 
-		school_memberships, err := helpers.CacheOrListStudentMemberships(c.Context(), rdb, *queries, status_data.AccountID, school_memberships_ttl)
+		school_memberships, err := helpers.CacheOrListStudentMemberships(c.Context(), rdb, *queries, student.ID, school_memberships_ttl)
 
 		if err != nil {
 			return &StatusData{}, err
