@@ -58,28 +58,21 @@ func ResolveMeScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (MeScope
 	}
 
 	queries := db_queries.New(pool)
-	ttl := GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800)
 
-	var studentID int32
+	var schoolID, classID, studentID int32
+	var err error
+
 	switch session.Role {
-	case "student":
-		studentID = session.AccountID
-	case "guardian":
-		id, err := ResolvePerson(c, *queries, session)
+	case "student", "guardian":
+		schoolID, classID, studentID, err = ResolvePerson(c, rdb, *queries, session)
 		if err != nil {
 			return MeScope{}, errors.New("invalid scope")
 		}
-		studentID = id
 	default:
 		return MeScope{}, errors.New("invalid scope")
 	}
 
-	student, err := CacheOrGetStudent(c.Context(), rdb, *queries, studentID, ttl)
-	if err != nil {
-		return MeScope{}, errors.New("invalid scope")
-	}
-
-	return MeScope{StudentID: studentID, SchoolID: student.SchoolID, ClassID: student.ClassesID}, nil
+	return MeScope{StudentID: studentID, SchoolID: schoolID, ClassID: classID}, nil
 }
 
 func ResolveTeacherCapabilityScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, required_permission string) (TeacherScope, int) {
@@ -98,11 +91,7 @@ func ResolveTeacherCapabilityScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.C
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
-	if err != nil {
-		return TeacherScope{}, fiber.StatusBadRequest
-	}
-
-	if school_id == 0 {
+	if err != nil || school_id == 0 {
 		return TeacherScope{}, fiber.StatusBadRequest
 	}
 
@@ -131,11 +120,7 @@ func ResolveTeacherScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (Te
 
 	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
 
-	if err != nil {
-		return TeacherScope{}, fiber.StatusBadRequest
-	}
-
-	if school_id == 0 {
+	if err != nil || school_id == 0 {
 		return TeacherScope{}, fiber.StatusBadRequest
 	}
 
@@ -153,17 +138,25 @@ func ResolveTeacherScope(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (Te
 	return TeacherScope{TeacherID: teacherID, SchoolID: int32(school_id)}, fiber.StatusOK
 }
 
-func ResolvePerson(c fiber.Ctx, queries db_queries.Queries, session_data SessionData) (int32, error) {
+func ResolvePerson(c fiber.Ctx, rdb *redis.Client, queries db_queries.Queries, session_data SessionData) (int32, int32, int32, error) {
+	school_id, err := strconv.ParseInt(c.Get("X-School"), 10, 32)
+
+	if err != nil || school_id == 0 || school_id >= math.MaxInt32 {
+		return 0, 0, 0, errors.New("invalid school")
+	}
+
+	var student_id int32
+
 	switch session_data.Role {
 	case "student":
-		return session_data.AccountID, nil
+		student_id = session_data.AccountID
 	case "guardian":
 		requested_student_id_str := c.Query("student_id")
 
 		requested_student_id, err := strconv.ParseInt(requested_student_id_str, 10, 32)
 
 		if err != nil {
-			return 0, err
+			return 0, 0, 0, err
 		}
 
 		can_view_student, err := queries.CanViewStudent(c.Context(), db_queries.CanViewStudentParams{
@@ -172,18 +165,27 @@ func ResolvePerson(c fiber.Ctx, queries db_queries.Queries, session_data Session
 		})
 
 		if err != nil {
-			return 0, err
+			return 0, 0, 0, err
 		}
 
 		if can_view_student != 1 {
-			return 0, errors.New("No access")
+			return 0, 0, 0, errors.New("No access")
 		}
 
-		return int32(requested_student_id), nil
-
+		student_id = int32(requested_student_id)
 	case "teacher":
-		return 0, errors.New("teacher cannot access this")
+		return 0, 0, 0, errors.New("teacher cannot access this")
 	default:
-		return 0, errors.New("role doesn't exist")
+		return 0, 0, 0, errors.New("role doesn't exist")
 	}
+
+	ttl := GetInt32EnvFallback("SCHOOL_MEMBERSHIP_CACHE_TTL", 5*60, 604800)
+
+	school_membership, err := CacheOrGetStudentMembership(c.Context(), rdb, queries, int32(school_id), int32(student_id), ttl)
+
+	if err != nil {
+		return 0, 0, 0, errors.New("student isnt part of school")
+	}
+
+	return school_membership.SchoolID, school_membership.ClassesID, school_membership.StudentID, nil
 }

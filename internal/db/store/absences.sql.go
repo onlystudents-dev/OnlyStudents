@@ -31,8 +31,17 @@ LEFT JOIN base_schedule bs ON bs.id = a.lesson_id
 LEFT JOIN teachers t ON t.id = COALESCE(bs.teacher_id, csub.teacher_id)
 LEFT JOIN teachers v ON v.id = a.verified_by
 WHERE a.student_id = $1
+  AND (
+    csub.school_id = $2
+    OR (csub.id IS NULL AND bs.school_id = $2)
+  )
 ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id
 `
+
+type GetStudentAbsencesParams struct {
+	StudentID int32
+	SchoolID  int32
+}
 
 type GetStudentAbsencesRow struct {
 	ID               int64
@@ -47,8 +56,8 @@ type GetStudentAbsencesRow struct {
 	VerifiedBy       interface{}
 }
 
-func (q *Queries) GetStudentAbsences(ctx context.Context, studentID int32) ([]GetStudentAbsencesRow, error) {
-	rows, err := q.db.Query(ctx, getStudentAbsences, studentID)
+func (q *Queries) GetStudentAbsences(ctx context.Context, arg GetStudentAbsencesParams) ([]GetStudentAbsencesRow, error) {
+	rows, err := q.db.Query(ctx, getStudentAbsences, arg.StudentID, arg.SchoolID)
 	if err != nil {
 		return nil, err
 	}
@@ -157,13 +166,13 @@ func (q *Queries) GetTeacherAbsences(ctx context.Context, arg GetTeacherAbsences
 
 const teacherAddAbsence = `-- name: TeacherAddAbsence :execrows
 INSERT INTO absences (student_id, class_subjects_id, date, type, note)
-SELECT st.id, cs.id, $1, $2, $3
+SELECT ss.student_id, cs.id, $1, $2, $3
 FROM class_subjects cs
-JOIN students st ON st.classes_id = cs.class_id
+JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = $4
   AND cs.school_id = $5
   AND cs.teacher_id = $6
-  AND st.id = $7
+  AND ss.student_id = $7
   AND $2 IN ('absent', 'tardy')
 `
 

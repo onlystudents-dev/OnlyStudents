@@ -25,10 +25,11 @@ func SubmitHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req SubmitHomeworkRequest) bool {
 			return req.HomeworkID <= 0 || req.Content == ""
 		},
-		func(ctx context.Context, account_id int32, queries *db_queries.Queries, req SubmitHomeworkRequest) (int64, error) {
+		func(ctx context.Context, school_id int32, account_id int32, queries *db_queries.Queries, req SubmitHomeworkRequest) (int64, error) {
 			return queries.StudentUpsertHomeworkSubmission(c.Context(), db_queries.StudentUpsertHomeworkSubmissionParams{
 				HomeworkID: req.HomeworkID,
 				StudentID:  account_id,
+				SchoolID:   school_id,
 				Content:    pgtype.Text{String: req.Content, Valid: true},
 			})
 		})

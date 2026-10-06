@@ -76,7 +76,12 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         // why on earth would it cry because of while true
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (true) {
-            const response = await fetch(`/api/v1/me/student/timetable?start_date=${start}&end_date=${end}`)
+            // TODO: actually make a school selector, this is very hacky but works for now.
+            const response = await fetch(`/api/v1/me/student/timetable?start_date=${start}&end_date=${end}`, {
+                headers: {
+                  "X-School": "1",
+                },
+              })
 
             if (response.status === 429) {
                 setRateLimit(getRetryAfter(response))
@@ -138,7 +143,13 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         api: string,
         method?: React.Dispatch<React.SetStateAction<T>>
     ) {
-        const response = await fetch(api)
+        // TODO: actually make a school selector, this is very hacky but works for now.
+        const response = await fetch(api, {
+            headers: {
+              "X-School": "1",
+            }
+          }
+        )
 
         if (!response.ok) {
             toast.error(await fromResponse(response))

@@ -16,7 +16,7 @@ func StudentSummary[Row, T any](
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
 	cache_key string,
-	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, accountID int32, ttl int32) ([]Row, error),
+	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]Row, error),
 	convert func(row Row) T,
 ) error {
 	session_data, ok := c.Locals("session").(helpers.SessionData)
@@ -29,7 +29,7 @@ func StudentSummary[Row, T any](
 
 	var summaries []T
 
-	account_id, err := helpers.ResolvePerson(c, *queries, session_data)
+	me_scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
@@ -37,7 +37,7 @@ func StudentSummary[Row, T any](
 
 	switch session_data.Role {
 	case "student", "guardian":
-		data, err := cache_or_get_func(c.Context(), rdb, *queries, account_id, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
+		data, err := cache_or_get_func(c.Context(), rdb, *queries, me_scope.SchoolID, me_scope.StudentID, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
@@ -58,7 +58,7 @@ func StudentModify[request_type any](
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
 	request_check_func func(request_type) bool,
-	query_func func(context.Context, int32, *db_queries.Queries, request_type) (int64, error),
+	query_func func(context.Context, int32, int32, *db_queries.Queries, request_type) (int64, error),
 ) error {
 	var req request_type
 
@@ -84,9 +84,9 @@ func StudentModify[request_type any](
 
 	queries := db_queries.New(pool)
 
-	account_id, resolve_err := helpers.ResolvePerson(c, *queries, session_data)
+	me_scope, scope_err := helpers.ResolveMeScope(c, pool, rdb)
 
-	if resolve_err != nil {
+	if scope_err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
 	}
 
@@ -95,7 +95,7 @@ func StudentModify[request_type any](
 
 	switch session_data.Role {
 	case "student", "guardian":
-		rows_affected, err = query_func(c.Context(), account_id, queries, req)
+		rows_affected, err = query_func(c.Context(), me_scope.SchoolID, me_scope.StudentID, queries, req)
 	default:
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}

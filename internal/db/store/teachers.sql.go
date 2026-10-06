@@ -69,32 +69,20 @@ func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
 	return i, err
 }
 
-const listTeachers = `-- name: ListTeachers :many
-SELECT id, phone_number, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers ORDER BY id
+const listTeacherSchoolMemberships = `-- name: ListTeacherSchoolMemberships :many
+SELECT id, teacher_id, school_id FROM teacher_school WHERE teacher_id = $1
 `
 
-func (q *Queries) ListTeachers(ctx context.Context) ([]Teacher, error) {
-	rows, err := q.db.Query(ctx, listTeachers)
+func (q *Queries) ListTeacherSchoolMemberships(ctx context.Context, teacherID int32) ([]TeacherSchool, error) {
+	rows, err := q.db.Query(ctx, listTeacherSchoolMemberships, teacherID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Teacher
+	var items []TeacherSchool
 	for rows.Next() {
-		var i Teacher
-		if err := rows.Scan(
-			&i.ID,
-			&i.PhoneNumber,
-			&i.BirthFirstName,
-			&i.BirthLastName,
-			&i.BirthDate,
-			&i.BirthCity,
-			&i.BirthCountry,
-			&i.PermamentAddress,
-			&i.TemporaryAddress,
-			&i.FirstName,
-			&i.LastName,
-		); err != nil {
+		var i TeacherSchool
+		if err := rows.Scan(&i.ID, &i.TeacherID, &i.SchoolID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

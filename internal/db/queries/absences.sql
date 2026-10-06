@@ -17,7 +17,11 @@ LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 LEFT JOIN base_schedule bs ON bs.id = a.lesson_id
 LEFT JOIN teachers t ON t.id = COALESCE(bs.teacher_id, csub.teacher_id)
 LEFT JOIN teachers v ON v.id = a.verified_by
-WHERE a.student_id = $1
+WHERE a.student_id = sqlc.arg(student_id)
+  AND (
+    csub.school_id = sqlc.arg(school_id)
+    OR (csub.id IS NULL AND bs.school_id = sqlc.arg(school_id))
+  )
 ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id;
 
 -- name: GetTeacherAbsences :many
@@ -45,13 +49,13 @@ ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id;
 
 -- name: TeacherAddAbsence :execrows
 INSERT INTO absences (student_id, class_subjects_id, date, type, note)
-SELECT st.id, cs.id, sqlc.arg(date), sqlc.arg(type), sqlc.arg(note)
+SELECT ss.student_id, cs.id, sqlc.arg(date), sqlc.arg(type), sqlc.arg(note)
 FROM class_subjects cs
-JOIN students st ON st.classes_id = cs.class_id
+JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id)
-  AND st.id = sqlc.arg(student_id)
+  AND ss.student_id = sqlc.arg(student_id)
   AND sqlc.arg(type) IN ('absent', 'tardy');
 
 -- name: TeacherEditAbsence :execrows

@@ -114,8 +114,7 @@ func ListFinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req AddGradeRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb,
 		func(req AddGradeRequest) bool {
 			return req.StudentID <= 0 || req.TermID <= 0 || req.GradeTypeID <= 0 || req.Value <= 0 || req.Date <= 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID <= 0
 		},
@@ -135,8 +134,7 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func AddFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req AddFinalGradeRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb,
 		func(req AddFinalGradeRequest) bool {
 			return req.TermID <= 0 || req.Value <= 0 || req.ClassSubjectsID <= 0
 		},
@@ -153,8 +151,7 @@ func AddFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func RemoveGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, false,
-		func(req RemoveGradeRequest) int32 { return 0 },
+	return TeacherModify(c, pool, rdb,
 		func(req RemoveGradeRequest) bool { return req.GradeID <= 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveGradeRequest) (int64, error) {
 			return queries.TeacherDeleteGrade(ctx, db_queries.TeacherDeleteGradeParams{
@@ -166,8 +163,7 @@ func RemoveGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req EditGradeRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb,
 		func(req EditGradeRequest) bool {
 			return req.GradeID <= 0 || req.TermID <= 0 || req.GradeTypeID <= 0 || req.Value <= 0 || req.Date <= 0 || (req.HasNote && req.Note == "") || req.ClassSubjectsID <= 0
 		},
@@ -187,8 +183,7 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func EditFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb, true,
-		func(req EditFinalGradeRequest) int32 { return req.ClassSubjectsID },
+	return TeacherModify(c, pool, rdb,
 		func(req EditFinalGradeRequest) bool {
 			return req.FinalGradeID <= 0 || req.TermID <= 0 || req.Value <= 0 || req.ClassSubjectsID <= 0
 		},

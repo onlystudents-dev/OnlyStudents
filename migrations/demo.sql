@@ -36,17 +36,23 @@ INSERT INTO classes (
          );
 
 INSERT INTO students (
-    id_number, school_id, first_name, last_name,
+    id, first_name, last_name,
     birth_first_name, birth_last_name, birth_date, birth_city, birth_country,
     mother_birth_first_name, mother_birth_last_name,
-    classes_id, permament_address, temporary_address, ssn_number,
+    permament_address, temporary_address, ssn_number,
     bank_name, iban_owner, iban_number, document_type, document_number
 ) VALUES (
-             123456789, 1, 'Test', 'Student',
+             1, 'Test', 'Student',
              'Test', 'Student', '2005-01-01', 'TestCity', 'HU',
              'MotherTest', 'MotherStudent',
-             1, 'PermAddr', 'TempAddr', 987654321,
+             'PermAddr', 'TempAddr', 987654321,
              'TestBank', 'TestOwner', 'HU12345678901234567890123456', 'ID', 'DOC123'
+         );
+
+INSERT INTO student_school (
+    student_id, school_id, classes_id, id_number
+) VALUES (
+             1, 1, 1, 123456789
          );
 
 INSERT INTO guardians (
@@ -62,7 +68,9 @@ INSERT INTO guardians (
 INSERT INTO accounts (role, student_id, email_address)
 SELECT 'student', s.id, NULL
 FROM students s
-WHERE s.id_number = 123456789
+JOIN student_school ss ON ss.student_id = s.id
+WHERE ss.school_id = 1
+  AND ss.id_number = 123456789
   AND NOT EXISTS (
     SELECT 1
     FROM accounts a
@@ -102,7 +110,9 @@ SELECT
     1,
     TRUE
 FROM students s
-WHERE s.id_number = 123456789
+JOIN student_school ss ON ss.student_id = s.id
+WHERE ss.school_id = 1
+  AND ss.id_number = 123456789
   AND NOT EXISTS (
     SELECT 1
     FROM guardians_access ga

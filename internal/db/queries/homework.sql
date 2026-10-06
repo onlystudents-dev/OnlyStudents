@@ -16,12 +16,14 @@ JOIN class_subjects csub ON csub.id = h.class_subjects_id
 LEFT JOIN subjects s ON s.id = csub.subject_id
 LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 JOIN teachers t ON t.id = h.teacher_id
-LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $1
-WHERE csub.class_id = (
-    SELECT st.classes_id
-    FROM students st
-    WHERE st.id = $1
-)
+LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = sqlc.arg(student_id)
+WHERE csub.school_id = sqlc.arg(school_id)
+  AND csub.class_id = (
+      SELECT ss.classes_id
+      FROM student_school ss
+      WHERE ss.student_id = sqlc.arg(student_id)
+        AND ss.school_id = sqlc.arg(school_id)
+  )
 ORDER BY h.due_date, h.created_at;
 
 -- name: GetTeacherHomework :many
@@ -87,13 +89,19 @@ WHERE h.id = $1
 
 -- name: StudentUpsertHomeworkSubmission :execrows
 INSERT INTO homework_submissions (homework_id, student_id, content)
-SELECT $1, $2, $3
+SELECT sqlc.arg(homework_id), sqlc.arg(student_id), sqlc.arg(content)
 WHERE EXISTS (
     SELECT 1
     FROM homework h
     JOIN class_subjects csub ON csub.id = h.class_subjects_id
-    WHERE h.id = $1
-      AND csub.class_id = (SELECT st.classes_id FROM students st WHERE st.id = $2)
+    WHERE h.id = sqlc.arg(homework_id)
+      AND csub.school_id = sqlc.arg(school_id)
+      AND csub.class_id = (
+          SELECT ss.classes_id
+          FROM student_school ss
+          WHERE ss.student_id = sqlc.arg(student_id)
+            AND ss.school_id = sqlc.arg(school_id)
+      )
 )
 ON CONFLICT (homework_id, student_id) DO UPDATE
 SET content = EXCLUDED.content,
