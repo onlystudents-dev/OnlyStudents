@@ -3,7 +3,7 @@ import {type AdminStatusData, enrollKeys, type Log, type School} from "../../typ
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import {useEffect, useRef, useState} from "preact/compat";
 import Button, {DropdownConfig, InputConfig} from "../../util/sidebar/config.tsx";
-import {faFileLines, faHeartPulse, faUserPlus} from "@fortawesome/free-solid-svg-icons";
+import {faFileLines, faHeartPulse, faPaintRoller, faUserPlus} from "@fortawesome/free-solid-svg-icons";
 import {getKey} from "../../util/language.ts";
 import Loading from "../../util/loading.tsx";
 
@@ -130,6 +130,7 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                 <Button icon={faHeartPulse} text={getKey("ADMIN_STATUS")} onClick={() => setActive("status")} />
                 <Button icon={faFileLines} text={getKey("ADMIN_LOGS")} onClick={() => { setActive("logs"); void fetchLogs() }} />
                 <Button icon={faUserPlus} text={getKey("ADMIN_ENROLL")} onClick={() => { setActive("enroll"); void fetchSchools() }} />
+                <Button icon={faPaintRoller} text={getKey("THEME")} onClick={() => setActive("themes")} />
             </Sidebar>
         </>
     )
