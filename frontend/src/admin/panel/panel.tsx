@@ -148,7 +148,7 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                                                         // i have a 4k monitor so it fits for me
                                                         // well not anymore
                                                         return <InputConfig value={options[key] || ""} onChange={value => setOptions({ ...options, [key]: value })} onFocusIn={() => setFocused(key)} onFocusOut={() => focused === key && setFocused("")} key={key} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}
-                                                                            type={type} className={`enroll rubik ${focused === key && "bg-(--hover-color)"}`} />
+                                                                            type={type} maxLength={key === "birth_country" ? 2 : undefined} className={`enroll rubik ${focused === key && "bg-(--hover-color)"}`} />
                                                 }
                                             })}
                                         </div>
