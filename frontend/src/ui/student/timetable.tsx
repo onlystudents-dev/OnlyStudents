@@ -1,58 +1,20 @@
-import Navbar from "../../navbar/navbar.tsx";
 import type {Class, Lesson, LessonTime, Room} from "../../types/api.ts";
-import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
-import React, {useCallback, useEffect, useRef, useState} from "react";
-import "./timetable.css";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faAngleLeft, faAngleRight, faHouseChimney, faPenToSquare} from "@fortawesome/free-solid-svg-icons";
-import RateLimit from "../../util/ratelimit.tsx";
-import Skeleton from "../../util/skeleton/skeleton.tsx";
-import Loading from "../../util/loading.tsx";
+import {fromResponse, getLanguage} from "../../util/language.ts";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {toast} from "react-toastify";
-import {formatSecondsToHourAndMinute, formatUnixDate} from "../../util/time.ts";
-import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
-import {fetchWithSchool, getRetryAfter, readJSON} from "../../util/api.ts";
-import type {FeatureProps} from "../../types/props.ts";
 
-const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
-
-type DayName = typeof DAY_NAMES[number]
-
-type day = {
-    name: DayName,
-    date: string,
-    lessons: Lesson[],
-    today: boolean
-}
-
-function Badge({ icon, className }: {icon: IconDefinition, className: string}) {
-    return (
-        <span className={`rounded-full size-8 inline-flex items-center justify-center ${className}`}>
-            <FontAwesomeIcon icon={icon} />
-        </span>
-    )
-}
-
-function getWeekRange(date: Date) {
-    const day = date.getDay()
-    const diffToMonday = day === 0 ? -6 : 1 - day
-
-    const monday = new Date(date)
-    monday.setDate(date.getDate() + diffToMonday)
-    monday.setHours(0, 0, 0, 0)
-
-    const sunday = new Date(monday)
-    sunday.setDate(monday.getDate() + 6)
-
-    const toISODate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-
-    return { start: toISODate(monday), end: toISODate(sunday), monday, mondayTime: Math.floor(monday.getTime() / 1000) }
-}
+import {fetchInto, fetchWithHeaders, getRetryAfter, readJSON} from "../../util/api.ts";
+import type { FeatureProps } from "../../types/props.ts";
+import {type Day, type DayName, DAY_NAMES, Timetable} from "../timetable/timetable.tsx"
+import { formatUnixDate, getWeekRange } from "../../util/time.ts";
+import Loading from "../../util/loading.tsx";
+import RateLimit from "../../util/ratelimit.tsx";
+import Navbar from "../../navbar/navbar.tsx";
 
 export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
     const [lessonTime, setLessonTime] = useState<LessonTime[]>([])
-    const [days, setDays] = useState<day[]>(() => DAY_NAMES.map(name => ({name, date: "", lessons: [], today: false})))
+    const [days, setDays] = useState<Day[]>(() => DAY_NAMES.map(name => ({name, date: "", lessons: [], today: false})))
     const [year, setYear] = useState<string>("")
     const [ratelimit, setRateLimit] = useState(-1)
     const [loading, setLoading] = useState(true)
@@ -76,7 +38,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         // why on earth would it cry because of while true
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (true) {
-            const response = await fetchWithSchool(`/api/v1/me/student/timetable?start_date=${start}&end_date=${end}`)
+            const response = await fetchWithHeaders(`/api/v1/me/student/timetable?start_date=${start}&end_date=${end}`)
 
             if (response.status === 429) {
                 setRateLimit(getRetryAfter(response))
@@ -115,7 +77,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
             const language = getLanguage(meRef.current)?.key || "en-US"
             const now = new Date()
 
-            const createDayData = (name: DayName, dayOffset: number, dayOfWeek: number): day => {
+            const createDayData = (name: DayName, dayOffset: number, dayOfWeek: number): Day => {
                 const targetDate = new Date(monday)
                 targetDate.setDate(monday.getDate() + dayOffset)
 
@@ -133,23 +95,6 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
             return lessons
         }
     }, [])
-
-    async function fetchInto<T>(
-        api: string,
-        method?: React.Dispatch<React.SetStateAction<T>>
-    ) {
-        const response = await fetchWithSchool(api)
-
-        if (!response.ok) {
-            toast.error(await fromResponse(response))
-            return
-        }
-
-        const json = await readJSON<T>(response)
-
-        if (method) method(json)
-        return json
-    }
 
     const Fetch = useCallback(async () => {
         const lessons = await fetchWeekLessons(0)
@@ -187,78 +132,14 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         void Fetch()
     }, [Fetch])
 
-    const d = (() => {
-        switch (me.preferences.timetable_display) {
-            case 1:
-                return days.filter(day => day.lessons.length > 0)
-            case 2:
-                return days.slice(0, 5)
-            default:
-                return days
-        }
-    })()
-
     return (
-        <>
-            <Navbar me={me} reloadSchoolStuff={Fetch} />
-            {loading && <Loading />}
-            {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
-            <div className="w-full flex flex-row justify-center pt-4">
-                <h1 className="text-5xl rubik">{year} {getKey("TERM")}</h1>
-            </div>
-            <div className="w-full h-fit p-4 gap-4 flex flex-row justify-center items-stretch">
-                <div className="flex flex-col justify-center h-14">
-                    <span className="icon" onClick={() => fetchWeekLessons(weekOffset.current - 1)}>
-                        <FontAwesomeIcon icon={faAngleLeft} />
-                    </span>
-                </div>
-                {d.map((day) => (
-                    <div className="day" key={day.name}>
-                        <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>
-                            <h1 className="rubik">{getKey(`DAYS.${day.name}`)}</h1>
-                            <p className="poppins">{day.date}</p>
-                        </div>
-                        {day.lessons.map((lesson) => (
-                            <div className="lesson" key={lesson.actual_date + lesson.lesson_num}>
-                                <div className="flex flex-row justify-between items-start w-full gap-2">
-                                    <div className="flex flex-col min-w-0">
-                                        <h1 className="rubik truncate">{lesson.subject_name}</h1>
-                                        <h2 className="poppins truncate">{[
-                                            lesson.has_teacher_first_name && lesson.teacher_first_name,
-                                            lesson.has_teacher_last_name && lesson.teacher_last_name,
-                                        ].filter(Boolean).join(" ")}</h2>
-                                    </div>
-                                    <div className="flex flex-col gap-1 items-end shrink-0">
-                                        {lesson.has_exam && <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />}
-                                        {lesson.has_homework && <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />}
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-row justify-between items-end w-full gap-2">
-                                    <div className="min-w-0">
-                                        <p className="fredoka truncate">{rooms.find(room => room.id === lesson.room_id)?.name || <Skeleton width={48} height={16} color={"var(--card-color)"} />}</p>
-                                    </div>
-                                    <div className="whitespace-nowrap shrink-0 text-right">
-                                        <h2>{toHoursAndMinutes(lesson) || <Skeleton width={96} height={16} color={"var(--hover-color)"} />}</h2>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ))}
-                <div className="flex flex-col justify-center h-14">
-                    <span className="icon" onClick={() => fetchWeekLessons(weekOffset.current + 1)}>
-                        <FontAwesomeIcon icon={faAngleRight} />
-                    </span>
-                </div>
-            </div>
-        </>
-    )
-
-    function toHoursAndMinutes(lesson: Lesson) {
-        const time = lessonTime.find(lt => lt.has_lesson_number && lt.lesson_number === lesson.lesson_num)
-        if (!time) return ""
-
-        return `${formatSecondsToHourAndMinute(time.at_start, me)}-${formatSecondsToHourAndMinute(time.at_end, me)}`
-    }
+      <>
+        <Navbar me={me} reloadSchoolStuff={Fetch} />
+        {loading && <Loading />}
+        {ratelimit !== -1 && (
+          <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />
+        )}
+        <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffset.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffset.current + 1)}/>
+      </>
+    );
 }

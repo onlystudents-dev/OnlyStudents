@@ -260,6 +260,9 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
         setLoading(true)
         const response = await postJSON("/api/v1/me/logout")
 
+        // remove school_id and class_id
+        localStorage.clear()
+
         if (response.status === 200) {
             location.reload()
         } else {
