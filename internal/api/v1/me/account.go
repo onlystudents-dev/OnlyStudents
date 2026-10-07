@@ -68,15 +68,26 @@ func UpdatePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	if !slices.Contains(helpers.Themes, req.Theme) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
 	if !slices.Contains(helpers.Languages, req.Lang) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
 	if !slices.Contains(helpers.TimeFormats, req.TimeFormat) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	queries := db_queries.New(pool)
+
+	themesA, themes_error := queries.ListThemes(c.Context())
+	if themes_error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+	var themes []string
+	for _, theme := range themesA {
+		themes = append(themes, theme.Name)
+	}
+
+	if req.Theme != "" && !slices.Contains(themes, req.Theme) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
@@ -93,8 +104,6 @@ func UpdatePreferences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	if marshal_err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
-
-	queries := db_queries.New(pool)
 
 	pgAccountID := pgtype.Int4{Int32: session_data.AccountID, Valid: true}
 	var err error

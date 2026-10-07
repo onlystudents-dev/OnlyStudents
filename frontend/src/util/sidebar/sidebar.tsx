@@ -41,7 +41,7 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
         <div className="sidebar">
             {me && <>
                 <div className="flex flex-row gap-4">
-                    <div className="rounded-[50%] h-20 cursor-pointer">
+                    <div className="rounded-[50%] h-20">
                         <img className={`rounded-[inherit] max-h-full ${pfpLoaded ? "" : "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
                         {!pfpLoaded && <Skeleton width={40} height={40} color="var(--bg-color)" className="rounded-[inherit]!"/>}
                     </div>

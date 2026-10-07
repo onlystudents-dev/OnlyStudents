@@ -38,12 +38,3 @@ func AdminDeleteTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 
 	return c.SendStatus(fiber.StatusOK)
 }
-
-func AdminGetThemes(c fiber.Ctx, pool *pgxpool.Pool) error {
-	themes, err := helpers.GetThemes(c, pool)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.JSON(themes)
-}

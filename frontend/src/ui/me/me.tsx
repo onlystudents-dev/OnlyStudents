@@ -1,6 +1,6 @@
 import "./me.css";
 import Navbar from "../../navbar/navbar.tsx";
-import {isTimeFormat, type Me, type Preferences} from "../../types/api.ts";
+import {isTimeFormat, type Me, type Preferences, type Theme} from "../../types/api.ts";
 import Button, {DropdownConfig} from "../../util/sidebar/config.tsx";
 import {
     faAddressCard, faCalendarDays, faClock,
@@ -10,7 +10,7 @@ import {
     faUser,
     faUserLock
 } from "@fortawesome/free-solid-svg-icons";
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import Loading from "../../util/loading.tsx";
 import {fromResponse, getKey, getLanguage, languages} from "../../util/language.ts";
 import Config from "./config.tsx";
@@ -18,7 +18,7 @@ import {toast} from "react-toastify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import PasswordCheck from "../../auth/pwc.tsx";
 import Save from "../../util/save/save.tsx";
-import {applyTheme, getAutoTheme, isTheme, themes} from "../../util/theme.ts";
+import {applyTheme, getAutoTheme} from "../../util/theme.ts";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import type {Dispatch, StateUpdater} from "preact/hooks";
 import {getTimeFormat} from "../../util/time.ts";
@@ -29,6 +29,8 @@ type Options = Pick<Preferences, "lang" | "time_format" | "theme" | "timetable_d
 export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () => Promise<Me | null>, setMe: Dispatch<StateUpdater<Me | null>>, reload: () => void}) {
     const [waiting, setWaiting] = useState(false)
     const [loading, setLoading] = useState(false)
+
+    const [themes, setThemes] = useState<Theme[] | null>(null)
 
     const [active, setActive] = useState<"appearance" | "user" | "security">("appearance")
 
@@ -61,6 +63,13 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
         setOptions(current => ({ ...current, [key]: value }))
     }
 
+    useEffect(() => {
+        void fetch("/api/v1/themes").then(async (response) => {
+            const json = await response.json() as Theme[]
+            setThemes(json)
+        })
+    }, [])
+
     return (
         <>
             <Navbar me={me} />
@@ -84,10 +93,10 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                             <option value="h12">{getKey("12_TIME_FORMAT")}</option>
                                             <option value="h23">{getKey("24_TIME_FORMAT")}</option>
                                         </DropdownConfig>
-                                        <DropdownConfig text={getKey("THEME")} icon={faPaintRoller} value={options.theme} onChange={(raw) => isTheme(raw) && setOption("theme", raw)}>
+                                        <DropdownConfig text={getKey("THEME")} icon={faPaintRoller} value={options.theme} onChange={(raw) => setOption("theme", raw)}>
                                             <option value="">{getKey("AUTOTHEME", getKey(`THEMES.${getAutoTheme()}`))}</option>
-                                            {themes.map(theme => (
-                                                theme && <option value={theme}>{getKey(`THEMES.${theme}`)}</option>
+                                            {themes?.map(theme => (
+                                                <option value={theme.name}>{getKey(`THEMES.${theme.name}`) || theme.name}</option>
                                             ))}
                                         </DropdownConfig>
                                         <DropdownConfig text={getKey("TIMETABLE_DISPLAY")} icon={faTable} value={String(options.timetable_display)} onChange={(raw) => setOption("timetable_display", Number(raw))}>

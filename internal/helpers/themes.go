@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -28,9 +27,10 @@ type Theme struct {
 }
 
 var (
-	styleTagRegex  = regexp.MustCompile(`(?si)<style[^>]*>(.*?)</style>`)
-	rootBlockRegex = regexp.MustCompile(`(?s):root\s*\{([^}]+)\}`)
-	cssVarRegex    = regexp.MustCompile(`--([a-zA-Z0-9_-]+)\s*:`)
+	themesStyleRegex = regexp.MustCompile(`(?si)(<style\b[^>]*\bid=["']themes["'][^>]*>)(.*?)(</style>)`)
+	styleTagRegex    = regexp.MustCompile(`(?si)<style[^>]*>(.*?)</style>`)
+	rootBlockRegex   = regexp.MustCompile(`(?s):root\s*\{([^}]+)\}`)
+	cssVarRegex      = regexp.MustCompile(`--([a-zA-Z0-9_-]+)\s*:`)
 )
 
 func parseRootKeys(html []byte) []string {
@@ -222,7 +222,18 @@ func InjectThemes(ctx context.Context, rdb *redis.Client, html []byte) []byte {
 		return html
 	}
 
-	closingStyle := []byte("</style>")
-	replacement := append(append([]byte{}, css...), closingStyle...)
-	return bytes.Replace(html, closingStyle, replacement, 1)
+	matches := themesStyleRegex.FindSubmatchIndex(html)
+	if matches == nil {
+		return html
+	}
+
+	result := make([]byte, 0, len(html)+len(css))
+
+	result = append(result, html[:matches[3]]...)
+
+	result = append(result, css...)
+
+	result = append(result, html[matches[4]:]...)
+
+	return result
 }

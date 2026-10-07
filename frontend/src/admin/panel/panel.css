@@ -27,23 +27,7 @@
     .enroll {
         @apply cursor-default! h-12 pr-1;
         input {
-            @apply w-80 rounded-lg bg-(--hover-color) outline-none h-10 p-2;
-        }
-    }
-
-    .theme-header {
-        @apply w-full flex flex-row items-center gap-4;
-    }
-
-    .theme-card {
-        @apply w-full flex flex-row items-center justify-between gap-4 border-2 border-(--border-color) rounded-xl p-3;
-    }
-
-    .swatches {
-        @apply flex flex-row flex-wrap gap-1;
-
-        span {
-            @apply size-6 rounded-md border border-(--border-color) inline-block;
+            @apply w-80 rounded-lg bg-(--card-color) outline-none h-10 p-2;
         }
     }
 
@@ -51,11 +35,41 @@
         @apply cursor-default! h-12 pr-1;
 
         input[type="color"] {
-            @apply size-10 rounded-lg border-2 border-(--border-color) cursor-pointer bg-transparent p-0;
+            @apply size-10 rounded-none border-2 border-(--border-color) cursor-pointer bg-transparent p-0;
         }
 
         input {
-            @apply w-72 rounded-lg bg-(--hover-color) outline-none h-10 p-2;
+            @apply w-80 rounded-lg bg-(--card-color) outline-none h-10 p-2;
         }
+    }
+
+    .theme-card {
+        @apply w-full flex flex-row items-center justify-between gap-4 border-2 border-(--border-color) rounded-xl p-3;
+
+        .swatches {
+            @apply flex flex-row flex-wrap gap-1;
+
+            span {
+                @apply size-6 rounded-md border border-(--border-color) inline-block;
+            }
+        }
+    }
+
+    .theme-action-button {
+        @apply cursor-pointer;
+        transition: color 300ms ease-in-out;
+    }
+
+    .theme-action-button:hover {
+        transition: color 100ms ease-in-out;
+    }
+
+    .theme-action-shadow {
+        transition: box-shadow 400ms ease-in-out;
+    }
+
+    .theme-action-shadow:hover {
+        transition: box-shadow 200ms ease-in-out;
+        box-shadow: 0 0 10px var(--border-color);
     }
 }

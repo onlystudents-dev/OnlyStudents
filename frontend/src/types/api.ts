@@ -1,5 +1,3 @@
-import type {Theme} from "../util/theme.ts";
-
 export type Role = "student" | "teacher" | "guardian" | "admin"
 
 export type Me = {
@@ -25,7 +23,7 @@ export type Preferences = {
     pfp_url: string,
     nickname: string,
     lang: string,
-    theme: Theme,
+    theme: string,
     timetable_display: number,
     timetable_next: boolean,
     time_format: TimeFormat,
@@ -42,6 +40,11 @@ export type GuardianChildren = {
     school_memberships: SchoolMembership[],
     first_name: string,
     last_name: string,
+}
+
+export type Theme = {
+    name: string,
+    colors: Record<string, string>,
 }
 
 export type Lesson = {
