@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 
@@ -140,12 +141,14 @@ func SetTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, name string, c
 	ctx := c.Context()
 	theme := Theme{Name: name, Colors: colors}
 	if err := theme.IsValid(ctx, rdb); err != nil {
+		slog.Error("set theme", "err", err.Error())
 		return err
 	}
 
 	queries := db_queries.New(pool)
 	colorsBytes, err := json.Marshal(colors)
 	if err != nil {
+		slog.Error("set theme", "err", err.Error())
 		return err
 	}
 
@@ -154,6 +157,7 @@ func SetTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, name string, c
 		Colors: colorsBytes,
 	})
 	if err != nil {
+		slog.Error("set theme", "err", err.Error())
 		return err
 	}
 
@@ -188,6 +192,7 @@ func rebuildCSS(ctx context.Context, rdb *redis.Client, themes []Theme) error {
 func RefreshCSS(ctx context.Context, pool *pgxpool.Pool, rdb *redis.Client) error {
 	themes, err := GetThemes(ctx, pool)
 	if err != nil {
+		slog.Error("refresh css", "err", err.Error())
 		return err
 	}
 	return rebuildCSS(ctx, rdb, themes)

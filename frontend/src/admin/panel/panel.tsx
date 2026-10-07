@@ -1,13 +1,46 @@
 import "./panel.css";
-import {type AdminStatusData, enrollKeys, type Log, type School} from "../../types/admin.ts";
+import {type AdminStatusData, type AdminTheme, enrollKeys, type Log, type School} from "../../types/admin.ts";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import {useEffect, useRef, useState} from "preact/compat";
 import Button, {DropdownConfig, InputConfig} from "../../util/sidebar/config.tsx";
-import {faFileLines, faHeartPulse, faPaintRoller, faUserPlus} from "@fortawesome/free-solid-svg-icons";
-import {getKey} from "../../util/language.ts";
+import {faArrowLeft, faFileLines, faHeartPulse, faPalette, faPenToSquare, faPlus, faTrash, faUserPlus} from "@fortawesome/free-solid-svg-icons";
+import {fromResponse, getKey} from "../../util/language.ts";
 import Loading from "../../util/loading.tsx";
+import {toast} from "react-toastify";
+import Save from "../../util/save/save.tsx";
+import {postJSON} from "../../util/api.ts";
 
 type enrollable = "guardian" | "student" | "teacher"
+
+function rootColors(): Record<string, string> {
+  for (const style of Array.from(document.querySelectorAll("style"))) {
+        if (style.getAttribute("type") == "text/css") {
+          continue
+        }
+
+        const root = /:root\s*\{([^}]+)\}/.exec(style.textContent)
+        const body = root?.[1]
+        if (body === undefined) continue
+
+        const colors: Record<string, string> = {}
+        for (const [, key, value] of body.matchAll(/--([a-zA-Z0-9_-]+)\s*:\s*([^;]+);?/g)) {
+            if (key === undefined || value === undefined) continue
+            colors[`--${key}`] = value.trim()
+        }
+
+        if (Object.keys(colors).length !== 0) return colors
+    }
+
+    return {}
+}
+
+function colorOf(theme: AdminTheme, key: string): string {
+    return theme.colors[key] ?? theme.colors[key.slice(2)] ?? ""
+}
+
+function toHex(value: string): string {
+    return /^#[0-9a-fA-F]{6}$/.test(value.trim()) ? value.trim() : "#000000"
+}
 
 export default function AdminPanel({ status }: {status: AdminStatusData}) {
     const [active, setActive] = useState<"status" | "logs" | "enroll" | "themes">("status")
@@ -18,7 +51,11 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
 
     const [enroll, setEnroll] = useState<enrollable>("guardian")
     const [options, setOptions] = useState<Record<string, string | number>>({})
+    const [enrollEpoch, setEnrollEpoch] = useState(0)
     const [schools, setSchools] = useState<School[]>([])
+
+    const [themes, setThemes] = useState<AdminTheme[] | null>(null)
+    const [editing, setEditing] = useState<AdminTheme | null>(null)
 
     useEffect(() => {
         if (active === "logs" && logsRef.current) {
@@ -87,7 +124,7 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                         case "enroll":
                             return (
                                 <>
-                                    <DropdownConfig value={enroll} onChange={e => setEnroll(e as enrollable)} className="sselect">
+                                    <DropdownConfig value={enroll} onChange={e => { setEnroll(e as enrollable); setOptions({}) }} className="sselect">
                                         <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
                                         <option value="student">{getKey("ROLE.STUDENT")}</option>
                                         <option value="teacher">{getKey("ROLE.TEACHER")}</option>
@@ -98,7 +135,7 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                                                 switch(key) {
                                                     case "school_id":
                                                         return (
-                                                            <DropdownConfig value={schools[0]?.name || ""} onChange={e => setOptions({ ...options, [key]: Number(e) })} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} className="enroll rubik">
+                                                            <DropdownConfig value={String(options.school_id ?? schools[0]?.id ?? "")} onChange={e => setOptions({ ...options, [key]: Number(e) })} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} className="enroll rubik">
                                                                 {schools.map(school => (
                                                                     <option key={school.id} value={school.id}>{school.name}</option>
                                                                 ))}
@@ -110,15 +147,54 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                                             })}
                                         </div>
                                     </div>
+                                    <Save key={enrollEpoch} options={options} setOptions={setOptions} save={saveEnroll} />
                                 </>
                             )
                         case "themes":
-                            return (
-                                <>
-                                    <div className="box flex-wrap">
+                            if (editing) {
+                                const colors = rootColors()
+                                return (
+                                    <>
+                                        <div className="box">
+                                            <div className="theme-header">
+                                                <Button icon={faArrowLeft} text={getKey("ADMIN_THEMES_BACK")} onClick={() => setEditing(null)} />
+                                                <InputConfig text={getKey("ADMIN_THEMES_NAME")} value={editing.name} onChange={value => setEditing({...editing, name: value})} className="enroll rubik" />
+                                            </div>
+                                            <div className="w-full overflow-y-auto pr-2 flex flex-col gap-2" style={{height: "calc(100vh - 164px)"}}>
+                                                {Object.entries(colors).map(([key]) => (
+                                                    <div className="config theme-color rubik" key={key}>
+                                                        <p>{key}</p>
+                                                        <div className="flex flex-row items-center gap-2">
+                                                            <input type="color" value={toHex(editing.colors[key] ?? "")} onChange={e => setEditing({...editing, colors: {...editing.colors, [key]: e.currentTarget.value}})} />
+                                                            <input value={editing.colors[key] ?? ""} onChange={e => setEditing({...editing, colors: {...editing.colors, [key]: e.currentTarget.value}})} />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <Save options={editing} setOptions={setEditing} save={saveTheme} />
+                                    </>
+                                )
+                            }
 
-                                    </div>
-                                </>
+                            return (
+                                <div className="box flex-wrap">
+                                    <Button icon={faPlus} text={getKey("ADMIN_THEMES_NEW")} onClick={() => openEditor()} />
+                                    {!themes ? <Loading /> : themes.length === 0 ? <p className="poppins">{getKey("ADMIN_THEMES_EMPTY")}</p> : themes.map(theme => (
+                                        <div className="theme-card" key={theme.name}>
+                                            <h1 className="rubik">{theme.name}</h1>
+                                            <div className="swatches">
+                                                {Object.keys(rootColors()).map(key => (
+                                                    <span key={key} title={key} style={{backgroundColor: colorOf(theme, key) || "transparent"}} />
+                                                ))}
+                                            </div>
+                                            <div className="flex flex-row gap-2">
+                                                <Button icon={faPenToSquare} text={getKey("ADMIN_THEMES_EDIT")} onClick={() => openEditor(theme)} />
+                                                <Button icon={faTrash} text={getKey("ADMIN_THEMES_DELETE")} onClick={() => void deleteTheme(theme.name)} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )
                         default:
                             return null
@@ -130,8 +206,8 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                 <Button icon={faHeartPulse} text={getKey("ADMIN_STATUS")} onClick={() => setActive("status")} />
                 <Button icon={faFileLines} text={getKey("ADMIN_LOGS")} onClick={() => { setActive("logs"); void fetchLogs() }} />
                 <Button icon={faUserPlus} text={getKey("ADMIN_ENROLL")} onClick={() => { setActive("enroll"); void fetchSchools() }} />
-                <Button icon={faPaintRoller} text={getKey("THEME")} onClick={() => setActive("themes")} />
-            </Sidebar>
+                <Button icon={faPalette} text={getKey("ADMIN_THEMES")} onClick={() => { setActive("themes"); void fetchThemes() }} />
+        </Sidebar>
         </>
     )
 
@@ -149,5 +225,101 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
         const schoolsJ = await response.json() as School[]
 
         setSchools(schoolsJ)
+    }
+
+    async function fetchThemes() {
+        setEditing(null)
+
+        const response = await fetch("/api/v1/admin/themes")
+
+        if (!response.ok) {
+            void toast.error(await fromResponse(response))
+            return
+        }
+
+        setThemes(await response.json() as AdminTheme[])
+    }
+
+    function openEditor(theme?: AdminTheme) {
+        const defaults = rootColors()
+
+        setEditing(theme
+            ? {name: theme.name, colors: Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, colorOf(theme, key) || value]))}
+            : {name: "", colors: {...defaults}})
+    }
+
+    async function saveEnroll(): Promise<boolean> {
+        const entries = Object.entries(enrollKeys[enroll]).filter(([, type]) => type !== "boolean")
+        const values: Record<string, string | number | undefined> = {...options, school_id: options.school_id ?? schools[0]?.id}
+
+        const missing = entries.filter(([key]) => String(values[key] ?? "").trim() === "").map(([key]) => getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`))
+        if (missing.length !== 0) {
+            toast.error(getKey("ADMIN_ENROLL_MISSING", missing.join(", ")))
+            return false
+        }
+
+        const body = Object.fromEntries(entries.map(([key, type]) => {
+            const value = String(values[key] ?? "")
+            if (type === "date") return [key, Math.floor(Date.parse(value) / 1000)]
+            if (type === "number") return [key, Number(value)]
+            return [key, value]
+        }))
+
+        const response = await postJSON(`/api/v1/admin/enroll/${enroll}`, body)
+
+        if (response.status !== 200) {
+            void toast.error(await fromResponse(response))
+            return false
+        }
+
+        toast.success(getKey("ADMIN_ENROLL_SAVED"))
+        setOptions({})
+        setEnrollEpoch(epoch => epoch + 1)
+        return true
+    }
+
+    async function saveTheme(): Promise<boolean> {
+        if (!editing) return false
+
+        if (!editing.name.trim()) {
+            toast.error(getKey("ADMIN_THEMES_BAD_NAME"))
+            return false
+        }
+
+        const missing = Object.keys(rootColors()).filter(key => !(editing.colors[key] ?? "").trim())
+        if (missing.length !== 0) {
+            toast.error(getKey("ADMIN_THEMES_MISSING", missing.join(", ")))
+            return false
+        }
+
+        const response = await fetch("/api/v1/admin/theme", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(editing),
+        })
+
+        if (!response.ok) {
+            void toast.error(await fromResponse(response))
+            return false
+        }
+
+        toast.success(getKey("ADMIN_THEMES_SAVED"))
+        setEditing(null)
+        void fetchThemes()
+        return true
+    }
+
+    async function deleteTheme(name: string) {
+        if (!window.confirm(getKey("ADMIN_THEMES_DELETE_CONFIRM", name))) return
+
+        const response = await fetch("/api/v1/admin/theme", {method: "DELETE", body: name})
+
+        if (!response.ok) {
+            void toast.error(await fromResponse(response))
+            return
+        }
+
+        toast.success(getKey("ADMIN_THEMES_DELETED"))
+        void fetchThemes()
     }
 }

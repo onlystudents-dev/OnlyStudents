@@ -22,6 +22,11 @@ export type Log = {
     content: string,
 }
 
+export type AdminTheme = {
+    name: string,
+    colors: Record<string, string>,
+}
+
 export type EnrollGuardianRequest = {
     phone_number: string,
     first_name: string,
