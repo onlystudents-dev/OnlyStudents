@@ -49,7 +49,7 @@ export function Timetable(props: TimetableProps) {
     </div>
     <div className="w-full h-fit p-4 gap-4 flex flex-row justify-center items-stretch">
       <div className="flex flex-col justify-center h-14">
-        <span className="icon" onClick={() => props.onPrevWeek}>
+        <span className="icon" onClick={() => props.onPrevWeek()}>
           <FontAwesomeIcon icon={faAngleLeft} />
         </span>
       </div>
@@ -88,7 +88,7 @@ export function Timetable(props: TimetableProps) {
           </div>
       ))}
       <div className="flex flex-col justify-center h-14">
-        <span className="icon" onClick={() => props.onNextWeek}>
+        <span className="icon" onClick={() => props.onNextWeek()}>
           <FontAwesomeIcon icon={faAngleRight} />
         </span>
       </div>
