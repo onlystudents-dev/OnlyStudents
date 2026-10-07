@@ -1,4 +1,4 @@
-import type {Class, Lesson, LessonTime, Room} from "../../types/api.ts";
+import type {Lesson, LessonTime, Room} from "../../types/api.ts";
 import {fromResponse, getLanguage} from "../../util/language.ts";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {toast} from "react-toastify";
