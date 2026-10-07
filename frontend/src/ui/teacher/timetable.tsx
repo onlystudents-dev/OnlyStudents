@@ -3,7 +3,7 @@ import {fromResponse, getLanguage} from "../../util/language.ts";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {toast} from "react-toastify";
 
-import {fetchInto, fetchWithHeaders, getRetryAfter, readJSON} from "../../util/api.ts";
+import {fetchInto, fetchWithSchool, getRetryAfter, readJSON} from "../../util/api.ts";
 import type { FeatureProps } from "../../types/props.ts";
 import {type Day, type DayName, DAY_NAMES, Timetable} from "../timetable/timetable.tsx"
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
@@ -38,7 +38,7 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
         // why on earth would it cry because of while true
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (true) {
-            const response = await fetchWithHeaders(`/api/v1/me/teacher/timetable/mine?start_date=${start}&end_date=${end}`)
+            const response = await fetchWithSchool(`/api/v1/me/teacher/timetable/mine?start_date=${start}&end_date=${end}`)
 
             if (response.status === 429) {
                 setRateLimit(getRetryAfter(response))

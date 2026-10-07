@@ -11,7 +11,7 @@ export function postJSON(url: string, body?: unknown) {
     })
 }
 
-export function fetchWithHeaders(url: string) {
+export function fetchWithSchool(url: string) {
     const school = localStorage.getItem("school_id");
     const child = localStorage.getItem("child_id");
     const headers: Record<string, string> = {};
@@ -35,7 +35,7 @@ export async function fetchInto<T>(
     api: string,
     method?: React.Dispatch<React.SetStateAction<T>>
 ) {
-    const response = await fetchWithHeaders(api)
+    const response = await fetchWithSchool(api)
 
     if (!response.ok) {
         toast.error(await fromResponse(response))
