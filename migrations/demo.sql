@@ -1,7 +1,3 @@
--- Demo seed data (multi-school). Applied as a migration when DEMO_MODE=true,
--- after migrations 00001-00007 (so: no password_hash, student_school and
--- class_subjects exist, students has no school_id/classes_id/id_number).
-
 INSERT INTO school_type (id, name) VALUES
                                        (1, 'Default'),
                                        (2, 'Non-default');
@@ -88,7 +84,6 @@ INSERT INTO subjects (subject_name) VALUES
                                         ('Földrajz'),
                                         ('Testnevelés');
 
--- subject ids are global (subjects 1-5 for school 1, 6-10 for school 2)
 INSERT INTO class_subjects (id, school_id, class_id, subject_id, custom_subject, custom_subject_id, teacher_id) VALUES
                                                                                                                     (1,  1, 1, 1,  FALSE, NULL, 1),
                                                                                                                     (2,  1, 1, 2,  FALSE, NULL, 1),
@@ -181,7 +176,6 @@ INSERT INTO rooms (id, school_id, name, capacity) VALUES
                                                       (1, 1, '101', 30),
                                                       (2, 2, '101', 30);
 
--- groups.bell_id must be a bell_schedule_type; school 2's group uses type 2
 INSERT INTO groups (id, school_id, bell_id, group_name) VALUES
                                                             (1, 1, 1, '9.A'),
                                                             (2, 2, 2, '9.A');
@@ -361,7 +355,6 @@ SELECT 1, 5, bs.id, '2026-09-17', 'tardy', FALSE, NULL, 'Késett a tanórára.'
 FROM base_schedule bs
 WHERE bs.school_id = 1 AND bs.group_id = 1 AND bs.day_of_week = 4 AND bs.lesson_num = 4;
 
--- Explicit ids were used above, so advance the sequences to avoid PK collisions later.
 SELECT setval(pg_get_serial_sequence('school_type', 'id'),         (SELECT MAX(id) FROM school_type));
 SELECT setval(pg_get_serial_sequence('teachers', 'id'),            (SELECT MAX(id) FROM teachers));
 SELECT setval(pg_get_serial_sequence('schools', 'id'),             (SELECT MAX(id) FROM schools));

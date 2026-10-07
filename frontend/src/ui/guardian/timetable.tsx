@@ -1,1 +1,4 @@
-export { default } from "../placeholder.tsx"
+import StudentTimetable from '../student/timetable';
+
+const GuardianTimetable = StudentTimetable;
+export default GuardianTimetable;

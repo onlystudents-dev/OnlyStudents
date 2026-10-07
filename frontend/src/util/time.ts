@@ -28,3 +28,19 @@ export function formatUnixDate(unix: number, locale: string): string {
         day: "numeric",
     }).format(new Date(unix * 1000))
 }
+
+export function getWeekRange(date: Date) {
+    const day = date.getDay()
+    const diffToMonday = day === 0 ? -6 : 1 - day
+
+    const monday = new Date(date)
+    monday.setDate(date.getDate() + diffToMonday)
+    monday.setHours(0, 0, 0, 0)
+
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+
+    const toISODate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+
+    return { start: toISODate(monday), end: toISODate(sunday), monday, mondayTime: Math.floor(monday.getTime() / 1000) }
+}

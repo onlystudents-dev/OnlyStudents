@@ -235,6 +235,10 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.RemoveCanceledLesson(c, pool, rdb) },
 						},
 						"substitution": helpers.Patch(func(c fiber.Ctx) error { return timetableapi.UpdateSubstitution(c, pool, rdb) }),
+
+						"mine":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRealTimeTable(c, pool, rdb) }),
+						"my_lesson_times": helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyLessonTimes(c, pool, rdb) }),
+						"my_rooms":        helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRooms(c, pool, rdb) }),
 					},
 				},
 			},
