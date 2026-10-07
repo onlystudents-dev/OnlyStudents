@@ -29,7 +29,7 @@ export function DropdownConfig({ text, icon, value, children, className, onChang
     )
 }
 
-export function InputConfig({ text, icon, value, className, onChange, type }: {text?: string, icon?: IconDefinition, value: string | number | boolean, className?: string, onChange: (raw: string) => void, type?: HTMLInputTypeAttribute}) {
+export function InputConfig({ text, icon, value, className, onChange, onFocusIn, onFocusOut, type }: {text?: string, icon?: IconDefinition, value: string | number | boolean, className?: string, onChange: (raw: string) => void, onFocusIn?: () => void, onFocusOut?: () => void, type?: HTMLInputTypeAttribute}) {
     let val: string | number | undefined
     let checked: boolean | undefined
     switch (typeof value) {
@@ -50,7 +50,7 @@ export function InputConfig({ text, icon, value, className, onChange, type }: {t
                 <p>
                     {icon && <FontAwesomeIcon icon={icon} />} {text}
                 </p>
-                <input className="poppins" value={val} checked={checked} type={type} onChange={(e) => onChange(e.currentTarget.value)} />
+                <input className="poppins" value={val} checked={checked} type={type} onChange={(e) => onChange(e.currentTarget.value)} onFocusIn={onFocusIn} onFocusOut={onFocusOut} />
             </div>
         </>
     )

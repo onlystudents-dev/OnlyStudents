@@ -5,7 +5,7 @@ import {useEffect, useRef, useState} from "preact/compat";
 import Button, {DropdownConfig, InputConfig} from "../../util/sidebar/config.tsx";
 import {
     faArrowLeft,
-    faFileLines,
+    faFileLines, faFloppyDisk,
     faHeartPulse,
     faPaintRoller,
     faPenToSquare,
@@ -18,6 +18,7 @@ import Loading from "../../util/loading.tsx";
 import {toast} from "react-toastify";
 import Save from "../../util/save/save.tsx";
 import type {Theme} from "../../types/api.ts";
+import {postJSON} from "../../util/api.ts";
 
 type enrollable = "guardian" | "student" | "teacher"
 
@@ -54,6 +55,7 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
     const [enroll, setEnroll] = useState<enrollable>("guardian")
     const [options, setOptions] = useState<Record<string, string | number>>({})
     const [schools, setSchools] = useState<School[]>([])
+    const [focused, setFocused] = useState("")
 
     const [themes, setThemes] = useState<Theme[] | null>(null)
     const [editing, setEditing] = useState<Theme | null>(null)
@@ -131,22 +133,26 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                                         <option value="teacher">{getKey("ROLE.TEACHER")}</option>
                                     </DropdownConfig>
                                     <div className="box pr-2!">
-                                        <div className="w-full overflow-y-auto pr-2" style={{height: "calc(100vh - 124px)"}}>
+                                        <div className="w-full overflow-y-auto pr-2 flex flex-col" style={{height: "calc(100vh - 164px)"}}>
                                             {Object.entries(enrollKeys[enroll]).filter((([, type]) => type !== "boolean")).map(([key, type]) => {
                                                 switch(key) {
                                                     case "school_id":
                                                         return (
-                                                            <DropdownConfig value={String(options.school_id ?? schools[0]?.id ?? "")} onChange={e => setOptions({ ...options, [key]: Number(e) })} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} className="enroll rubik">
+                                                            <DropdownConfig value={String(options[key]) || schools[0]?.name || ""} onChange={e => setOptions({ ...options, [key]: Number(e) })} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} className="enroll rubik">
                                                                 {schools.map(school => (
                                                                     <option key={school.id} value={school.id}>{school.name}</option>
                                                                 ))}
                                                             </DropdownConfig>
                                                         )
                                                     default:
-                                                        return <InputConfig value={options[key] || ""} onChange={value => setOptions({ ...options, [key]: value })} key={key} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} type={type} className="enroll rubik" />
+                                                        // i have a 4k monitor so it fits for me
+                                                        // well not anymore
+                                                        return <InputConfig value={options[key] || ""} onChange={value => setOptions({ ...options, [key]: value })} onFocusIn={() => setFocused(key)} onFocusOut={() => focused === key && setFocused("")} key={key} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}
+                                                                            type={type} className={`enroll rubik ${focused === key && "bg-(--hover-color)"}`} />
                                                 }
                                             })}
                                         </div>
+                                        <Button className="enroll-save" icon={faFloppyDisk} text={getKey("SAVE")} onClick={() => void enrollUser()} />
                                     </div>
                                 </>
                             )
@@ -241,6 +247,53 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
         if (element) {
             const themes = await fetch("/dynamic/themes.css")
             element.textContent = await themes.text()
+        }
+    }
+
+    async function enrollUser() {
+        const ops: Record<string, string | number | boolean> = {}
+
+        for (const [key, type] of Object.entries(enrollKeys[enroll])) {
+            if (type === "boolean") {
+                const valueKey = key.startsWith("has_")
+                    ? key.slice(4)
+                    : key
+
+                ops[key] = !!options[valueKey]
+                continue
+            }
+
+            const value = options[key]
+
+            if (value === undefined || value === "") {
+                continue
+            }
+
+            switch (type) {
+                case "number":
+                    ops[key] = Number(value)
+                    break
+
+                case "date":
+                    ops[key] = Math.floor(
+                        new Date(String(value)).getTime() / 1000
+                    )
+                    break
+
+                default:
+                    ops[key] = String(value)
+                    break
+            }
+        }
+
+        const response = await postJSON(`/api/v1/admin/enroll/${enroll}`, ops)
+
+        switch (response.status) {
+            case 200:
+                toast.success(getKey("ADMIN_SUCCESSFULLY_ENROLLED"))
+                break
+            default:
+                toast.error(await fromResponse(response))
         }
     }
 

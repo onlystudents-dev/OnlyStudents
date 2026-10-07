@@ -31,6 +31,15 @@
         }
     }
 
+    .enroll-save {
+        @apply self-end w-fit p-2 rounded-lg mr-4 bg-(--card-color) hover:bg-(--hover-color) cursor-pointer;
+        transition: background-color 300ms ease-in-out;
+    }
+
+    .enroll-save:hover {
+        transition: background-color 100ms ease-in-out;
+    }
+
     .theme-color {
         @apply cursor-default! h-12 pr-1;
 

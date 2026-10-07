@@ -147,7 +147,8 @@
     "ADMIN_ENROLL.GUARDIAN.BIRTH_COUNTRY": "Születési ország",
     "ADMIN_ENROLL.GUARDIAN.PERMANENT_ADDRESS": "Állandó lakcím",
     "ADMIN_ENROLL.GUARDIAN.TEMPORARY_ADDRESS": "Tartózkodási hely",
-    "ADMIN_ENROLL.GUARDIAN.EMAIL_ADDRESS": "E-mail-cím"
+    "ADMIN_ENROLL.GUARDIAN.EMAIL_ADDRESS": "E-mail-cím",
+    "ADMIN_SUCCESSFULLY_ENROLLED": "Sikeres beíratás!"
   },
   "errors": {
     "FORBIDDEN": "Nincs jogod ennek az erőforrásnak az eléréséhez vagy megváltoztatásához!",
