@@ -49,7 +49,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
             if (response.status === 401) {
                 setLoading(false)
                 const me = await unauthorizedRef.current()
-                if (me?.role !== "student") return
+                if (me?.role !== "student" && me?.role !== "guardian") return
                 setLoading(true)
                 await Promise.all([
                     fetchInto("/api/v1/me/student/timetable/room", setRooms),
