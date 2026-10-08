@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mrz1836/go-countries"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -132,9 +133,20 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 
 	tx, err := pool.Begin(c.Context())
 	if err != nil {
-		return 500
+		return fiber.StatusInternalServerError
 	}
 	defer tx.Rollback(c.Context())
+
+	if (req.HasPhoneNumber && !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber)) ||
+		!helpers.EmailRegex.MatchString(req.EmailAddress) ||
+		req.FirstName == "" || req.LastName == "" ||
+		req.BirthFirstName == "" || req.BirthLastName == "" || req.BirthCity == "" ||
+		req.MotherBirthFirstName == "" || req.MotherBirthLastName == "" ||
+		req.PermamentAddress == "" || req.TemporaryAddress == "" ||
+		req.TaxNumber <= 0 || req.SsnNumber <= 0 || req.IDNumber <= 0 || req.ClassesID <= 0 || req.SchoolID <= 0 ||
+		countries.GetByAlpha2(req.BirthCountry) == nil {
+		return fiber.StatusBadRequest
+	}
 
 	queries := db_queries.New(pool).WithTx(tx)
 
@@ -207,7 +219,7 @@ func EnrollStudent(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *o
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	return c.SendStatus(enroll_student(c, req, pool, rdb))
+	return helpers.ErrorByStatusCode(c, enroll_student(c, req, pool, rdb))
 }
 
 func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, rdb *redis.Client) int {
@@ -216,6 +228,15 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 
 	if err != nil {
 		return fiber.StatusInternalServerError
+	}
+
+	if !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber) ||
+		!helpers.EmailRegex.MatchString(req.EmailAddress) ||
+		req.FirstName == "" || req.LastName == "" ||
+		req.BirthFirstName == "" || req.BirthLastName == "" || req.BirthCity == "" ||
+		req.PermamentAddress == "" || req.TemporaryAddress == "" ||
+		countries.GetByAlpha2(req.BirthCountry) == nil {
+		return fiber.StatusBadRequest
 	}
 
 	queries := db_queries.New(pool)
@@ -269,7 +290,7 @@ func EnrollTeacher(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *o
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	return c.SendStatus(enroll_teacher(c, req, pool, rdb))
+	return helpers.ErrorByStatusCode(c, enroll_teacher(c, req, pool, rdb))
 }
 
 func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool, rdb *redis.Client) int {
@@ -278,6 +299,15 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 
 	if err != nil {
 		return fiber.StatusInternalServerError
+	}
+
+	if !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber) ||
+		!helpers.EmailRegex.MatchString(req.EmailAddress) ||
+		req.FirstName == "" || req.LastName == "" ||
+		req.BirthFirstName == "" || req.BirthLastName == "" || req.BirthCity == "" ||
+		req.PermamentAddress == "" || req.TemporaryAddress == "" ||
+		countries.GetByAlpha2(req.BirthCountry) == nil {
+		return fiber.StatusBadRequest
 	}
 
 	queries := db_queries.New(pool)
@@ -331,7 +361,7 @@ func EnrollGuardian(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	return c.SendStatus(enroll_guardian(c, req, pool, rdb))
+	return helpers.ErrorByStatusCode(c, enroll_guardian(c, req, pool, rdb))
 }
 
 // TODO: rework so this is a process in the background with jobs, this would be way too slow otherwise.
@@ -376,5 +406,5 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 		}
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	return helpers.ErrorByStatusCode(c, fiber.StatusOK)
 }
