@@ -148,7 +148,8 @@
     "ADMIN_ENROLL.GUARDIAN.PERMANENT_ADDRESS": "Permanent address",
     "ADMIN_ENROLL.GUARDIAN.TEMPORARY_ADDRESS": "Temporary address",
     "ADMIN_ENROLL.GUARDIAN.EMAIL_ADDRESS": "Email address",
-    "ADMIN_SUCCESSFULLY_ENROLLED": "Successfully enrolled!"
+    "ADMIN_SUCCESSFULLY_ENROLLED": "Successfully enrolled!",
+    "ENROLL": "Enroll"
   },
   "errors": {
     "FORBIDDEN": "You do not have permission to access or modify this resource!",

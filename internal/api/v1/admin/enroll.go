@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bytemare/opaque"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -97,11 +98,21 @@ type MassEnrollRequest struct {
 }
 
 func SendEnrollToken(rdb *redis.Client, ctx context.Context, enroll_token string, email string, role string, account_uuid uuid.UUID) {
-	err := rdb.Set(ctx, fmt.Sprintf("enroll:%s", enroll_token), opaquepkg.EnrollState{
+	enroll_state := opaquepkg.EnrollState{
 		AccountUUID: account_uuid.String(),
-	}, time.Duration(helpers.GetIntEnvFallback("ENROLL_TOKEN_TTL", 168, 30*24))*time.Hour).Err()
+	}
+
+	enroll_state_bytes, err := json.Marshal(enroll_state)
 
 	if err != nil {
+		slog.Error("enroll token marshal", "err", err)
+		return
+	}
+
+	redis_err := rdb.Set(ctx, fmt.Sprintf("enroll:%s", enroll_token), enroll_state_bytes, time.Duration(helpers.GetIntEnvFallback("ENROLL_TOKEN_TTL", 168, 30*24))*time.Hour).Err()
+
+	if redis_err != nil {
+		slog.Error("enroll token rdb set", "err", redis_err)
 		return
 	}
 
