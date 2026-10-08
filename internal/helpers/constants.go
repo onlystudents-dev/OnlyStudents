@@ -9,7 +9,6 @@ var EmailRegex = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 
 var Languages = []string{"", "en-US", "hu-HU"}
 var TimeFormats = []string{"", "h12", "h23"}
-var Themes = []string{"", "dark", "light"}
 var FrontendPaths = []string{
 	"/",
 	"/admin",

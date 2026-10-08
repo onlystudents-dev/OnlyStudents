@@ -86,6 +86,14 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 		}),
 
 		"v1": fiber.Map{
+			"themes": helpers.Get(func(c fiber.Ctx) error {
+				themes, err := helpers.GetThemes(c, pool)
+				if err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+				}
+
+				return c.JSON(themes)
+			}),
 			"admin": fiber.Map{
 				helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth, role("admin")},
 				"logs":                   helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminLogs(c, pool, rdb) }),
@@ -101,7 +109,6 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					fiber.MethodPut:    func(c fiber.Ctx) error { return adminapi.AdminSetTheme(c, pool, rdb) },
 					fiber.MethodDelete: func(c fiber.Ctx) error { return adminapi.AdminDeleteTheme(c, pool, rdb) },
 				},
-				"themes": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminGetThemes(c, pool) }),
 			},
 			"me": fiber.Map{
 				helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth},
@@ -326,6 +333,17 @@ func main() {
 	// frontend
 	app.Use("/assets/fonts", static.New("frontend/dist/assets/fonts", static.Config{MaxAge: 31536000}))
 	app.Use("/assets", static.New("frontend/dist/assets", static.Config{MaxAge: 3600}))
+
+	// non-static assets
+	app.Get("/dynamic/themes.css", func(c fiber.Ctx) error {
+		css, err := rdb.Get(c.Context(), "theme:dynamic_css").Bytes()
+		if err != nil {
+			return c.SendStatus(fiber.StatusNotFound)
+		}
+
+		c.Type("css")
+		return c.Send(css)
+	})
 
 	indexHTML, err := os.ReadFile("frontend/dist/index.html")
 	if err != nil {

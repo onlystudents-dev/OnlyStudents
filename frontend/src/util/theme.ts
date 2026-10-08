@@ -1,21 +1,14 @@
 import type {Me} from "../types/api.ts";
 
-export const themes = ["", "dark", "light"] as const;
-export type Theme = typeof themes[number];
-
-export function isTheme(value: string): value is Theme {
-    return themes.some(theme => theme === value)
-}
-
-export function getAutoTheme(): Theme {
+export function getAutoTheme(): string {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-export function getTheme(me: Me): Theme {
+export function getTheme(me: Me): string {
     return me.preferences.theme || getAutoTheme()
 }
 
-export function applyTheme(arg: Me | Theme) {
-    const theme = typeof arg === "string" ? arg : getTheme(arg);
+export function applyTheme(arg: Me | string) {
+    const theme = typeof arg === "string" ? arg ? arg : getAutoTheme() : getTheme(arg); // spaghetti
     document.documentElement.setAttribute('data-theme', theme);
 }

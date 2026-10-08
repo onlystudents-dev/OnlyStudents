@@ -12,6 +12,15 @@ export default function Admin() {
 
     const [status, setStatus] = useState<AdminStatusData | null>(null)
 
+    function fetchStatus() {
+        return fetch("/api/v1/admin/status").then(async response => {
+            if (response.status === 200) {
+                const json = await response.json() as AdminStatusData
+                setStatus(json)
+            }
+        })
+    }
+
     useEffect(() => {
         void fetch("/api/v1/admin/status").then(async response => {
             switch (response.status) {
@@ -30,7 +39,7 @@ export default function Admin() {
 
     return (
         <>
-            {loading ? <Loading /> : status ? <AdminPanel status={status} /> : <AdminLogin />}
+            {loading ? <Loading /> : status ? <AdminPanel status={status} fetchStatus={fetchStatus} /> : <AdminLogin />}
         </>
     )
 }

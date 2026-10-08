@@ -26,7 +26,7 @@ function getDifferences<T extends Record<string, unknown>>(options: T, defaults:
     ) as Partial<T>;
 }
 
-export default function Save<T extends Record<string, unknown>>({ options, setOptions, save }: {options: T, setOptions: React.Dispatch<React.SetStateAction<T>>, save: (diff: Partial<T>) => (boolean | Promise<boolean>)}) {
+export default function Save<T extends Record<string, unknown>>({ options, setOptions, save }: {options: T, setOptions: (value: T) => void, save: (diff: Partial<T>, defaults: Partial<T>) => (boolean | Promise<boolean>)}) {
     const [defaults, setDefaults] = React.useState<T>(options);
 
     const differences = getDifferences(options, defaults)
@@ -40,7 +40,7 @@ export default function Save<T extends Record<string, unknown>>({ options, setOp
                     <Button onClick={() => setOptions({ ...defaults })} className="breset">
                         {getKey("RESET")}
                     </Button>
-                    <Button onClick={async () => {if (!(await save(differences))) return; setDefaults({ ...options })}} className="bsave">
+                    <Button onClick={async () => {if (!(await save(differences, defaults))) return; setDefaults({ ...options })}} className="bsave">
                         {getKey("SAVE")}
                     </Button>
                 </div>

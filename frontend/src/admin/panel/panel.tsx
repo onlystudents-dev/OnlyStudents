@@ -3,13 +3,103 @@ import {type AdminStatusData, enrollKeys, type Log, type School} from "../../typ
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import {useEffect, useRef, useState} from "preact/compat";
 import Button, {DropdownConfig, InputConfig} from "../../util/sidebar/config.tsx";
-import {faFileLines, faHeartPulse, faUserPlus} from "@fortawesome/free-solid-svg-icons";
-import {getKey} from "../../util/language.ts";
+import {
+    faArrowLeft,
+    faFileLines,
+    faHeartPulse,
+    faPaintRoller,
+    faPenToSquare,
+    faPlus,
+    faTrash,
+    faUserPlus
+} from "@fortawesome/free-solid-svg-icons";
+import {fromResponse, getKey} from "../../util/language.ts";
 import Loading from "../../util/loading.tsx";
+import {toast} from "react-toastify";
+import Save from "../../util/save/save.tsx";
+import type {Theme} from "../../types/api.ts";
+import {postJSON} from "../../util/api.ts";
+import countries from "world-countries";
+import Select from "react-select";
 
 type enrollable = "guardian" | "student" | "teacher"
 
-export default function AdminPanel({ status }: {status: AdminStatusData}) {
+// i hate eslint
+/* eslint-disable */
+const selectStyles = {
+    control: (base: any) => ({
+        ...base,
+        width: '20rem',
+        height: '2.5rem',
+        minHeight: '2.5rem',
+        borderRadius: '0.5rem',
+        backgroundColor: 'var(--card-color)',
+        border: 'none',
+        boxShadow: 'none',
+        cursor: 'text',
+        padding: '0 0.25rem',
+    }),
+    valueContainer: (base: any) => ({
+        ...base,
+        padding: '0',
+    }),
+    input: (base: any) => ({
+        ...base,
+        color: 'inherit',
+        margin: 0,
+        padding: 0,
+    }),
+    singleValue: (base: any) => ({
+        ...base,
+        color: 'inherit',
+    }),
+    menu: (base: any) => ({
+        ...base,
+        backgroundColor: 'var(--card-color)',
+        borderRadius: '0.5rem',
+        overflow: 'hidden',
+        zIndex: 50,
+        marginTop: '0.25rem',
+    }),
+    option: (base: any, state: any) => ({
+        ...base,
+        backgroundColor: state.isFocused ? 'var(--hover-color)' : 'transparent',
+        color: 'inherit',
+        cursor: 'pointer',
+        padding: '0.5rem 1rem',
+    }),
+};
+/* eslint-enable */
+
+function rootColors(): Record<string, string> {
+    const style = document.getElementById("root-theme")
+    if (!style) return {}
+
+    const root = /:root\s*\{([^}]+)\}/.exec(style.textContent)
+    const body = root?.[1]
+    if (body === undefined) return {}
+
+    const colors: Record<string, string> = {}
+    for (const [, key, value] of body.matchAll(/--([a-zA-Z0-9_-]+)\s*:\s*([^;]+);?/g)) {
+        if (key === undefined || value === undefined) continue
+        colors[`--${key}`] = value.trim()
+    }
+
+    if (Object.keys(colors).length !== 0) return colors
+
+    return {}
+}
+
+function colorOf(theme: Theme, key: string): string {
+    return theme.colors[key] ?? theme.colors[key.slice(2)] ?? ""
+}
+
+const countryList = countries.map(country => ({
+    value: country.cca2.toUpperCase(),
+    label: `${country.flag} ${Object.values(country.name.native)[0]?.common} (${country.cca2.toUpperCase()})`,
+}))
+
+export default function AdminPanel({ status, fetchStatus }: {status: AdminStatusData, fetchStatus: () => Promise<void>}) {
     const [active, setActive] = useState<"status" | "logs" | "enroll" | "themes">("status")
 
     const [logs, setLogs] = useState<Log[] | null>(null)
@@ -19,6 +109,10 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
     const [enroll, setEnroll] = useState<enrollable>("guardian")
     const [options, setOptions] = useState<Record<string, string | number>>({})
     const [schools, setSchools] = useState<School[]>([])
+    const [focused, setFocused] = useState("")
+
+    const [themes, setThemes] = useState<Theme[] | null>(null)
+    const [editing, setEditing] = useState<Theme | null>(null)
 
     useEffect(() => {
         if (active === "logs" && logsRef.current) {
@@ -87,38 +181,108 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                         case "enroll":
                             return (
                                 <>
-                                    <DropdownConfig value={enroll} onChange={e => setEnroll(e as enrollable)} className="sselect">
+                                    <DropdownConfig value={enroll} onChange={e => { setEnroll(e as enrollable); setOptions({}) }} className="sselect">
                                         <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
                                         <option value="student">{getKey("ROLE.STUDENT")}</option>
                                         <option value="teacher">{getKey("ROLE.TEACHER")}</option>
                                     </DropdownConfig>
                                     <div className="box pr-2!">
-                                        <div className="w-full overflow-y-auto pr-2" style={{height: "calc(100vh - 124px)"}}>
+                                        <div className="w-full overflow-y-auto pr-2 flex flex-col" style={{height: "calc(100vh - 164px)"}}>
                                             {Object.entries(enrollKeys[enroll]).filter((([, type]) => type !== "boolean")).map(([key, type]) => {
                                                 switch(key) {
-                                                    case "school_id":
+                                                    case "school_id": {
+                                                        const schoolOptions = schools.map(s => ({ value: s.id, label: s.name }));
+                                                        const selectedSchool = schoolOptions.find(s => s.value === options[key]) || schoolOptions[0] || null;
+
                                                         return (
-                                                            <DropdownConfig value={schools[0]?.name || ""} onChange={e => setOptions({ ...options, [key]: Number(e) })} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} className="enroll rubik">
-                                                                {schools.map(school => (
-                                                                    <option key={school.id} value={school.id}>{school.name}</option>
-                                                                ))}
-                                                            </DropdownConfig>
+                                                            <div className={`config enroll rubik ${focused === key ? "bg-(--hover-color)" : ""}`} key={key}>
+                                                                <p>{getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}</p>
+                                                                <Select
+                                                                    options={schoolOptions}
+                                                                    value={selectedSchool}
+                                                                    onChange={val => setOptions({ ...options, [key]: val?.value || "" })}
+                                                                    isSearchable
+                                                                    styles={selectStyles}
+                                                                    components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
+                                                                    onFocus={() => setFocused(key)}
+                                                                    onBlur={() => focused === key && setFocused("")}
+                                                                    placeholder=""
+                                                                />
+                                                            </div>
+                                                        )
+                                                    }
+                                                    case "birth_country":
+                                                        return (
+                                                            <div className={`config enroll rubik ${focused === key ? "bg-(--hover-color)" : ""}`} key={key}>
+                                                                <p>{getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}</p>
+                                                                <Select
+                                                                    options={countryList}
+                                                                    value={countryList.find(c => c.value === options[key]) || null}
+                                                                    onChange={val => setOptions({ ...options, [key]: val?.value || "" })}
+                                                                    isSearchable
+                                                                    styles={selectStyles}
+                                                                    components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
+                                                                    onFocus={() => setFocused(key)}
+                                                                    onBlur={() => focused === key && setFocused("")}
+                                                                    placeholder=""
+                                                                />
+                                                            </div>
                                                         )
                                                     default:
-                                                        return <InputConfig value={options[key] || ""} onChange={value => setOptions({ ...options, [key]: value })} key={key} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} type={type} className="enroll rubik" />
+                                                        // i have a 4k monitor so it fits for me
+                                                        // well not anymore
+                                                        return <InputConfig value={options[key] || ""} onChange={value => setOptions({ ...options, [key]: value })} onFocusIn={() => setFocused(key)} onFocusOut={() => focused === key && setFocused("")} key={key} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}
+                                                                            type={type} className={`enroll rubik ${focused === key && "bg-(--hover-color)"}`} />
                                                 }
                                             })}
                                         </div>
+                                        <Button className="enroll-save" icon={faUserPlus} text={getKey("ADMIN_ENROLL")} onClick={() => void enrollUser()} />
                                     </div>
                                 </>
                             )
                         case "themes":
-                            return (
-                                <>
-                                    <div className="box flex-wrap">
+                            if (editing) {
+                                const colors = rootColors()
+                                return (
+                                    <>
+                                        <div className="box">
+                                            <Button className="self-start theme-action-button hover:text-(--warning-color) ml-1 mb-1" icon={faArrowLeft} text={getKey("ADMIN_THEMES_BACK")} onClick={() => setEditing(null)} />
+                                            <div className="w-full overflow-y-auto pr-2 flex flex-col gap-2" style={{height: "calc(100vh - 164px)"}}>
+                                                <InputConfig text={getKey("ADMIN_THEMES_NAME")} value={editing.name} onChange={value => setEditing({...editing, name: value})} className="enroll rubik" />
+                                                {Object.entries(colors).map(([key]) => (
+                                                    <div className="config theme-color rubik" key={key}>
+                                                        <p>{key}</p>
+                                                        <div className="flex flex-row items-center gap-2">
+                                                            <input type="color" value={editing.colors[key]} onChange={e => setEditing({...editing, colors: {...editing.colors, [key]: e.currentTarget.value}})} />
+                                                            <input value={editing.colors[key]} onChange={e => setEditing({...editing, colors: {...editing.colors, [key]: e.currentTarget.value}})} />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <Save options={editing} setOptions={setEditing} save={saveTheme} />
+                                    </>
+                                )
+                            }
 
-                                    </div>
-                                </>
+                            return (
+                                <div className="box flex-wrap">
+                                    <Button className="self-start theme-action-button hover:text-(--right-color) ml-1 mb-1" icon={faPlus} text={getKey("ADMIN_THEMES_NEW")} onClick={() => openEditor()} />
+                                    {!themes ? <Loading /> : themes.length === 0 ? <p className="poppins">{getKey("ADMIN_THEMES_EMPTY")}</p> : themes.map(theme => (
+                                        <div className="theme-card theme-action-shadow" key={theme.name}>
+                                            <h1 className="rubik">{getKey(`THEMES.${theme.name}`) || theme.name}</h1>
+                                            <div className="swatches">
+                                                {Object.keys(rootColors()).map(key => (
+                                                    <span key={key} title={key} style={{backgroundColor: colorOf(theme, key) || "transparent"}} />
+                                                ))}
+                                            </div>
+                                            <div className="flex flex-row gap-2">
+                                                <Button className="theme-action-button hover:text-(--edit-color)" icon={faPenToSquare} text={getKey("ADMIN_THEMES_EDIT")} onClick={() => openEditor(theme)} />
+                                                <Button className="theme-action-button hover:text-(--wrong-color)" icon={faTrash} text={getKey("ADMIN_THEMES_DELETE")} onClick={() => void deleteTheme(theme.name, true)} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )
                         default:
                             return null
@@ -130,7 +294,8 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                 <Button icon={faHeartPulse} text={getKey("ADMIN_STATUS")} onClick={() => setActive("status")} />
                 <Button icon={faFileLines} text={getKey("ADMIN_LOGS")} onClick={() => { setActive("logs"); void fetchLogs() }} />
                 <Button icon={faUserPlus} text={getKey("ADMIN_ENROLL")} onClick={() => { setActive("enroll"); void fetchSchools() }} />
-            </Sidebar>
+                <Button icon={faPaintRoller} text={getKey("ADMIN_THEMES")} onClick={() => { setActive("themes"); void fetchThemes() }} />
+        </Sidebar>
         </>
     )
 
@@ -148,5 +313,132 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
         const schoolsJ = await response.json() as School[]
 
         setSchools(schoolsJ)
+    }
+
+    async function fetchThemes() {
+        setEditing(null)
+
+        const response = await fetch("/api/v1/themes")
+
+        if (!response.ok) {
+            void toast.error(await fromResponse(response))
+            return
+        }
+
+        setThemes(await response.json() as Theme[])
+
+        const element = document.getElementById("themes")
+        if (element) {
+            const themes = await fetch("/dynamic/themes.css")
+            element.textContent = await themes.text()
+        }
+    }
+
+    async function enrollUser() {
+        const ops: Record<string, string | number | boolean> = {}
+
+        for (const [key, type] of Object.entries(enrollKeys[enroll])) {
+            if (type === "boolean") {
+                const valueKey = key.startsWith("has_")
+                    ? key.slice(4)
+                    : key
+
+                ops[key] = !!options[valueKey]
+                continue
+            }
+
+            const value = options[key]
+
+            if (value === undefined || value === "") {
+                continue
+            }
+
+            switch (type) {
+                case "number":
+                    ops[key] = Number(value)
+                    break
+
+                case "date":
+                    ops[key] = Math.floor(
+                        new Date(String(value)).getTime() / 1000
+                    )
+                    break
+
+                default:
+                    ops[key] = String(value)
+                    break
+            }
+        }
+
+        const response = await postJSON(`/api/v1/admin/enroll/${enroll}`, ops)
+
+        switch (response.status) {
+            case 200:
+                toast.success(getKey("ADMIN_SUCCESSFULLY_ENROLLED"))
+                void fetchStatus()
+                break
+            default:
+                toast.error(await fromResponse(response))
+        }
+    }
+
+    function openEditor(theme?: Theme) {
+        const defaults = rootColors()
+
+        console.log("defaults", defaults)
+        console.log("theme", theme)
+
+        setEditing(theme
+            ? {name: theme.name, colors: Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, colorOf(theme, key) || value]))}
+            : {name: "", colors: {...defaults}})
+    }
+
+    async function saveTheme(diff: Partial<Theme>, defaults: Partial<Theme>): Promise<boolean> {
+        if (!editing) return false
+
+        if (!editing.name.trim()) {
+            toast.error(getKey("ADMIN_THEMES_BAD_NAME"))
+            return false
+        }
+
+        const missing = Object.keys(rootColors()).filter(key => !(editing.colors[key] ?? "").trim())
+        if (missing.length !== 0) {
+            toast.error(getKey("ADMIN_THEMES_MISSING", missing.join(", ")))
+            return false
+        }
+
+        if (diff.name !== undefined && defaults.name !== undefined) {
+            await deleteTheme(defaults.name)
+        }
+
+        const response = await fetch("/api/v1/admin/theme", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(editing),
+        })
+
+        if (!response.ok) {
+            void toast.error(await fromResponse(response))
+            return false
+        }
+
+        toast.success(getKey("ADMIN_THEMES_SAVED"))
+        setEditing(null)
+        void fetchThemes()
+        return true
+    }
+
+    async function deleteTheme(name: string, stuff?: boolean) {
+        if (stuff && !window.confirm(getKey("ADMIN_THEMES_DELETE_CONFIRM", name))) return
+
+        const response = await fetch("/api/v1/admin/theme", {method: "DELETE", body: name})
+
+        if (!response.ok) {
+            void toast.error(await fromResponse(response))
+            return
+        }
+
+        if (stuff) toast.success(getKey("ADMIN_THEMES_DELETED"))
+        void fetchThemes()
     }
 }
