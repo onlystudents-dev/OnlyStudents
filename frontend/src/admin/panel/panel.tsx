@@ -5,7 +5,7 @@ import {useEffect, useRef, useState} from "preact/compat";
 import Button, {DropdownConfig, InputConfig} from "../../util/sidebar/config.tsx";
 import {
     faArrowLeft,
-    faFileLines, faFloppyDisk,
+    faFileLines,
     faHeartPulse,
     faPaintRoller,
     faPenToSquare,
@@ -19,8 +19,57 @@ import {toast} from "react-toastify";
 import Save from "../../util/save/save.tsx";
 import type {Theme} from "../../types/api.ts";
 import {postJSON} from "../../util/api.ts";
+import countries from "world-countries";
+import Select from "react-select";
 
 type enrollable = "guardian" | "student" | "teacher"
+
+// i hate eslint
+/* eslint-disable */
+const selectStyles = {
+    control: (base: any) => ({
+        ...base,
+        width: '20rem',
+        height: '2.5rem',
+        minHeight: '2.5rem',
+        borderRadius: '0.5rem',
+        backgroundColor: 'var(--card-color)',
+        border: 'none',
+        boxShadow: 'none',
+        cursor: 'text',
+        padding: '0 0.25rem',
+    }),
+    valueContainer: (base: any) => ({
+        ...base,
+        padding: '0',
+    }),
+    input: (base: any) => ({
+        ...base,
+        color: 'inherit',
+        margin: 0,
+        padding: 0,
+    }),
+    singleValue: (base: any) => ({
+        ...base,
+        color: 'inherit',
+    }),
+    menu: (base: any) => ({
+        ...base,
+        backgroundColor: 'var(--card-color)',
+        borderRadius: '0.5rem',
+        overflow: 'hidden',
+        zIndex: 50,
+        marginTop: '0.25rem',
+    }),
+    option: (base: any, state: any) => ({
+        ...base,
+        backgroundColor: state.isFocused ? 'var(--hover-color)' : 'transparent',
+        color: 'inherit',
+        cursor: 'pointer',
+        padding: '0.5rem 1rem',
+    }),
+};
+/* eslint-enable */
 
 function rootColors(): Record<string, string> {
     const style = document.getElementById("root-theme")
@@ -45,7 +94,12 @@ function colorOf(theme: Theme, key: string): string {
     return theme.colors[key] ?? theme.colors[key.slice(2)] ?? ""
 }
 
-export default function AdminPanel({ status }: {status: AdminStatusData}) {
+const countryList = countries.map(country => ({
+    value: country.cca2.toUpperCase(),
+    label: `${country.flag} ${Object.values(country.name.native)[0]?.common} (${country.cca2.toUpperCase()})`,
+}))
+
+export default function AdminPanel({ status, fetchStatus }: {status: AdminStatusData, fetchStatus: () => Promise<void>}) {
     const [active, setActive] = useState<"status" | "logs" | "enroll" | "themes">("status")
 
     const [logs, setLogs] = useState<Log[] | null>(null)
@@ -136,23 +190,53 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
                                         <div className="w-full overflow-y-auto pr-2 flex flex-col" style={{height: "calc(100vh - 164px)"}}>
                                             {Object.entries(enrollKeys[enroll]).filter((([, type]) => type !== "boolean")).map(([key, type]) => {
                                                 switch(key) {
-                                                    case "school_id":
+                                                    case "school_id": {
+                                                        const schoolOptions = schools.map(s => ({ value: s.id, label: s.name }));
+                                                        const selectedSchool = schoolOptions.find(s => s.value === options[key]) || schoolOptions[0] || null;
+
                                                         return (
-                                                            <DropdownConfig value={String(options[key]) || schools[0]?.name || ""} onChange={e => setOptions({ ...options, [key]: Number(e) })} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} className="enroll rubik">
-                                                                {schools.map(school => (
-                                                                    <option key={school.id} value={school.id}>{school.name}</option>
-                                                                ))}
-                                                            </DropdownConfig>
+                                                            <div className={`config enroll rubik ${focused === key ? "bg-(--hover-color)" : ""}`} key={key}>
+                                                                <p>{getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}</p>
+                                                                <Select
+                                                                    options={schoolOptions}
+                                                                    value={selectedSchool}
+                                                                    onChange={val => setOptions({ ...options, [key]: val?.value || "" })}
+                                                                    isSearchable
+                                                                    styles={selectStyles}
+                                                                    components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
+                                                                    onFocus={() => setFocused(key)}
+                                                                    onBlur={() => focused === key && setFocused("")}
+                                                                    placeholder=""
+                                                                />
+                                                            </div>
+                                                        )
+                                                    }
+                                                    case "birth_country":
+                                                        return (
+                                                            <div className={`config enroll rubik ${focused === key ? "bg-(--hover-color)" : ""}`} key={key}>
+                                                                <p>{getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}</p>
+                                                                <Select
+                                                                    options={countryList}
+                                                                    value={countryList.find(c => c.value === options[key]) || null}
+                                                                    onChange={val => setOptions({ ...options, [key]: val?.value || "" })}
+                                                                    isSearchable
+                                                                    styles={selectStyles}
+                                                                    components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
+                                                                    onFocus={() => setFocused(key)}
+                                                                    onBlur={() => focused === key && setFocused("")}
+                                                                    placeholder=""
+                                                                />
+                                                            </div>
                                                         )
                                                     default:
                                                         // i have a 4k monitor so it fits for me
                                                         // well not anymore
                                                         return <InputConfig value={options[key] || ""} onChange={value => setOptions({ ...options, [key]: value })} onFocusIn={() => setFocused(key)} onFocusOut={() => focused === key && setFocused("")} key={key} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}
-                                                                            type={type} maxLength={key === "birth_country" ? 2 : undefined} className={`enroll rubik ${focused === key && "bg-(--hover-color)"}`} />
+                                                                            type={type} className={`enroll rubik ${focused === key && "bg-(--hover-color)"}`} />
                                                 }
                                             })}
                                         </div>
-                                        <Button className="enroll-save" icon={faFloppyDisk} text={getKey("SAVE")} onClick={() => void enrollUser()} />
+                                        <Button className="enroll-save" icon={faUserPlus} text={getKey("ADMIN_ENROLL")} onClick={() => void enrollUser()} />
                                     </div>
                                 </>
                             )
@@ -291,6 +375,7 @@ export default function AdminPanel({ status }: {status: AdminStatusData}) {
         switch (response.status) {
             case 200:
                 toast.success(getKey("ADMIN_SUCCESSFULLY_ENROLLED"))
+                void fetchStatus()
                 break
             default:
                 toast.error(await fromResponse(response))

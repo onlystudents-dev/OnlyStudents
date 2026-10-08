@@ -18,8 +18,10 @@
     "@fortawesome/react-fontawesome": "^3.5.0",
     "@serenity-kit/opaque": "^1.1.0",
     "preact": "^10.27.2",
+    "react-select": "^5.10.2",
     "react-toastify": "^11.1.0",
     "terser": "^5.51.2",
+    "world-countries": "^5.1.0",
     "wouter": "^3.7.1"
   },
   "devDependencies": {
