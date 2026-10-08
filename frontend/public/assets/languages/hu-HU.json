@@ -148,7 +148,8 @@
     "ADMIN_ENROLL.GUARDIAN.PERMANENT_ADDRESS": "Állandó lakcím",
     "ADMIN_ENROLL.GUARDIAN.TEMPORARY_ADDRESS": "Tartózkodási hely",
     "ADMIN_ENROLL.GUARDIAN.EMAIL_ADDRESS": "E-mail-cím",
-    "ADMIN_SUCCESSFULLY_ENROLLED": "Sikeres beíratás!"
+    "ADMIN_SUCCESSFULLY_ENROLLED": "Sikeres beíratás!",
+    "ENROLL": "Beíratkozás"
   },
   "errors": {
     "FORBIDDEN": "Nincs jogod ennek az erőforrásnak az eléréséhez vagy megváltoztatásához!",

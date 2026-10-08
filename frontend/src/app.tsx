@@ -123,6 +123,9 @@ export default function App({ reload }: {reload: () => void}) {
                     <Route path="/admin">
                         {loading ? <Loading /> : lazy(() => import("./admin/admin.tsx"))}
                     </Route>
+                    <Route path="/enroll">
+                        {loading ? <Loading /> : lazy(() => import("./auth/enroll/enroll.tsx"))}
+                    </Route>
                     {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={async () => {setRatelimit(-1); await fetchMe().then(me => {if (me !== null) applyTheme(me)})}} /> : loading ? <Loading /> : !me ? <Login /> : (
                         <>
                             <Route path="/"><Home me={me} /></Route>
