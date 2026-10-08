@@ -212,6 +212,10 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 		return fiber.StatusInternalServerError
 	}
 
+	if err := tx.Commit(c.Context()); err != nil {
+		return fiber.StatusInternalServerError
+	}
+
 	SendEnrollToken(rdb, c.Context(), enroll_token, req.EmailAddress, "student", account_uuid)
 
 	return fiber.StatusOK

@@ -193,7 +193,7 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                                     case "school_id": {
                                                         const schoolOptions = schools.map(s => ({ value: s.id, label: s.name }))
                                                         const selectedSchool = schoolOptions.find(s => s.value === options[key]) || schoolOptions[0] || null
-                                                        if (selectedSchool) setOptions({ ...options, [key]: selectedSchool.value })
+                                                        if (selectedSchool && !options[key]) setOptions({ ...options, [key]: selectedSchool.value })
 
                                                         return (
                                                             <div className={`config enroll rubik ${focused === key ? "bg-(--hover-color)" : ""}`} key={key}>
