@@ -7,7 +7,7 @@ import PasswordReset from "../pwr/pwr.tsx";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
 import {getKey} from "../../util/language.ts";
-import { opaqueLogin } from "../opaqueLogin.ts";
+import { opaqueLogin } from "../opaque.ts";
 import RoleSelect from "../roleSelect.tsx";
 import { useCountdown } from "../../util/countdown.ts";
 import type {Me} from "../../types/api.ts";
@@ -33,25 +33,32 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
       if (red || wrong || remaining || !id || !password) return
       setWaiting(true)
       try {
-        const res = await opaqueLogin({ userId: Number(id), role, password });
-        switch (res.status) {
-          case "ok":
-              if (fetchMe !== undefined) {
-                  await fetchMe()
-              } else {
+          const res = await opaqueLogin({ userId: Number(id), role, password });
+          switch (res.status) {
+              case "ok":
                   localStorage.removeItem("child_id")
                   localStorage.removeItem("school_id")
-                  location.reload()
-              }
-              break
-          case "wrong": toast.error(getKey("WRONG_CREDENTIALS")); setWrong(true); break
-          case "ratelimited":
-            toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)))
-            updateRemaining(res.retryAfter)
-            break
-          case "error": toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED")); break
-        }
-      } finally { setWaiting(false) }
+                  if (fetchMe !== undefined) {
+                      await fetchMe()
+                  } else {
+                      location.reload()
+                  }
+                  break
+              case "wrong":
+                  toast.error(getKey("WRONG_CREDENTIALS"))
+                  setWrong(true)
+                  break
+              case "ratelimited":
+                  toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)))
+                  updateRemaining(res.retryAfter)
+                  break
+              case "error":
+                  toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED"))
+                  break
+          }
+      } finally {
+          setWaiting(false)
+      }
     }, [red, wrong, remaining, id, password, role, fetchMe, updateRemaining])
 
     useEffect(() => {
@@ -68,7 +75,7 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
 
     return (
         <>
-            <div className={`box cantar ${reset ? "h-158" : "h-100"}`}>
+            <div className={`box cantar ${reset ? "h-168" : "h-100"}`}>
                 <div className={`content out ${pwrA && "hid h-86"}`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">

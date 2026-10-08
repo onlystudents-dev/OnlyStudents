@@ -12,21 +12,21 @@ import {useCountdown} from "../../util/countdown.ts";
 import {getRetryAfter, postJSON} from "../../util/api.ts";
 
 export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, red, checkUserID, setWaiting, setResetL }: {pwrA: boolean, unsPwr: () => void, role: string, setRole: React.Dispatch<React.SetStateAction<string>>, id: string, setId: React.Dispatch<React.SetStateAction<string>>, red: boolean, checkUserID: (id: string) => void, setWaiting: React.Dispatch<React.SetStateAction<boolean>>, setResetL:  React.Dispatch<React.SetStateAction<boolean>>}) {
-    const [reset, setReset] = useState(false);
-    const [resetA, setResetA] = useState(false);
+    const [reset, setReset] = useState(false)
+    const [resetA, setResetA] = useState(false)
 
-    const [code, setCode] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+    const [code, setCode] = useState("")
+    const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
 
-    const [passed, setPassed] = useState(false);
+    const [passed, setPassed] = useState(false)
 
-    const [config, setConfig] = useState<PasswordConfig | null>(null);
+    const [config, setConfig] = useState<PasswordConfig | null>(null)
 
-    const [remaining, updateRemaining] = useCountdown();
+    const [remaining, updateRemaining] = useCountdown()
 
     useEffect(() => {
-        void getPasswordConfig().then(setConfig);
+        void getPasswordConfig().then(setConfig)
     }, []);
 
     const submit = useCallback(async (url: string, body: unknown, onOk: () => void) => {
@@ -74,7 +74,7 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
 
     return (
         <>
-            <div className={`content in outback ${!pwrA && "hid"} ${resetA ? "h-144" : "h-86"}`}>
+            <div className={`content in outback ${!pwrA && "hid"} ${resetA ? "h-154" : "h-86"}`}>
                 <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("FORGOT_PASSWORD_TITLE")}</h1>
                 {!reset && <div className={`loginput fredoka out ${resetA && "hid"}`}>
                     <RoleSelect value={role} onChange={setRole} />
