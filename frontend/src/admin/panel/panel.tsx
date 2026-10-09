@@ -1,5 +1,5 @@
 import "./panel.css";
-import {type AdminStatusData, enrollKeys, type Log, type School} from "../../types/admin.ts";
+import {type AdminStatusData, enrollKeys, type Log, type School, type Class} from "../../types/admin.ts";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import {useEffect, useRef, useState} from "preact/compat";
 import Button, {DropdownConfig, InputConfig} from "../../util/sidebar/config.tsx";
@@ -99,6 +99,10 @@ const countryList = countries.map(country => ({
     label: `${country.flag} ${Object.values(country.name.native)[0]?.common} (${country.cca2.toUpperCase()})`,
 }))
 
+export type EnrollKey = {
+    [R in keyof typeof enrollKeys]: keyof typeof enrollKeys[R]
+}[keyof typeof enrollKeys]
+
 export default function AdminPanel({ status, fetchStatus }: {status: AdminStatusData, fetchStatus: () => Promise<void>}) {
     const [active, setActive] = useState<"status" | "logs" | "enroll" | "themes">("status")
 
@@ -109,7 +113,9 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
     const [enroll, setEnroll] = useState<enrollable>("guardian")
     const [options, setOptions] = useState<Record<string, string | number>>({})
     const [schools, setSchools] = useState<School[]>([])
+    const [classes, setClasses] = useState<Class[]>([])
     const [focused, setFocused] = useState("")
+    const [wrong, setWrong] = useState<EnrollKey[]>([])
 
     const [themes, setThemes] = useState<Theme[] | null>(null)
     const [editing, setEditing] = useState<Theme | null>(null)
@@ -181,19 +187,22 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                         case "enroll":
                             return (
                                 <>
-                                    <DropdownConfig value={enroll} onChange={e => { setEnroll(e as enrollable); setOptions({}) }} className="sselect">
+                                    <DropdownConfig value={enroll} onChange={e => { setEnroll(e as enrollable); setOptions({}); setWrong([]) }} className="sselect">
                                         <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
                                         <option value="student">{getKey("ROLE.STUDENT")}</option>
                                         <option value="teacher">{getKey("ROLE.TEACHER")}</option>
                                     </DropdownConfig>
                                     <div className="box pr-2!">
-                                        <div className="w-full overflow-y-auto pr-2 flex flex-col" style={{height: "calc(100vh - 164px)"}}>
+                                        <div className="inputs" style={{height: "calc(100vh - 164px)"}}>
                                             {Object.entries(enrollKeys[enroll]).filter((([, type]) => type !== "boolean")).map(([key, type]) => {
                                                 switch(key) {
                                                     case "school_id": {
                                                         const schoolOptions = schools.map(s => ({ value: s.id, label: s.name }))
                                                         const selectedSchool = schoolOptions.find(s => s.value === options[key]) || schoolOptions[0] || null
-                                                        if (selectedSchool && !options[key]) setOptions({ ...options, [key]: selectedSchool.value })
+                                                        if (selectedSchool && !options[key]) {
+                                                            setOptions({...options, [key]: selectedSchool.value})
+                                                            void setSchool(selectedSchool.value)
+                                                        }
 
                                                         return (
                                                             <div className={`config enroll rubik ${focused === key ? "bg-(--hover-color)" : ""}`} key={key}>
@@ -201,13 +210,37 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                                                 <Select
                                                                     options={schoolOptions}
                                                                     value={selectedSchool}
-                                                                    onChange={val => setOptions({ ...options, [key]: val?.value || "" })}
+                                                                    onChange={val => { setOptions({ ...options, [key]: val?.value || "" }); void setSchool(val?.value || ""); setWrong(wrong.filter(k => k !== key)) }}
                                                                     isSearchable
                                                                     styles={selectStyles}
                                                                     components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
                                                                     onFocus={() => setFocused(key)}
                                                                     onBlur={() => focused === key && setFocused("")}
                                                                     placeholder=""
+                                                                    classNamePrefix={wrong.includes(key) ? "wrongg" : "keyinput"}
+                                                                />
+                                                            </div>
+                                                        )
+                                                    }
+                                                    case "class_id": {
+                                                        const classOptions = classes.map(s => ({ value: s.id, label: s.name }))
+                                                        const selectedClass = classOptions.find(s => s.value === options[key]) || classOptions[0] || null
+                                                        if (selectedClass && !options[key]) setOptions({ ...options, [key]: selectedClass.value })
+
+                                                        return (
+                                                            <div className={`config enroll rubik ${focused === key ? "bg-(--hover-color)" : ""}`} key={key}>
+                                                                <p>{getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}</p>
+                                                                <Select
+                                                                    options={classOptions}
+                                                                    value={selectedClass}
+                                                                    onChange={val => { setOptions({ ...options, [key]: val?.value || "" }); setWrong(wrong.filter(k => k !== key)) }}
+                                                                    isSearchable
+                                                                    styles={selectStyles}
+                                                                    components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
+                                                                    onFocus={() => setFocused(key)}
+                                                                    onBlur={() => focused === key && setFocused("")}
+                                                                    placeholder=""
+                                                                    classNamePrefix={wrong.includes(key) ? "wrongg" : "keyinput"}
                                                                 />
                                                             </div>
                                                         )
@@ -219,21 +252,22 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                                                 <Select
                                                                     options={countryList}
                                                                     value={countryList.find(c => c.value === options[key]) || null}
-                                                                    onChange={val => setOptions({ ...options, [key]: val?.value || "" })}
+                                                                    onChange={val => { setOptions({ ...options, [key]: val?.value || "" }); setWrong(wrong.filter(k => k !== key)) }}
                                                                     isSearchable
                                                                     styles={selectStyles}
                                                                     components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
                                                                     onFocus={() => setFocused(key)}
                                                                     onBlur={() => focused === key && setFocused("")}
                                                                     placeholder=""
+                                                                    classNamePrefix={wrong.includes(key) ? "wrongg" : "keyinput"}
                                                                 />
                                                             </div>
                                                         )
                                                     default:
                                                         // i have a 4k monitor so it fits for me
                                                         // well not anymore
-                                                        return <InputConfig value={options[key] || ""} onChange={value => setOptions({ ...options, [key]: value })} onFocusIn={() => setFocused(key)} onFocusOut={() => focused === key && setFocused("")} key={key} text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)}
-                                                                            type={type} className={`enroll rubik ${focused === key && "bg-(--hover-color)"}`} />
+                                                        return <InputConfig value={options[key] || ""} onChange={value => { setOptions({ ...options, [key]: value }); setWrong(wrong.filter(k => k !== key)) }} onFocusIn={() => setFocused(key)} onFocusOut={() => focused === key && setFocused("")} key={key}
+                                                                            text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} type={type} className={`enroll rubik ${focused === key && "bg-(--hover-color)"} ${wrong.includes(key as EnrollKey) ? "wronggg" : "keyinput"}`} />
                                                 }
                                             })}
                                         </div>
@@ -300,6 +334,13 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
         </>
     )
 
+    async function setSchool(id: string | number) {
+        const response = await fetch(`/api/v1/admin/classes?school_id=${id}`)
+        const classes = await response.json() as Class[]
+
+        setClasses(classes)
+    }
+
     async function fetchLogs() {
         const response = await fetch("/api/v1/admin/logs")
         const logs = await response.json() as Log[]
@@ -336,6 +377,8 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
     }
 
     async function enrollUser() {
+        if (wrong.length > 0) return
+
         const ops: Record<string, string | number | boolean> = {}
 
         for (const [key, type] of Object.entries(enrollKeys[enroll])) {
@@ -358,13 +401,11 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                 case "number":
                     ops[key] = Number(value)
                     break
-
                 case "date":
                     ops[key] = Math.floor(
                         new Date(String(value)).getTime() / 1000
                     )
                     break
-
                 default:
                     ops[key] = String(value)
                     break
@@ -378,6 +419,11 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                 toast.success(getKey("ADMIN_SUCCESSFULLY_ENROLLED"))
                 void fetchStatus()
                 break
+            case 400: {
+                const json = await response.json() as Record<string, EnrollKey[]>
+                setWrong(json.invalid_params || [])
+                break
+            }
             default:
                 toast.error(await fromResponse(response))
         }

@@ -17,6 +17,11 @@ export type School = {
     zip_code: string,
 }
 
+export type Class = {
+    id: number,
+    name: string,
+}
+
 export type Log = {
     name: string,
     content: string,
@@ -81,6 +86,7 @@ export type EnrollTeacherRequest = {
 export const enrollKeys = {
     student: {
         school_id: "number",
+        class_id: "number",
         id_number: "number",
         first_name: "string",
         last_name: "string",
@@ -94,7 +100,6 @@ export const enrollKeys = {
         email_address: "email",
         has_phone_number: "boolean",
         phone_number: "tel",
-        class_id: "number",
         permanent_address: "string",
         temporary_address: "string",
         has_tax_number: "boolean",
