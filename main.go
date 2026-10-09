@@ -24,6 +24,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
+	"github.com/gofiber/fiber/v3/middleware/helmet"
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -316,9 +317,21 @@ func main() {
 		},
 	})
 
-	app.Use(func(c fiber.Ctx) error {
-		return middlewares.SecurityHeadersMiddleware(c)
-	})
+	app.Use(helmet.New(helmet.Config{
+		XSSProtection:             "1; mode=block",
+		ContentTypeNosniff:        "nosniff",
+		XFrameOptions:             "SAMEORIGIN",
+		ContentSecurityPolicy:     "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.pwnedpasswords.com; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+		ReferrerPolicy:            "no-referrer",
+		PermissionPolicy:          "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+		CrossOriginEmbedderPolicy: "require-corp",
+		CrossOriginOpenerPolicy:   "same-origin",
+		CrossOriginResourcePolicy: "same-origin",
+		OriginAgentCluster:        "?1",
+		XDNSPrefetchControl:       "off",
+		XDownloadOptions:          "noopen",
+		XPermittedCrossDomain:     "none",
+	}))
 
 	app.Use(compress.New(compress.Config{
 		Next: func(c fiber.Ctx) bool {
