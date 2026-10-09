@@ -32,7 +32,7 @@ JOIN teachers t ON t.id = e.teacher_id
 LEFT JOIN rooms r ON r.id = e.room_id
 WHERE csub.school_id = $1
   AND csub.class_id = (
-      SELECT ss.classes_id
+      SELECT ss.class_id
       FROM student_school ss
       WHERE ss.student_id = $2
         AND ss.school_id = $1

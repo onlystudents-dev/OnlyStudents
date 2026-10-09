@@ -187,5 +187,5 @@ func ResolvePerson(c fiber.Ctx, rdb *redis.Client, queries db_queries.Queries, s
 		return 0, 0, 0, errors.New("student isnt part of school")
 	}
 
-	return school_membership.SchoolID, school_membership.ClassesID, school_membership.StudentID, nil
+	return school_membership.SchoolID, school_membership.ClassID, school_membership.StudentID, nil
 }

@@ -90,7 +90,7 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 		for _, school_membership := range school_memberships {
 			school_memberships_data = append(school_memberships_data, SchoolMembership{
 				SchoolID:   school_membership.SchoolID,
-				ClassID:    school_membership.ClassesID,
+				ClassID:    school_membership.ClassID,
 				SchoolName: school_membership.SchoolName,
 			})
 		}
@@ -125,7 +125,7 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			for _, school_membership := range school_memberships {
 				school_memberships_data = append(school_memberships_data, SchoolMembership{
 					SchoolID:   school_membership.SchoolID,
-					ClassID:    school_membership.ClassesID,
+					ClassID:    school_membership.ClassID,
 					SchoolName: school_membership.SchoolName,
 				})
 			}

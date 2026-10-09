@@ -308,7 +308,7 @@ const teacherAddFinalGrade = `-- name: TeacherAddFinalGrade :execrows
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
 SELECT ss.student_id, cs.id, $1, $2, $3
 FROM class_subjects cs
-JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
+JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = $4
   AND cs.school_id = $5
   AND cs.teacher_id = $2
@@ -344,7 +344,7 @@ const teacherAddGrade = `-- name: TeacherAddGrade :execrows
 INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
 SELECT ss.student_id, cs.id, $1, $2, $3, $4, $5, $6
 FROM class_subjects cs
-JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
+JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = $7
   AND cs.school_id = $8
   AND cs.teacher_id = $1

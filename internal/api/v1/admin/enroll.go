@@ -35,7 +35,7 @@ type EnrollStudentRequest struct {
 	BirthCountry         string `json:"birth_country"`
 	MotherBirthFirstName string `json:"mother_birth_first_name"`
 	MotherBirthLastName  string `json:"mother_birth_last_name"`
-	ClassesID            int32  `json:"classes_id"`
+	ClassID              int32  `json:"class_id"`
 	PermamentAddress     string `json:"permanent_address"`
 	TemporaryAddress     string `json:"temporary_address"`
 	HasTaxNumber         bool   `json:"has_tax_number"`
@@ -134,32 +134,116 @@ func SendEnrollToken(rdb *redis.Client, ctx context.Context, enroll_token string
 
 }
 
-func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, rdb *redis.Client) int {
+func runBadRequestChecks[T any](req T, checks map[string]func(req T) bool) []string {
+	checks_failed := []string{}
+
+	for key, check := range checks {
+		if check(req) {
+			checks_failed = append(checks_failed, key)
+		}
+	}
+
+	return checks_failed
+}
+
+func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, rdb *redis.Client) (int, fiber.Map) {
 	enroll_token := opaquepkg.NewEnrollToken()
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
+	}
+
+	checks := map[string]func(req EnrollStudentRequest) bool{
+		"phone_number": func(req EnrollStudentRequest) bool {
+			return (req.HasPhoneNumber && !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber))
+		},
+		"email": func(req EnrollStudentRequest) bool {
+			return !helpers.EmailRegex.MatchString(req.EmailAddress)
+		},
+		"first_name": func(req EnrollStudentRequest) bool {
+			return req.FirstName == ""
+		},
+		"last_name": func(req EnrollStudentRequest) bool {
+			return req.LastName == ""
+		},
+		"birth_first_name": func(req EnrollStudentRequest) bool {
+			return req.BirthFirstName == ""
+		},
+		"birth_last_name": func(req EnrollStudentRequest) bool {
+			return req.BirthLastName == ""
+		},
+		"birth_city": func(req EnrollStudentRequest) bool {
+			return req.BirthCity == ""
+		},
+		"mother_birth_first_name": func(req EnrollStudentRequest) bool {
+			return req.MotherBirthFirstName == ""
+		},
+		"mother_birth_last_name": func(req EnrollStudentRequest) bool {
+			return req.MotherBirthLastName == ""
+		},
+		"permanent_address": func(req EnrollStudentRequest) bool {
+			return req.PermamentAddress == ""
+		},
+		"temporary_address": func(req EnrollStudentRequest) bool {
+			return req.TemporaryAddress == ""
+		},
+		"tax_number": func(req EnrollStudentRequest) bool {
+			return req.TaxNumber <= 0
+		},
+		"ssn_number": func(req EnrollStudentRequest) bool {
+			return req.SsnNumber <= 0
+		},
+		"id_number": func(req EnrollStudentRequest) bool {
+			return req.IDNumber <= 0
+		},
+		"school_id": func(req EnrollStudentRequest) bool {
+			return req.SchoolID <= 0
+		},
+		"class_id": func(req EnrollStudentRequest) bool {
+			return req.ClassID <= 0
+		},
+		"birth_country": func(req EnrollStudentRequest) bool {
+			return countries.GetByAlpha2(req.BirthCountry) == nil
+		},
+	}
+
+	bad_parameters := runBadRequestChecks(req, checks)
+
+	if len(bad_parameters) > 0 {
+		return fiber.StatusBadRequest, fiber.Map{"error": "BAD_REQUEST", "invalid_params": bad_parameters}
 	}
 
 	tx, err := pool.Begin(c.Context())
 	if err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 	defer tx.Rollback(c.Context())
 
-	if (req.HasPhoneNumber && !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber)) ||
-		!helpers.EmailRegex.MatchString(req.EmailAddress) ||
-		req.FirstName == "" || req.LastName == "" ||
-		req.BirthFirstName == "" || req.BirthLastName == "" || req.BirthCity == "" ||
-		req.MotherBirthFirstName == "" || req.MotherBirthLastName == "" ||
-		req.PermamentAddress == "" || req.TemporaryAddress == "" ||
-		req.TaxNumber <= 0 || req.SsnNumber <= 0 || req.IDNumber <= 0 || req.ClassesID <= 0 || req.SchoolID <= 0 ||
-		countries.GetByAlpha2(req.BirthCountry) == nil {
-		return fiber.StatusBadRequest
+	queries := db_queries.New(pool).WithTx(tx)
+
+	school_row_count, err := queries.AdminCheckSchoolExists(c.Context(), req.SchoolID)
+
+	if err != nil {
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
-	queries := db_queries.New(pool).WithTx(tx)
+	if school_row_count != 1 {
+		return fiber.StatusBadRequest, fiber.Map{"error": "BAD_REQUEST", "invalid_params": []string{"school_id"}}
+	}
+
+	class_row_count, err := queries.AdminCheckClassExists(c.Context(), db_queries.AdminCheckClassExistsParams{
+		SchoolID: req.SchoolID,
+		ID:       req.ClassID,
+	})
+
+	if err != nil {
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
+	}
+
+	if class_row_count != 1 {
+		return fiber.StatusBadRequest, fiber.Map{"error": "BAD_REQUEST", "invalid_params": []string{"class_id"}}
+	}
 
 	student_id, create_student_err := queries.CreateStudent(c.Context(), db_queries.CreateStudentParams{
 		PhoneNumber:          pgtype.Text{String: req.PhoneNumber, Valid: req.HasPhoneNumber},
@@ -184,18 +268,18 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 	})
 
 	if create_student_err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
 	rows_affected, create_student_membership_err := queries.CreateStudentMembership(c.Context(), db_queries.CreateStudentMembershipParams{
 		StudentID: student_id,
 		IDNumber:  req.IDNumber,
-		ClassesID: req.ClassesID,
+		ClassID:   req.ClassID,
 		SchoolID:  req.SchoolID,
 	})
 
 	if rows_affected == 0 || create_student_membership_err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
 	create_account_err := queries.CreateAccount(c.Context(), db_queries.CreateAccountParams{
@@ -209,16 +293,16 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 	})
 
 	if create_account_err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
 	if err := tx.Commit(c.Context()); err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
 	SendEnrollToken(rdb, c.Context(), enroll_token, req.EmailAddress, "student", account_uuid)
 
-	return fiber.StatusOK
+	return fiber.StatusOK, fiber.Map{}
 }
 
 func EnrollStudent(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaque.Server) error {
@@ -234,27 +318,69 @@ func EnrollStudent(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *o
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	return helpers.ErrorByStatusCode(c, enroll_student(c, req, pool, rdb))
+	status_code, json := enroll_student(c, req, pool, rdb)
+
+	if status_code != 200 {
+		return c.Status(status_code).JSON(json)
+	} else {
+		return c.SendStatus(status_code)
+	}
 }
 
-func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, rdb *redis.Client) int {
+func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, rdb *redis.Client) (int, fiber.Map) {
 	enroll_token := opaquepkg.NewEnrollToken()
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
-	if !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber) ||
-		!helpers.EmailRegex.MatchString(req.EmailAddress) ||
-		req.FirstName == "" || req.LastName == "" ||
-		req.BirthFirstName == "" || req.BirthLastName == "" || req.BirthCity == "" ||
-		req.PermamentAddress == "" || req.TemporaryAddress == "" ||
-		countries.GetByAlpha2(req.BirthCountry) == nil {
-		return fiber.StatusBadRequest
+	checks := map[string]func(req EnrollTeacherRequest) bool{
+		"phone_number": func(req EnrollTeacherRequest) bool {
+			return !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber)
+		},
+		"email": func(req EnrollTeacherRequest) bool {
+			return !helpers.EmailRegex.MatchString(req.EmailAddress)
+		},
+		"first_name": func(req EnrollTeacherRequest) bool {
+			return req.FirstName == ""
+		},
+		"last_name": func(req EnrollTeacherRequest) bool {
+			return req.LastName == ""
+		},
+		"birth_first_name": func(req EnrollTeacherRequest) bool {
+			return req.BirthFirstName == ""
+		},
+		"birth_last_name": func(req EnrollTeacherRequest) bool {
+			return req.BirthLastName == ""
+		},
+		"birth_city": func(req EnrollTeacherRequest) bool {
+			return req.BirthCity == ""
+		},
+		"permanent_address": func(req EnrollTeacherRequest) bool {
+			return req.PermamentAddress == ""
+		},
+		"temporary_address": func(req EnrollTeacherRequest) bool {
+			return req.TemporaryAddress == ""
+		},
+		"birth_country": func(req EnrollTeacherRequest) bool {
+			return countries.GetByAlpha2(req.BirthCountry) == nil
+		},
 	}
 
-	queries := db_queries.New(pool)
+	bad_parameters := runBadRequestChecks(req, checks)
+
+	if len(bad_parameters) > 0 {
+		return fiber.StatusBadRequest, fiber.Map{"error": "BAD_REQUEST", "invalid_params": bad_parameters}
+	}
+
+	tx, err := pool.Begin(c.Context())
+	if err != nil {
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
+	}
+	defer tx.Rollback(c.Context())
+
+	queries := db_queries.New(pool).WithTx(tx)
 
 	teacher_id, create_teacher_err := queries.CreateTeacher(c.Context(), db_queries.CreateTeacherParams{
 		PhoneNumber:      req.PhoneNumber,
@@ -270,7 +396,7 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 	})
 
 	if create_teacher_err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
 	create_account_err := queries.CreateAccount(c.Context(), db_queries.CreateAccountParams{
@@ -284,12 +410,16 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 	})
 
 	if create_account_err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
+	}
+
+	if err := tx.Commit(c.Context()); err != nil {
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
 	SendEnrollToken(rdb, c.Context(), enroll_token, req.EmailAddress, "teacher", account_uuid)
 
-	return fiber.StatusOK
+	return fiber.StatusOK, fiber.Map{}
 }
 
 func EnrollTeacher(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaque.Server) error {
@@ -305,27 +435,69 @@ func EnrollTeacher(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *o
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	return helpers.ErrorByStatusCode(c, enroll_teacher(c, req, pool, rdb))
+	status_code, json := enroll_teacher(c, req, pool, rdb)
+
+	if status_code != 200 {
+		return c.Status(status_code).JSON(json)
+	} else {
+		return c.SendStatus(status_code)
+	}
 }
 
-func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool, rdb *redis.Client) int {
+func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool, rdb *redis.Client) (int, fiber.Map) {
 	enroll_token := opaquepkg.NewEnrollToken()
 	account_uuid, err := uuid.NewRandom()
 
 	if err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
-	if !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber) ||
-		!helpers.EmailRegex.MatchString(req.EmailAddress) ||
-		req.FirstName == "" || req.LastName == "" ||
-		req.BirthFirstName == "" || req.BirthLastName == "" || req.BirthCity == "" ||
-		req.PermamentAddress == "" || req.TemporaryAddress == "" ||
-		countries.GetByAlpha2(req.BirthCountry) == nil {
-		return fiber.StatusBadRequest
+	checks := map[string]func(req EnrollGuardianRequest) bool{
+		"phone_number": func(req EnrollGuardianRequest) bool {
+			return !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber)
+		},
+		"email": func(req EnrollGuardianRequest) bool {
+			return !helpers.EmailRegex.MatchString(req.EmailAddress)
+		},
+		"first_name": func(req EnrollGuardianRequest) bool {
+			return req.FirstName == ""
+		},
+		"last_name": func(req EnrollGuardianRequest) bool {
+			return req.LastName == ""
+		},
+		"birth_first_name": func(req EnrollGuardianRequest) bool {
+			return req.BirthFirstName == ""
+		},
+		"birth_last_name": func(req EnrollGuardianRequest) bool {
+			return req.BirthLastName == ""
+		},
+		"birth_city": func(req EnrollGuardianRequest) bool {
+			return req.BirthCity == ""
+		},
+		"permanent_address": func(req EnrollGuardianRequest) bool {
+			return req.PermamentAddress == ""
+		},
+		"temporary_address": func(req EnrollGuardianRequest) bool {
+			return req.TemporaryAddress == ""
+		},
+		"birth_country": func(req EnrollGuardianRequest) bool {
+			return countries.GetByAlpha2(req.BirthCountry) == nil
+		},
 	}
 
-	queries := db_queries.New(pool)
+	bad_parameters := runBadRequestChecks(req, checks)
+
+	if len(bad_parameters) > 0 {
+		return fiber.StatusBadRequest, fiber.Map{"error": "BAD_REQUEST", "invalid_params": bad_parameters}
+	}
+
+	tx, err := pool.Begin(c.Context())
+	if err != nil {
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
+	}
+	defer tx.Rollback(c.Context())
+
+	queries := db_queries.New(pool).WithTx(tx)
 
 	guardian_id, create_guardian_err := queries.CreateGuardian(c.Context(), db_queries.CreateGuardianParams{
 		PhoneNumber:      req.PhoneNumber,
@@ -341,7 +513,7 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 	})
 
 	if create_guardian_err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
 	create_account_err := queries.CreateAccount(c.Context(), db_queries.CreateAccountParams{
@@ -355,12 +527,12 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 	})
 
 	if create_account_err != nil {
-		return fiber.StatusInternalServerError
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
 	SendEnrollToken(rdb, c.Context(), enroll_token, req.EmailAddress, "guardian", account_uuid)
 
-	return fiber.StatusOK
+	return fiber.StatusOK, fiber.Map{}
 }
 
 func EnrollGuardian(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaque.Server) error {
@@ -376,7 +548,13 @@ func EnrollGuardian(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	return helpers.ErrorByStatusCode(c, enroll_guardian(c, req, pool, rdb))
+	status_code, json := enroll_guardian(c, req, pool, rdb)
+
+	if status_code != 200 {
+		return c.Status(status_code).JSON(json)
+	} else {
+		return c.SendStatus(status_code)
+	}
 }
 
 // TODO: rework so this is a process in the background with jobs, this would be way too slow otherwise.
@@ -398,7 +576,7 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 	var guardian_errors int
 
 	for _, student_request := range req.Students {
-		code := enroll_student(c, student_request, pool, rdb)
+		code, _ := enroll_student(c, student_request, pool, rdb)
 
 		if code != fiber.StatusOK {
 			student_errors += 1
@@ -406,7 +584,7 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 	}
 
 	for _, teacher_request := range req.Teachers {
-		code := enroll_teacher(c, teacher_request, pool, rdb)
+		code, _ := enroll_teacher(c, teacher_request, pool, rdb)
 
 		if code != fiber.StatusOK {
 			teacher_errors += 1
@@ -414,7 +592,7 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 	}
 
 	for _, guardian_request := range req.Guardians {
-		code := enroll_guardian(c, guardian_request, pool, rdb)
+		code, _ := enroll_guardian(c, guardian_request, pool, rdb)
 
 		if code != fiber.StatusOK {
 			guardian_errors += 1

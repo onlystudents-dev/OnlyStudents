@@ -63,7 +63,7 @@ CREATE TABLE students (
     birth_country CHAR(2) NOT NULL,
     mother_birth_first_name VARCHAR(256) NOT NULL,
     mother_birth_last_name VARCHAR(256) NOT NULL,
-    classes_id INT NOT NULL,
+    class_id INT NOT NULL,
     permament_address VARCHAR(256) NOT NULL,
     temporary_address VARCHAR(256) NOT NULL,
     tax_number INT DEFAULT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE students (
     document_type VARCHAR(50) NOT NULL,
     document_number VARCHAR(50) NOT NULL,
     CONSTRAINT fk_students_school FOREIGN KEY (school_id) REFERENCES schools (id),
-    CONSTRAINT fk_students_class FOREIGN KEY (classes_id) REFERENCES classes (id),
+    CONSTRAINT fk_students_class FOREIGN KEY (class_id) REFERENCES classes (id),
     CONSTRAINT uq_students_phone_number UNIQUE (phone_number)
 );
 
@@ -374,7 +374,7 @@ CREATE TABLE permissions (
 );
 
 CREATE INDEX idx_students_school_id ON students (school_id);
-CREATE INDEX idx_students_classes_id ON students (classes_id);
+CREATE INDEX idx_students_class_id ON students (class_id);
 
 CREATE INDEX idx_schools_school_type ON schools (school_type);
 CREATE INDEX idx_schools_principal_id ON schools (principal_id);

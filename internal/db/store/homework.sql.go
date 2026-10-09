@@ -32,7 +32,7 @@ JOIN teachers t ON t.id = h.teacher_id
 LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $1
 WHERE csub.school_id = $2
   AND csub.class_id = (
-      SELECT ss.classes_id
+      SELECT ss.class_id
       FROM student_school ss
       WHERE ss.student_id = $1
         AND ss.school_id = $2
@@ -235,7 +235,7 @@ WHERE EXISTS (
     WHERE h.id = $1
       AND csub.school_id = $4
       AND csub.class_id = (
-          SELECT ss.classes_id
+          SELECT ss.class_id
           FROM student_school ss
           WHERE ss.student_id = $2
             AND ss.school_id = $4

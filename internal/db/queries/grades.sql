@@ -93,7 +93,7 @@ ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name), fg.id;
 INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
 SELECT ss.student_id, cs.id, sqlc.arg(teacher_id), sqlc.arg(term_id), sqlc.arg(grade_type_id), sqlc.arg(value), sqlc.arg(date), sqlc.arg(note)
 FROM class_subjects cs
-JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
+JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id)
@@ -105,7 +105,7 @@ WHERE cs.id = sqlc.arg(class_subjects_id)
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
 SELECT ss.student_id, cs.id, sqlc.arg(term_id), sqlc.arg(teacher_id), sqlc.arg(value)
 FROM class_subjects cs
-JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
+JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id)

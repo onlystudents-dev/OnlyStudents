@@ -168,7 +168,7 @@ const teacherAddAbsence = `-- name: TeacherAddAbsence :execrows
 INSERT INTO absences (student_id, class_subjects_id, date, type, note)
 SELECT ss.student_id, cs.id, $1, $2, $3
 FROM class_subjects cs
-JOIN student_school ss ON ss.classes_id = cs.class_id AND ss.school_id = cs.school_id
+JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = $4
   AND cs.school_id = $5
   AND cs.teacher_id = $6
