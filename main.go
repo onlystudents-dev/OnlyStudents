@@ -318,7 +318,7 @@ func main() {
 	})
 
 	app.Use(helmet.New(helmet.Config{
-		XSSProtection:             "1; mode=block",
+		XSSProtection:             "0",
 		ContentTypeNosniff:        "nosniff",
 		XFrameOptions:             "SAMEORIGIN",
 		ContentSecurityPolicy:     "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.pwnedpasswords.com; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
