@@ -106,6 +106,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					"mass":     helpers.Post(func(c fiber.Ctx) error { return adminapi.MassEnroll(c, pool, rdb, opaque_server) }),
 				},
 				"schools": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListSchools(c, pool, rdb) }),
+				"classes": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListClasses(c, pool, rdb) }),
 				"theme": fiber.Map{
 					fiber.MethodPut:    func(c fiber.Ctx) error { return adminapi.AdminSetTheme(c, pool, rdb) },
 					fiber.MethodDelete: func(c fiber.Ctx) error { return adminapi.AdminDeleteTheme(c, pool, rdb) },
