@@ -309,7 +309,7 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 
 	params := db_queries.ReadRealTimeTableParams{
 		SchoolID:  int32(scope.SchoolID),
-		ClassesID: req.ClassId,
+		ClassID:   req.ClassId,
 		StartDate: pgtype.Date{Time: start, Valid: true},
 		EndDate:   pgtype.Date{Time: end, Valid: true},
 	}

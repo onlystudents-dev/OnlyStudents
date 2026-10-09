@@ -19,7 +19,7 @@ JOIN teachers t ON t.id = h.teacher_id
 LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = sqlc.arg(student_id)
 WHERE csub.school_id = sqlc.arg(school_id)
   AND csub.class_id = (
-      SELECT ss.classes_id
+      SELECT ss.class_id
       FROM student_school ss
       WHERE ss.student_id = sqlc.arg(student_id)
         AND ss.school_id = sqlc.arg(school_id)
@@ -97,7 +97,7 @@ WHERE EXISTS (
     WHERE h.id = sqlc.arg(homework_id)
       AND csub.school_id = sqlc.arg(school_id)
       AND csub.class_id = (
-          SELECT ss.classes_id
+          SELECT ss.class_id
           FROM student_school ss
           WHERE ss.student_id = sqlc.arg(student_id)
             AND ss.school_id = sqlc.arg(school_id)

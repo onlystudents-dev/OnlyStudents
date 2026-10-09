@@ -9,7 +9,7 @@ SELECT
     ss.id,
     ss.student_id,
     ss.school_id,
-    ss.classes_id,
+    ss.class_id,
     ss.id_number,
     s.first_name,
     s.last_name
@@ -22,12 +22,12 @@ ORDER BY s.last_name, s.first_name, ss.school_id;
 SELECT * FROM student_school WHERE student_id = $1 AND school_id = $2;
 
 -- name: CreateStudentMembership :one
-INSERT INTO student_school (student_id, school_id, classes_id, id_number)
-SELECT sqlc.arg(student_id), sqlc.arg(school_id), sqlc.arg(classes_id), sqlc.arg(id_number)
+INSERT INTO student_school (student_id, school_id, class_id, id_number)
+SELECT sqlc.arg(student_id), sqlc.arg(school_id), sqlc.arg(class_id), sqlc.arg(id_number)
 WHERE EXISTS (
     SELECT 1
     FROM classes c
-    WHERE c.id = sqlc.arg(classes_id)
+    WHERE c.id = sqlc.arg(class_id)
       AND c.school_id = sqlc.arg(school_id)
 )
 RETURNING id;

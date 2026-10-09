@@ -42,7 +42,7 @@ INSERT INTO students (
          );
 
 -- One student enrolled in both schools
-INSERT INTO student_school (student_id, school_id, classes_id, id_number) VALUES
+INSERT INTO student_school (student_id, school_id, class_id, id_number) VALUES
                                                                               (1, 1, 1, 123456789),
                                                                               (1, 2, 2, 123456789);
 

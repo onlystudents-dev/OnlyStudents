@@ -307,7 +307,7 @@ type StudentSchool struct {
 	ID        int32
 	StudentID int32
 	SchoolID  int32
-	ClassesID int32
+	ClassID   int32
 	IDNumber  int32
 }
 

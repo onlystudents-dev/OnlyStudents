@@ -113,7 +113,7 @@
     "ADMIN_ENROLL.STUDENT.BIRTH_COUNTRY": "Születési ország",
     "ADMIN_ENROLL.STUDENT.MOTHER_BIRTH_FIRST_NAME": "Anyja születési keresztneve",
     "ADMIN_ENROLL.STUDENT.MOTHER_BIRTH_LAST_NAME": "Anyja születési vezetékneve",
-    "ADMIN_ENROLL.STUDENT.CLASSES_ID": "Osztály azonosítója",
+    "ADMIN_ENROLL.STUDENT.CLASS_ID": "Osztály azonosítója",
     "ADMIN_ENROLL.STUDENT.PERMANENT_ADDRESS": "Állandó lakcím",
     "ADMIN_ENROLL.STUDENT.TEMPORARY_ADDRESS": "Tartózkodási hely",
     "ADMIN_ENROLL.STUDENT.HAS_TAX_NUMBER": "Van adóazonosító jele",

@@ -10,7 +10,7 @@ import (
 )
 
 const createStudentMembership = `-- name: CreateStudentMembership :one
-INSERT INTO student_school (student_id, school_id, classes_id, id_number)
+INSERT INTO student_school (student_id, school_id, class_id, id_number)
 SELECT $1, $2, $3, $4
 WHERE EXISTS (
     SELECT 1
@@ -24,7 +24,7 @@ RETURNING id
 type CreateStudentMembershipParams struct {
 	StudentID int32
 	SchoolID  int32
-	ClassesID int32
+	ClassID   int32
 	IDNumber  int32
 }
 
@@ -32,7 +32,7 @@ func (q *Queries) CreateStudentMembership(ctx context.Context, arg CreateStudent
 	row := q.db.QueryRow(ctx, createStudentMembership,
 		arg.StudentID,
 		arg.SchoolID,
-		arg.ClassesID,
+		arg.ClassID,
 		arg.IDNumber,
 	)
 	var id int32
@@ -58,7 +58,7 @@ func (q *Queries) DeleteStudentMembership(ctx context.Context, arg DeleteStudent
 }
 
 const getStudentMembership = `-- name: GetStudentMembership :one
-SELECT id, student_id, school_id, classes_id, id_number FROM student_school WHERE student_id = $1 AND school_id = $2
+SELECT id, student_id, school_id, class_id, id_number FROM student_school WHERE student_id = $1 AND school_id = $2
 `
 
 type GetStudentMembershipParams struct {
@@ -73,14 +73,14 @@ func (q *Queries) GetStudentMembership(ctx context.Context, arg GetStudentMember
 		&i.ID,
 		&i.StudentID,
 		&i.SchoolID,
-		&i.ClassesID,
+		&i.ClassID,
 		&i.IDNumber,
 	)
 	return i, err
 }
 
 const listStudentMemberships = `-- name: ListStudentMemberships :many
-SELECT ss.id, student_id, school_id, classes_id, id_number, school.id, name, zip_code, city, address_line, school_type, principal_id, phone_number, email_address, school.name AS school_name FROM student_school ss
+SELECT ss.id, student_id, school_id, class_id, id_number, school.id, name, zip_code, city, address_line, school_type, principal_id, phone_number, email_address, school.name AS school_name FROM student_school ss
 JOIN schools school ON school.id = ss.school_id
 WHERE student_id = $1
 ORDER BY school_id
@@ -90,7 +90,7 @@ type ListStudentMembershipsRow struct {
 	ID           int32
 	StudentID    int32
 	SchoolID     int32
-	ClassesID    int32
+	ClassID      int32
 	IDNumber     int32
 	ID_2         int32
 	Name         string
@@ -117,7 +117,7 @@ func (q *Queries) ListStudentMemberships(ctx context.Context, studentID int32) (
 			&i.ID,
 			&i.StudentID,
 			&i.SchoolID,
-			&i.ClassesID,
+			&i.ClassID,
 			&i.IDNumber,
 			&i.ID_2,
 			&i.Name,
@@ -145,7 +145,7 @@ SELECT
     ss.id,
     ss.student_id,
     ss.school_id,
-    ss.classes_id,
+    ss.class_id,
     ss.id_number,
     s.first_name,
     s.last_name
@@ -159,7 +159,7 @@ type ListStudentMembershipsBySchoolRow struct {
 	ID        int32
 	StudentID int32
 	SchoolID  int32
-	ClassesID int32
+	ClassID   int32
 	IDNumber  int32
 	FirstName string
 	LastName  string
@@ -178,7 +178,7 @@ func (q *Queries) ListStudentMembershipsBySchool(ctx context.Context, schoolID i
 			&i.ID,
 			&i.StudentID,
 			&i.SchoolID,
-			&i.ClassesID,
+			&i.ClassID,
 			&i.IDNumber,
 			&i.FirstName,
 			&i.LastName,

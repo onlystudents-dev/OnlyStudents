@@ -4,7 +4,7 @@ SELECT
     s.first_name,
     s.last_name,
     ss.school_id,
-    ss.classes_id AS class_id,
+    ss.class_id AS class_id,
     ss.id_number
 FROM guardians_access ga
 JOIN students s ON s.id = ga.student_id
