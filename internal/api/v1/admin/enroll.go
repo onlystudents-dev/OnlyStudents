@@ -158,7 +158,7 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 		"phone_number": func(req EnrollStudentRequest) bool {
 			return (req.HasPhoneNumber && !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber))
 		},
-		"email": func(req EnrollStudentRequest) bool {
+		"email_address": func(req EnrollStudentRequest) bool {
 			return !helpers.EmailRegex.MatchString(req.EmailAddress)
 		},
 		"first_name": func(req EnrollStudentRequest) bool {
@@ -339,7 +339,7 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 		"phone_number": func(req EnrollTeacherRequest) bool {
 			return !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber)
 		},
-		"email": func(req EnrollTeacherRequest) bool {
+		"email_address": func(req EnrollTeacherRequest) bool {
 			return !helpers.EmailRegex.MatchString(req.EmailAddress)
 		},
 		"first_name": func(req EnrollTeacherRequest) bool {
@@ -456,7 +456,7 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 		"phone_number": func(req EnrollGuardianRequest) bool {
 			return !helpers.PhoneNumberRegex.MatchString(req.PhoneNumber)
 		},
-		"email": func(req EnrollGuardianRequest) bool {
+		"email_address": func(req EnrollGuardianRequest) bool {
 			return !helpers.EmailRegex.MatchString(req.EmailAddress)
 		},
 		"first_name": func(req EnrollGuardianRequest) bool {

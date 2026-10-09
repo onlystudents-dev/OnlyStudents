@@ -11,6 +11,17 @@
 
     .box {
         @apply border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2;
+        .inputs {
+            @apply w-full overflow-y-auto pr-2 flex flex-col;
+            /* really stupid names but it is what it is */
+            .wronggg input, .wrongg__control {
+                box-shadow: 0 0 15px var(--wrong-color) !important;
+                transition: box-shadow 200ms ease-in-out !important;
+            }
+            .keyinput input, .keyinput__control {
+                transition: box-shadow 400ms ease-in-out;
+            }
+        }
     }
 
     .status {
