@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"math"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -36,6 +38,11 @@ type SchoolSummary struct {
 	City        string `json:"city"`
 	AddressLine string `json:"address_line"`
 	ZipCode     string `json:"zip_code"`
+}
+
+type ClassSummary struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
 }
 
 func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -135,6 +142,45 @@ func AdminListSchools(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 			City:        row.City,
 			AddressLine: row.AddressLine,
 			ZipCode:     row.ZipCode,
+		})
+	}
+
+	return c.JSON(summaries)
+}
+
+func AdminListClasses(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	_, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+	}
+
+	queries := db_queries.New(pool)
+
+	summaries := []ClassSummary{}
+
+	school_id_str := c.Query("school_id", "none")
+
+	if school_id_str == "none" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	school_id, err := strconv.ParseInt(school_id_str, 10, 32)
+
+	if school_id <= 0 || school_id > math.MaxInt32 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	schools, err := queries.AdminListClasses(c.Context(), int32(school_id))
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	for _, row := range schools {
+		summaries = append(summaries, ClassSummary{
+			ID:   row.ID,
+			Name: row.Name,
 		})
 	}
 

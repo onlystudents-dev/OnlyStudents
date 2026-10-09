@@ -9,6 +9,64 @@ import (
 	"context"
 )
 
+const adminCheckClassExists = `-- name: AdminCheckClassExists :execrows
+SELECT 1 FROM classes WHERE id = $1 AND school_id = $2
+`
+
+type AdminCheckClassExistsParams struct {
+	ID       int32
+	SchoolID int32
+}
+
+func (q *Queries) AdminCheckClassExists(ctx context.Context, arg AdminCheckClassExistsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, adminCheckClassExists, arg.ID, arg.SchoolID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const adminCheckSchoolExists = `-- name: AdminCheckSchoolExists :execrows
+SELECT 1 FROM schools WHERE id = $1
+`
+
+func (q *Queries) AdminCheckSchoolExists(ctx context.Context, id int32) (int64, error) {
+	result, err := q.db.Exec(ctx, adminCheckSchoolExists, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const adminListClasses = `-- name: AdminListClasses :many
+SELECT name, id FROM classes WHERE school_id = $1
+`
+
+type AdminListClassesRow struct {
+	Name string
+	ID   int32
+}
+
+func (q *Queries) AdminListClasses(ctx context.Context, schoolID int32) ([]AdminListClassesRow, error) {
+	rows, err := q.db.Query(ctx, adminListClasses, schoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminListClassesRow
+	for rows.Next() {
+		var i AdminListClassesRow
+		if err := rows.Scan(&i.Name, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const adminListSchools = `-- name: AdminListSchools :many
 SELECT name, city, address_line, zip_code, id FROM schools
 `
