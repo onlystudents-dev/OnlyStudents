@@ -18,15 +18,11 @@ type LoginInitResponse = {
 type EnrollInitResponse = {
     enroll_response: string;
 };
-
-type Ok = {status: "ok"};
 type Failure = {status: "error"; error?: string | undefined};
 type RateLimited = {status: "ratelimited"; retryAfter: number};
 
-export type OpaqueLoginResult = Ok | {status: "wrong"} | Failure | RateLimited;
-export type OpaqueRegisterResult = Ok | Failure | RateLimited;
-
-const ok: Ok = {status: "ok"};
+export type OpaqueLoginResult = {"status": "ok", exportKey: string} | {status: "wrong"} | Failure | RateLimited;
+export type OpaqueRegisterResult = {"status": "ok", exportKey: string} | Failure | RateLimited;
 
 const rateLimited = (res: Response): RateLimited => ({
     status: "ratelimited",
@@ -87,7 +83,10 @@ export async function opaqueLogin(params: OpaqueParams): Promise<OpaqueLoginResu
             return error === "WRONG_CREDENTIALS" ? {status: "wrong"} : failure(error);
         }
 
-        return ok;
+        return {
+          "status": "ok",
+          "exportKey": result.exportKey
+        };
     } catch {
         return failure();
     }
@@ -126,7 +125,10 @@ export async function opaqueRegister(params: OpaqueParams): Promise<OpaqueRegist
         if (finishRes.status === 429) return rateLimited(finishRes);
         if (!finishRes.ok) return failure(await readError(finishRes));
 
-        return ok;
+        return {
+          "status": "ok",
+          "exportKey": result.exportKey
+        };
     } catch {
         return failure();
     }
