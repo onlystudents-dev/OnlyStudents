@@ -19,6 +19,12 @@ export default defineConfig({
               priority: 30
             },
             {
+              name: 'crypto',
+              test: /src[\\/]util[\\/]crypto[\\/]/,
+              maxSize: 250000,
+              priority: 30
+            },
+            {
               name: 'shared',
               test: /src[\\/](navbar|util|types)[\\/]/,
               priority: 25

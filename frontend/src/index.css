@@ -98,3 +98,13 @@ body {
 .cantar {
     @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2;
 }
+
+
+.hover-shadow {
+  transition: box-shadow 400ms ease-in-out;
+}
+
+.hover-shadow:hover {
+  box-shadow: 0 0 15px var(--hover-color);
+  transition: box-shadow 200ms ease-in-out;
+}

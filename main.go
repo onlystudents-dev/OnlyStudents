@@ -57,9 +57,17 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			c.Set("Cache-Control", "public, max-age=86400")
 			return c.JSON(fiber.Map{
 				"password": fiber.Map{
-					"minLength":        helpers.GetIntEnvFallback("PW_MIN_LEN", 12, 128),
-					"maxLength":        helpers.GetIntEnvFallback("PW_MAX_LEN", 256, 1024),
-					"hibpCheckEnabled": helpers.GetEnvFallback("HIBP_CHECK_ENABLED", "false") == "true",
+					"min_length":         helpers.GetIntEnvFallback("PW_MIN_LEN", 12, 128),
+					"max_length":         helpers.GetIntEnvFallback("PW_MAX_LEN", 256, 1024),
+					"hibp_check_enabled": helpers.GetEnvFallback("HIBP_CHECK_ENABLED", "false") == "true",
+				},
+				"e2ee": fiber.Map{
+					"argon2_salt_len":         helpers.GetIntEnvFallback("ARGON2_SALTLEN", 16, 64),
+					"argon2_time":             helpers.GetIntEnvFallback("ARGON2_TIME", 2, 10),
+					"argon2_memory":           helpers.GetIntEnvFallback("ARGON2_MEMORY", 65536, 524288),
+					"argon2_threads":          helpers.GetIntEnvFallback("ARGON2_THREADS", 1, 16),
+					"argon2_key_len":          helpers.GetIntEnvFallback("ARGON2_KEYLEN", 32, 256),
+					"recovery_key_word_count": helpers.GetIntEnvFallback("RECOVERY_KEY_WORD_COUNT", 24, 24),
 				},
 			})
 		}),
@@ -85,170 +93,174 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			forgetLimit,
 			func(c fiber.Ctx) error { return v1.ForgetPasswordConfirm(c, pool, rdb) },
 		}),
+		"themes": helpers.Get(func(c fiber.Ctx) error {
+			themes, err := helpers.GetThemes(c, pool)
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+			}
 
-		"v1": fiber.Map{
-			"themes": helpers.Get(func(c fiber.Ctx) error {
-				themes, err := helpers.GetThemes(c, pool)
-				if err != nil {
-					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-				}
+			return c.JSON(themes)
+		}),
+		"admin": fiber.Map{
+			helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth, role("admin")},
+			"logs":                   helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminLogs(c, pool, rdb) }),
+			"status":                 helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminStatus(c, pool, rdb) }),
+			"enroll": fiber.Map{
+				"student":  helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollStudent(c, pool, rdb, opaque_server) }),
+				"teacher":  helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollTeacher(c, pool, rdb, opaque_server) }),
+				"guardian": helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollGuardian(c, pool, rdb, opaque_server) }),
+				"mass":     helpers.Post(func(c fiber.Ctx) error { return adminapi.MassEnroll(c, pool, rdb, opaque_server) }),
+			},
+			"schools": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListSchools(c, pool, rdb) }),
+			"classes": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListClasses(c, pool, rdb) }),
+			"theme": fiber.Map{
+				fiber.MethodPut:    func(c fiber.Ctx) error { return adminapi.AdminSetTheme(c, pool, rdb) },
+				fiber.MethodDelete: func(c fiber.Ctx) error { return adminapi.AdminDeleteTheme(c, pool, rdb) },
+			},
+		},
+		"me": fiber.Map{
+			helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth},
+			"logout":                 helpers.Post(func(c fiber.Ctx) error { return v1.Logout(c, pool, rdb) }),
+			"update_preferences":     helpers.Post(func(c fiber.Ctx) error { return meapi.UpdatePreferences(c, pool, rdb) }),
+			"change_email":           helpers.Post(func(c fiber.Ctx) error { return meapi.ChangeEmail(c, pool, rdb) }),
+			"verify_email": helpers.Post([]fiber.Handler{authLimit,
+				func(c fiber.Ctx) error { return meapi.VerifyEmailRequest(c, pool, rdb) }}),
+			"verify_email_confirm": helpers.Post([]fiber.Handler{authLimit,
+				func(c fiber.Ctx) error { return meapi.VerifyEmailConfirm(c, pool, rdb) }}),
+			"status": helpers.Get(func(c fiber.Ctx) error { return meapi.Status(c, pool, rdb) }),
 
-				return c.JSON(themes)
-			}),
-			"admin": fiber.Map{
-				helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth, role("admin")},
-				"logs":                   helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminLogs(c, pool, rdb) }),
-				"status":                 helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminStatus(c, pool, rdb) }),
-				"enroll": fiber.Map{
-					"student":  helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollStudent(c, pool, rdb, opaque_server) }),
-					"teacher":  helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollTeacher(c, pool, rdb, opaque_server) }),
-					"guardian": helpers.Post(func(c fiber.Ctx) error { return adminapi.EnrollGuardian(c, pool, rdb, opaque_server) }),
-					"mass":     helpers.Post(func(c fiber.Ctx) error { return adminapi.MassEnroll(c, pool, rdb, opaque_server) }),
+			"e2ee": fiber.Map{
+				"enroll": helpers.Post([]fiber.Handler{
+					forgetLimit,
+					func(c fiber.Ctx) error { return meapi.EnrollE2EE(c, pool, rdb) },
+				}),
+			},
+
+			"student": fiber.Map{
+				helpers.RoutesGroupMWKey: []fiber.Handler{role("student", "guardian")},
+				"grades":                 helpers.Get(func(c fiber.Ctx) error { return studentapi.Grades(c, pool, rdb) }),
+				"absences": fiber.Map{
+					fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Absences(c, pool, rdb) },
+					"submit_reason": helpers.Post(func(c fiber.Ctx) error { return studentapi.SubmitAbsenceReason(c, pool, rdb) }),
 				},
-				"schools": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListSchools(c, pool, rdb) }),
-				"classes": helpers.Get(func(c fiber.Ctx) error { return adminapi.AdminListClasses(c, pool, rdb) }),
-				"theme": fiber.Map{
-					fiber.MethodPut:    func(c fiber.Ctx) error { return adminapi.AdminSetTheme(c, pool, rdb) },
-					fiber.MethodDelete: func(c fiber.Ctx) error { return adminapi.AdminDeleteTheme(c, pool, rdb) },
+				"final_grades": helpers.Get(func(c fiber.Ctx) error { return studentapi.FinalGrades(c, pool, rdb) }),
+				"exams":        helpers.Get(func(c fiber.Ctx) error { return studentapi.Exams(c, pool, rdb) }),
+				"homework": fiber.Map{
+					fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Homework(c, pool, rdb) },
+					"submit":        helpers.Post(func(c fiber.Ctx) error { return studentapi.SubmitHomework(c, pool, rdb) }),
+				},
+				"class":  helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadClass(c, pool, rdb) }),
+				"groups": helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadGroups(c, pool, rdb) }),
+				"timetable": fiber.Map{
+					fiber.MethodGet:      func(c fiber.Ctx) error { return studentapi.ReadMyRealTimeTable(c, pool, rdb) },
+					"base":               helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadBaseSchedule(c, pool, rdb) }),
+					"lesson_time":        helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadLessonTime(c, pool, rdb) }),
+					"room":               helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadRoom(c, pool, rdb) }),
+					"custom_subject":     helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadCustomSubject(c, pool, rdb) }),
+					"bell_schedule_type": helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadBellScheduleType(c, pool, rdb) }),
 				},
 			},
-			"me": fiber.Map{
-				helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth},
-				"logout":                 helpers.Post(func(c fiber.Ctx) error { return v1.Logout(c, pool, rdb) }),
-				"update_preferences":     helpers.Post(func(c fiber.Ctx) error { return meapi.UpdatePreferences(c, pool, rdb) }),
-				"change_email":           helpers.Post(func(c fiber.Ctx) error { return meapi.ChangeEmail(c, pool, rdb) }),
-				"verify_email": helpers.Post([]fiber.Handler{authLimit,
-					func(c fiber.Ctx) error { return meapi.VerifyEmailRequest(c, pool, rdb) }}),
-				"verify_email_confirm": helpers.Post([]fiber.Handler{authLimit,
-					func(c fiber.Ctx) error { return meapi.VerifyEmailConfirm(c, pool, rdb) }}),
-				"status": helpers.Get(func(c fiber.Ctx) error { return meapi.Status(c, pool, rdb) }),
 
-				"student": fiber.Map{
-					helpers.RoutesGroupMWKey: []fiber.Handler{role("student", "guardian")},
-					"grades":                 helpers.Get(func(c fiber.Ctx) error { return studentapi.Grades(c, pool, rdb) }),
-					"absences": fiber.Map{
-						fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Absences(c, pool, rdb) },
-						"submit_reason": helpers.Post(func(c fiber.Ctx) error { return studentapi.SubmitAbsenceReason(c, pool, rdb) }),
-					},
-					"final_grades": helpers.Get(func(c fiber.Ctx) error { return studentapi.FinalGrades(c, pool, rdb) }),
-					"exams":        helpers.Get(func(c fiber.Ctx) error { return studentapi.Exams(c, pool, rdb) }),
-					"homework": fiber.Map{
-						fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Homework(c, pool, rdb) },
-						"submit":        helpers.Post(func(c fiber.Ctx) error { return studentapi.SubmitHomework(c, pool, rdb) }),
-					},
-					"class":  helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadClass(c, pool, rdb) }),
-					"groups": helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadGroups(c, pool, rdb) }),
-					"timetable": fiber.Map{
-						fiber.MethodGet:      func(c fiber.Ctx) error { return studentapi.ReadMyRealTimeTable(c, pool, rdb) },
-						"base":               helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadBaseSchedule(c, pool, rdb) }),
-						"lesson_time":        helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadLessonTime(c, pool, rdb) }),
-						"room":               helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadRoom(c, pool, rdb) }),
-						"custom_subject":     helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadCustomSubject(c, pool, rdb) }),
-						"bell_schedule_type": helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadBellScheduleType(c, pool, rdb) }),
-					},
+			"teacher": fiber.Map{
+				helpers.RoutesGroupMWKey: []fiber.Handler{role("teacher")},
+
+				"grades": fiber.Map{
+					fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListGrades(c, pool, rdb) },
+					fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddGrade(c, pool, rdb) },
+					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditGrade(c, pool, rdb) },
+					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveGrade(c, pool, rdb) },
 				},
 
-				"teacher": fiber.Map{
-					helpers.RoutesGroupMWKey: []fiber.Handler{role("teacher")},
+				"final_grades": fiber.Map{
+					fiber.MethodGet:   func(c fiber.Ctx) error { return teacherapi.ListFinalGrades(c, pool, rdb) },
+					fiber.MethodPost:  func(c fiber.Ctx) error { return teacherapi.AddFinalGrade(c, pool, rdb) },
+					fiber.MethodPatch: func(c fiber.Ctx) error { return teacherapi.EditFinalGrade(c, pool, rdb) },
+				},
 
-					"grades": fiber.Map{
-						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListGrades(c, pool, rdb) },
-						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddGrade(c, pool, rdb) },
-						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditGrade(c, pool, rdb) },
-						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveGrade(c, pool, rdb) },
+				"exams": fiber.Map{
+					fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListExams(c, pool, rdb) },
+					fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddExam(c, pool, rdb) },
+					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditExam(c, pool, rdb) },
+					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveExam(c, pool, rdb) },
+				},
+
+				"absences": fiber.Map{
+					fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListAbsences(c, pool, rdb) },
+					fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddAbsence(c, pool, rdb) },
+					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditAbsence(c, pool, rdb) },
+					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveAbsence(c, pool, rdb) },
+				},
+
+				"homework": fiber.Map{
+					fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListHomework(c, pool, rdb) },
+					fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddHomework(c, pool, rdb) },
+					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditHomework(c, pool, rdb) },
+					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveHomework(c, pool, rdb) },
+				},
+
+				"homework_submissions": fiber.Map{
+					fiber.MethodGet:   func(c fiber.Ctx) error { return teacherapi.ListHomeworkSubmissions(c, pool, rdb) },
+					fiber.MethodPatch: func(c fiber.Ctx) error { return teacherapi.UpdateHomeworkSubmission(c, pool, rdb) },
+				},
+
+				"timetable": fiber.Map{
+					"bell_schedule_type": fiber.Map{
+						fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateBellScheduleType(c, pool, rdb) },
+						fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditBellScheduleType(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteBellScheduleType(c, pool, rdb) },
+						fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadBellScheduleTypes(c, pool, rdb) },
 					},
-
-					"final_grades": fiber.Map{
-						fiber.MethodGet:   func(c fiber.Ctx) error { return teacherapi.ListFinalGrades(c, pool, rdb) },
-						fiber.MethodPost:  func(c fiber.Ctx) error { return teacherapi.AddFinalGrade(c, pool, rdb) },
-						fiber.MethodPatch: func(c fiber.Ctx) error { return teacherapi.EditFinalGrade(c, pool, rdb) },
+					"lesson_time": fiber.Map{
+						fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateLessonTime(c, pool, rdb) },
+						fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditLessonTime(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteLessonTime(c, pool, rdb) },
+						fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadLessonTime(c, pool, rdb) },
 					},
-
-					"exams": fiber.Map{
-						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListExams(c, pool, rdb) },
-						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddExam(c, pool, rdb) },
-						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditExam(c, pool, rdb) },
-						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveExam(c, pool, rdb) },
+					"custom_subject": fiber.Map{
+						fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateCustomSubject(c, pool, rdb) },
+						fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditCustomSubject(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteCustomSubject(c, pool, rdb) },
+						fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadCustomSubjects(c, pool, rdb) },
 					},
-
-					"absences": fiber.Map{
-						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListAbsences(c, pool, rdb) },
-						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddAbsence(c, pool, rdb) },
-						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditAbsence(c, pool, rdb) },
-						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveAbsence(c, pool, rdb) },
+					"room": fiber.Map{
+						fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateRoom(c, pool, rdb) },
+						fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.UpdateRoom(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteRoom(c, pool, rdb) },
+						fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadRoom(c, pool, rdb) },
 					},
-
-					"homework": fiber.Map{
-						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListHomework(c, pool, rdb) },
-						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddHomework(c, pool, rdb) },
-						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditHomework(c, pool, rdb) },
-						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveHomework(c, pool, rdb) },
+					"group": fiber.Map{
+						fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateGroup(c, pool, rdb) },
+						fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditGroup(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteGroup(c, pool, rdb) },
+						fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadGroup(c, pool, rdb) },
+						"student": fiber.Map{
+							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.InsertStudentToGroup(c, pool, rdb) },
+							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteStudentFromGroup(c, pool, rdb) },
+							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadStudentsInGroup(c, pool, rdb) },
+						},
 					},
-
-					"homework_submissions": fiber.Map{
-						fiber.MethodGet:   func(c fiber.Ctx) error { return teacherapi.ListHomeworkSubmissions(c, pool, rdb) },
-						fiber.MethodPatch: func(c fiber.Ctx) error { return teacherapi.UpdateHomeworkSubmission(c, pool, rdb) },
+					"base_schedule": fiber.Map{
+						fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateBaseSchedule(c, pool, rdb) },
+						fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.UpdateBaseSchedule(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteBaseSchedule(c, pool, rdb) },
+						"class":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadBaseScheduleClass(c, pool, rdb) }),
+						"group":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadBaseScheduleGroup(c, pool, rdb) }),
 					},
-
-					"timetable": fiber.Map{
-						"bell_schedule_type": fiber.Map{
-							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateBellScheduleType(c, pool, rdb) },
-							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditBellScheduleType(c, pool, rdb) },
-							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteBellScheduleType(c, pool, rdb) },
-							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadBellScheduleTypes(c, pool, rdb) },
-						},
-						"lesson_time": fiber.Map{
-							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateLessonTime(c, pool, rdb) },
-							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditLessonTime(c, pool, rdb) },
-							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteLessonTime(c, pool, rdb) },
-							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadLessonTime(c, pool, rdb) },
-						},
-						"custom_subject": fiber.Map{
-							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateCustomSubject(c, pool, rdb) },
-							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditCustomSubject(c, pool, rdb) },
-							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteCustomSubject(c, pool, rdb) },
-							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadCustomSubjects(c, pool, rdb) },
-						},
-						"room": fiber.Map{
-							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateRoom(c, pool, rdb) },
-							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.UpdateRoom(c, pool, rdb) },
-							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteRoom(c, pool, rdb) },
-							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadRoom(c, pool, rdb) },
-						},
-						"group": fiber.Map{
-							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateGroup(c, pool, rdb) },
-							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.EditGroup(c, pool, rdb) },
-							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteGroup(c, pool, rdb) },
-							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadGroup(c, pool, rdb) },
-							"student": fiber.Map{
-								fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.InsertStudentToGroup(c, pool, rdb) },
-								fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteStudentFromGroup(c, pool, rdb) },
-								fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadStudentsInGroup(c, pool, rdb) },
-							},
-						},
-						"base_schedule": fiber.Map{
-							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateBaseSchedule(c, pool, rdb) },
-							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.UpdateBaseSchedule(c, pool, rdb) },
-							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteBaseSchedule(c, pool, rdb) },
-							"class":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadBaseScheduleClass(c, pool, rdb) }),
-							"group":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadBaseScheduleGroup(c, pool, rdb) }),
-						},
-						"realtime": fiber.Map{
-							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateRealTimeLesson(c, pool, rdb) },
-							fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.UpdateRealTimeLesson(c, pool, rdb) },
-							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteRealTimeLesson(c, pool, rdb) },
-							fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadRealTimeTable(c, pool, rdb) },
-						},
-						"canceled_lesson": fiber.Map{
-							fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.AddCanceledLesson(c, pool, rdb) },
-							fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.RemoveCanceledLesson(c, pool, rdb) },
-						},
-						"substitution": helpers.Patch(func(c fiber.Ctx) error { return timetableapi.UpdateSubstitution(c, pool, rdb) }),
-
-						"mine":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRealTimeTable(c, pool, rdb) }),
-						"my_lesson_times": helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyLessonTimes(c, pool, rdb) }),
-						"my_rooms":        helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRooms(c, pool, rdb) }),
+					"realtime": fiber.Map{
+						fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.CreateRealTimeLesson(c, pool, rdb) },
+						fiber.MethodPatch:  func(c fiber.Ctx) error { return timetableapi.UpdateRealTimeLesson(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.DeleteRealTimeLesson(c, pool, rdb) },
+						fiber.MethodGet:    func(c fiber.Ctx) error { return timetableapi.ReadRealTimeTable(c, pool, rdb) },
 					},
+					"canceled_lesson": fiber.Map{
+						fiber.MethodPost:   func(c fiber.Ctx) error { return timetableapi.AddCanceledLesson(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return timetableapi.RemoveCanceledLesson(c, pool, rdb) },
+					},
+					"substitution": helpers.Patch(func(c fiber.Ctx) error { return timetableapi.UpdateSubstitution(c, pool, rdb) }),
+
+					"mine":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRealTimeTable(c, pool, rdb) }),
+					"my_lesson_times": helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyLessonTimes(c, pool, rdb) }),
+					"my_rooms":        helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRooms(c, pool, rdb) }),
 				},
 			},
 		},
@@ -378,7 +390,7 @@ func main() {
 	}
 	// frontEND
 
-	api := app.Group("/api")
+	api := app.Group("/api/v1")
 	helpers.RegisterRoutes(api, buildRoutes(pool, rdb, opaque_server))
 
 	log.Fatal(app.Listen(":8080",

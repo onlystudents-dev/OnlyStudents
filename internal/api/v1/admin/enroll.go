@@ -530,6 +530,10 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
 	}
 
+	if err := tx.Commit(c.Context()); err != nil {
+		return fiber.StatusInternalServerError, fiber.Map{"error": "SERVER_ERROR"}
+	}
+
 	SendEnrollToken(rdb, c.Context(), enroll_token, req.EmailAddress, "guardian", account_uuid)
 
 	return fiber.StatusOK, fiber.Map{}
