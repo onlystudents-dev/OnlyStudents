@@ -150,10 +150,11 @@
     "ADMIN_ENROLL.GUARDIAN.EMAIL_ADDRESS": "E-mail-cím",
     "ADMIN_SUCCESSFULLY_ENROLLED": "Sikeres beíratás!",
     "ENROLL": "Beíratkozás",
-    "RECOVERY_KEY_SHOW": "A visszaállítási kulcsa a következő",
+    "RECOVERY_KEY_SHOW": "A visszaállítási kulcsa a következő:",
     "RECOVERY_KEY_STORAGE": "Kérlek tárolja ezt a kulcsot egy biztonságos helyen. Enélkül a kulcs nélkül nem fogja tudni visszaállítani jelszavát, ha elfelejtette. Mi soha nem fogjuk öntől kérni ezt email vagy más kommunikációs platformon keresztül.",
     "RECOVERY_KEY_ACCEPT": "Biztonságos helyen tároltam a kulcsot.",
-    "CONTINUE": "Tovább"
+    "CONTINUE": "Tovább",
+    "COPIED": "Kimásolva"
   },
   "errors": {
     "CONFLICT": "A megadott adat már létezik a rendszerben, és nem felülírható!",

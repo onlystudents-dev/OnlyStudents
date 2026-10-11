@@ -111,7 +111,11 @@ export default function Enroll() {
         void getPasswordConfig().then(setConfig)
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Enter") void register()
+            if (recovery) {
+                if (e.key === "Enter" || e.key === " ") setRevealed(true)
+            } else {
+                if (e.key === "Enter") void register()
+            }
         }
 
         window.addEventListener("keydown", handleKeyDown)
@@ -119,7 +123,7 @@ export default function Enroll() {
         return () => {
             window.removeEventListener("keydown", handleKeyDown)
         }
-    }, [register])
+    }, [recovery, register])
 
     return (
         <>
@@ -138,23 +142,16 @@ export default function Enroll() {
                     {recovery && <div className="loginput fredoka">
                         <div>{getKey("RECOVERY_KEY_SHOW")}</div>
 
-                        <div
-                            className={`recovery-key ${revealed ? "" : "spoiler"}`}
-                            onClick={() => setRevealed(true)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setRevealed(true) }}
-                            title={revealed ? "" : getKey("RECOVERY_KEY_SHOW")}
-                        >
+                        <div className={`recovery-key ${!revealed && "spoiler"}`} onClick={() => { if (revealed) void copy(); else setRevealed(true); }} role="button" tabIndex={0} title={!revealed && getKey("RECOVERY_KEY_SHOW") || undefined}>
                             {recoveryMnemonic}
                         </div>
 
                         <div>{getKey("RECOVERY_KEY_STORAGE")}</div>
 
-                        <label className="recovery-accept">
+                        {revealed && <label className="recovery-accept">
                             <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.currentTarget.checked)} />
                             {getKey("RECOVERY_KEY_ACCEPT")}
-                        </label>
+                        </label>}
                     </div>}
 
                     <div className="elogbutton">
@@ -162,15 +159,11 @@ export default function Enroll() {
                             {remaining}
                         </p>
 
-                        {recovery ? (
-                            <Button className={accepted ? "" : "opacity-50"} onClick={() => { if (accepted) location.href = "/me" }}>
-                                {getKey("CONTINUE")} <FontAwesomeIcon icon={faArrowRight} />
-                            </Button>
-                        ) : (
-                            <Button onClick={register}>
-                                {getKey("ENROLL")} <FontAwesomeIcon icon={faArrowRight} />
-                            </Button>
-                        )}
+                        {recovery ? <Button className={accepted ? "hover-shadow" : "opacity-50 cursor-not-allowed!"} onClick={() => { if (accepted) location.href = "/me" }}>
+                            {getKey("ENROLL")} <FontAwesomeIcon icon={faArrowRight} />
+                        </Button> : <Button className="hover-shadow" onClick={register}>
+                            {getKey("CONTINUE")} <FontAwesomeIcon icon={faArrowRight} />
+                        </Button>}
                     </div>
                 </div>
             </div>
@@ -178,4 +171,9 @@ export default function Enroll() {
             {waiting && <Loading />}
         </>
     )
+
+    async function copy() {
+        await navigator.clipboard.writeText(recoveryMnemonic)
+        toast.success(getKey("COPIED"))
+    }
 }
