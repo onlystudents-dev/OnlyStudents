@@ -6,7 +6,7 @@ import React, {useCallback, useEffect, useState} from "react";
 import {toast} from "react-toastify";
 import PasswordCheck from "../pwc.tsx";
 import {fromResponse, getKey} from "../../util/language.ts";
-import {getPasswordConfig, type PasswordConfig} from "../passwordConfig.ts";
+import {getPasswordConfig, type PasswordConfig} from "../AuthConfig.ts";
 import RoleSelect from "../roleSelect.tsx";
 import {useCountdown} from "../../util/countdown.ts";
 import {getRetryAfter, postJSON} from "../../util/api.ts";
@@ -82,8 +82,8 @@ export default function PasswordReset({ pwrA, unsPwr, role, setRole, id, setId, 
                 </div>}
                 {reset && <div className="loginput fredoka in">
                     <input type="text" placeholder={getKey("CODE")} onChange={(e) => setCode(e.currentTarget.value)} />
-                    <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setPassword(e.currentTarget.value)} />
-                    <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.maxLength} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
+                    <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.max_length} onChange={(e) => setPassword(e.currentTarget.value)} />
+                    <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.max_length} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
                     <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                 </div>}
 

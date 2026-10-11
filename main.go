@@ -57,9 +57,17 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			c.Set("Cache-Control", "public, max-age=86400")
 			return c.JSON(fiber.Map{
 				"password": fiber.Map{
-					"minLength":        helpers.GetIntEnvFallback("PW_MIN_LEN", 12, 128),
-					"maxLength":        helpers.GetIntEnvFallback("PW_MAX_LEN", 256, 1024),
-					"hibpCheckEnabled": helpers.GetEnvFallback("HIBP_CHECK_ENABLED", "false") == "true",
+					"min_length":         helpers.GetIntEnvFallback("PW_MIN_LEN", 12, 128),
+					"max_length":         helpers.GetIntEnvFallback("PW_MAX_LEN", 256, 1024),
+					"hibp_check_enabled": helpers.GetEnvFallback("HIBP_CHECK_ENABLED", "false") == "true",
+				},
+				"e2ee": fiber.Map{
+					"argon2_salt_len":         helpers.GetIntEnvFallback("ARGON2_SALTLEN", 16, 64),
+					"argon2_time":             helpers.GetIntEnvFallback("ARGON2_TIME", 2, 10),
+					"argon2_memory":           helpers.GetIntEnvFallback("ARGON2_MEMORY", 65536, 524288),
+					"argon2_threads":          helpers.GetIntEnvFallback("ARGON2_THREADS", 1, 16),
+					"argon2_key_len":          helpers.GetIntEnvFallback("ARGON2_KEYLEN", 32, 256),
+					"recovery_key_word_count": helpers.GetIntEnvFallback("RECOVERY_KEY_WORD_COUNT", 24, 64),
 				},
 			})
 		}),

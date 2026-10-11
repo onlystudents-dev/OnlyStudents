@@ -5,7 +5,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight} from "@fortawesome/free-solid-svg-icons";
 import {useCallback, useEffect, useState} from "preact/compat";
 import PasswordCheck from "../pwc.tsx";
-import {getPasswordConfig, type PasswordConfig} from "../passwordConfig.ts";
+import {getPasswordConfig, type PasswordConfig} from "../AuthConfig.ts";
 import {opaqueRegister} from "../opaque.ts";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
@@ -74,8 +74,8 @@ export default function Enroll() {
                     </h1>
 
                     <div className="loginput fredoka">
-                        <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.maxLength} value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
-                        <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.maxLength} value={confirmPassword} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
+                        <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.max_length} value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
+                        <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.max_length} value={confirmPassword} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
                         <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                     </div>
 

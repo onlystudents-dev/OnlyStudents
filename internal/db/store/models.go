@@ -31,6 +31,17 @@ type Account struct {
 	Preferences   []byte
 }
 
+type AccountCrypto struct {
+	AccountUuid       pgtype.UUID
+	WrappedMkPassword []byte
+	WrappedMkRecovery []byte
+	RecoveryKeyHash   []byte
+	RecoveryKeySalt   []byte
+	RecoveryKeyParams string
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
 type AccountOpaque struct {
 	AccountUuid          pgtype.UUID
 	RegistrationRecord   []byte
