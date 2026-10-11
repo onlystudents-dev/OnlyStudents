@@ -14,6 +14,14 @@ func LogDir() string {
 	return GetEnvFallback("LOG_DIR", "logs")
 }
 
+func getLevel() slog.Level {
+	if GetEnvFallback("APP_ENV", "development") == "development" {
+		return slog.LevelDebug
+	}
+
+	return slog.LevelError
+}
+
 func SetupLogging() (*os.File, error) {
 	dir := LogDir()
 
@@ -41,7 +49,9 @@ func SetupLogging() (*os.File, error) {
 
 	writer := io.MultiWriter(console, f)
 	log.SetOutput(writer)
-	slog.SetDefault(slog.New(slog.NewTextHandler(writer, nil)))
+	slog.SetDefault(slog.New(slog.NewTextHandler(writer, &slog.HandlerOptions{
+		Level: getLevel(),
+	})))
 
 	pipeStdStreams(console, f)
 
