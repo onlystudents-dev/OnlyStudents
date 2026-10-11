@@ -29,24 +29,17 @@ const getGuardianChildren = `-- name: GetGuardianChildren :many
 SELECT
     s.id,
     s.first_name,
-    s.last_name,
-    ss.school_id,
-    ss.class_id AS class_id,
-    ss.id_number
+    s.last_name
 FROM guardians_access ga
 JOIN students s ON s.id = ga.student_id
-JOIN student_school ss ON ss.student_id = s.id
 WHERE ga.guardian_id = $1
-ORDER BY s.last_name, s.first_name, ss.school_id
+ORDER BY s.last_name, s.first_name
 `
 
 type GetGuardianChildrenRow struct {
 	ID        int32
 	FirstName string
 	LastName  string
-	SchoolID  int32
-	ClassID   int32
-	IDNumber  int32
 }
 
 func (q *Queries) GetGuardianChildren(ctx context.Context, guardianID int32) ([]GetGuardianChildrenRow, error) {
@@ -58,14 +51,7 @@ func (q *Queries) GetGuardianChildren(ctx context.Context, guardianID int32) ([]
 	var items []GetGuardianChildrenRow
 	for rows.Next() {
 		var i GetGuardianChildrenRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.FirstName,
-			&i.LastName,
-			&i.SchoolID,
-			&i.ClassID,
-			&i.IDNumber,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.FirstName, &i.LastName); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

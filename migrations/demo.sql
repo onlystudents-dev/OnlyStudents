@@ -39,12 +39,20 @@ INSERT INTO students (
              'MotherTest', 'MotherStudent',
              'PermAddr', 'TempAddr', 987654321,
              'TestBank', 'TestOwner', 'HU12345678901234567890123456', 'ID', 'DOC123'
+         ),
+         (
+             2, 'Second', 'Student',
+             'Second', 'Student', '2006-02-02', 'TestCity', 'HU',
+             'MotherTest', 'MotherStudent',
+             'PermAddr2', 'TempAddr2', 987654322,
+             'TestBank', 'TestOwner2', 'HU12345678901234567890123457', 'ID', 'DOC124'
          );
 
--- One student enrolled in both schools
+-- Student 1 enrolled in both schools, student 2 only in the non-default school
 INSERT INTO student_school (student_id, school_id, class_id, id_number) VALUES
                                                                               (1, 1, 1, 123456789),
-                                                                              (1, 2, 2, 123456789);
+                                                                              (1, 2, 2, 123456789),
+                                                                              (2, 2, 2, 223456789);
 
 INSERT INTO guardians (
     id, phone_number, first_name, last_name,
@@ -62,7 +70,8 @@ INSERT INTO accounts (role, teacher_id, email_address) VALUES ('teacher', 1, 'pr
 INSERT INTO accounts (role, guardian_id, email_address) VALUES ('guardian', 1, 'guardian@school.test');
 
 INSERT INTO guardians_access (student_id, guardian_id, legal_representative) VALUES
-    (1, 1, TRUE);
+    (1, 1, TRUE),
+    (2, 1, TRUE);
 
 INSERT INTO school_years (school_id, name, start_date, end_date, is_active) VALUES
                                                                                 (1, '2026/2027', '2026-09-01', '2027-06-15', TRUE),
