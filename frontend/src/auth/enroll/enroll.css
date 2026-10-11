@@ -27,3 +27,31 @@
         transition: box-shadow 400ms ease-in-out;
     }
 }
+
+.recovery-key {
+    @apply w-full rounded-lg p-3 text-center break-words cursor-pointer select-none;
+    background-color: var(--card-color);
+    border: 2px dashed var(--border-color);
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+    transition: filter 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.recovery-key:hover {
+    border-color: var(--edit-color);
+    box-shadow: 0 0 10px var(--hover-color);
+}
+
+.recovery-key.spoiler {
+    filter: blur(7px);
+    user-select: none;
+}
+
+.recovery-accept {
+    @apply flex w-full flex-row items-center gap-3 cursor-pointer select-none;
+
+    input[type="checkbox"] {
+        @apply h-5 w-5 shrink-0 cursor-pointer rounded;
+        accent-color: var(--edit-color);
+    }
+}

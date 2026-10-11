@@ -37,7 +37,7 @@ export default function AdminLogin() {
         if (wrong || remaining || !token) return
         setWaiting(true)
         try {
-            const response = await fetch("/api/admin_token_login", {
+            const response = await fetch("/api/v1/admin_token_login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

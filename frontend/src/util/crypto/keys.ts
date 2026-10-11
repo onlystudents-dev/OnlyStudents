@@ -1,8 +1,8 @@
 import * as argon2 from '@noble/hashes/argon2.js';
 import * as hkdf from '@noble/hashes/hkdf.js';
 import * as sha2 from '@noble/hashes/sha2.js';
-import { AUTH_DEFAULT_CONFIG, type E2EEConfig } from '../../auth/AuthConfig';
-import { normalize } from './mnemonic';
+import { AUTH_DEFAULT_CONFIG, type E2EEConfig } from '../../auth/authConfig';
+import { normalizeMnemonicSecret } from './mnemonic';
 import { concatBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 
 type Bytes = Uint8Array<ArrayBuffer>;
@@ -20,7 +20,7 @@ export function randomBytes(len: number): Bytes {
 }
 
 export function recoveryDigest(mnemonic: string, salt: Bytes, cfg: E2EEConfig): Bytes {
-  return argon2.argon2id(normalize(mnemonic), salt, {
+  return argon2.argon2id(normalizeMnemonicSecret(mnemonic), salt, {
     t: cfg.argon2_time,
     m: cfg.argon2_memory,
     p: cfg.argon2_threads,

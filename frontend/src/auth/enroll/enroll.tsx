@@ -1,14 +1,27 @@
 import "./enroll.css";
-import {getKey} from "../../util/language.ts";
+import {fromResponse, getKey} from "../../util/language.ts";
 import Button from "../../util/button/button.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight} from "@fortawesome/free-solid-svg-icons";
 import {useCallback, useEffect, useState} from "preact/compat";
 import PasswordCheck from "../pwc.tsx";
-import {getPasswordConfig, type PasswordConfig} from "../AuthConfig.ts";
+import {getE2EEConfig, getPasswordConfig, type PasswordConfig} from "../authConfig.ts";
 import {opaqueRegister} from "../opaque.ts";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
+import { decodeOpaqueExportKey, deriveWrapKey, generateMK, paramsToString, randomBytes, recoveryDigest, wrapMK } from "../../util/crypto/keys.ts";
+import { generateMnemonicSecret, MnemonicSecrettoSeed } from "../../util/crypto/mnemonic.ts";
+import { getRetryAfter } from "../../util/api.ts";
+
+const CHUNK = 0x8000;
+
+export function b64encode(u8: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < u8.length; i += CHUNK) {
+    s += String.fromCharCode(...u8.subarray(i, i + CHUNK))
+  }
+  return btoa(s)
+}
 
 export default function Enroll() {
     const enrollToken = new URLSearchParams(location.search).get("enroll_token");
@@ -19,8 +32,51 @@ export default function Enroll() {
     const [passed, setPassed] = useState(false)
     const [waiting, setWaiting] = useState(false)
     const [remaining, setRemaining] = useState("")
+    const [recovery, setRecovery] = useState(false)
+    const [recoveryMnemonic, setRecoveryMnemonic] = useState("")
+    const [accepted, setAccepted] = useState(false)
+    const [revealed, setRevealed] = useState(false)
 
     const [config, setConfig] = useState<PasswordConfig | null>(null)
+
+    async function PrepareE2EE(exportKey: string) {
+      const e2ee_config = await getE2EEConfig()
+      const MK = generateMK()
+      const mnemonic = generateMnemonicSecret(e2ee_config.recovery_key_word_count)
+      const OpaqueWrappedMK = await wrapMK(MK, await deriveWrapKey(decodeOpaqueExportKey(exportKey), "password"))
+      const MnemonicWrappedMK = await wrapMK(MK, await deriveWrapKey(MnemonicSecrettoSeed(mnemonic), "recovery"))
+      const RecoveryKeySalt = randomBytes(e2ee_config.argon2_salt_len)
+      setWaiting(true)
+      try {
+          const response = await fetch("/api/v1/me/e2ee/enroll", {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                  wrapped_mk_password: b64encode(OpaqueWrappedMK),
+                  wrapped_mk_recovery: b64encode(MnemonicWrappedMK),
+                  recovery_key_hash: b64encode(recoveryDigest(mnemonic, RecoveryKeySalt, e2ee_config)),
+                  recovery_key_salt: b64encode(RecoveryKeySalt),
+                  recovery_key_params: paramsToString(e2ee_config)
+              })
+          })
+
+          switch (response.status) {
+              case 200:
+                  setRecoveryMnemonic(mnemonic)
+                  setRecovery(true)
+                  break
+              case 429: {
+                toast.error(getKey("TOO_MANY_REQUESTS", String(getRetryAfter(response))))
+                setRemaining(String(getRetryAfter(response)))
+                break
+              }
+              default:
+                toast.error(await fromResponse(response))
+          }
+      } finally { setWaiting(false)}
+    }
 
     const register = useCallback(async () => {
         if (!passed || remaining || !enrollToken) return
@@ -28,11 +84,11 @@ export default function Enroll() {
         setWaiting(true)
 
         try {
-            const res = await opaqueRegister({enrollToken, password})
+            const res = await opaqueRegister({ enrollToken, password })
 
             switch (res.status) {
                 case "ok":
-                    location.href = "/me"
+                    await PrepareE2EE(res.exportKey)
                     break
                 case "ratelimited":
                     toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)))
@@ -73,20 +129,48 @@ export default function Enroll() {
                         {getKey("ENROLL")}
                     </h1>
 
-                    <div className="loginput fredoka">
-                        <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.max_length} value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
-                        <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.max_length} value={confirmPassword} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
-                        <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
-                    </div>
+                    {!recovery && <div className="loginput fredoka">
+                      <input type="password" placeholder={getKey("PASSWORD")} maxLength={config?.max_length} value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
+                      <input className={`${password !== confirmPassword && "wrong"}`} type="password" placeholder={getKey("CONFIRM_PASSWORD")} maxLength={config?.max_length} value={confirmPassword} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
+                      <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
+                    </div>}
+
+                    {recovery && <div className="loginput fredoka">
+                        <div>{getKey("RECOVERY_KEY_SHOW")}</div>
+
+                        <div
+                            className={`recovery-key ${revealed ? "" : "spoiler"}`}
+                            onClick={() => setRevealed(true)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setRevealed(true) }}
+                            title={revealed ? "" : getKey("RECOVERY_KEY_SHOW")}
+                        >
+                            {recoveryMnemonic}
+                        </div>
+
+                        <div>{getKey("RECOVERY_KEY_STORAGE")}</div>
+
+                        <label className="recovery-accept">
+                            <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.currentTarget.checked)} />
+                            {getKey("RECOVERY_KEY_ACCEPT")}
+                        </label>
+                    </div>}
 
                     <div className="elogbutton">
                         <p className="text-(--wrong-color) text-3xl fredoka">
                             {remaining}
                         </p>
 
-                        <Button onClick={register}>
-                            {getKey("ENROLL")} <FontAwesomeIcon icon={faArrowRight} />
-                        </Button>
+                        {recovery ? (
+                            <Button className={accepted ? "" : "opacity-50"} onClick={() => { if (accepted) location.href = "/me" }}>
+                                {getKey("CONTINUE")} <FontAwesomeIcon icon={faArrowRight} />
+                            </Button>
+                        ) : (
+                            <Button onClick={register}>
+                                {getKey("ENROLL")} <FontAwesomeIcon icon={faArrowRight} />
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

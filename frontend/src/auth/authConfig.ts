@@ -61,7 +61,7 @@ function normalize_e2ee(raw: unknown): E2EEConfig {
 
 export async function getPasswordConfig(): Promise<PasswordConfig> {
     try {
-        const response = await fetch("/api/config");
+        const response = await fetch("/api/v1/config");
         if (!response.ok) return AUTH_DEFAULT_CONFIG.password;
 
         const json = await readJSON<{ password?: unknown } | null>(response);
@@ -73,7 +73,7 @@ export async function getPasswordConfig(): Promise<PasswordConfig> {
 
 export async function getE2EEConfig(): Promise<E2EEConfig> {
     try {
-        const response = await fetch("/api/config");
+        const response = await fetch("/api/v1/config");
         if (!response.ok) return AUTH_DEFAULT_CONFIG.e2ee;
 
         const json = await readJSON<{ e2ee?: unknown } | null>(response);

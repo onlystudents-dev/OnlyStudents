@@ -50,7 +50,7 @@ export async function opaqueLogin(params: OpaqueParams): Promise<OpaqueLoginResu
         const {clientLoginState, startLoginRequest} =
             client.startLogin({password: params.password});
 
-        const initRes = await postJSON("/api/login/init", {
+        const initRes = await postJSON("/api/v1/login/init", {
             user: params.userId,
             role: params.role,
             start_login_request: startLoginRequest,
@@ -71,7 +71,7 @@ export async function opaqueLogin(params: OpaqueParams): Promise<OpaqueLoginResu
 
         if (!result) return {status: "wrong"};
 
-        const finRes = await postJSON("/api/login/finish", {
+        const finRes = await postJSON("/api/v1/login/finish", {
             login_handle,
             finish_login_request: result.finishLoginRequest,
         });
@@ -99,7 +99,7 @@ export async function opaqueRegister(params: OpaqueParams): Promise<OpaqueRegist
         const {clientRegistrationState, registrationRequest} =
             client.startRegistration({password: params.password});
 
-        const initRes = await postJSON("/api/enroll/init", {
+        const initRes = await postJSON("/api/v1/enroll/init", {
             enroll_token: params.enrollToken,
             start_enroll_request: registrationRequest,
         });
@@ -117,7 +117,7 @@ export async function opaqueRegister(params: OpaqueParams): Promise<OpaqueRegist
             ...identifierOpts(params),
         });
 
-        const finishRes = await postJSON("/api/enroll/finish", {
+        const finishRes = await postJSON("/api/v1/enroll/finish", {
             enroll_token: params.enrollToken,
             finish_enroll_request: result.registrationRecord,
         });
