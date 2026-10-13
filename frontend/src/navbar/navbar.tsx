@@ -50,15 +50,19 @@ export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolS
 
     function setChild(childId: string) {
         const id = Number(childId)
-        const memberships = me.children?.find(c => c.account_id === id)?.school_memberships
-        const schoolId = memberships?.[0]?.school_id
+        const selectedChild = me.children?.find(c => c.account_id === id)
+        const memberships = selectedChild?.school_memberships ?? []
+        const schoolId = memberships[0]?.school_id
 
-        localStorage.setItem("child_id", childId)
+        localStorage.setItem("child_id", String(id))
         setChildR(id)
 
         if (schoolId !== undefined) {
             localStorage.setItem("school_id", String(schoolId))
             setSchoolR(schoolId)
+        } else {
+            localStorage.removeItem("school_id")
+            setSchoolR(undefined)
         }
 
         reloadSchoolStuff?.()
