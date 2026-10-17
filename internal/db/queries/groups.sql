@@ -1,5 +1,8 @@
--- name: GetClassByID :one
-SELECT * FROM classes WHERE id = $1;
+-- name: GetStudentClass :one
+SELECT c.*
+FROM classes c
+JOIN student_school ss ON ss.class_id = c.id
+WHERE ss.id = sqlc.arg(student_id) AND ss.school_id = sqlc.arg(school_id);
 
 -- name: GetGroupsByStudentID :many
 SELECT g.*

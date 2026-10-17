@@ -1,8 +1,6 @@
 package studentapi
 
 import (
-	"fmt"
-	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -29,72 +27,32 @@ type GroupData struct {
 	GroupName string `json:"group_name"`
 }
 
+func convertClass(row db_queries.Class) ClassData {
+	return ClassData{
+		ID:             row.ID,
+		SchoolID:       row.SchoolID,
+		Name:           row.Name,
+		TeacherID:      row.TeacherID,
+		HasCoTeacherID: row.CoTeacherID.Valid,
+		CoTeacherID:    row.CoTeacherID.Int32,
+		HasBellID:      row.BellID.Valid,
+		BellID:         row.BellID.Int32,
+	}
+}
+
+func convertGroup(row db_queries.Group) GroupData {
+	return GroupData{
+		ID:        row.ID,
+		SchoolID:  row.SchoolID,
+		BellID:    row.BellID,
+		GroupName: row.GroupName,
+	}
+}
+
 func ReadClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveMeScope(c, pool, rdb)
-
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	queries := db_queries.New(pool)
-
-	class_data, err := helpers.CacheOrGetStudentClass(c.Context(), rdb, *queries, scope.ClassID, helpers.GetInt32EnvFallback("CLASS_CACHE_TTL", 5*60, 604800))
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	if class_data.SchoolID != scope.SchoolID {
-		slog.Warn("Something went extremely wrong. Class school id does not match scope. Report to devs.")
-		slog.Warn(fmt.Sprintf("Scope School ID: %d\nClass School ID: %d", scope.SchoolID, class_data.SchoolID))
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	return c.JSON(ClassData{
-		ID:             class_data.ID,
-		SchoolID:       class_data.SchoolID,
-		Name:           class_data.Name,
-		TeacherID:      class_data.TeacherID,
-		HasCoTeacherID: class_data.CoTeacherID.Valid,
-		CoTeacherID:    class_data.CoTeacherID.Int32,
-		HasBellID:      class_data.BellID.Valid,
-		BellID:         class_data.BellID.Int32,
-	})
+	return StudentSummarySingle(c, pool, rdb, "CLASS_CACHE_TTL", helpers.CacheOrGetStudentClass, convertClass)
 }
 
 func ReadGroups(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveMeScope(c, pool, rdb)
-
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	queries := db_queries.New(pool)
-
-	groups_data, err := helpers.CacheOrGetStudentGroups(c.Context(), rdb, *queries, scope.StudentID, scope.SchoolID, helpers.GetInt32EnvFallback("GROUPS_CACHE_TTL", 5*60, 604800))
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	groups := []GroupData{}
-
-	for _, group_data := range groups_data {
-		if group_data.SchoolID != scope.SchoolID {
-			slog.Warn("Something went extremely wrong. Group school id does not match scope. Report to devs.")
-			slog.Warn(fmt.Sprintf("Scope School ID: %d\nGroup School ID: %d", scope.SchoolID, group_data.SchoolID))
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-		}
-
-		group_data_go := GroupData{
-			ID:        group_data.ID,
-			SchoolID:  group_data.SchoolID,
-			BellID:    group_data.BellID,
-			GroupName: group_data.GroupName,
-		}
-
-		groups = append(groups, group_data_go)
-	}
-
-	return c.JSON(groups)
+	return StudentSummary(c, pool, rdb, "GROUPS_CACHE_TTL", helpers.CacheOrGetStudentGroups, convertGroup)
 }

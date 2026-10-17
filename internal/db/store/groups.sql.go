@@ -9,24 +9,6 @@ import (
 	"context"
 )
 
-const getClassByID = `-- name: GetClassByID :one
-SELECT id, school_id, name, teacher_id, co_teacher_id, bell_id FROM classes WHERE id = $1
-`
-
-func (q *Queries) GetClassByID(ctx context.Context, id int32) (Class, error) {
-	row := q.db.QueryRow(ctx, getClassByID, id)
-	var i Class
-	err := row.Scan(
-		&i.ID,
-		&i.SchoolID,
-		&i.Name,
-		&i.TeacherID,
-		&i.CoTeacherID,
-		&i.BellID,
-	)
-	return i, err
-}
-
 const getGroupsByStudentID = `-- name: GetGroupsByStudentID :many
 SELECT g.id, g.school_id, g.bell_id, g.group_name
 FROM groups g
@@ -63,4 +45,30 @@ func (q *Queries) GetGroupsByStudentID(ctx context.Context, arg GetGroupsByStude
 		return nil, err
 	}
 	return items, nil
+}
+
+const getStudentClass = `-- name: GetStudentClass :one
+SELECT c.id, c.school_id, c.name, c.teacher_id, c.co_teacher_id, c.bell_id
+FROM classes c
+JOIN student_school s ON s.class_id = c.id
+WHERE s.id = $1 AND s.school_id = $2
+`
+
+type GetStudentClassParams struct {
+	StudentID int32
+	SchoolID  int32
+}
+
+func (q *Queries) GetStudentClass(ctx context.Context, arg GetStudentClassParams) (Class, error) {
+	row := q.db.QueryRow(ctx, getStudentClass, arg.StudentID, arg.SchoolID)
+	var i Class
+	err := row.Scan(
+		&i.ID,
+		&i.SchoolID,
+		&i.Name,
+		&i.TeacherID,
+		&i.CoTeacherID,
+		&i.BellID,
+	)
+	return i, err
 }

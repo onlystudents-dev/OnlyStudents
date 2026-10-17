@@ -18,7 +18,7 @@ func TeacherSummaryByID[request_type, Row, T any](
 	cache_key string,
 	request_check_func func(request_type) bool,
 	get_id_func func(request_type) int32,
-	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, ID int32, schoolID int32, accountID int32, ttl int32) ([]Row, error),
+	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, ID int32, scope helpers.TeacherScope, ttl int32) ([]Row, error),
 	convert func(row Row) T,
 ) error {
 	var req request_type
@@ -49,7 +49,7 @@ func TeacherSummaryByID[request_type, Row, T any](
 
 	switch session_data.Role {
 	case "teacher":
-		data, err := cache_or_get_func(c.Context(), rdb, *queries, get_id_func(req), teacher_scope.SchoolID, teacher_scope.TeacherID, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
+		data, err := cache_or_get_func(c.Context(), rdb, *queries, get_id_func(req), teacher_scope, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
@@ -70,7 +70,7 @@ func TeacherSummary[Row, T any](
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
 	cache_key string,
-	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, schoolID int32, accountID int32, ttl int32) ([]Row, error),
+	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope helpers.TeacherScope, ttl int32) ([]Row, error),
 	convert func(row Row) T,
 ) error {
 	session_data, ok := c.Locals("session").(helpers.SessionData)
@@ -91,7 +91,7 @@ func TeacherSummary[Row, T any](
 
 	switch session_data.Role {
 	case "teacher":
-		data, err := cache_or_get_func(c.Context(), rdb, *queries, teacher_scope.SchoolID, teacher_scope.TeacherID, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
+		data, err := cache_or_get_func(c.Context(), rdb, *queries, teacher_scope, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
