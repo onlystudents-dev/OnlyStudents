@@ -1,7 +1,9 @@
 package studentapi
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"time"
@@ -13,7 +15,12 @@ import (
 )
 
 type ReadLessonTimeRequest struct {
-	TypeID int32 `json:"type_id" query:"type_id"`
+	TypeID int32 `query:"type_id"`
+}
+
+type ReadRealTimetableRequest struct {
+	StartDate int32 `query:"start_date"`
+	EndDate   int32 `query:"end_date"`
 }
 
 type TimetableLesson struct {
@@ -116,225 +123,147 @@ func parseDateRange(c fiber.Ctx) (time.Time, time.Time, error) {
 	return start_parsed, end_parsed, nil
 }
 
+func convertRealTimeTable(row db_queries.ReadRealTimeTableRow) TimetableLesson {
+	return TimetableLesson{
+		ActualDate:          row.ActualDate.Time.Unix(),
+		RoomID:              row.RoomID,
+		LessonNum:           row.LessonNum,
+		DayOfWeek:           row.DayOfWeek,
+		EffectiveTeacherID:  row.EffectiveTeacherID,
+		HasTeacherFirstName: row.TeacherFirstName.Valid,
+		HasTeacherLastName:  row.TeacherLastName.Valid,
+		TeacherFirstName:    row.TeacherFirstName.String,
+		TeacherLastName:     row.TeacherLastName.String,
+		GroupID:             row.GroupID,
+		SchoolID:            row.SchoolID,
+		CustomSubject:       row.CustomSubject,
+		HasSubjectID:        row.SubjectID.Valid,
+		SubjectID:           row.SubjectID.Int32,
+		HasCustomSubjectID:  row.CustomSubjectID.Valid,
+		CustomSubjectID:     row.CustomSubjectID.Int32,
+		SubjectName:         row.SubjectName,
+		HasExam:             row.HasExam,
+		HasHomework:         row.HasHomework,
+		IsSubstitution:      row.IsSubstitution,
+		Canceled:            row.Canceled,
+	}
+}
+
+func convertBaseLesson(row db_queries.ReadBaseScheduleClassRow) TimetableBaseLesson {
+	return TimetableBaseLesson{
+		ID:                  row.ID,
+		SchoolID:            row.SchoolID,
+		TeacherID:           row.TeacherID,
+		HasTeacherFirstName: row.TeacherFirstName.Valid,
+		HasTeacherLastName:  row.TeacherLastName.Valid,
+		TeacherFirstName:    row.TeacherFirstName.String,
+		TeacherLastName:     row.TeacherLastName.String,
+		RoomID:              row.RoomID,
+		DayOfWeek:           row.DayOfWeek,
+		LessonNum:           row.LessonNum,
+		GroupID:             row.GroupID,
+		CustomSubject:       row.CustomSubject,
+		HasSubjectID:        row.SubjectID.Valid,
+		SubjectID:           row.SubjectID.Int32,
+		HasCustomSubjectID:  row.CustomSubjectID.Valid,
+		CustomSubjectID:     row.CustomSubjectID.Int32,
+		SubjectName:         row.SubjectName,
+		HasExam:             row.HasExam,
+		HasHomework:         row.HasHomework,
+	}
+}
+
+func convertLessonTime(row db_queries.BellSchedule) TimetableBellSchedule {
+	return TimetableBellSchedule{
+		ID:              row.ID,
+		SchoolID:        row.SchoolID,
+		TypeID:          row.TypeID,
+		HasLessonNumber: row.LessonNumber.Valid,
+		LessonNumber:    row.LessonNumber.Int32,
+		AtStart:         row.AtStart.Microseconds / 1000000,
+		AtEnd:           row.AtEnd.Microseconds / 1000000,
+	}
+}
+
+func convertRoom(row db_queries.ReadRoomRow) TimetableRoom {
+	return TimetableRoom{
+		ID:       row.ID,
+		Name:     row.Name,
+		Capacity: row.Capacity,
+	}
+}
+
+func convertCustomSubject(row db_queries.ReadCustomSubjectRow) TimetableCustomSubject {
+	return TimetableCustomSubject{
+		ID:          row.ID,
+		SubjectName: row.SubjectName,
+	}
+}
+
+func convertBellScheduleType(row db_queries.ReadBellScheduleTypeRow) TimetableBellScheduleType {
+	return TimetableBellScheduleType{
+		ID:   row.ID,
+		Name: row.Name,
+	}
+}
+
 func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveMeScope(c, pool, rdb)
+	return StudentSummary(c, pool, rdb, "REAL_TIMETABLE_CACHE_TTL", false,
+		func(req ReadRealTimetableRequest) bool {
+			return req.StartDate <= 0 || req.EndDate <= 0
+		},
+		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadRealTimetableRequest, scope helpers.MeScope, ttl int32) ([]db_queries.ReadRealTimeTableRow, error) {
+			start, end, err := parseDateRange(c)
+			if err != nil {
+				return []db_queries.ReadRealTimeTableRow{}, err
+			}
 
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	start, end, err := parseDateRange(c)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	queries := db_queries.New(pool)
-
-	data, err := queries.ReadRealTimeTable(c.Context(), db_queries.ReadRealTimeTableParams{
-		SchoolID:  scope.SchoolID,
-		ClassID:   scope.ClassID,
-		StartDate: pgtype.Date{Time: start, Valid: true},
-		EndDate:   pgtype.Date{Time: end, Valid: true},
-	})
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	lessons := make([]TimetableLesson, 0, len(data))
-
-	for _, row := range data {
-		lessons = append(lessons, TimetableLesson{
-			ActualDate:          row.ActualDate.Time.Unix(),
-			RoomID:              row.RoomID,
-			LessonNum:           row.LessonNum,
-			DayOfWeek:           row.DayOfWeek,
-			EffectiveTeacherID:  row.EffectiveTeacherID,
-			HasTeacherFirstName: row.TeacherFirstName.Valid,
-			HasTeacherLastName:  row.TeacherLastName.Valid,
-			TeacherFirstName:    row.TeacherFirstName.String,
-			TeacherLastName:     row.TeacherLastName.String,
-			GroupID:             row.GroupID,
-			SchoolID:            row.SchoolID,
-			CustomSubject:       row.CustomSubject,
-			HasSubjectID:        row.SubjectID.Valid,
-			SubjectID:           row.SubjectID.Int32,
-			HasCustomSubjectID:  row.CustomSubjectID.Valid,
-			CustomSubjectID:     row.CustomSubjectID.Int32,
-			SubjectName:         row.SubjectName,
-			HasExam:             row.HasExam,
-			HasHomework:         row.HasHomework,
-			IsSubstitution:      row.IsSubstitution,
-			Canceled:            row.Canceled,
-		})
-	}
-
-	return c.JSON(lessons)
+			key := fmt.Sprintf("real_timetable:%d:%d:%d:%d", scope.SchoolID, scope.StudentID, start.Unix(), end.Unix())
+			return helpers.CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRealTimeTableRow, error) {
+				return queries.ReadRealTimeTable(ctx, db_queries.ReadRealTimeTableParams{
+					SchoolID:  scope.SchoolID,
+					ClassID:   scope.ClassID,
+					StartDate: pgtype.Date{Time: start, Valid: true},
+					EndDate:   pgtype.Date{Time: end, Valid: true},
+				})
+			})
+		}, convertRealTimeTable)
 }
 
 func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveMeScope(c, pool, rdb)
-
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	queries := db_queries.New(pool)
-
-	data, err := queries.ReadBaseScheduleClass(c.Context(), db_queries.ReadBaseScheduleClassParams{
-		SchoolID: scope.SchoolID,
-		ClassID:  scope.ClassID,
-	})
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	lessons := make([]TimetableBaseLesson, 0, len(data))
-
-	for _, row := range data {
-		lessons = append(lessons, TimetableBaseLesson{
-			ID:                  row.ID,
-			SchoolID:            row.SchoolID,
-			TeacherID:           row.TeacherID,
-			HasTeacherFirstName: row.TeacherFirstName.Valid,
-			HasTeacherLastName:  row.TeacherLastName.Valid,
-			TeacherFirstName:    row.TeacherFirstName.String,
-			TeacherLastName:     row.TeacherLastName.String,
-			RoomID:              row.RoomID,
-			DayOfWeek:           row.DayOfWeek,
-			LessonNum:           row.LessonNum,
-			GroupID:             row.GroupID,
-			CustomSubject:       row.CustomSubject,
-			HasSubjectID:        row.SubjectID.Valid,
-			SubjectID:           row.SubjectID.Int32,
-			HasCustomSubjectID:  row.CustomSubjectID.Valid,
-			CustomSubjectID:     row.CustomSubjectID.Int32,
-			SubjectName:         row.SubjectName,
-			HasExam:             row.HasExam,
-			HasHomework:         row.HasHomework,
-		})
-	}
-
-	return c.JSON(lessons)
+	return StudentSummary(c, pool, rdb, "BASE_SCHEDULE_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadBaseScheduleClassRow, error) {
+		return helpers.CacheOrGetStudentBaseScheduleClass(ctx, rdb, queries, scope, ttl)
+	}, convertBaseLesson)
 }
 
 func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req ReadLessonTimeRequest
-
-	if err := c.Bind().Query(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	scope, err := helpers.ResolveMeScope(c, pool, rdb)
-
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	queries := db_queries.New(pool)
-
-	data, err := queries.ReadLessonTime(c.Context(), db_queries.ReadLessonTimeParams{
-		SchoolID: scope.SchoolID,
-		TypeID:   req.TypeID,
-	})
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	lesson_times := make([]TimetableBellSchedule, 0, len(data))
-
-	for _, row := range data {
-		lesson_times = append(lesson_times, TimetableBellSchedule{
-			ID:              row.ID,
-			SchoolID:        row.SchoolID,
-			TypeID:          row.TypeID,
-			HasLessonNumber: row.LessonNumber.Valid,
-			LessonNumber:    row.LessonNumber.Int32,
-			AtStart:         row.AtStart.Microseconds / 1000000,
-			AtEnd:           row.AtEnd.Microseconds / 1000000,
+	return StudentSummary(c, pool, rdb, "LESSON_TIME_CACHE_TTL", false, func(req ReadLessonTimeRequest) bool {
+		return req.TypeID <= 0
+	}, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadLessonTimeRequest, scope helpers.MeScope, ttl int32) ([]db_queries.BellSchedule, error) {
+		key := fmt.Sprintf("lesson_time:%d:%d", scope.SchoolID, req.TypeID)
+		return helpers.CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.BellSchedule, error) {
+			return queries.ReadLessonTime(ctx, db_queries.ReadLessonTimeParams{
+				SchoolID: scope.SchoolID,
+				TypeID:   req.TypeID,
+			})
 		})
-	}
-
-	return c.JSON(lesson_times)
+	}, convertLessonTime)
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveMeScope(c, pool, rdb)
-
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	queries := db_queries.New(pool)
-
-	data, err := queries.ReadRoom(c.Context(), scope.SchoolID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	rooms := make([]TimetableRoom, 0, len(data))
-
-	for _, row := range data {
-		rooms = append(rooms, TimetableRoom{
-			ID:       row.ID,
-			Name:     row.Name,
-			Capacity: row.Capacity,
-		})
-	}
-
-	return c.JSON(rooms)
+	return StudentSummary(c, pool, rdb, "ROOM_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
+		return helpers.CacheOrGetStudentRooms(ctx, rdb, queries, scope, ttl)
+	}, convertRoom)
 }
 
 func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveMeScope(c, pool, rdb)
-
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	queries := db_queries.New(pool)
-
-	data, err := queries.ReadCustomSubject(c.Context(), scope.SchoolID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	custom_subjects := make([]TimetableCustomSubject, 0, len(data))
-
-	for _, row := range data {
-		custom_subjects = append(custom_subjects, TimetableCustomSubject{
-			ID:          row.ID,
-			SubjectName: row.SubjectName,
-		})
-	}
-
-	return c.JSON(custom_subjects)
+	return StudentSummary(c, pool, rdb, "CUSTOM_SUBJECT_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
+		return helpers.CacheOrGetStudentCustomSubjects(ctx, rdb, queries, scope, ttl)
+	}, convertCustomSubject)
 }
 
 func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	scope, err := helpers.ResolveMeScope(c, pool, rdb)
-
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
-	}
-
-	queries := db_queries.New(pool)
-
-	data, err := queries.ReadBellScheduleType(c.Context(), scope.SchoolID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-	}
-
-	bell_schedule_types := make([]TimetableBellScheduleType, 0, len(data))
-
-	for _, row := range data {
-		bell_schedule_types = append(bell_schedule_types, TimetableBellScheduleType{
-			ID:   row.ID,
-			Name: row.Name,
-		})
-	}
-
-	return c.JSON(bell_schedule_types)
+	return StudentSummary(c, pool, rdb, "BELL_SCHEDULE_TYPE_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadBellScheduleTypeRow, error) {
+		return helpers.CacheOrGetStudentBellScheduleTypes(ctx, rdb, queries, scope, ttl)
+	}, convertBellScheduleType)
 }

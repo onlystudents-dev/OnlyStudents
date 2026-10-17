@@ -161,23 +161,55 @@ func CacheOrGetStudentGroups(ctx context.Context, rdb *redis.Client, queries db_
 	})
 }
 
-func CacheOrGetStudentClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) (db_queries.Class, error) {
+func CacheOrGetStudentClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.Class, error) {
 	key := fmt.Sprintf("student_class:%d:%d")
-	return CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.Class, error) {
+	class, err := CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.Class, error) {
 		return queries.GetStudentClass(ctx, db_queries.GetStudentClassParams{
 			StudentID: scope.StudentID,
 			SchoolID:  scope.SchoolID,
 		})
 	})
+	return []db_queries.Class{class}, err
 }
 
 func CacheOrGetStudentBaseScheduleClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.ReadBaseScheduleClassRow, error) {
-	key := fmt.Sprintf("base_schedule_classes:%d:%d", scope.SchoolID, scope.ClassID)
+	key := fmt.Sprintf("base_schedule_classes:student:%d:%d", scope.SchoolID, scope.ClassID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBaseScheduleClassRow, error) {
 		return queries.ReadBaseScheduleClass(ctx, db_queries.ReadBaseScheduleClassParams{
 			SchoolID: scope.SchoolID,
 			ClassID:  scope.ClassID,
 		})
+	})
+}
+
+func CacheOrGetStudentLessonTime(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, typeID int32, scope MeScope, ttl int32) ([]db_queries.BellSchedule, error) {
+	key := fmt.Sprintf("lesson_time:student:%d:%d", scope.SchoolID, typeID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.BellSchedule, error) {
+		return queries.ReadLessonTime(ctx, db_queries.ReadLessonTimeParams{
+			SchoolID: scope.SchoolID,
+			TypeID:   typeID,
+		})
+	})
+}
+
+func CacheOrGetStudentRooms(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
+	key := fmt.Sprintf("rooms:%d", scope.SchoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRoomRow, error) {
+		return queries.ReadRoom(ctx, scope.SchoolID)
+	})
+}
+
+func CacheOrGetStudentCustomSubjects(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
+	key := fmt.Sprintf("custom_subjects:%d", scope.SchoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadCustomSubjectRow, error) {
+		return queries.ReadCustomSubject(ctx, scope.SchoolID)
+	})
+}
+
+func CacheOrGetStudentBellScheduleTypes(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.ReadBellScheduleTypeRow, error) {
+	key := fmt.Sprintf("bell_schedule_types:%d", scope.SchoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBellScheduleTypeRow, error) {
+		return queries.ReadBellScheduleType(ctx, scope.SchoolID)
 	})
 }
 
@@ -263,14 +295,14 @@ func CacheOrGetCheckPermission(ctx context.Context, rdb *redis.Client, queries d
 	})
 }
 
-func CacheOrGetBellScheduleTypes(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.ReadBellScheduleTypeRow, error) {
+func CacheOrGetTeacherBellScheduleTypes(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.ReadBellScheduleTypeRow, error) {
 	key := fmt.Sprintf("bell_schedule_types:%d", scope.SchoolID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBellScheduleTypeRow, error) {
 		return queries.ReadBellScheduleType(ctx, scope.SchoolID)
 	})
 }
 
-func CacheOrGetCustomSubjects(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
+func CacheOrGetTeacherCustomSubjects(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
 	key := fmt.Sprintf("custom_subjects:%d", scope.SchoolID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadCustomSubjectRow, error) {
 		return queries.ReadCustomSubject(ctx, scope.SchoolID)
@@ -294,8 +326,8 @@ func CacheOrGetStudentsInGroup(ctx context.Context, rdb *redis.Client, queries d
 	})
 }
 
-func CacheOrGetLessonTime(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, typeID int32, scope TeacherScope, ttl int32) ([]db_queries.BellSchedule, error) {
-	key := fmt.Sprintf("lesson_time:%d:%d", scope.SchoolID, typeID)
+func CacheOrGetTeacherLessonTime(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, typeID int32, scope TeacherScope, ttl int32) ([]db_queries.BellSchedule, error) {
+	key := fmt.Sprintf("lesson_time:teacher:%d:%d", scope.SchoolID, typeID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.BellSchedule, error) {
 		return queries.ReadLessonTime(ctx, db_queries.ReadLessonTimeParams{
 			SchoolID: scope.SchoolID,
@@ -304,7 +336,7 @@ func CacheOrGetLessonTime(ctx context.Context, rdb *redis.Client, queries db_que
 	})
 }
 
-func CacheOrGetRooms(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
+func CacheOrGetTeacherRooms(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
 	key := fmt.Sprintf("rooms:%d", scope.SchoolID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRoomRow, error) {
 		return queries.ReadRoom(ctx, scope.SchoolID)
@@ -312,7 +344,7 @@ func CacheOrGetRooms(ctx context.Context, rdb *redis.Client, queries db_queries.
 }
 
 func CacheOrGetTeacherBaseScheduleClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, classID int32, scope TeacherScope, ttl int32) ([]db_queries.ReadBaseScheduleClassRow, error) {
-	key := fmt.Sprintf("base_schedule_classes:%d:%d", scope.SchoolID, classID)
+	key := fmt.Sprintf("base_schedule_classes:teacher:%d:%d", scope.SchoolID, classID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadBaseScheduleClassRow, error) {
 		return queries.ReadBaseScheduleClass(ctx, db_queries.ReadBaseScheduleClassParams{
 			SchoolID: scope.SchoolID,

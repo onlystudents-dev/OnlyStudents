@@ -82,5 +82,5 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "MANAGE_ROOMS", "ROOMS_CACHE_TTL", helpers.CacheOrGetRooms, convertRoom)
+	return TeacherTimeTableSummary(c, pool, rdb, "MANAGE_ROOMS", "ROOMS_CACHE_TTL", helpers.CacheOrGetTeacherRooms, convertRoom)
 }
