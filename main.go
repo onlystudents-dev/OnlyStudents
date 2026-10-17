@@ -128,11 +128,18 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				func(c fiber.Ctx) error { return meapi.VerifyEmailConfirm(c, pool, rdb) }}),
 			"status": helpers.Get(func(c fiber.Ctx) error { return meapi.Status(c, pool, rdb) }),
 
+			"change_password": fiber.Map{
+				helpers.RoutesGroupMWKey: []fiber.Handler{authLimit},
+				"init":                   helpers.Post(func(c fiber.Ctx) error { return meapi.ChangePasswordInit(c, pool, rdb, opaque_server) }),
+				"finish":                 helpers.Post(func(c fiber.Ctx) error { return meapi.ChangePasswordFinish(c, pool, rdb, opaque_server) }),
+				"rekey_init":             helpers.Post(func(c fiber.Ctx) error { return meapi.RekeyInit(c, pool, rdb, opaque_server) }),
+				"rekey_finish":           helpers.Post(func(c fiber.Ctx) error { return meapi.RekeyFinish(c, pool, rdb, opaque_server) }),
+			},
+
 			"e2ee": fiber.Map{
-				"crypto": helpers.Get([]fiber.Handler{
-					apiLimit,
+				"crypto": helpers.Get(
 					func(c fiber.Ctx) error { return meapi.GetE2EE(c, pool, rdb) },
-				}),
+				),
 				"enroll": helpers.Post([]fiber.Handler{
 					forgetLimit,
 					func(c fiber.Ctx) error { return meapi.EnrollE2EE(c, pool, rdb) },

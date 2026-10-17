@@ -9,5 +9,5 @@ SET registration_record = EXCLUDED.registration_record,
     credential_identifier = EXCLUDED.credential_identifier,
     updated_at = now();
 
--- name: UpdateOpaqueRecord :exec
+-- name: UpdateOpaqueRecord :execrows
 UPDATE account_opaque SET registration_record = $1, credential_identifier = $2, updated_at = now() WHERE account_uuid = $3;
