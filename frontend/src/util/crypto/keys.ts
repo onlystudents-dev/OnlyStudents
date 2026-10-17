@@ -29,10 +29,10 @@ export function recoveryDigest(mnemonic: string, salt: Bytes, cfg: E2EEConfig): 
 }
 
 export function paramsToString(cfg: E2EEConfig): string {
-    return `t=${cfg.argon2_time},m=${cfg.argon2_memory},p=${cfg.argon2_threads}`
+    return `t=${cfg.argon2_time},m=${cfg.argon2_memory},p=${cfg.argon2_threads},dkLen=${cfg.argon2_key_len}`
 }
 
-export function parseParams(s: string): {t: number, m: number, p: number} {
+export function parseParams(s: string): {t: number, m: number, p: number, dkLen: number} {
     const out: Record<string, number> = {}
     for (const part of s.split(",")) {
         const [k, v] = part.split("=")
@@ -41,7 +41,7 @@ export function parseParams(s: string): {t: number, m: number, p: number} {
         }
         out[k] = Number(v)
     }
-    return {t: out.t ? out.t : AUTH_DEFAULT_CONFIG.e2ee.argon2_time, m: out.m ? out.m : AUTH_DEFAULT_CONFIG.e2ee.argon2_memory, p: out.p ? out.p : AUTH_DEFAULT_CONFIG.e2ee.argon2_threads}
+    return {t: out.t ? out.t : AUTH_DEFAULT_CONFIG.e2ee.argon2_time, m: out.m ? out.m : AUTH_DEFAULT_CONFIG.e2ee.argon2_memory, p: out.p ? out.p : AUTH_DEFAULT_CONFIG.e2ee.argon2_threads, dkLen: out.dkLen ? out.dkLen : AUTH_DEFAULT_CONFIG.e2ee.argon2_key_len}
 }
 
 function base64UrlDecode(str: string): Bytes {
