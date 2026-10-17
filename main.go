@@ -130,6 +130,10 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			"status": helpers.Get(func(c fiber.Ctx) error { return meapi.Status(c, pool, rdb) }),
 
 			"e2ee": fiber.Map{
+				"crypto": helpers.Get([]fiber.Handler{
+					apiLimit,
+					func(c fiber.Ctx) error { return meapi.GetE2EE(c, pool, rdb) },
+				}),
 				"enroll": helpers.Post([]fiber.Handler{
 					forgetLimit,
 					func(c fiber.Ctx) error { return meapi.EnrollE2EE(c, pool, rdb) },

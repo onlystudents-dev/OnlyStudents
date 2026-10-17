@@ -157,6 +157,7 @@
     "COPIED": "Kimásolva"
   },
   "errors": {
+    "NO_CRYPTO": "A beállított végponti titkosítási kulcsok hiányoznak.",
     "CONFLICT": "A megadott adat már létezik a rendszerben, és nem felülírható!",
     "FORBIDDEN": "Nincs jogod ennek az erőforrásnak az eléréséhez vagy megváltoztatásához!",
     "NOT_IMPLEMENTED": "Ez a funkció még nincs készen. Folyamatosan dolgozunk rajta!",
