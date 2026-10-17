@@ -154,9 +154,11 @@
     "RECOVERY_KEY_STORAGE": "Kérlek tárolja ezt a kulcsot egy biztonságos helyen. Enélkül a kulcs nélkül nem fogja tudni visszaállítani jelszavát, ha elfelejtette. Mi soha nem fogjuk öntől kérni ezt email vagy más kommunikációs platformon keresztül.",
     "RECOVERY_KEY_ACCEPT": "Biztonságos helyen tároltam a kulcsot.",
     "CONTINUE": "Tovább",
-    "COPIED": "Kimásolva"
+    "COPIED": "Kimásolva",
+    "PASSWORD_SUCCESSFULLY_CHANGED": "Sikeresen megváltoztatta a jelszavát!"
   },
   "errors": {
+    "NO_CRYPTO": "A beállított végponti titkosítási kulcsok hiányoznak.",
     "CONFLICT": "A megadott adat már létezik a rendszerben, és nem felülírható!",
     "FORBIDDEN": "Nincs jogod ennek az erőforrásnak az eléréséhez vagy megváltoztatásához!",
     "NOT_IMPLEMENTED": "Ez a funkció még nincs készen. Folyamatosan dolgozunk rajta!",

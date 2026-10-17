@@ -22,7 +22,9 @@ import {applyTheme, getAutoTheme} from "../../util/theme.ts";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import type {Dispatch, StateUpdater} from "preact/hooks";
 import {getTimeFormat} from "../../util/time.ts";
-import {postJSON} from "../../util/api.ts";
+import {postJSON, readJSON} from "../../util/api.ts";
+import { opaqueReauth, opaqueRekey, type OpaqueReauthResult} from "../../auth/opaque.ts";
+import type { Bytes } from "../../util/crypto/keys.ts";
 
 type Options = Pick<Preferences, "lang" | "time_format" | "theme" | "timetable_display" | "timetable_next">
 
@@ -154,6 +156,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                 return (
                                     <>
                                         <Config text={getKey("PASSWORD")} icon={faUserLock} value={""} key={"password"}>
+                                            {(close) => (<>
                                             <h1 className="text-center text-5xl font-bold mb-8 rubik w-140">{getKey("CHANGE_PASSWORD")}</h1>
 
                                             <div className="flex flex-col gap-4 w-full">
@@ -163,9 +166,10 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                                 <PasswordCheck password={password} confirmPassword={confirmPassword} setPassed={setPassed} />
                                             </div>
 
-                                            <button disabled className="absolute bottom-7 right-7" onClick={updatePassword}>
+                                            <button className="absolute bottom-7 right-7" onClick={() => updatePassword(close)}>
                                                 <FontAwesomeIcon icon={faFloppyDisk} /> {getKey("SAVE")}
                                             </button>
+                                            </>)}
                                         </Config>
                                     </>
                                 )
@@ -253,15 +257,62 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
         })
     }
 
-    async function updatePassword() {
+    async function Rekey(reauth_res: OpaqueReauthResult, wrapped_mk_password: Bytes) {
+      if (reauth_res.status != "ok") {
+          return false
+      }
+
+      const rekey_res = await opaqueRekey({ password: password, crypto_grant_handle: reauth_res.crypto_grant_handle, exportKey: reauth_res.exportKey, wrapped_mk_password: wrapped_mk_password })
+
+      switch (rekey_res.status) {
+        case "ok":
+            toast.success(getKey("PASSWORD_SUCCESSFULLY_CHANGED"))
+            return true
+        case "wrong":
+            toast.error(getKey("WRONG_CREDENTIALS"))
+            break
+        case "ratelimited":
+            toast.error(getKey("TOO_MANY_REQUESTS", String(rekey_res.retryAfter)))
+            break
+        case "error":
+            toast.error(rekey_res.error ? getKey(rekey_res.error) : getKey("LOGIN_FAILED"))
+            break
+      }
+
+      return false
+    }
+
+    async function updatePassword(close: () => void) {
         if (!currentPassword || !password || !confirmPassword || !passed || currentPassword === password) return
 
         await busy(async () => {
-            await post("/api/v1/me/change_password", {
-                current_password: currentPassword,
-                new_password: password,
-                confirm_new_password: confirmPassword,
-            }, "PASSWORD_CHANGED")
+          const cryptoRes = await fetch("/api/v1/me/e2ee/crypto")
+
+          if (!cryptoRes.ok) {
+              toast.error(await fromResponse(cryptoRes))
+              return
+          }
+
+          const {wrapped_mk_password: wrapped_mk_password_b64} = await readJSON<{wrapped_mk_password: string}>(cryptoRes)
+          const bin = atob(wrapped_mk_password_b64)
+          const wrapped_mk_password = Uint8Array.from(bin, c => c.charCodeAt(0))
+
+          const reauth_res = await opaqueReauth({ password: currentPassword })
+
+          switch (reauth_res.status) {
+              case "ok":
+                  if (await Rekey(reauth_res, wrapped_mk_password)) close()
+                  break
+              case "wrong":
+                  toast.error(getKey("WRONG_CREDENTIALS"))
+                  break
+              case "ratelimited":
+                  toast.error(getKey("TOO_MANY_REQUESTS", String(reauth_res.retryAfter)))
+                  break
+              case "error":
+                  toast.error(reauth_res.error ? getKey(reauth_res.error) : getKey("LOGIN_FAILED"))
+                  break
+          }
         })
     }
 

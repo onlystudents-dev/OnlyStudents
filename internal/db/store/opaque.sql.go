@@ -13,11 +13,11 @@ import (
 
 const createOpaqueRecord = `-- name: CreateOpaqueRecord :exec
 INSERT INTO account_opaque (account_uuid, registration_record, credential_identifier, created_at, updated_at)
-VALUES ($1, $2, $3, current_date, current_date)
+VALUES ($1, $2, $3, now(), now())
 ON CONFLICT (account_uuid) DO UPDATE
 SET registration_record = EXCLUDED.registration_record,
     credential_identifier = EXCLUDED.credential_identifier,
-    updated_at = current_date
+    updated_at = now()
 `
 
 type CreateOpaqueRecordParams struct {
@@ -48,8 +48,8 @@ func (q *Queries) GetOpaqueRecord(ctx context.Context, accountUuid pgtype.UUID) 
 	return i, err
 }
 
-const updateOpaqueRecord = `-- name: UpdateOpaqueRecord :exec
-UPDATE account_opaque SET registration_record = $1, credential_identifier = $2, updated_at = current_date WHERE account_uuid = $3
+const updateOpaqueRecord = `-- name: UpdateOpaqueRecord :execrows
+UPDATE account_opaque SET registration_record = $1, credential_identifier = $2, updated_at = now() WHERE account_uuid = $3
 `
 
 type UpdateOpaqueRecordParams struct {
@@ -58,7 +58,10 @@ type UpdateOpaqueRecordParams struct {
 	AccountUuid          pgtype.UUID
 }
 
-func (q *Queries) UpdateOpaqueRecord(ctx context.Context, arg UpdateOpaqueRecordParams) error {
-	_, err := q.db.Exec(ctx, updateOpaqueRecord, arg.RegistrationRecord, arg.CredentialIdentifier, arg.AccountUuid)
-	return err
+func (q *Queries) UpdateOpaqueRecord(ctx context.Context, arg UpdateOpaqueRecordParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateOpaqueRecord, arg.RegistrationRecord, arg.CredentialIdentifier, arg.AccountUuid)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

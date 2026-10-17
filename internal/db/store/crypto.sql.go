@@ -12,7 +12,7 @@ import (
 )
 
 const createAccountCrypto = `-- name: CreateAccountCrypto :exec
-INSERT INTO account_crypto (account_uuid, wrapped_mk_password, wrapped_mk_recovery, recovery_key_hash, recovery_key_salt, recovery_key_params, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, current_date, current_date)
+INSERT INTO account_crypto (account_uuid, wrapped_mk_password, wrapped_mk_recovery, recovery_key_hash, recovery_key_salt, recovery_key_params, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, now(), now())
 `
 
 type CreateAccountCryptoParams struct {
@@ -56,12 +56,11 @@ func (q *Queries) GetAccountCrypto(ctx context.Context, accountUuid pgtype.UUID)
 	return i, err
 }
 
-const updateAccountCrypto = `-- name: UpdateAccountCrypto :exec
-UPDATE account_crypto SET wrapped_mk_password = $1, wrapped_mk_recovery = $2, recovery_key_hash = $3, recovery_key_salt = $4, recovery_key_params = $5, updated_at = current_date WHERE account_uuid = $6
+const updateRecoveryCrypto = `-- name: UpdateRecoveryCrypto :execrows
+UPDATE account_crypto SET wrapped_mk_recovery = $1, recovery_key_hash = $2, recovery_key_salt = $3, recovery_key_params = $4, updated_at = now() WHERE account_uuid = $5
 `
 
-type UpdateAccountCryptoParams struct {
-	WrappedMkPassword []byte
+type UpdateRecoveryCryptoParams struct {
 	WrappedMkRecovery []byte
 	RecoveryKeyHash   []byte
 	RecoveryKeySalt   []byte
@@ -69,14 +68,33 @@ type UpdateAccountCryptoParams struct {
 	AccountUuid       pgtype.UUID
 }
 
-func (q *Queries) UpdateAccountCrypto(ctx context.Context, arg UpdateAccountCryptoParams) error {
-	_, err := q.db.Exec(ctx, updateAccountCrypto,
-		arg.WrappedMkPassword,
+func (q *Queries) UpdateRecoveryCrypto(ctx context.Context, arg UpdateRecoveryCryptoParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateRecoveryCrypto,
 		arg.WrappedMkRecovery,
 		arg.RecoveryKeyHash,
 		arg.RecoveryKeySalt,
 		arg.RecoveryKeyParams,
 		arg.AccountUuid,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const updateWrappedMKPassword = `-- name: UpdateWrappedMKPassword :execrows
+UPDATE account_crypto SET wrapped_mk_password = $1, updated_at = now() WHERE account_uuid = $2
+`
+
+type UpdateWrappedMKPasswordParams struct {
+	WrappedMkPassword []byte
+	AccountUuid       pgtype.UUID
+}
+
+func (q *Queries) UpdateWrappedMKPassword(ctx context.Context, arg UpdateWrappedMKPasswordParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateWrappedMKPassword, arg.WrappedMkPassword, arg.AccountUuid)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

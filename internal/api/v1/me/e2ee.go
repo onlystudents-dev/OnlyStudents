@@ -25,6 +25,42 @@ func b64decode(base64_string string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(base64_string)
 }
 
+func b64encode(base64_bytes []byte) string {
+	return base64.StdEncoding.EncodeToString(base64_bytes)
+}
+
+func GetE2EE(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	session_data, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
+	}
+
+	queries := db_queries.New(pool)
+
+	account_uuid, aerr := uuid.Parse(session_data.AccountUUID)
+
+	if aerr != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	e2ee_data, err := queries.GetAccountCrypto(c.Context(), pgtype.UUID{Bytes: account_uuid, Valid: true})
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "NO_CRYPTO"})
+	}
+
+	base64_encoded_wrapped_mk := b64encode(e2ee_data.WrappedMkPassword)
+
+	if base64_encoded_wrapped_mk == "" {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	return c.JSON(fiber.Map{
+		"wrapped_mk_password": base64_encoded_wrapped_mk,
+	})
+}
+
 func EnrollE2EE(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	session_data, ok := c.Locals("session").(helpers.SessionData)
 

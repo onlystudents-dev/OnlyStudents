@@ -5,7 +5,7 @@ import { AUTH_DEFAULT_CONFIG, type E2EEConfig } from '../../auth/authConfig';
 import { normalizeMnemonicSecret } from './mnemonic';
 import { concatBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 
-type Bytes = Uint8Array<ArrayBuffer>;
+export type Bytes = Uint8Array<ArrayBuffer>;
 
 export function generateMK(): Bytes {
   return randomBytes(32)
@@ -19,6 +19,16 @@ export function randomBytes(len: number): Bytes {
   return crypto.getRandomValues(new Uint8Array(len))
 }
 
+const CHUNK = 0x8000;
+
+export function b64encode(u8: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < u8.length; i += CHUNK) {
+    s += String.fromCharCode(...u8.subarray(i, i + CHUNK))
+  }
+  return btoa(s)
+}
+
 export function recoveryDigest(mnemonic: string, salt: Bytes, cfg: E2EEConfig): Bytes {
   return argon2.argon2id(normalizeMnemonicSecret(mnemonic), salt, {
     t: cfg.argon2_time,
@@ -29,10 +39,10 @@ export function recoveryDigest(mnemonic: string, salt: Bytes, cfg: E2EEConfig): 
 }
 
 export function paramsToString(cfg: E2EEConfig): string {
-    return `t=${cfg.argon2_time},m=${cfg.argon2_memory},p=${cfg.argon2_threads}`
+    return `t=${cfg.argon2_time},m=${cfg.argon2_memory},p=${cfg.argon2_threads},dkLen=${cfg.argon2_key_len}`
 }
 
-export function parseParams(s: string): {t: number, m: number, p: number} {
+export function parseParams(s: string): {t: number, m: number, p: number, dkLen: number} {
     const out: Record<string, number> = {}
     for (const part of s.split(",")) {
         const [k, v] = part.split("=")
@@ -41,7 +51,7 @@ export function parseParams(s: string): {t: number, m: number, p: number} {
         }
         out[k] = Number(v)
     }
-    return {t: out.t ? out.t : AUTH_DEFAULT_CONFIG.e2ee.argon2_time, m: out.m ? out.m : AUTH_DEFAULT_CONFIG.e2ee.argon2_memory, p: out.p ? out.p : AUTH_DEFAULT_CONFIG.e2ee.argon2_threads}
+    return {t: out.t ? out.t : AUTH_DEFAULT_CONFIG.e2ee.argon2_time, m: out.m ? out.m : AUTH_DEFAULT_CONFIG.e2ee.argon2_memory, p: out.p ? out.p : AUTH_DEFAULT_CONFIG.e2ee.argon2_threads, dkLen: out.dkLen ? out.dkLen : AUTH_DEFAULT_CONFIG.e2ee.argon2_key_len}
 }
 
 function base64UrlDecode(str: string): Bytes {

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	v1 "onlystudents/internal/api/v1"
 	adminapi "onlystudents/internal/api/v1/admin"
 	meapi "onlystudents/internal/api/v1/me"
 	studentapi "onlystudents/internal/api/v1/me/student"
@@ -77,21 +76,21 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 		}),
 		"login": fiber.Map{
 			helpers.RoutesGroupMWKey: []fiber.Handler{authLimit},
-			"init":                   helpers.Post(func(c fiber.Ctx) error { return v1.LoginInit(c, pool, rdb, opaque_server) }),
-			"finish":                 helpers.Post(func(c fiber.Ctx) error { return v1.LoginFinish(c, pool, rdb, opaque_server) }),
+			"init":                   helpers.Post(func(c fiber.Ctx) error { return meapi.LoginInit(c, pool, rdb, opaque_server) }),
+			"finish":                 helpers.Post(func(c fiber.Ctx) error { return meapi.LoginFinish(c, pool, rdb, opaque_server) }),
 		},
 		"enroll": fiber.Map{
 			helpers.RoutesGroupMWKey: []fiber.Handler{authLimit},
-			"init":                   helpers.Post(func(c fiber.Ctx) error { return v1.EnrollInit(c, pool, rdb, opaque_server) }),
-			"finish":                 helpers.Post(func(c fiber.Ctx) error { return v1.EnrollFinish(c, pool, rdb, opaque_server) }),
+			"init":                   helpers.Post(func(c fiber.Ctx) error { return meapi.EnrollInit(c, pool, rdb, opaque_server) }),
+			"finish":                 helpers.Post(func(c fiber.Ctx) error { return meapi.EnrollFinish(c, pool, rdb, opaque_server) }),
 		},
 		"forget_password": helpers.Post([]fiber.Handler{
 			forgetLimit,
-			func(c fiber.Ctx) error { return v1.ForgetPassword(c, pool, rdb) },
+			func(c fiber.Ctx) error { return meapi.ForgetPassword(c, pool, rdb) },
 		}),
 		"forget_password_confirm": helpers.Post([]fiber.Handler{
 			forgetLimit,
-			func(c fiber.Ctx) error { return v1.ForgetPasswordConfirm(c, pool, rdb) },
+			func(c fiber.Ctx) error { return meapi.ForgetPasswordConfirm(c, pool, rdb) },
 		}),
 		"themes": helpers.Get(func(c fiber.Ctx) error {
 			themes, err := helpers.GetThemes(c, pool)
@@ -120,7 +119,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 		},
 		"me": fiber.Map{
 			helpers.RoutesGroupMWKey: []fiber.Handler{apiLimit, auth},
-			"logout":                 helpers.Post(func(c fiber.Ctx) error { return v1.Logout(c, pool, rdb) }),
+			"logout":                 helpers.Post(func(c fiber.Ctx) error { return meapi.Logout(c, pool, rdb) }),
 			"update_preferences":     helpers.Post(func(c fiber.Ctx) error { return meapi.UpdatePreferences(c, pool, rdb) }),
 			"change_email":           helpers.Post(func(c fiber.Ctx) error { return meapi.ChangeEmail(c, pool, rdb) }),
 			"verify_email": helpers.Post([]fiber.Handler{authLimit,
@@ -129,7 +128,18 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				func(c fiber.Ctx) error { return meapi.VerifyEmailConfirm(c, pool, rdb) }}),
 			"status": helpers.Get(func(c fiber.Ctx) error { return meapi.Status(c, pool, rdb) }),
 
+			"change_password": fiber.Map{
+				helpers.RoutesGroupMWKey: []fiber.Handler{authLimit},
+				"init":                   helpers.Post(func(c fiber.Ctx) error { return meapi.ChangePasswordInit(c, pool, rdb, opaque_server) }),
+				"finish":                 helpers.Post(func(c fiber.Ctx) error { return meapi.ChangePasswordFinish(c, pool, rdb, opaque_server) }),
+				"rekey_init":             helpers.Post(func(c fiber.Ctx) error { return meapi.RekeyInit(c, pool, rdb, opaque_server) }),
+				"rekey_finish":           helpers.Post(func(c fiber.Ctx) error { return meapi.RekeyFinish(c, pool, rdb, opaque_server) }),
+			},
+
 			"e2ee": fiber.Map{
+				"crypto": helpers.Get(
+					func(c fiber.Ctx) error { return meapi.GetE2EE(c, pool, rdb) },
+				),
 				"enroll": helpers.Post([]fiber.Handler{
 					forgetLimit,
 					func(c fiber.Ctx) error { return meapi.EnrollE2EE(c, pool, rdb) },

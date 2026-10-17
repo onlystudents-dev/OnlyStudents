@@ -154,9 +154,11 @@
     "RECOVERY_KEY_STORAGE": "Please store this in a secure place. Without this key, you will not be able to recover your account in case you forget your password. We will never ask you to provide this to us over email or any other communication platform.",
     "RECOVERY_KEY_ACCEPT": "I have stored the secret in a secure place.",
     "CONTINUE": "Continue",
-    "COPIED": "Copied"
+    "COPIED": "Copied",
+    "PASSWORD_SUCCESSFULLY_CHANGED": "You successfully changed your password!"
   },
   "errors": {
+    "NO_CRYPTO": "The enrolled E2EE keys are missing.",
     "CONFLICT": "The submitted data exists in the system and cannot be overwritten!",
     "FORBIDDEN": "You do not have permission to access or modify this resource!",
     "NOT_IMPLEMENTED": "This feature is not implemented yet! We are constantly working on new features!",

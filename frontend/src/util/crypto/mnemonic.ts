@@ -21,6 +21,10 @@ export function normalizeMnemonicSecret(user_provided: string) {
   return user_provided.trim().toLowerCase().replace(/\s+/g, '')
 }
 
+export function normalizeMnemonicWords(user_provided: string) {
+  return user_provided.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
 export function MnemonicSecrettoSeed(mnemonic: string) {
-  return mnemonicToSeedSync(mnemonic)
+  return mnemonicToSeedSync(normalizeMnemonicWords(mnemonic))
 }
