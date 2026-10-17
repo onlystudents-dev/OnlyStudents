@@ -50,8 +50,8 @@ func (q *Queries) GetGroupsByStudentID(ctx context.Context, arg GetGroupsByStude
 const getStudentClass = `-- name: GetStudentClass :one
 SELECT c.id, c.school_id, c.name, c.teacher_id, c.co_teacher_id, c.bell_id
 FROM classes c
-JOIN student_school s ON s.class_id = c.id
-WHERE s.id = $1 AND s.school_id = $2
+JOIN student_school ss ON ss.class_id = c.id
+WHERE ss.id = $1 AND ss.school_id = $2
 `
 
 type GetStudentClassParams struct {

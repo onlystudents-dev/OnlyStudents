@@ -26,26 +26,6 @@ WHERE csub.school_id = sqlc.arg(school_id)
   )
 ORDER BY h.due_date, h.created_at;
 
--- name: GetTeacherHomework :many
-SELECT
-    h.id,
-    csub.id AS class_subjects_id,
-    COALESCE(cs.subject_name, s.subject_name) AS subject,
-    s.code AS subject_code,
-    h.title,
-    h.description,
-    h.due_date,
-    h.created_at,
-    (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id = h.id) AS submission_count,
-    (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id = h.id AND hs.submitted_at::date <= h.due_date) AS on_time_submission_count
-FROM homework h
-JOIN class_subjects csub ON csub.id = h.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-WHERE csub.school_id = $1
-  AND csub.teacher_id = $2
-ORDER BY h.due_date, h.created_at;
-
 -- name: TeacherAddHomework :execrows
 INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date)
 SELECT cs.id, sqlc.arg(teacher_id), sqlc.arg(title), sqlc.arg(description), sqlc.arg(due_date)
@@ -141,4 +121,26 @@ WHERE hs.homework_id = $1
         AND cs.school_id = $2
         AND cs.teacher_id = $3
   )
+ORDER BY hs.submitted_at, hs.student_id;
+
+-- name: GetTeacherUngradedHomeworkSubmissions :many
+SELECT
+    hs.id,
+    hs.homework_id,
+    h.title AS homework_title,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    st.id AS student_id,
+    st.first_name,
+    st.last_name,
+    hs.content,
+    hs.submitted_at
+FROM homework_submissions hs
+JOIN homework h ON h.id = hs.homework_id
+JOIN class_subjects csub ON csub.id = h.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+JOIN students st ON st.id = hs.student_id
+WHERE hs.graded_value IS NULL
+  AND csub.school_id = $1
+  AND csub.teacher_id = $2
 ORDER BY hs.submitted_at, hs.student_id;

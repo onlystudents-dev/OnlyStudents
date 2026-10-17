@@ -46,18 +46,17 @@ type RemoveHomeworkRequest struct {
 	HomeworkID int64 `json:"homework_id"`
 }
 
-type HomeworkSummary struct {
-	ID                    int64  `json:"id"`
-	Subject               string `json:"subject"`
-	HasSubjectCode        bool   `json:"has_subject_code"`
-	SubjectCode           string `json:"subject_code"`
-	Title                 string `json:"title"`
-	HasDescription        bool   `json:"has_description"`
-	Description           string `json:"description"`
-	DueDate               int64  `json:"due_date"`
-	CreatedAt             int64  `json:"created_at"`
-	SubmissionCount       int64  `json:"submission_count"`
-	OnTimeSubmissionCount int64  `json:"on_timesubmission_count"`
+type UngradedHomeworkSubmissionSummary struct {
+	ID            int64  `json:"id"`
+	HomeworkID    int32  `json:"homework_id"`
+	HomeworkTitle string `json:"homework_title"`
+	Subject       string `json:"subject"`
+	StudentID     int32  `json:"student_id"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	HasContent    bool   `json:"has_content"`
+	Content       string `json:"content"`
+	SubmittedAt   int64  `json:"submitted_at"`
 }
 
 type HomeworkSubmissionSummary struct {
@@ -71,27 +70,26 @@ type HomeworkSubmissionSummary struct {
 	GradedValue    int16  `json:"graded_value"`
 }
 
-func convertHomework(row db_queries.GetTeacherHomeworkRow) HomeworkSummary {
-	return HomeworkSummary{
-		ID:                    row.ID,
-		Subject:               row.Subject,
-		HasSubjectCode:        row.SubjectCode.Valid,
-		SubjectCode:           row.SubjectCode.String,
-		Title:                 row.Title,
-		HasDescription:        row.Description.Valid,
-		Description:           row.Description.String,
-		DueDate:               row.DueDate.Time.Unix(),
-		CreatedAt:             row.CreatedAt.Time.Unix(),
-		SubmissionCount:       row.SubmissionCount,
-		OnTimeSubmissionCount: row.OnTimeSubmissionCount,
-	}
-}
-
 func convertHomeworkSubmission(row db_queries.GetTeacherHomeworkSubmissionsRow) HomeworkSubmissionSummary {
 	return HomeworkSubmissionSummary{
 		ID:        row.ID,
 		FirstName: row.FirstName,
 		LastName:  row.LastName,
+	}
+}
+
+func convertUngradedHomeworkSubmission(row db_queries.GetTeacherUngradedHomeworkSubmissionsRow) UngradedHomeworkSubmissionSummary {
+	return UngradedHomeworkSubmissionSummary{
+		ID:            row.ID,
+		HomeworkID:    row.HomeworkID,
+		HomeworkTitle: row.HomeworkTitle,
+		Subject:       row.Subject,
+		StudentID:     row.StudentID,
+		FirstName:     row.FirstName,
+		LastName:      row.LastName,
+		HasContent:    row.Content.Valid,
+		Content:       row.Content.String,
+		SubmittedAt:   row.SubmittedAt.Time.Unix(),
 	}
 }
 
@@ -102,8 +100,8 @@ func ListHomeworkSubmissions(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client)
 		helpers.CacheOrGetTeacherHomeworkSubmissions, convertHomeworkSubmission)
 }
 
-func ListHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherSummary(c, pool, rdb, "HOMEWORK_CACHE_TTL", helpers.CacheOrGetTeacherHomework, convertHomework)
+func ListUngradedHomeworkSubmissions(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	return TeacherSummary(c, pool, rdb, "HOMEWORK_SUBMISSIONS_CACHE_TTL", helpers.CacheOrGetTeacherUngradedHomeworkSubmissions, convertUngradedHomeworkSubmission)
 }
 
 func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
