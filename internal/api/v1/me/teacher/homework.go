@@ -54,6 +54,7 @@ type UngradedHomeworkSubmissionSummary struct {
 	StudentID     int32  `json:"student_id"`
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
+	DueDate       int64  `json:"due_date"`
 	HasContent    bool   `json:"has_content"`
 	Content       string `json:"content"`
 	SubmittedAt   int64  `json:"submitted_at"`
@@ -63,6 +64,7 @@ type HomeworkSubmissionSummary struct {
 	ID             int64  `json:"id"`
 	FirstName      string `json:"first_name"`
 	LastName       string `json:"last_name"`
+	DueDate        int64  `json:"due_date"`
 	HasContent     bool   `json:"has_content"`
 	Content        string `json:"content"`
 	SubmittedAt    int64  `json:"submitted_at"`
@@ -75,6 +77,7 @@ func convertHomeworkSubmission(row db_queries.GetTeacherHomeworkSubmissionsRow) 
 		ID:        row.ID,
 		FirstName: row.FirstName,
 		LastName:  row.LastName,
+		DueDate:   row.DueDate.Time.Unix(),
 	}
 }
 
@@ -87,6 +90,7 @@ func convertUngradedHomeworkSubmission(row db_queries.GetTeacherUngradedHomework
 		StudentID:     row.StudentID,
 		FirstName:     row.FirstName,
 		LastName:      row.LastName,
+		DueDate:       row.DueDate.Time.Unix(),
 		HasContent:    row.Content.Valid,
 		Content:       row.Content.String,
 		SubmittedAt:   row.SubmittedAt.Time.Unix(),
