@@ -162,7 +162,7 @@ func CacheOrGetStudentGroups(ctx context.Context, rdb *redis.Client, queries db_
 }
 
 func CacheOrGetStudentClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.Class, error) {
-	key := fmt.Sprintf("student_class:%d:%d")
+	key := fmt.Sprintf("student_class:%d:%d", scope.SchoolID, scope.StudentID)
 	class, err := CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.Class, error) {
 		return queries.GetStudentClass(ctx, db_queries.GetStudentClassParams{
 			StudentID: scope.StudentID,
