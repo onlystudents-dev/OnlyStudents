@@ -257,10 +257,10 @@ func CacheOrGetTeacherExams(ctx context.Context, rdb *redis.Client, queries db_q
 	})
 }
 
-func CacheOrGetTeacherHomework(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherHomeworkRow, error) {
-	key := fmt.Sprintf("teacher_homework:%d:%d", scope.SchoolID, scope.TeacherID)
-	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherHomeworkRow, error) {
-		return queries.GetTeacherHomework(ctx, db_queries.GetTeacherHomeworkParams{
+func CacheOrGetTeacherUngradedHomeworkSubmissions(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherUngradedHomeworkSubmissionsRow, error) {
+	key := fmt.Sprintf("teacher_ungraded_homework_submissions:%d:%d", scope.SchoolID, scope.TeacherID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherUngradedHomeworkSubmissionsRow, error) {
+		return queries.GetTeacherUngradedHomeworkSubmissions(ctx, db_queries.GetTeacherUngradedHomeworkSubmissionsParams{
 			TeacherID: scope.TeacherID,
 			SchoolID:  scope.SchoolID,
 		})

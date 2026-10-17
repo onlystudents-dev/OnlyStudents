@@ -91,76 +91,6 @@ func (q *Queries) GetStudentHomework(ctx context.Context, arg GetStudentHomework
 	return items, nil
 }
 
-const getTeacherHomework = `-- name: GetTeacherHomework :many
-SELECT
-    h.id,
-    csub.id AS class_subjects_id,
-    COALESCE(cs.subject_name, s.subject_name) AS subject,
-    s.code AS subject_code,
-    h.title,
-    h.description,
-    h.due_date,
-    h.created_at,
-    (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id = h.id) AS submission_count,
-    (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id = h.id AND hs.submitted_at::date <= h.due_date) AS on_time_submission_count
-FROM homework h
-JOIN class_subjects csub ON csub.id = h.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-WHERE csub.school_id = $1
-  AND csub.teacher_id = $2
-ORDER BY h.due_date, h.created_at
-`
-
-type GetTeacherHomeworkParams struct {
-	SchoolID  int32
-	TeacherID int32
-}
-
-type GetTeacherHomeworkRow struct {
-	ID                    int64
-	ClassSubjectsID       int32
-	Subject               string
-	SubjectCode           pgtype.Text
-	Title                 string
-	Description           pgtype.Text
-	DueDate               pgtype.Date
-	CreatedAt             pgtype.Timestamptz
-	SubmissionCount       int64
-	OnTimeSubmissionCount int64
-}
-
-func (q *Queries) GetTeacherHomework(ctx context.Context, arg GetTeacherHomeworkParams) ([]GetTeacherHomeworkRow, error) {
-	rows, err := q.db.Query(ctx, getTeacherHomework, arg.SchoolID, arg.TeacherID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetTeacherHomeworkRow
-	for rows.Next() {
-		var i GetTeacherHomeworkRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.ClassSubjectsID,
-			&i.Subject,
-			&i.SubjectCode,
-			&i.Title,
-			&i.Description,
-			&i.DueDate,
-			&i.CreatedAt,
-			&i.SubmissionCount,
-			&i.OnTimeSubmissionCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getTeacherHomeworkSubmissions = `-- name: GetTeacherHomeworkSubmissions :many
 SELECT
     hs.id,
@@ -214,6 +144,76 @@ func (q *Queries) GetTeacherHomeworkSubmissions(ctx context.Context, arg GetTeac
 			&i.Content,
 			&i.SubmittedAt,
 			&i.GradedValue,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTeacherUngradedHomeworkSubmissions = `-- name: GetTeacherUngradedHomeworkSubmissions :many
+SELECT
+    hs.id,
+    hs.homework_id,
+    h.title AS homework_title,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    st.id AS student_id,
+    st.first_name,
+    st.last_name,
+    hs.content,
+    hs.submitted_at
+FROM homework_submissions hs
+JOIN homework h ON h.id = hs.homework_id
+JOIN class_subjects csub ON csub.id = h.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+JOIN students st ON st.id = hs.student_id
+WHERE hs.graded_value IS NULL
+  AND csub.school_id = $1
+  AND csub.teacher_id = $2
+ORDER BY hs.submitted_at, hs.student_id
+`
+
+type GetTeacherUngradedHomeworkSubmissionsParams struct {
+	SchoolID  int32
+	TeacherID int32
+}
+
+type GetTeacherUngradedHomeworkSubmissionsRow struct {
+	ID            int64
+	HomeworkID    int32
+	HomeworkTitle string
+	Subject       string
+	StudentID     int32
+	FirstName     string
+	LastName      string
+	Content       pgtype.Text
+	SubmittedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg GetTeacherUngradedHomeworkSubmissionsParams) ([]GetTeacherUngradedHomeworkSubmissionsRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherUngradedHomeworkSubmissions, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherUngradedHomeworkSubmissionsRow
+	for rows.Next() {
+		var i GetTeacherUngradedHomeworkSubmissionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.HomeworkID,
+			&i.HomeworkTitle,
+			&i.Subject,
+			&i.StudentID,
+			&i.FirstName,
+			&i.LastName,
+			&i.Content,
+			&i.SubmittedAt,
 		); err != nil {
 			return nil, err
 		}
