@@ -155,7 +155,8 @@
     "RECOVERY_KEY_ACCEPT": "I have stored the secret in a secure place.",
     "CONTINUE": "Continue",
     "COPIED": "Copied",
-    "PASSWORD_SUCCESSFULLY_CHANGED": "You successfully changed your password!"
+    "PASSWORD_SUCCESSFULLY_CHANGED": "You successfully changed your password!",
+    "TEACHER_UPDATED_HOMEWORK": "Homework successfully updated!"
   },
   "errors": {
     "NO_CRYPTO": "The enrolled E2EE keys are missing.",

@@ -47,17 +47,18 @@ type RemoveHomeworkRequest struct {
 }
 
 type UngradedHomeworkSubmissionSummary struct {
-	ID            int64  `json:"id"`
-	HomeworkID    int32  `json:"homework_id"`
-	HomeworkTitle string `json:"title"`
-	Subject       string `json:"subject"`
-	StudentID     int32  `json:"student_id"`
-	FirstName     string `json:"first_name"`
-	LastName      string `json:"last_name"`
-	DueDate       int64  `json:"due_date"`
-	HasContent    bool   `json:"has_content"`
-	Content       string `json:"content"`
-	SubmittedAt   int64  `json:"created_at"`
+	ID              int64  `json:"id"`
+	HomeworkID      int32  `json:"homework_id"`
+	HomeworkTitle   string `json:"title"`
+	Subject         string `json:"subject"`
+	StudentID       int32  `json:"student_id"`
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	DueDate         int64  `json:"due_date"`
+	HasContent      bool   `json:"has_content"`
+	Content         string `json:"content"`
+	SubmittedAt     int64  `json:"created_at"`
+	ClassSubjectsID int32  `json:"class_subjects_id"`
 }
 
 type HomeworkSubmissionSummary struct {
@@ -83,17 +84,18 @@ func convertHomeworkSubmission(row db_queries.GetTeacherHomeworkSubmissionsRow) 
 
 func convertUngradedHomeworkSubmission(row db_queries.GetTeacherUngradedHomeworkSubmissionsRow) UngradedHomeworkSubmissionSummary {
 	return UngradedHomeworkSubmissionSummary{
-		ID:            row.ID,
-		HomeworkID:    row.HomeworkID,
-		HomeworkTitle: row.HomeworkTitle,
-		Subject:       row.Subject,
-		StudentID:     row.StudentID,
-		FirstName:     row.FirstName,
-		LastName:      row.LastName,
-		DueDate:       row.DueDate.Time.Unix(),
-		HasContent:    row.Content.Valid,
-		Content:       row.Content.String,
-		SubmittedAt:   row.SubmittedAt.Time.Unix(),
+		ID:              row.ID,
+		HomeworkID:      row.HomeworkID,
+		HomeworkTitle:   row.HomeworkTitle,
+		Subject:         row.Subject,
+		StudentID:       row.StudentID,
+		FirstName:       row.FirstName,
+		LastName:        row.LastName,
+		DueDate:         row.DueDate.Time.Unix(),
+		HasContent:      row.Content.Valid,
+		Content:         row.Content.String,
+		SubmittedAt:     row.SubmittedAt.Time.Unix(),
+		ClassSubjectsID: row.ClassSubjectsID,
 	}
 }
 

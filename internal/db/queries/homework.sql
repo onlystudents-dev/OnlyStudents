@@ -131,6 +131,7 @@ SELECT
     hs.homework_id,
     h.title AS homework_title,
     h.due_date,
+    csub.class_id AS class_subjects_id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     st.id AS student_id,
     st.first_name,
@@ -138,11 +139,11 @@ SELECT
     hs.content,
     hs.submitted_at
 FROM homework_submissions hs
-JOIN homework h ON h.id = hs.homework_id
-JOIN class_subjects csub ON csub.id = h.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN students st ON st.id = hs.student_id
+         JOIN homework h ON h.id = hs.homework_id
+         JOIN class_subjects csub ON csub.id = h.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN students st ON st.id = hs.student_id
 WHERE hs.graded_value IS NULL
   AND csub.school_id = $1
   AND csub.teacher_id = $2

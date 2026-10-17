@@ -8,5 +8,23 @@
 }
 
 .homework:hover {
-    transform: translateX(-10%);
+    transform: translateX(-5%);
+}
+
+.popup {
+    @apply absolute bg-(--hover-color) border-2 border-(--border-color) rounded-lg z-151;
+    inset: calc(10vh - 62px) 16vw 10vh;
+}
+
+.popup-content {
+    @apply relative w-full h-full flex flex-col;
+
+    textarea, input {
+        @apply rounded-lg;
+        box-shadow: 0 0 0 0 transparent;
+        transition: box-shadow 200ms ease-in-out;
+    }
+    textarea:hover, textarea:focus, input:hover, input:focus {
+        box-shadow: 0 0 0 4px var(--txt-color);
+    }
 }

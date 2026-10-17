@@ -281,7 +281,7 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                 return (
                                     <>
                                         <div className="box">
-                                            <Button className="self-start theme-action-button hover:text-(--warning-color) ml-1 mb-1" icon={faArrowLeft} text={getKey("ADMIN_THEMES_BACK")} onClick={() => setEditing(null)} />
+                                            <Button className="self-start action-button hover:text-(--warning-color) ml-1 mb-1" icon={faArrowLeft} text={getKey("ADMIN_THEMES_BACK")} onClick={() => setEditing(null)} />
                                             <div className="w-full overflow-y-auto pr-2 flex flex-col gap-2" style={{height: "calc(100vh - 164px)"}}>
                                                 <InputConfig text={getKey("ADMIN_THEMES_NAME")} value={editing.name} onChange={value => setEditing({...editing, name: value})} className="enroll rubik" />
                                                 {Object.entries(colors).map(([key]) => (
@@ -302,7 +302,7 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
 
                             return (
                                 <div className="box flex-wrap">
-                                    <Button className="self-start theme-action-button hover:text-(--right-color) ml-1 mb-1" icon={faPlus} text={getKey("ADMIN_THEMES_NEW")} onClick={() => openEditor()} />
+                                    <Button className="self-start action-button hover:text-(--right-color) ml-1 mb-1" icon={faPlus} text={getKey("ADMIN_THEMES_NEW")} onClick={() => openEditor()} />
                                     {!themes ? <Loading /> : themes.length === 0 ? <p className="poppins">{getKey("ADMIN_THEMES_EMPTY")}</p> : themes.map(theme => (
                                         <div className="theme-card theme-action-shadow" key={theme.name}>
                                             <h1 className="rubik">{getKey(`THEMES.${theme.name}`) || theme.name}</h1>
@@ -312,8 +312,8 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                                 ))}
                                             </div>
                                             <div className="flex flex-row gap-2">
-                                                <Button className="theme-action-button hover:text-(--edit-color)" icon={faPenToSquare} text={getKey("ADMIN_THEMES_EDIT")} onClick={() => openEditor(theme)} />
-                                                <Button className="theme-action-button hover:text-(--wrong-color)" icon={faTrash} text={getKey("ADMIN_THEMES_DELETE")} onClick={() => void deleteTheme(theme.name, true)} />
+                                                <Button className="action-button hover:text-(--edit-color)" icon={faPenToSquare} text={getKey("ADMIN_THEMES_EDIT")} onClick={() => openEditor(theme)} />
+                                                <Button className="action-button hover:text-(--wrong-color)" icon={faTrash} text={getKey("ADMIN_THEMES_DELETE")} onClick={() => void deleteTheme(theme.name, true)} />
                                             </div>
                                         </div>
                                     ))}

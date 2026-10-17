@@ -155,7 +155,8 @@
     "RECOVERY_KEY_ACCEPT": "Biztonságos helyen tároltam a kulcsot.",
     "CONTINUE": "Tovább",
     "COPIED": "Kimásolva",
-    "PASSWORD_SUCCESSFULLY_CHANGED": "Sikeresen megváltoztatta a jelszavát!"
+    "PASSWORD_SUCCESSFULLY_CHANGED": "Sikeresen megváltoztattad a jelszavad!",
+    "TEACHER_UPDATED_HOMEWORK": "Házi feladat sikeresen frissítve!"
   },
   "errors": {
     "NO_CRYPTO": "A beállított végponti titkosítási kulcsok hiányoznak.",

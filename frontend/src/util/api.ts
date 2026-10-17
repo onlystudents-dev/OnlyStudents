@@ -11,13 +11,13 @@ export function postJSON(url: string, body?: unknown) {
     })
 }
 
-export function fetchWithSchool(url: string) {
+export function fetchWithSchool(url: string, init?: RequestInit) {
     const school = localStorage.getItem("school_id");
     const child = localStorage.getItem("child_id");
-    const headers: Record<string, string> = {};
-    if (school) headers["X-School"] = school;
-    if (child) headers["X-Child"] = child;
-    return fetch(url, { headers });
+    const headers = new Headers(init?.headers || {});
+    if (school) headers.set("X-School", school);
+    if (child) headers.set("X-Child", child);
+    return fetch(url, { ...init, headers });
 }
 
 export function getRetryAfter(response: Response): number {

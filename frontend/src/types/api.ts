@@ -126,4 +126,6 @@ export type HomeworkSubmission = {
     has_content: boolean,
     content: string,
     created_at: number,
+    due_date: number,
+    class_subjects_id: number,
 }
