@@ -12,7 +12,7 @@ import (
 )
 
 const createSession = `-- name: CreateSession :exec
-INSERT INTO sessions (id, account_uuid, created_at, last_seen_at) VALUES ($1, $2, current_date, current_date)
+INSERT INTO sessions (id, account_uuid, created_at, last_seen_at) VALUES ($1, $2, now(), now())
 `
 
 type CreateSessionParams struct {
@@ -78,7 +78,7 @@ func (q *Queries) RevokeSession(ctx context.Context, arg RevokeSessionParams) er
 }
 
 const touchSession = `-- name: TouchSession :exec
-UPDATE sessions SET last_seen_at = current_date WHERE id = $1
+UPDATE sessions SET last_seen_at = now() WHERE id = $1
 `
 
 func (q *Queries) TouchSession(ctx context.Context, id pgtype.UUID) error {
