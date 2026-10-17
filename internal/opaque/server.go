@@ -378,11 +378,17 @@ func ChangePasswordFinish(ctx context.Context, s *opaque.Server, rdb *redis.Clie
 		return "", "", create_session_err
 	}
 
+	enroll_state_bytes, err := json.Marshal(EnrollState{
+		AccountUUID: parsed_account_uuid.String(),
+	})
+
+	if err != nil {
+		return "", "", err
+	}
+
 	crypto_grant_handle := rand.Text()
 	ttl := time.Duration(helpers.GetInt64EnvFallback("OPAQUE_CRYPTO_GRANT_TTL", 300, 900)) * time.Second
-	rdb_err := rdb.Set(ctx, fmt.Sprintf("crypto_grant:%s", crypto_grant_handle), EnrollState{
-		AccountUUID: parsed_account_uuid.String(),
-	}, ttl).Err()
+	rdb_err := rdb.Set(ctx, fmt.Sprintf("crypto_grant:%s", crypto_grant_handle), enroll_state_bytes, ttl).Err()
 
 	if rdb_err != nil {
 		return "", "", rdb_err
