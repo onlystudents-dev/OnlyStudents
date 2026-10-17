@@ -5,7 +5,7 @@ import { AUTH_DEFAULT_CONFIG, type E2EEConfig } from '../../auth/authConfig';
 import { normalizeMnemonicSecret } from './mnemonic';
 import { concatBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 
-type Bytes = Uint8Array<ArrayBuffer>;
+export type Bytes = Uint8Array<ArrayBuffer>;
 
 export function generateMK(): Bytes {
   return randomBytes(32)
@@ -17,6 +17,16 @@ export function deriveWrapKey(secret: Bytes, purpose: "password" | "recovery"): 
 
 export function randomBytes(len: number): Bytes {
   return crypto.getRandomValues(new Uint8Array(len))
+}
+
+const CHUNK = 0x8000;
+
+export function b64encode(u8: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < u8.length; i += CHUNK) {
+    s += String.fromCharCode(...u8.subarray(i, i + CHUNK))
+  }
+  return btoa(s)
 }
 
 export function recoveryDigest(mnemonic: string, salt: Bytes, cfg: E2EEConfig): Bytes {

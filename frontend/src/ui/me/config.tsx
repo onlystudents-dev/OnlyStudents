@@ -3,8 +3,9 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import React, {useState} from "react";
 import Overlay from "../../util/overlay/overlay.tsx";
 
-export default function Config({ icon, text, value, children, className}: {icon: IconDefinition, text: string, value: string, children: React.ReactNode, className?: string}) {
+export default function Config({ icon, text, value, children, className}: {icon: IconDefinition, text: string, value: string, children: React.ReactNode | ((close: () => void) => React.ReactNode), className?: string}) {
     const [open, setOpen] = useState(false)
+    const close = () => setOpen(false)
 
     return (
         <>
@@ -18,9 +19,9 @@ export default function Config({ icon, text, value, children, className}: {icon:
             </div>
             {open && <>
                 <div className="cantar configure configs">
-                    {children}
+                    {typeof children === "function" ? children(close) : children}
                 </div>
-                <Overlay onClick={() => {setOpen(false)}} z={1} time={10000} />
+                <Overlay onClick={close} z={1} time={10000} />
             </>}
         </>
     )
