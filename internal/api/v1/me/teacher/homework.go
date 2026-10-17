@@ -49,7 +49,7 @@ type RemoveHomeworkRequest struct {
 type UngradedHomeworkSubmissionSummary struct {
 	ID            int64  `json:"id"`
 	HomeworkID    int32  `json:"homework_id"`
-	HomeworkTitle string `json:"homework_title"`
+	HomeworkTitle string `json:"title"`
 	Subject       string `json:"subject"`
 	StudentID     int32  `json:"student_id"`
 	FirstName     string `json:"first_name"`
@@ -57,7 +57,7 @@ type UngradedHomeworkSubmissionSummary struct {
 	DueDate       int64  `json:"due_date"`
 	HasContent    bool   `json:"has_content"`
 	Content       string `json:"content"`
-	SubmittedAt   int64  `json:"submitted_at"`
+	SubmittedAt   int64  `json:"created_at"`
 }
 
 type HomeworkSubmissionSummary struct {

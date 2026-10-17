@@ -97,3 +97,33 @@ export type LessonTime = {
     at_start: number,
     at_end: number,
 }
+
+export type HomeworkSummary = {
+    id: number,
+    subject: string,
+    has_subject_code: boolean,
+    subject_code: string,
+    teacher_last_name: string,
+    teacher_first_name: string,
+    title: string,
+    has_description: number,
+    description: string,
+    due_date: number,
+    created_at: number,
+    submitted_at: number,
+    has_graded_value: boolean,
+    graded_value: number,
+}
+
+export type HomeworkSubmission = {
+    id: number,
+    homework_id: number,
+    title: string,
+    subject: string,
+    student_id: number,
+    first_name: string,
+    last_name: string,
+    has_content: boolean,
+    content: string,
+    created_at: number,
+}

@@ -1,1 +1,4 @@
-export { default } from "../placeholder.tsx"
+import StudentHomeworks from '../student/homeworks';
+
+const GuardianHomeworks = StudentHomeworks;
+export default GuardianHomeworks;

@@ -336,6 +336,16 @@ INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_dat
                                                                                        (1, 1, 'Törtek gyakorlása',          'Oldd meg a kijelölt törtes feladatokat.',          '2026-09-25'),
                                                                                        (5, 1, 'Programozási feladat',       'Készíts egy egyszerű Java programot.',             '2026-09-25');
 
+
+INSERT INTO homework_submissions (homework_id, student_id, content, submitted_at, graded_value) VALUES
+                                                                                                    (1, 1, 'Megoldások a 12–20. feladatokra csatolva.', '2026-09-20 17:45:00+02', 5),
+                                                                                                    (2, 1, 'Unit 1 vocabulary practice, 120 words learned.', '2026-09-20 19:10:00+02', 4),
+                                                                                                    (3, 1, 'A feladatlap megoldásai fényképen csatolva.', '2026-09-21 16:20:00+02', 3),
+                                                                                                    (4, 1, 'Háromszögek és szögek feladatai megoldva.', '2026-09-21 18:05:00+02', 4),
+                                                                                                    (5, 1, 'Bemutató elkészítve, link a projekthez: https://example.test/projekt', '2026-09-22 20:30:00+02', 5),
+                                                                                                    (7, 1, 'Exercises 4–8 completed in the workbook.', '2026-09-24 15:40:00+02', NULL),
+                                                                                                    (9, 1, 'Simple Java program uploaded: Main.java and README.', '2026-09-24 21:15:00+02', NULL);
+
 -- Exams
 
 INSERT INTO exams (

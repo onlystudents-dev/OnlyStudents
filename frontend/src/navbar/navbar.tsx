@@ -87,16 +87,16 @@ export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolS
                         <img className={`rounded-[inherit] max-h-full ${!pfpLoaded && "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
                         {!pfpLoaded && <Skeleton width={40} height={40} color={"var(--bg-color)"} className="rounded-[inherit]!" />}
                     </a>
-                    {me.role === "guardian" && <select className="button text-start!" value={child} onChange={e => setChild(e.currentTarget.value)}>
-                        {me.children?.map(child => (
-                            <option value={child.account_id} key={child.account_id}>{child.first_name} {child.last_name}</option>
-                        ))}
-                    </select>}
                     <select className="button text-start!" value={school} onChange={e => setSchool(e.currentTarget.value)}>
                         {memberships?.map(membership => (
                             <option value={membership.school_id} key={membership.school_id}>{membership.school_name}</option>
                         ))}
                     </select>
+                    {me.role === "guardian" && <select className="button text-start!" value={child} onChange={e => setChild(e.currentTarget.value)}>
+                        {me.children?.map(child => (
+                            <option value={child.account_id} key={child.account_id}>{child.first_name} {child.last_name}</option>
+                        ))}
+                    </select>}
                 </div>
             </nav>
         </>
