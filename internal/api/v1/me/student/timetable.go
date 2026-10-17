@@ -19,8 +19,8 @@ type ReadLessonTimeRequest struct {
 }
 
 type ReadRealTimetableRequest struct {
-	StartDate int32 `query:"start_date"`
-	EndDate   int32 `query:"end_date"`
+	StartDate string `query:"start_date"`
+	EndDate   string `query:"end_date"`
 }
 
 type TimetableLesson struct {
@@ -210,7 +210,17 @@ func convertBellScheduleType(row db_queries.ReadBellScheduleTypeRow) TimetableBe
 func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return StudentSummary(c, pool, rdb, "REAL_TIMETABLE_CACHE_TTL", false,
 		func(req ReadRealTimetableRequest) bool {
-			return req.StartDate <= 0 || req.EndDate <= 0
+			_, start_date_err := time.Parse(time.DateOnly, req.StartDate)
+			if start_date_err != nil {
+				return true
+			}
+
+			_, end_date_err := time.Parse(time.DateOnly, req.EndDate)
+			if end_date_err != nil {
+				return true
+			}
+
+			return false
 		},
 		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadRealTimetableRequest, scope helpers.MeScope, ttl int32) ([]db_queries.ReadRealTimeTableRow, error) {
 			start, end, err := parseDateRange(c)
