@@ -10,7 +10,7 @@ import {opaqueRegister} from "../opaque.ts";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
 import { decodeOpaqueExportKey, deriveWrapKey, generateMK, paramsToString, randomBytes, recoveryDigest, wrapMK } from "../../util/crypto/keys.ts";
-import { generateMnemonicSecret, MnemonicSecrettoSeed } from "../../util/crypto/mnemonic.ts";
+import { generateMnemonicSecret, MnemonicSecrettoSeed, normalizeMnemonicSecret } from "../../util/crypto/mnemonic.ts";
 import { getRetryAfter } from "../../util/api.ts";
 
 const CHUNK = 0x8000;
@@ -44,7 +44,7 @@ export default function Enroll() {
       const MK = generateMK()
       const mnemonic = generateMnemonicSecret(e2ee_config.recovery_key_word_count)
       const OpaqueWrappedMK = await wrapMK(MK, await deriveWrapKey(decodeOpaqueExportKey(exportKey), "password"))
-      const MnemonicWrappedMK = await wrapMK(MK, await deriveWrapKey(MnemonicSecrettoSeed(mnemonic), "recovery"))
+      const MnemonicWrappedMK = await wrapMK(MK, await deriveWrapKey(MnemonicSecrettoSeed(normalizeMnemonicSecret(mnemonic)), "recovery"))
       const RecoveryKeySalt = randomBytes(e2ee_config.argon2_salt_len)
       setWaiting(true)
       try {
