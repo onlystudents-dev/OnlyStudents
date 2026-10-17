@@ -1,6 +1,7 @@
 package studentapi
 
 import (
+	"context"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -174,21 +175,31 @@ func convertExam(row db_queries.GetStudentExamsRow) ExamSummary {
 }
 
 func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "grades", helpers.CacheOrGetStudentGrades, convertGrade)
+	return StudentSummary(c, pool, rdb, "GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentGradesRow, error) {
+		return helpers.CacheOrGetStudentGrades(ctx, rdb, queries, scope, ttl)
+	}, convertGrade)
 }
 
 func FinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "final_grades", helpers.CacheOrGetStudentFinalGrades, convertFinalGrade)
+	return StudentSummary(c, pool, rdb, "FINAL_GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentFinalGradesRow, error) {
+		return helpers.CacheOrGetStudentFinalGrades(ctx, rdb, queries, scope, ttl)
+	}, convertFinalGrade)
 }
 
 func Absences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "absences", helpers.CacheOrGetStudentAbsences, convertAbsence)
+	return StudentSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentAbsencesRow, error) {
+		return helpers.CacheOrGetStudentAbsences(ctx, rdb, queries, scope, ttl)
+	}, convertAbsence)
 }
 
 func Homework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "homework", helpers.CacheOrGetStudentHomework, convertHomework)
+	return StudentSummary(c, pool, rdb, "HOMEWORK_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentHomeworkRow, error) {
+		return helpers.CacheOrGetStudentHomework(ctx, rdb, queries, scope, ttl)
+	}, convertHomework)
 }
 
 func Exams(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "exams", helpers.CacheOrGetStudentExams, convertExam)
+	return StudentSummary(c, pool, rdb, "EXAMS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentExamsRow, error) {
+		return helpers.CacheOrGetStudentExams(ctx, rdb, queries, scope, ttl)
+	}, convertExam)
 }

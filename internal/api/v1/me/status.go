@@ -73,13 +73,17 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 
 	switch session_data.Role {
 	case "student":
-		student, err := helpers.CacheOrGetStudent(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
+		student, err := helpers.CacheOrGetStudent(c.Context(), rdb, *queries, helpers.MeScope{
+			StudentID: session_data.AccountID,
+		}, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
 			return &StatusData{}, err
 		}
 
-		school_memberships, err := helpers.CacheOrListStudentMemberships(c.Context(), rdb, *queries, student.ID, school_memberships_ttl)
+		school_memberships, err := helpers.CacheOrListStudentMemberships(c.Context(), rdb, *queries, helpers.MeScope{
+			StudentID: session_data.AccountID,
+		}, school_memberships_ttl)
 
 		if err != nil {
 			return &StatusData{}, err
@@ -114,7 +118,9 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 		guardian_children_data := []ChildrenData{}
 
 		for _, children := range guardian_children {
-			school_memberships, err := helpers.CacheOrListStudentMemberships(c.Context(), rdb, *queries, children.ID, school_memberships_ttl)
+			school_memberships, err := helpers.CacheOrListStudentMemberships(c.Context(), rdb, *queries, helpers.MeScope{
+				StudentID: children.ID,
+			}, school_memberships_ttl)
 
 			if err != nil {
 				return &StatusData{}, err
@@ -155,13 +161,17 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 		}
 
 	case "teacher":
-		teacher, err := helpers.CacheOrGetTeacher(c.Context(), rdb, *queries, session_data.AccountID, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
+		teacher, err := helpers.CacheOrGetTeacher(c.Context(), rdb, *queries, helpers.TeacherScope{
+			TeacherID: session_data.AccountID,
+		}, helpers.GetInt32EnvFallback("PERSON_CACHE_TTL", 5*60, 604800))
 
 		if err != nil {
 			return &StatusData{}, err
 		}
 
-		school_memberships, err := helpers.CacheOrListTeacherMemberships(c.Context(), rdb, *queries, teacher.ID, school_memberships_ttl)
+		school_memberships, err := helpers.CacheOrListTeacherMemberships(c.Context(), rdb, *queries, helpers.TeacherScope{
+			TeacherID: session_data.AccountID,
+		}, school_memberships_ttl)
 
 		if err != nil {
 			return &StatusData{}, err

@@ -255,7 +255,7 @@ func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 	return TeacherTimeTableSummaryByID(c, pool, rdb, "MANAGE_TIMETABLES", "BASE_SCHEDULE_CLASS_CACHE_TTL",
 		func(req ReadBaseScheduleClassRequest) bool { return req.ClassId <= 0 },
 		func(req ReadBaseScheduleClassRequest) int32 { return req.ClassId },
-		helpers.CacheOrGetBaseScheduleClass, convertBaseScheduleClass)
+		helpers.CacheOrGetTeacherBaseScheduleClass, convertBaseScheduleClass)
 }
 
 func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {

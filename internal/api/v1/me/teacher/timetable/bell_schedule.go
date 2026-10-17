@@ -76,5 +76,5 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 }
 
 func ReadBellScheduleTypes(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "MANAGE_BELL_SCHEDULE", "BELL_SCHEDULE_TYPE_CACHE_TTL", helpers.CacheOrGetBellScheduleTypes, convertBellScheduleType)
+	return TeacherTimeTableSummary(c, pool, rdb, "MANAGE_BELL_SCHEDULE", "BELL_SCHEDULE_TYPE_CACHE_TTL", helpers.CacheOrGetTeacherBellScheduleTypes, convertBellScheduleType)
 }

@@ -19,7 +19,6 @@ type MeScope struct {
 
 type TeacherScope struct {
 	SchoolID  int32
-	ClassID   int32
 	TeacherID int32
 }
 
@@ -181,7 +180,10 @@ func ResolvePerson(c fiber.Ctx, rdb *redis.Client, queries db_queries.Queries, s
 
 	ttl := GetInt32EnvFallback("SCHOOL_MEMBERSHIP_CACHE_TTL", 5*60, 604800)
 
-	school_membership, err := CacheOrGetStudentMembership(c.Context(), rdb, queries, int32(school_id), int32(student_id), ttl)
+	school_membership, err := CacheOrGetStudentMembership(c.Context(), rdb, queries, MeScope{
+		SchoolID:  int32(school_id),
+		StudentID: int32(student_id),
+	}, ttl)
 
 	if err != nil {
 		return 0, 0, 0, errors.New("student isnt part of school")
