@@ -19,6 +19,10 @@ import (
 const (
 	redisKeyDynamicCSS    = "theme:dynamic_css"
 	redisKeyRootColorKeys = "theme:root_color_keys"
+
+	maxThemeNameLength = 50
+	maxCSSValueLength  = 64
+	maxColorsPerTheme  = 64
 )
 
 type Theme struct {
@@ -31,7 +35,42 @@ var (
 	styleTagRegex    = regexp.MustCompile(`(?si)<style[^>]*>(.*?)</style>`)
 	rootBlockRegex   = regexp.MustCompile(`(?s):root\s*\{([^}]+)\}`)
 	cssVarRegex      = regexp.MustCompile(`--([a-zA-Z0-9_-]+)\s*:`)
+
+	cssCustomPropertyRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]*$`)
+	themeNameRegex         = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9 _-]*$`)
+	cssHexColorRegex       = regexp.MustCompile(`^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$`)
+	cssFuncColorRegex      = regexp.MustCompile(`(?i)^(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\([0-9a-zA-Z%\s,./+-]+\)$`)
+	cssVarReferenceRegex   = regexp.MustCompile(`(?i)^var\(--[a-zA-Z][a-zA-Z0-9_-]*\)$`)
+
+	cssColorKeywords = buildCssColorKeywords()
 )
+
+const cssColorKeywordList = `aliceblue antiquewhite aqua aquamarine azure beige bisque black ` +
+	`blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse chocolate coral ` +
+	`cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen ` +
+	`darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon ` +
+	`darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink ` +
+	`deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ` +
+	`ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ` +
+	`ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan ` +
+	`lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen ` +
+	`lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime limegreen linen ` +
+	`magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen ` +
+	`mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream ` +
+	`mistyrose moccasin navajowhite navy oldlace olive olivedrab orange orangered orchid ` +
+	`palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum ` +
+	`powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown ` +
+	`seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen ` +
+	`steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen ` +
+	`transparent currentcolor inherit initial unset revert`
+
+func buildCssColorKeywords() map[string]struct{} {
+	keywords := make(map[string]struct{})
+	for _, keyword := range strings.Fields(cssColorKeywordList) {
+		keywords[keyword] = struct{}{}
+	}
+	return keywords
+}
 
 func parseRootKeys(html []byte) []string {
 	styleMatches := styleTagRegex.FindAllSubmatch(html, -1)
@@ -66,9 +105,77 @@ func parseRootKeys(html []byte) []string {
 	return keys
 }
 
-func (t Theme) IsValid(ctx context.Context, rdb *redis.Client) error {
-	if strings.TrimSpace(t.Name) == "" {
+func normalizeColors(colors map[string]string) map[string]string {
+	normalized := make(map[string]string, len(colors))
+	for key, val := range colors {
+		cleanKey := strings.TrimSpace(strings.TrimPrefix(key, "--"))
+		normalized[cleanKey] = strings.TrimSpace(val)
+	}
+	return normalized
+}
+
+func isValidCSSColor(value string) bool {
+	if len(value) == 0 || len(value) > maxCSSValueLength {
+		return false
+	}
+	if cssHexColorRegex.MatchString(value) {
+		return true
+	}
+	if cssFuncColorRegex.MatchString(value) {
+		return true
+	}
+	if cssVarReferenceRegex.MatchString(value) {
+		return true
+	}
+	_, ok := cssColorKeywords[strings.ToLower(value)]
+	return ok
+}
+
+func validateThemeStatic(t Theme) error {
+	name := strings.TrimSpace(t.Name)
+	if name == "" {
 		return fmt.Errorf("theme name cannot be empty")
+	}
+	if len(name) > maxThemeNameLength {
+		return fmt.Errorf("theme name exceeds %d characters", maxThemeNameLength)
+	}
+	if !themeNameRegex.MatchString(name) {
+		return fmt.Errorf("theme name contains invalid characters: %q", name)
+	}
+
+	if len(t.Colors) == 0 {
+		return fmt.Errorf("theme %q has no colors", name)
+	}
+	if len(t.Colors) > maxColorsPerTheme {
+		return fmt.Errorf("theme %q has more than %d color keys", name, maxColorsPerTheme)
+	}
+
+	normalized := normalizeColors(t.Colors)
+
+	var invalidKeys, invalidValues []string
+	for key, val := range normalized {
+		if !cssCustomPropertyRegex.MatchString(key) {
+			invalidKeys = append(invalidKeys, key)
+			continue
+		}
+		if !isValidCSSColor(val) {
+			invalidValues = append(invalidValues, fmt.Sprintf("%s=%q", key, val))
+		}
+	}
+
+	if len(invalidKeys) > 0 {
+		return fmt.Errorf("invalid CSS custom property names: %s", strings.Join(invalidKeys, ", "))
+	}
+	if len(invalidValues) > 0 {
+		return fmt.Errorf("invalid CSS color values: %s", strings.Join(invalidValues, ", "))
+	}
+
+	return nil
+}
+
+func (t Theme) IsValid(ctx context.Context, rdb *redis.Client) error {
+	if err := validateThemeStatic(t); err != nil {
+		return err
 	}
 
 	data, err := rdb.Get(ctx, redisKeyRootColorKeys).Bytes()
@@ -88,29 +195,17 @@ func (t Theme) IsValid(ctx context.Context, rdb *redis.Client) error {
 		return fmt.Errorf("root color keys are empty")
 	}
 
-	normalized := make(map[string]string, len(t.Colors))
-	for k, v := range t.Colors {
-		cleanKey := strings.TrimSpace(strings.TrimPrefix(k, "--"))
-		normalized[cleanKey] = strings.TrimSpace(v)
-	}
+	normalized := normalizeColors(t.Colors)
 
-	var missing, empty []string
+	var missing []string
 	for _, key := range requiredKeys {
-		val, exists := normalized[key]
-		if !exists {
+		if _, exists := normalized[key]; !exists {
 			missing = append(missing, key)
-			continue
-		}
-		if val == "" {
-			empty = append(empty, key)
 		}
 	}
 
 	if len(missing) > 0 {
 		return fmt.Errorf("missing required color keys: %s", strings.Join(missing, ", "))
-	}
-	if len(empty) > 0 {
-		return fmt.Errorf("empty values for color keys: %s", strings.Join(empty, ", "))
 	}
 
 	return nil
@@ -176,6 +271,9 @@ func DeleteTheme(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, name string
 func rebuildCSS(ctx context.Context, rdb *redis.Client, themes []Theme) error {
 	var builder strings.Builder
 	for _, theme := range themes {
+		if err := validateThemeStatic(theme); err != nil {
+			return fmt.Errorf("refusing to build css for invalid theme: %w", err)
+		}
 		builder.WriteString(fmt.Sprintf("[data-theme=%q]{", theme.Name))
 		for key, val := range theme.Colors {
 			if !strings.HasPrefix(key, "--") {
