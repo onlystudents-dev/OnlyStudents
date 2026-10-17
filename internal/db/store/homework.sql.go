@@ -96,10 +96,12 @@ SELECT
     hs.id,
     st.first_name,
     st.last_name,
+    h.due_date,
     hs.content,
     hs.submitted_at,
     hs.graded_value
 FROM homework_submissions hs
+JOIN homework h ON h.id = hs.homework_id
 JOIN students st ON st.id = hs.student_id
 WHERE hs.homework_id = $1
   AND EXISTS (
@@ -123,6 +125,7 @@ type GetTeacherHomeworkSubmissionsRow struct {
 	ID          int64
 	FirstName   string
 	LastName    string
+	DueDate     pgtype.Date
 	Content     pgtype.Text
 	SubmittedAt pgtype.Timestamptz
 	GradedValue pgtype.Int2
@@ -141,6 +144,7 @@ func (q *Queries) GetTeacherHomeworkSubmissions(ctx context.Context, arg GetTeac
 			&i.ID,
 			&i.FirstName,
 			&i.LastName,
+			&i.DueDate,
 			&i.Content,
 			&i.SubmittedAt,
 			&i.GradedValue,
@@ -160,6 +164,7 @@ SELECT
     hs.id,
     hs.homework_id,
     h.title AS homework_title,
+    h.due_date,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     st.id AS student_id,
     st.first_name,
@@ -187,6 +192,7 @@ type GetTeacherUngradedHomeworkSubmissionsRow struct {
 	ID            int64
 	HomeworkID    int32
 	HomeworkTitle string
+	DueDate       pgtype.Date
 	Subject       string
 	StudentID     int32
 	FirstName     string
@@ -208,6 +214,7 @@ func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg
 			&i.ID,
 			&i.HomeworkID,
 			&i.HomeworkTitle,
+			&i.DueDate,
 			&i.Subject,
 			&i.StudentID,
 			&i.FirstName,
