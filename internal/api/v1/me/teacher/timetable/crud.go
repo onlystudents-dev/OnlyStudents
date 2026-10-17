@@ -40,7 +40,7 @@ func TeacherTimeTableSummaryByID[request_type, Row, T any](
 
 	queries := db_queries.New(pool)
 
-	var summaries []T
+	summaries := []T{}
 
 	teacher_scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, required_permission)
 
@@ -83,7 +83,7 @@ func TeacherTimeTableSummary[Row, T any](
 
 	queries := db_queries.New(pool)
 
-	var summaries []T
+	summaries := []T{}
 
 	teacher_scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, required_permission)
 

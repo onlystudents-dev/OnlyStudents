@@ -41,7 +41,7 @@ func StudentSummary[Row, T, request_type any](
 
 	queries := db_queries.New(pool)
 
-	var summaries []T
+	summaries := []T{}
 
 	me_scope, err := helpers.ResolveMeScope(c, pool, rdb)
 
