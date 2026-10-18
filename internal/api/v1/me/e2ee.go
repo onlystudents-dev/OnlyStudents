@@ -2,9 +2,12 @@ package meapi
 
 import (
 	"encoding/base64"
+	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
+	opaquepkg "onlystudents/internal/opaque"
 
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 
 	"github.com/gofiber/fiber/v3"
@@ -19,6 +22,11 @@ type enrollE2EERequest struct {
 	RecoveryKeyHash   string `json:"recovery_key_hash"`
 	RecoveryKeySalt   string `json:"recovery_key_salt"`
 	RecoveryKeyParams string `json:"recovery_key_params"`
+}
+
+type E2EERewrapRequest struct {
+	CryptoGrantHandle string `json:"crypto_grant_handle"`
+	WrappedMKPassword string `json:"wrapped_mk_password"`
 }
 
 func b64decode(base64_string string) ([]byte, error) {
@@ -123,6 +131,84 @@ func EnrollE2EE(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		} else {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 		}
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func E2EERewrap(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	session_data, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
+	}
+
+	var req E2EERewrapRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	if req.WrappedMKPassword == "" || req.CryptoGrantHandle == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	raw, err := rdb.Get(c.Context(), "crypto_grant:"+req.CryptoGrantHandle).Bytes()
+
+	if err != nil {
+		slog.Error("crypto grant rdb get", "err", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	var crypto_grant opaquepkg.EnrollState
+
+	unmarshal_err := json.Unmarshal(raw, &crypto_grant)
+
+	if unmarshal_err != nil {
+		slog.Error("json unmarshall error", "err", unmarshal_err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	if crypto_grant.AccountUUID != session_data.AccountUUID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "FORBIDDEN"})
+	}
+
+	parsed_account_uuid, err := uuid.Parse(crypto_grant.AccountUUID)
+
+	if err != nil {
+		slog.Error("account uuid parse", "err", err)
+		return c.SendStatus(500)
+	}
+
+	DecodedWrappedMKPassword, DecodedWrappedMKPasswordErr := b64decode(req.WrappedMKPassword)
+
+	if DecodedWrappedMKPasswordErr != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	queries := db_queries.New(pool)
+
+	rows, err := queries.UpdateWrappedMKPassword(c.Context(), db_queries.UpdateWrappedMKPasswordParams{
+		AccountUuid:       pgtype.UUID{Bytes: parsed_account_uuid, Valid: true},
+		WrappedMkPassword: DecodedWrappedMKPassword,
+	})
+
+	if err != nil {
+		slog.Error("update wrapped mk password", "err", err)
+		if isUniqueViolation(err) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "CONFLICT"})
+		} else {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+		}
+	}
+
+	if rows != 1 {
+		slog.Error("unexpected updated row count", "rows", rows)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	if err := rdb.Del(c.Context(), "crypto_grant:"+req.CryptoGrantHandle).Err(); err != nil {
+		slog.Error("crypto grant rdb del", "err", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)

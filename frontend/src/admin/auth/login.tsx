@@ -8,34 +8,34 @@ import Loading from "../../util/loading.tsx";
 import {toast} from "react-toastify";
 
 export default function AdminLogin() {
-    const [wrong, setWrong] = useState(false)
+    const [invalidToken, setInvalidToken] = useState(false)
 
-    const [token, setToken] = useState("")
+    const [adminToken, setAdminToken] = useState("")
 
     const [waiting, setWaiting] = useState(false)
-    const [remaining, setRemaining] = useState("")
+    const [secondsLeft, setSecondsLeft] = useState("")
 
     const timerRef = useRef<number | null>(null)
 
-    const updateRemaining = useCallback(function step(remaining: number) {
+    const startCountdown = useCallback(function step(seconds: number) {
         if (timerRef.current) {
             clearTimeout(timerRef.current)
         }
 
-        if (remaining < 0) {
-            setRemaining("")
+        if (seconds < 0) {
+            setSecondsLeft("")
             return
         }
 
-        setRemaining(String(remaining))
+        setSecondsLeft(String(seconds))
 
         timerRef.current = setTimeout(() => {
-            step(remaining - 1)
+            step(seconds - 1)
         }, 1000)
     }, [])
 
     const login = useCallback(async () => {
-        if (wrong || remaining || !token) return
+        if (invalidToken || secondsLeft || !adminToken) return
         setWaiting(true)
         try {
             const response = await fetch("/api/v1/admin_token_login", {
@@ -44,7 +44,7 @@ export default function AdminLogin() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    admin_token: token
+                    admin_token: adminToken
                 })
             })
 
@@ -54,15 +54,15 @@ export default function AdminLogin() {
                     break
                 case 429: {
                     const after = Number(response.headers.get("retry-after"))
-                    updateRemaining(after)
-                    toast.error(await fromResponse(response))
+                    startCountdown(after)
+                    await fromResponse(response)
                     break
                 }
                 default:
                     toast.error(await fromResponse(response))
             }
         } finally { setWaiting(false) }
-    }, [wrong, remaining, token, updateRemaining])
+    }, [invalidToken, secondsLeft, adminToken, startCountdown])
 
     useEffect(() => {
         const handleKeyDown = async (e: KeyboardEvent) => {
@@ -83,10 +83,10 @@ export default function AdminLogin() {
                     <h1 className="self-center text-5xl font-bold mb-4 rubik">{getKey("LOGIN_TITLE")}</h1>
 
                     <div className="loginput fredoka">
-                        <input className={`${wrong && "wrong"}`} type="password" placeholder={getKey("ADMIN_TOKEN")} value={token} onChange={(e) => {setToken(e.currentTarget.value); setWrong(false)}} />
+                        <input className={`${invalidToken && "wrong"}`} type="password" placeholder={getKey("ADMIN_TOKEN")} value={adminToken} onChange={(e) => {setAdminToken(e.currentTarget.value); setInvalidToken(false)}} />
                     </div>
                     <div className="logbutton">
-                        <p className="text-(--wrong-color) text-3xl fredoka">{remaining}</p>
+                        <p className="text-(--wrong-color) text-3xl fredoka">{secondsLeft}</p>
                         <Button onClick={login}>
                             {getKey("LOGIN")} <FontAwesomeIcon icon={faArrowRight} />
                         </Button>

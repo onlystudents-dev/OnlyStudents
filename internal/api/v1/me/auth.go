@@ -254,7 +254,7 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
-	cacheKey := fmt.Sprintf("pending_password_reset_%s", code)
+	cacheKey := fmt.Sprintf("reset_code_%s", code)
 	sessionData := helpers.SessionData{
 		AccountID:   req.User,
 		Role:        req.Role,
@@ -290,12 +290,16 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-type ResetPasswordConfirmType struct {
-	PasswordResetCode string `json:"pending_password"`
+type ForgetPasswordCheckRequest struct {
+	PasswordResetCode string `json:"reset_code"`
 }
 
-func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	var req ResetPasswordConfirmType
+type ForgetPasswordConfirmRequest struct {
+	PasswordResetCode string `json:"reset_code"`
+}
+
+func ForgetPasswordCheck(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	var req ForgetPasswordCheckRequest
 
 	if err := c.Bind().Body(&req); err != nil {
 		return c.SendStatus(400)
@@ -305,9 +309,9 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 		return c.SendStatus(400)
 	}
 
-	key := fmt.Sprintf("pending_password_reset_%s", req.PasswordResetCode)
+	key := fmt.Sprintf("reset_code_%s", req.PasswordResetCode)
 
-	dataJSON, err := rdb.GetDel(c.Context(), key).Result()
+	dataJSON, err := rdb.Get(c.Context(), key).Result()
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "INVALID_PASSWORD_RESET_TOKEN",
@@ -322,37 +326,124 @@ func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 
 	queries := db_queries.New(pool)
 
+	account_uuid, aerr := uuid.Parse(sessionData.AccountUUID)
+
+	if aerr != nil {
+		slog.Error("account uuid parse", "err", aerr)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	e2ee_data, err := queries.GetAccountCrypto(c.Context(), pgtype.UUID{Bytes: account_uuid, Valid: true})
+
+	if err != nil {
+		slog.Error("get account crypto", "err", err)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "NO_CRYPTO"})
+	}
+
+	base64_encoded_wrapped_mk := b64encode(e2ee_data.WrappedMkRecovery)
+
+	if base64_encoded_wrapped_mk == "" {
+		slog.Error("empty wrapped mk recovery")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	base64_encoded_recovery_key_hash := b64encode(e2ee_data.RecoveryKeyHash)
+
+	if base64_encoded_recovery_key_hash == "" {
+		slog.Error("empty recovery key hash")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	base64_encoded_recovery_key_salt := b64encode(e2ee_data.RecoveryKeySalt)
+
+	if base64_encoded_recovery_key_salt == "" {
+		slog.Error("empty recovery key salt")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	return c.JSON(fiber.Map{
+		"wrapped_mk_recovery": base64_encoded_wrapped_mk,
+		"recovery_key_hash":   base64_encoded_recovery_key_hash,
+		"recovery_key_salt":   base64_encoded_recovery_key_salt,
+		"recovery_key_params": e2ee_data.RecoveryKeyParams,
+	})
+}
+
+func ForgetPasswordConfirm(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	var req ForgetPasswordConfirmRequest
+
+	if err := c.Bind().Body(&req); err != nil {
+		return c.SendStatus(400)
+	}
+
+	if req.PasswordResetCode == "" {
+		return c.SendStatus(400)
+	}
+
+	key := fmt.Sprintf("reset_code_%s", req.PasswordResetCode)
+
+	dataJSON, err := rdb.GetDel(c.Context(), key).Result()
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "INVALID_PASSWORD_RESET_TOKEN",
+		})
+	}
+
+	var sessionData helpers.SessionData
+	if err = json.Unmarshal([]byte(dataJSON), &sessionData); err != nil {
+		slog.Error("json unmarshall error", "err", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	queries := db_queries.New(pool)
+
 	parsed_account_uuid, err := uuid.Parse(sessionData.AccountUUID)
 
 	if err != nil {
 		slog.Error("account uuid parse", "err", err)
-		return c.SendStatus(500)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	session_revoke_err := queries.RevokeAllSessions(c.Context(), pgtype.UUID{Bytes: parsed_account_uuid, Valid: true})
 
 	if session_revoke_err != nil {
 		slog.Error("session revoke", "err", session_revoke_err)
-		return c.SendStatus(500)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	if redis_revoke_err := helpers.SessionRevokeAll(c.Context(), rdb, sessionData.AccountUUID); redis_revoke_err != nil {
 		slog.Error("session redis revoke", "err", redis_revoke_err)
-		return c.SendStatus(500)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	enroll_token := opaquepkg.NewEnrollToken()
 
-	enroll_err := rdb.Set(c.Context(), fmt.Sprintf("enroll:%s", enroll_token), opaquepkg.EnrollState{
-		AccountUUID: sessionData.AccountUUID,
-	}, time.Duration(helpers.GetIntEnvFallback("ENROLL_TOKEN_TTL", 168, 30*24))*time.Hour).Err()
+	enroll_state_bytes, err := json.Marshal(opaquepkg.EnrollState{
+		AccountUUID: parsed_account_uuid.String(),
+	})
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	enroll_err := rdb.Set(c.Context(), fmt.Sprintf("enroll:%s", enroll_token), enroll_state_bytes, time.Duration(helpers.GetIntEnvFallback("ENROLL_TOKEN_TTL", 168, 30*24))*time.Hour).Err()
 
 	if enroll_err != nil {
 		slog.Error("enroll create", "err", enroll_err)
-		return c.SendStatus(500)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	crypto_grant_handle := rand.Text()
+	ttl := time.Duration(helpers.GetInt64EnvFallback("OPAQUE_CRYPTO_GRANT_TTL", 300, 900)) * time.Second
+	rdb_err := rdb.Set(c.Context(), fmt.Sprintf("crypto_grant:%s", crypto_grant_handle), enroll_state_bytes, ttl).Err()
+
+	if rdb_err != nil {
+		slog.Error("crypto grant rdb set", "err", rdb_err)
+		return rdb_err
 	}
 
 	return c.JSON(fiber.Map{
-		"enroll_token": enroll_token,
+		"enroll_token":        enroll_token,
+		"crypto_grant_handle": crypto_grant_handle,
 	})
 }

@@ -14,9 +14,9 @@ import type {Me} from "../../types/api.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
 
 export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>}) {
-    const [pwr, setPwr] = useState(false)
-    const [pwrA, setPwrA] = useState(false)
-    const [reset, setReset] = useState(false)
+    const [resetOpen, setResetOpen] = useState(false)
+    const [resetActive, setResetActive] = useState(false)
+    const [resetSent, setResetSent] = useState(false)
 
     const [red, setRed] = useState(false)
     const [wrong, setWrong] = useState(false)
@@ -75,8 +75,8 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
 
     return (
         <>
-            <div className={`box cantar ${reset ? "h-168" : "h-100"}`}>
-                <div className={`content out ${pwrA && "hid h-86"}`}>
+            <div className={`box cantar ${resetSent ? "h-184" : "h-100"}`}>
+                <div className={`content out ${resetActive && "hid h-86"}`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">
                         <RoleSelect value={role} onChange={(r) => { setRole(r); setWrong(false) }} />
@@ -84,7 +84,7 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
                         <input className={`${wrong && "wrong"}`} type="password" placeholder={getKey("PASSWORD")} value={password} onChange={(e) => {setPassword(e.currentTarget.value); setWrong(false)}} />
                     </div>
                     <div aria-disabled className="logbutton">
-                        <Button onClick={sPwr}>
+                        <Button onClick={openReset}>
                             <FontAwesomeIcon icon={faQuestion} /> {getKey("FORGOT_PASSWORD")}
                         </Button>
                         <div className="flex flex-row items-center gap-4">
@@ -95,7 +95,7 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
                         </div>
                     </div>
                 </div>
-                {pwr && <PasswordReset pwrA={pwrA} unsPwr={unsPwr} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} setWaiting={setWaiting} setResetL={setReset} />}
+                {resetOpen && <PasswordReset resetActive={resetActive} onClose={closeReset} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} setWaiting={setWaiting} setResetSent={setResetSent} />}
             </div>
             {waiting && <Loading />}
             {fetchMe !== undefined && <Overlay z={148} />}
@@ -110,14 +110,14 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
         }
     }
 
-    function sPwr() {
-        setPwr(true)
-        setPwrA(true)
+    function openReset() {
+        setResetOpen(true)
+        setResetActive(true)
     }
 
-    function unsPwr() {
-        setReset(false)
-        setPwrA(false)
-        setTimeout(() => setPwr(false), 200)
+    function closeReset() {
+        setResetSent(false)
+        setResetActive(false)
+        setTimeout(() => setResetOpen(false), 200)
     }
 }
