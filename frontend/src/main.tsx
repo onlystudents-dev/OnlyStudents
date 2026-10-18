@@ -8,10 +8,7 @@ function Root() {
     const [reload, setReload] = useState(false)
 
     return (
-        <App
-            key={reload}
-            reload={() => setReload(prev => !prev)}
-        />
+        <App key={reload} reload={() => setReload(prev => !prev)} />
     )
 }
 

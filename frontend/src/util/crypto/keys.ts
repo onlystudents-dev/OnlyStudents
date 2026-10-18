@@ -8,34 +8,34 @@ import { concatBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 export type Bytes = Uint8Array<ArrayBuffer>;
 
 export function generateMK(): Bytes {
-  return randomBytes(32)
+    return randomBytes(32)
 }
 
 export function deriveWrapKey(secret: Bytes, purpose: "password" | "recovery"): Promise<CryptoKey> {
-  return crypto.subtle.importKey("raw", hkdf.hkdf(sha2.sha256, secret, utf8ToBytes(`onlystudents-e2ee-v1`), utf8ToBytes(`onlystudents-${purpose}-v1`), 32), "AES-GCM", false, ["encrypt", "decrypt"])
+    return crypto.subtle.importKey("raw", hkdf.hkdf(sha2.sha256, secret, utf8ToBytes(`onlystudents-e2ee-v1`), utf8ToBytes(`onlystudents-${purpose}-v1`), 32), "AES-GCM", false, ["encrypt", "decrypt"])
 }
 
 export function randomBytes(len: number): Bytes {
-  return crypto.getRandomValues(new Uint8Array(len))
+    return crypto.getRandomValues(new Uint8Array(len))
 }
 
 const CHUNK = 0x8000;
 
 export function b64encode(u8: Uint8Array): string {
-  let s = "";
-  for (let i = 0; i < u8.length; i += CHUNK) {
-    s += String.fromCharCode(...u8.subarray(i, i + CHUNK))
-  }
-  return btoa(s)
+    let s = "";
+    for (let i = 0; i < u8.length; i += CHUNK) {
+        s += String.fromCharCode(...u8.subarray(i, i + CHUNK))
+    }
+    return btoa(s)
 }
 
 export function recoveryDigest(mnemonic: string, salt: Bytes, cfg: E2EEConfig): Bytes {
-  return argon2.argon2id(normalizeMnemonicSecret(mnemonic), salt, {
-    t: cfg.argon2_time,
-    m: cfg.argon2_memory,
-    p: cfg.argon2_threads,
-    dkLen: cfg.argon2_key_len
-  })
+    return argon2.argon2id(normalizeMnemonicSecret(mnemonic), salt, {
+        t: cfg.argon2_time,
+        m: cfg.argon2_memory,
+        p: cfg.argon2_threads,
+        dkLen: cfg.argon2_key_len
+    })
 }
 
 export function paramsToString(cfg: E2EEConfig): string {
@@ -55,31 +55,31 @@ export function parseParams(s: string): {t: number, m: number, p: number, dkLen:
 }
 
 function base64UrlDecode(str: string): Bytes {
-  const b64 = str.replace(/-/g, '+').replace(/_/g, '/')
-  const bin = atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, '='))
-  return Uint8Array.from(bin, c => c.charCodeAt(0))
+    const b64 = str.replace(/-/g, '+').replace(/_/g, '/')
+    const bin = atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, '='))
+    return Uint8Array.from(bin, c => c.charCodeAt(0))
 }
 
 export function decodeOpaqueExportKey(exportKey: string): Bytes {
-  return base64UrlDecode(exportKey)
+    return base64UrlDecode(exportKey)
 }
 
 export async function wrapMK(mkBytes: Bytes, aesKey: CryptoKey): Promise<Bytes> {
-  const iv = randomBytes(12)
-  return concatBytes(iv,
-    new Uint8Array(await crypto.subtle.encrypt({
-      "name": "AES-GCM",
-      iv,
-    },
-    aesKey, mkBytes)
-  ))
+    const iv = randomBytes(12)
+    return concatBytes(iv,
+        new Uint8Array(await crypto.subtle.encrypt({
+            "name": "AES-GCM",
+            iv,
+        },
+        aesKey, mkBytes)
+    ))
 }
 
 export async function unwrapMK(blob: Bytes, aesKey: CryptoKey): Promise<Bytes> {
-  const iv = blob.slice(0, 12)
+    const iv = blob.slice(0, 12)
 
-  return new Uint8Array(await crypto.subtle.decrypt({
-    "name": "AES-GCM",
-    iv,
-  }, aesKey, blob.slice(12)))
+    return new Uint8Array(await crypto.subtle.decrypt({
+        "name": "AES-GCM",
+        iv,
+    }, aesKey, blob.slice(12)))
 }

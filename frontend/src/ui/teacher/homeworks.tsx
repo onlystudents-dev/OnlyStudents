@@ -15,7 +15,6 @@ export default function TeacherHomeworks({ me }: { me: Me }) {
         return fetchWithSchool("/api/v1/me/teacher/homework").then(async res => setHomeworks(await res.json() as HomeworkSubmission[]))
     }
 
-
     useEffect(() => void Fetch(), [])
 
     return <Homeworks me={me} homeworks={homeworks} Popup={Popup} reloadSchoolStuff={Fetch} />
