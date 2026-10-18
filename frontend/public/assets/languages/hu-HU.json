@@ -159,7 +159,7 @@
     "TEACHER_UPDATED_HOMEWORK": "Házi feladat sikeresen frissítve!",
     "NO_HOMEWORK.guardian": "A gyerekednek nincsen házi feladata.",
     "NO_HOMEWORK.student": "Nincs házi feladatod. De jó neked!",
-    "NO_HOMEWORK.teacher": "Nincs beküldendő házi feladat amit értékelned kéne."
+    "NO_HOMEWORK.teacher": "Nincs beküldött házi feladat amit értékelned kéne."
   },
   "errors": {
     "NO_CRYPTO": "A beállított végponti titkosítási kulcsok hiányoznak.",
