@@ -21,6 +21,8 @@ type AddHomeworkRequest struct {
 	HasDescription  bool   `json:"has_description"`
 	Description     string `json:"description"`
 	DueDate         int64  `json:"due_date"`
+	HasAssignedDate bool   `json:"has_assigned_date"`
+	AssignedDate    int64  `json:"assigned_date"`
 	ClassSubjectsID int32  `json:"class_subjects_id"`
 }
 
@@ -30,6 +32,8 @@ type EditHomeworkRequest struct {
 	HasDescription  bool   `json:"has_description"`
 	Description     string `json:"description"`
 	DueDate         int64  `json:"due_date"`
+	HasAssignedDate bool   `json:"has_assigned_date"`
+	AssignedDate    int64  `json:"assigned_date"`
 	ClassSubjectsID int32  `json:"class_subjects_id"`
 }
 
@@ -161,6 +165,7 @@ func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				Title:           req.Title,
 				Description:     pgtype.Text{String: req.Description, Valid: req.HasDescription},
 				DueDate:         pgtype.Date{Time: time.Unix(req.DueDate, 0), Valid: true},
+				AssignedDate:    pgtype.Date{Time: time.Unix(req.AssignedDate, 0), Valid: req.HasAssignedDate},
 				ClassSubjectsID: req.ClassSubjectsID,
 				SchoolID:        teacher_scope.SchoolID,
 			})
@@ -191,6 +196,7 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				Title:           req.Title,
 				Description:     pgtype.Text{String: req.Description, Valid: req.HasDescription},
 				DueDate:         pgtype.Date{Time: time.Unix(req.DueDate, 0), Valid: true},
+				AssignedDate:    pgtype.Date{Time: time.Unix(req.AssignedDate, 0), Valid: req.HasAssignedDate},
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       teacher_scope.TeacherID,
 			})

@@ -326,11 +326,11 @@ func (q *Queries) StudentUpsertHomeworkSubmission(ctx context.Context, arg Stude
 }
 
 const teacherAddHomework = `-- name: TeacherAddHomework :execrows
-INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date)
-SELECT cs.id, $1, $2, $3, $4
+INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date, assigned_date)
+SELECT cs.id, $1, $2, $3, $4, $5
 FROM class_subjects cs
-WHERE cs.id = $5
-  AND cs.school_id = $6
+WHERE cs.id = $6
+  AND cs.school_id = $7
   AND cs.teacher_id = $1
 `
 
@@ -339,6 +339,7 @@ type TeacherAddHomeworkParams struct {
 	Title           string
 	Description     pgtype.Text
 	DueDate         pgtype.Date
+	AssignedDate    pgtype.Date
 	ClassSubjectsID int32
 	SchoolID        int32
 }
@@ -349,6 +350,7 @@ func (q *Queries) TeacherAddHomework(ctx context.Context, arg TeacherAddHomework
 		arg.Title,
 		arg.Description,
 		arg.DueDate,
+		arg.AssignedDate,
 		arg.ClassSubjectsID,
 		arg.SchoolID,
 	)
@@ -389,21 +391,22 @@ UPDATE homework h
 SET class_subjects_id = $2,
     title = $3,
     description = $4,
-    due_date = $5
+    due_date = $5,
+    assigned_date = $6
 WHERE h.id = $1
   AND EXISTS (
       SELECT 1
       FROM class_subjects cs
       WHERE cs.id = h.class_subjects_id
-        AND cs.school_id = $6
-        AND cs.teacher_id = $7
+        AND cs.school_id = $7
+        AND cs.teacher_id = $8
   )
   AND EXISTS (
       SELECT 1
       FROM class_subjects cs
       WHERE cs.id = $2
-        AND cs.school_id = $6
-        AND cs.teacher_id = $7
+        AND cs.school_id = $7
+        AND cs.teacher_id = $8
   )
 `
 
@@ -413,6 +416,7 @@ type TeacherEditHomeworkParams struct {
 	Title           string
 	Description     pgtype.Text
 	DueDate         pgtype.Date
+	AssignedDate    pgtype.Date
 	SchoolID        int32
 	TeacherID       int32
 }
@@ -424,6 +428,7 @@ func (q *Queries) TeacherEditHomework(ctx context.Context, arg TeacherEditHomewo
 		arg.Title,
 		arg.Description,
 		arg.DueDate,
+		arg.AssignedDate,
 		arg.SchoolID,
 		arg.TeacherID,
 	)

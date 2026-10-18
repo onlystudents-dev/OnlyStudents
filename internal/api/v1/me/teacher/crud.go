@@ -148,6 +148,9 @@ func TeacherModify[request_type any](
 	rows_affected, err := query_func(c.Context(), teacher_scope, queries, req)
 
 	if err != nil {
+		if helpers.IsUniqueViolation(err) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "CONFLICT"})
+		}
 		slog.Error("teacher modify err", "err", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}

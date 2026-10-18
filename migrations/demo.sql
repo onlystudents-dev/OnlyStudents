@@ -325,16 +325,16 @@ INSERT INTO time_table (
 
 -- Homework
 
-INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date) VALUES
-                                                                                       (1, 1, 'Algebra gyakorló feladatok', 'Oldd meg a 12–20. feladatokat a munkafüzetből.', '2026-09-21'),
-                                                                                       (4, 1, 'English vocabulary',         'Tanuld meg az Unit 1 szavait.',                    '2026-09-21'),
-                                                                                       (2, 1, 'Nyelvtani feladatlap',       'A kijelölt nyelvtani feladatok megoldása.',        '2026-09-22'),
-                                                                                       (1, 1, 'Geometria gyakorlás',        'Háromszögek és szögek gyakorlása.',                '2026-09-22'),
-                                                                                       (5, 1, 'Informatika projekt',        'Készíts egy rövid bemutatót a megadott témáról.', '2026-09-23'),
-                                                                                       (1, 1, 'Dolgozatra készülés',        'Geometriai feladatok átnézése, megtanulása',       '2026-09-24'),
-                                                                                       (4, 1, 'English exercises',          'Complete exercises 4–8 in the workbook.',          '2026-09-24'),
-                                                                                       (1, 1, 'Törtek gyakorlása',          'Oldd meg a kijelölt törtes feladatokat.',          '2026-09-25'),
-                                                                                       (5, 1, 'Programozási feladat',       'Készíts egy egyszerű Java programot.',             '2026-09-25');
+INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date, assigned_date) VALUES
+                                                                                       (1, 1, 'Algebra gyakorló feladatok', 'Oldd meg a 12–20. feladatokat a munkafüzetből.', '2026-09-21', '2026-09-21'),
+                                                                                       (4, 1, 'English vocabulary',         'Tanuld meg az Unit 1 szavait.',                    '2026-09-21', '2026-09-21'),
+                                                                                       (2, 1, 'Nyelvtani feladatlap',       'A kijelölt nyelvtani feladatok megoldása.',        '2026-09-22', '2026-09-22'),
+                                                                                       (1, 1, 'Geometria gyakorlás',        'Háromszögek és szögek gyakorlása.',                '2026-09-22', '2026-09-22'),
+                                                                                       (5, 1, 'Informatika projekt',        'Készíts egy rövid bemutatót a megadott témáról.', '2026-09-23', '2026-09-23'),
+                                                                                       (1, 1, 'Dolgozatra készülés',        'Geometriai feladatok átnézése, megtanulása',       '2026-09-24', '2026-09-24'),
+                                                                                       (4, 1, 'English exercises',          'Complete exercises 4–8 in the workbook.',          '2026-09-24', '2026-09-23'),
+                                                                                       (1, 1, 'Törtek gyakorlása',          'Oldd meg a kijelölt törtes feladatokat.',          '2026-09-25', '2026-09-25'),
+                                                                                       (5, 1, 'Programozási feladat',       'Készíts egy egyszerű Java programot.',             '2026-09-25', '2026-09-25');
 
 
 INSERT INTO homework_submissions (homework_id, student_id, content, submitted_at, graded_value) VALUES

@@ -70,8 +70,8 @@ export function Timetable(props: TimetableProps) {
                               ].filter(Boolean).join(" ")}</h2>
                           </div>
                           <div className="flex flex-col gap-1 items-end shrink-0">
-                              {lesson.has_exam && <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />}
-                              {lesson.has_homework && <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />}
+                              {lesson.has_exam_id && <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />}
+                              {lesson.has_homework_id && <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />}
                           </div>
                       </div>
 

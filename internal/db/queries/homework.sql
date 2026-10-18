@@ -27,8 +27,8 @@ WHERE csub.school_id = sqlc.arg(school_id)
 ORDER BY h.due_date, h.created_at;
 
 -- name: TeacherAddHomework :execrows
-INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date)
-SELECT cs.id, sqlc.arg(teacher_id), sqlc.arg(title), sqlc.arg(description), sqlc.arg(due_date)
+INSERT INTO homework (class_subjects_id, teacher_id, title, description, due_date, assigned_date)
+SELECT cs.id, sqlc.arg(teacher_id), sqlc.arg(title), sqlc.arg(description), sqlc.arg(due_date), sqlc.arg(assigned_date)
 FROM class_subjects cs
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
@@ -56,21 +56,22 @@ UPDATE homework h
 SET class_subjects_id = $2,
     title = $3,
     description = $4,
-    due_date = $5
+    due_date = $5,
+    assigned_date = $6
 WHERE h.id = $1
   AND EXISTS (
       SELECT 1
       FROM class_subjects cs
       WHERE cs.id = h.class_subjects_id
-        AND cs.school_id = $6
-        AND cs.teacher_id = $7
+        AND cs.school_id = $7
+        AND cs.teacher_id = $8
   )
   AND EXISTS (
       SELECT 1
       FROM class_subjects cs
       WHERE cs.id = $2
-        AND cs.school_id = $6
-        AND cs.teacher_id = $7
+        AND cs.school_id = $7
+        AND cs.teacher_id = $8
   );
 
 -- name: TeacherDeleteHomework :execrows

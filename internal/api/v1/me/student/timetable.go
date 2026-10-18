@@ -41,8 +41,10 @@ type TimetableLesson struct {
 	HasCustomSubjectID  bool   `json:"has_custom_subject_id"`
 	CustomSubjectID     int32  `json:"custom_subject_id"`
 	SubjectName         string `json:"subject_name"`
-	HasExam             bool   `json:"has_exam"`
-	HasHomework         bool   `json:"has_homework"`
+	HasExamID           bool   `json:"has_exam_id"`
+	ExamID              int64  `json:"exam_id"`
+	HasHomeworkID       bool   `json:"has_homework_id"`
+	HomeworkID          int64  `json:"homework_id"`
 	IsSubstitution      bool   `json:"is_substitution"`
 	Canceled            bool   `json:"canceled"`
 }
@@ -65,8 +67,6 @@ type TimetableBaseLesson struct {
 	HasCustomSubjectID  bool   `json:"has_custom_subject_id"`
 	CustomSubjectID     int32  `json:"custom_subject_id"`
 	SubjectName         string `json:"subject_name"`
-	HasExam             bool   `json:"has_exam"`
-	HasHomework         bool   `json:"has_homework"`
 }
 
 type TimetableBellSchedule struct {
@@ -142,8 +142,10 @@ func convertRealTimeTable(row db_queries.ReadRealTimeTableRow) TimetableLesson {
 		HasCustomSubjectID:  row.CustomSubjectID.Valid,
 		CustomSubjectID:     row.CustomSubjectID.Int32,
 		SubjectName:         row.SubjectName,
-		HasExam:             row.HasExam,
-		HasHomework:         row.HasHomework,
+		HasExamID:           row.ExamID > 0,
+		ExamID:              row.ExamID,
+		HasHomeworkID:       row.HomeworkID > 0,
+		HomeworkID:          row.HomeworkID,
 		IsSubstitution:      row.IsSubstitution,
 		Canceled:            row.Canceled,
 	}
@@ -168,8 +170,6 @@ func convertBaseLesson(row db_queries.ReadBaseScheduleClassRow) TimetableBaseLes
 		HasCustomSubjectID:  row.CustomSubjectID.Valid,
 		CustomSubjectID:     row.CustomSubjectID.Int32,
 		SubjectName:         row.SubjectName,
-		HasExam:             row.HasExam,
-		HasHomework:         row.HasHomework,
 	}
 }
 
@@ -228,7 +228,7 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 				return []db_queries.ReadRealTimeTableRow{}, err
 			}
 
-			key := fmt.Sprintf("real_timetable:%d:%d:%d:%d", scope.SchoolID, scope.StudentID, start.Unix(), end.Unix())
+			key := fmt.Sprintf("real_timetable:v2:%d:%d:%d:%d", scope.SchoolID, scope.StudentID, start.Unix(), end.Unix())
 			return helpers.CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRealTimeTableRow, error) {
 				return queries.ReadRealTimeTable(ctx, db_queries.ReadRealTimeTableParams{
 					SchoolID:  scope.SchoolID,
