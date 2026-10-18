@@ -123,7 +123,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                                         <FontAwesomeIcon icon={faRotateLeft} /> {getKey("USE_DIFFERENT_EMAIL")}
                                                     </button>
                                                     <div className="absolute bottom-0 right-0 flex flex-row gap-2">
-                                                        <button onClick={async () => await resend()}>
+                                                        <button onClick={async () => await resend(() => toast.success(getKey("SUCCESSFULLY_RESENT")))}>
                                                             <FontAwesomeIcon icon={faPaperPlane} /> {getKey("RESEND")}
                                                         </button>
                                                         <button onClick={updateEmail}>
