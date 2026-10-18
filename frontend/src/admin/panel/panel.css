@@ -75,15 +75,6 @@
         }
     }
 
-    .theme-action-button {
-        @apply cursor-pointer;
-        transition: color 300ms ease-in-out;
-    }
-
-    .theme-action-button:hover {
-        transition: color 100ms ease-in-out;
-    }
-
     .theme-action-shadow {
         transition: box-shadow 400ms ease-in-out;
     }

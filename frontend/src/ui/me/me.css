@@ -48,10 +48,6 @@
     }
 }
 
-.wrong {
-    box-shadow: 0 0 15px var(--wrong-color) !important;
-}
-
 @keyframes out {
     0% {
         transform: translateX(0);

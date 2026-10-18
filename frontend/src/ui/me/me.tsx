@@ -1,5 +1,4 @@
 import "./me.css";
-import Navbar from "../../navbar/navbar.tsx";
 import {isTimeFormat, type Me, type Preferences, type Theme} from "../../types/api.ts";
 import Button, {DropdownConfig} from "../../util/sidebar/config.tsx";
 import {
@@ -74,7 +73,6 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
 
     return (
         <>
-            <Navbar me={me} />
             <Save options={options} setOptions={setOptions} save={save} />
             {loading && <Loading />}
             <div className="main">

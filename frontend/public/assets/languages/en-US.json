@@ -25,6 +25,7 @@
     "HOME": "Home",
     "TIMETABLE": "Timetable",
     "GRADES": "Grades",
+    "EXAMS": "Exams",
     "HOMEWORKS": "Homeworks",
     "ABSENCES": "Absences",
     "SETTINGS": "Settings",
@@ -66,6 +67,7 @@
     "DAYS.friday": "Friday",
     "DAYS.saturday": "Saturday",
     "DAYS.sunday": "Sunday",
+    "SCHOOL_YEAR": "%1 school year",
     "TERM": "Term",
     "TIMETABLE_DISPLAY": "Show days in timetable",
     "TIMETABLE_DISPLAY.LESSONS": "Only where there are lessons",
@@ -155,7 +157,13 @@
     "RECOVERY_KEY_ACCEPT": "I have stored the secret in a secure place.",
     "CONTINUE": "Continue",
     "COPIED": "Copied",
-    "PASSWORD_SUCCESSFULLY_CHANGED": "You successfully changed your password!"
+    "PASSWORD_SUCCESSFULLY_CHANGED": "You successfully changed your password!",
+    "TEACHER_UPDATED_HOMEWORK": "Homework successfully updated!",
+    "NO_HOMEWORK.guardian": "Your child doesn't have any homework yet.",
+    "NO_HOMEWORK.student": "You don't have any homework. Lucky you!",
+    "NO_HOMEWORK.teacher": "You don't have any homework submissions to grade left!",
+    "TYPE": "Type",
+    "TEACHER": "Teacher"
   },
   "errors": {
     "NO_CRYPTO": "The enrolled E2EE keys are missing.",

@@ -18,7 +18,11 @@ VALUES
           "warning-color": "#ff8200",
           "warning-base-color": "rgb(255 130 0 / 0.5)",
           "right-color": "#21fa90",
-          "edit-color": "#007fff"
+          "right-base-color": "rgb(33 250 144 / 0.5)",
+          "edit-color": "#007fff",
+          "edit-base-color": "rgb(0 127 255 / 0.5)",
+          "yellow-color": "#fec601",
+          "yellow-base-color": "rgb(254 198 1 / 0.5)"
         }'::jsonb
     ),
     (
@@ -34,7 +38,11 @@ VALUES
           "warning-color": "#ff8200",
           "warning-base-color": "rgb(255 130 0 / 0.5)",
           "right-color": "#21fa90",
-          "edit-color": "#007fff"
+          "right-base-color": "rgb(33 250 144 / 0.5)",
+          "edit-color": "#007fff",
+          "edit-base-color": "rgb(0 127 255 / 0.5)",
+          "yellow-color": "#fec601",
+          "yellow-base-color": "rgb(254 198 1 / 0.5)"
         }'::jsonb
     ),
     (
@@ -50,6 +58,10 @@ VALUES
           "warning-color": "#ff8200",
           "warning-base-color": "rgb(255 130 0 / 0.5)",
           "right-color": "#1ab369",
-          "edit-color": "#007fff"
+          "right-base-color": "rgb(26 179 105 / 0.5)",
+          "edit-color": "#007fff",
+          "edit-base-color": "rgb(0 127 255 / 0.5)",
+          "yellow-color": "#fec601",
+          "yellow-base-color": "rgb(254 198 1 / 0.5)"
         }'::jsonb
     );

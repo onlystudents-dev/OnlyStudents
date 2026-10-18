@@ -204,6 +204,7 @@ type Homework struct {
 	Description     pgtype.Text
 	DueDate         pgtype.Date
 	CreatedAt       pgtype.Timestamptz
+	AssignedDate    pgtype.Date
 }
 
 type HomeworkSubmission struct {

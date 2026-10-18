@@ -17,6 +17,7 @@ var FrontendPaths = []string{
 	"/enroll",
 	"/timetable",
 	"/grades",
+	"/exams",
 	"/homeworks",
 	"/absences",
 }

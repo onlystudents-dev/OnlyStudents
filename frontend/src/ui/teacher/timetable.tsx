@@ -5,11 +5,14 @@ import {toast} from "react-toastify";
 
 import {fetchInto, fetchWithSchool, getRetryAfter, readJSON} from "../../util/api.ts";
 import type { FeatureProps } from "../../types/props.ts";
-import {type Day, type DayName, DAY_NAMES, Timetable} from "../timetable/timetable.tsx"
+import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../timetable/timetable.tsx"
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
 import Loading from "../../util/loading.tsx";
 import RateLimit from "../../util/ratelimit.tsx";
-import Navbar from "../../navbar/navbar.tsx";
+import {useReloadSchoolStuff} from "../../util/school.ts";
+import Overlay from "../../util/overlay/overlay.tsx";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faXmark} from "@fortawesome/free-solid-svg-icons";
 
 export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
@@ -132,14 +135,39 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
         void Fetch()
     }, [Fetch])
 
+    useReloadSchoolStuff(() => void Fetch())
+
     return (
-      <>
-        <Navbar me={me} reloadSchoolStuff={Fetch} />
-        {loading && <Loading />}
-        {ratelimit !== -1 && (
-          <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />
-        )}
-        <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffset.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffset.current + 1)}/>
-      </>
-    );
+        <>
+            {loading && <Loading />}
+            {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
+            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffset.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffset.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} />
+        </>
+    )
+}
+
+function Popup({ lesson, rooms, clear }: PopupProps) {
+    return (
+        <>
+            <Overlay onClick={clear} />
+            <div className="popup">
+                <div className="popup-content">
+                    <div className="absolute top-6 left-6 right-16 flex flex-row gap-3">
+                        <div className="text-3xl rubik flex-1 truncate">
+                            {lesson.subject_name}
+                        </div>
+                        <div className="shrink min-w-0 max-w-[45%]">
+                            {rooms.find(r => r.id === lesson.room_id)?.name}
+                        </div>
+                    </div>
+                    <div className="absolute top-15 left-6 text-2xl opacity-70 rubik max-w-[56vw] truncate"> {/* truncate just in case */}
+                        {lesson.teacher_first_name} {lesson.teacher_last_name}
+                    </div>
+                    <div className="absolute top-6 right-6 action-button hover:text-(--wrong-color)" onClick={clear}>
+                        <FontAwesomeIcon icon={faXmark} />
+                    </div>
+                </div>
+            </div>
+        </>
+    )
 }

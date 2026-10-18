@@ -108,3 +108,26 @@ body {
   box-shadow: 0 0 15px var(--hover-color);
   transition: box-shadow 200ms ease-in-out;
 }
+
+.wrong {
+  box-shadow: 0 0 15px var(--wrong-color) !important;
+  transition: box-shadow 400ms ease-in-out;
+}
+
+.action-button {
+  @apply cursor-pointer;
+  transition: color 300ms ease-in-out;
+}
+
+.action-button:hover {
+  transition: color 100ms ease-in-out;
+}
+
+.bgaction-button {
+  @apply cursor-pointer;
+  transition: background-color 400ms ease-in-out;
+}
+
+.bgaction-button:hover {
+  transition: background-color 200ms ease-in-out;
+}

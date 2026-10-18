@@ -58,15 +58,8 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
             </>}
 
             <div className="buttons" onMouseLeave={() => setHidden(true)}>
-                <div
-                    className={`sbutton ${hidden ? "hid" : ""}`}
-                    style={{ top: `${hoverTop}px` }}
-                />
-
-                <div
-                    className="sbutton ssbutton"
-                    style={{ top: `${selectTop}px` }}
-                />
+                <div className={`sbutton ${hidden && "hid"}`} style={{ top: `${hoverTop}px` }} />
+                <div className="sbutton ssbutton" style={{ top: `${selectTop}px` }} />
 
                 {Children.toArray(children).map((child) => {
                     if (!isValidElement(child)) return child

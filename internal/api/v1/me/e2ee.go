@@ -118,7 +118,7 @@ func EnrollE2EE(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		RecoveryKeyParams: req.RecoveryKeyParams,
 	})
 	if err != nil {
-		if isUniqueViolation(err) {
+		if helpers.IsUniqueViolation(err) {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "CONFLICT"})
 		} else {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})

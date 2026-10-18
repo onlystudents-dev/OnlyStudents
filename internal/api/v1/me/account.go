@@ -3,7 +3,6 @@ package meapi
 import (
 	"context"
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"log/slog"
 	"math/big"
@@ -17,17 +16,9 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-const pgUniqueViolation = "23505"
-
-func isUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation
-}
 
 func generateCode(length int) (string, error) {
 	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -159,7 +150,7 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	}
 
 	if err != nil {
-		if isUniqueViolation(err) {
+		if helpers.IsUniqueViolation(err) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 		}
 		slog.Error("change email error", "err", err)

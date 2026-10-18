@@ -12,7 +12,7 @@
         }
     }
     .lesson {
-        @apply bg-(--hover-color) rounded-2xl p-3 w-full h-36 flex flex-col justify-between;
+        @apply bg-(--hover-color) rounded-2xl p-3 w-full h-36 flex flex-col justify-between cursor-pointer;
         border-bottom: 2px solid var(--border-color);
         border-color: var(--border-color);
         h1 {

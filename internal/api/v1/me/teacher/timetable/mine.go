@@ -30,8 +30,10 @@ type TimetableLesson struct {
 	HasCustomSubjectID  bool   `json:"has_custom_subject_id"`
 	CustomSubjectID     int32  `json:"custom_subject_id"`
 	SubjectName         string `json:"subject_name"`
-	HasExam             bool   `json:"has_exam"`
-	HasHomework         bool   `json:"has_homework"`
+	HasExamID           bool   `json:"has_exam_id"`
+	ExamID              int64  `json:"exam_id"`
+	HasHomeworkID       bool   `json:"has_homework_id"`
+	HomeworkID          int64  `json:"homework_id"`
 	IsSubstitution      bool   `json:"is_substitution"`
 	Canceled            bool   `json:"canceled"`
 }
@@ -116,8 +118,10 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 			HasCustomSubjectID:  row.CustomSubjectID.Valid,
 			CustomSubjectID:     row.CustomSubjectID.Int32,
 			SubjectName:         row.SubjectName,
-			HasExam:             row.HasExam,
-			HasHomework:         row.HasHomework,
+			HasExamID:           row.ExamID > 0,
+			ExamID:              row.ExamID,
+			HasHomeworkID:       row.HomeworkID > 0,
+			HomeworkID:          row.HomeworkID,
 			IsSubstitution:      row.IsSubstitution,
 			Canceled:            row.Canceled,
 		})

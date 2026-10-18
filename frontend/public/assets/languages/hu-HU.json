@@ -25,6 +25,7 @@
     "HOME": "Kezdőlap",
     "TIMETABLE": "Órarend",
     "GRADES": "Jegyek",
+    "EXAMS": "Dolgozatok",
     "HOMEWORKS": "Házi feladatok",
     "ABSENCES": "Hiányzások",
     "SETTINGS": "Beállítások",
@@ -66,7 +67,8 @@
     "DAYS.friday": "Péntek",
     "DAYS.saturday": "Szombat",
     "DAYS.sunday": "Vasárnap",
-    "TERM": "Tanév",
+    "SCHOOL_YEAR": "%1 tanév",
+    "TERM": "Félév",
     "TIMETABLE_DISPLAY": "Napok mutatása az órarendben",
     "TIMETABLE_DISPLAY.LESSONS": "Csak azok, amelyeken van óra",
     "TIMETABLE_DISPLAY.WEEKDAYS": "Hétköznapok",
@@ -155,7 +157,13 @@
     "RECOVERY_KEY_ACCEPT": "Biztonságos helyen tároltam a kulcsot.",
     "CONTINUE": "Tovább",
     "COPIED": "Kimásolva",
-    "PASSWORD_SUCCESSFULLY_CHANGED": "Sikeresen megváltoztatta a jelszavát!"
+    "PASSWORD_SUCCESSFULLY_CHANGED": "Sikeresen megváltoztattad a jelszavad!",
+    "TEACHER_UPDATED_HOMEWORK": "Házi feladat sikeresen frissítve!",
+    "NO_HOMEWORK.guardian": "A gyerekednek nincsen házi feladata.",
+    "NO_HOMEWORK.student": "Nincs házi feladatod. De jó neked!",
+    "NO_HOMEWORK.teacher": "Nincs beküldött házi feladat amit értékelned kéne.",
+    "TYPE": "Típus",
+    "TEACHER": "Tanár"
   },
   "errors": {
     "NO_CRYPTO": "A beállított végponti titkosítási kulcsok hiányoznak.",

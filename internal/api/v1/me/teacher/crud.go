@@ -16,6 +16,7 @@ func TeacherSummaryByID[request_type, Row, T any](
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
 	cache_key string,
+	single bool,
 	request_check_func func(request_type) bool,
 	get_id_func func(request_type) int32,
 	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, ID int32, scope helpers.TeacherScope, ttl int32) ([]Row, error),
@@ -62,6 +63,12 @@ func TeacherSummaryByID[request_type, Row, T any](
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
+	if single {
+		if len(summaries) == 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+		}
+		return c.JSON(summaries[0])
+	}
 	return c.JSON(summaries)
 }
 
@@ -141,6 +148,9 @@ func TeacherModify[request_type any](
 	rows_affected, err := query_func(c.Context(), teacher_scope, queries, req)
 
 	if err != nil {
+		if helpers.IsUniqueViolation(err) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "CONFLICT"})
+		}
 		slog.Error("teacher modify err", "err", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}

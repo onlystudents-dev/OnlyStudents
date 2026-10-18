@@ -60,10 +60,6 @@
     }
 }
 
-.wrong {
-    box-shadow: 0 0 15px var(--wrong-color) !important;
-}
-
 .logbutton {
     @apply flex flex-row justify-between items-center w-full absolute left-0 bottom-0 right-0;
     .button {

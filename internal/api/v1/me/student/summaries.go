@@ -10,6 +10,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type RequestWithID struct {
+	ID int64 `query:"id"`
+}
 type HomeworkSummary struct {
 	ID               int64  `json:"id"`
 	Subject          string `json:"subject"`
@@ -155,7 +158,45 @@ func convertHomework(row db_queries.GetStudentHomeworkRow) HomeworkSummary {
 	}
 }
 
-func convertExam(row db_queries.GetStudentExamsRow) ExamSummary {
+func convertHomeworkByID(row db_queries.GetStudentHomeworkByIDRow) HomeworkSummary {
+	return HomeworkSummary{
+		ID:               row.ID,
+		Subject:          row.Subject,
+		HasSubjectCode:   row.SubjectCode.Valid,
+		SubjectCode:      row.SubjectCode.String,
+		TeacherLastName:  row.TeacherLastName,
+		TeacherFirstName: row.TeacherFirstName,
+		Title:            row.Title,
+		HasDescription:   row.Description.Valid,
+		Description:      row.Description.String,
+		DueDate:          row.DueDate.Time.Unix(),
+		CreatedAt:        row.CreatedAt.Time.Unix(),
+		SubmittedAt:      row.SubmittedAt.Time.Unix(),
+		HasGradedValue:   row.GradedValue.Valid,
+		GradedValue:      row.GradedValue.Int16,
+	}
+}
+
+func convertExams(row db_queries.GetStudentExamsRow) ExamSummary {
+	return ExamSummary{
+		ID:               row.ID,
+		Subject:          row.Subject,
+		HasSubjectCode:   row.SubjectCode.Valid,
+		SubjectCode:      row.SubjectCode.String,
+		TeacherLastName:  row.TeacherLastName,
+		TeacherFirstName: row.TeacherFirstName,
+		Title:            row.Title,
+		HasDescription:   row.Description.Valid,
+		Description:      row.Description.String,
+		Date:             row.Date.Time.Unix(),
+		StartTime:        row.StartTime.Microseconds / 1000000,
+		EndTime:          row.EndTime.Microseconds / 1000000,
+		HasRoom:          row.Room.Valid,
+		Room:             row.Room.String,
+	}
+}
+
+func convertExam(row db_queries.GetStudentExamRow) ExamSummary {
 	return ExamSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
@@ -198,8 +239,20 @@ func Homework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	}, convertHomework)
 }
 
+func HomeworkByID(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	return StudentSummary(c, pool, rdb, "HOMEWORK_CACHE_TTL", true, func(req RequestWithID) bool { return req.ID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req RequestWithID, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentHomeworkByIDRow, error) {
+		return helpers.CacheOrGetStudentHomeworkByID(ctx, rdb, queries, scope, ttl, req.ID)
+	}, convertHomeworkByID)
+}
+
 func Exams(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return StudentSummary(c, pool, rdb, "EXAMS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentExamsRow, error) {
 		return helpers.CacheOrGetStudentExams(ctx, rdb, queries, scope, ttl)
+	}, convertExams)
+}
+
+func Exam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	return StudentSummary(c, pool, rdb, "EXAMS_CACHE_TTL", true, func(req RequestWithID) bool { return req.ID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req RequestWithID, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentExamRow, error) {
+		return helpers.CacheOrGetStudentExam(ctx, rdb, queries, scope, ttl, req.ID)
 	}, convertExam)
 }
