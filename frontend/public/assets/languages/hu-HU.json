@@ -157,9 +157,9 @@
     "COPIED": "Kimásolva",
     "PASSWORD_SUCCESSFULLY_CHANGED": "Sikeresen megváltoztattad a jelszavad!",
     "TEACHER_UPDATED_HOMEWORK": "Házi feladat sikeresen frissítve!",
-    "NO_HOMEWORK.guardian": "A gyerekednek nincsen házi feladata",
+    "NO_HOMEWORK.guardian": "A gyerekednek nincsen házi feladata.",
     "NO_HOMEWORK.student": "Nincs házi feladatod. De jó neked!",
-    "NO_HOMEWORK.teacher": "Nincs neked beküldendő házi feladat"
+    "NO_HOMEWORK.teacher": "Nincs beküldendő házi feladat amit értékelned kéne."
   },
   "errors": {
     "NO_CRYPTO": "A beállított végponti titkosítási kulcsok hiányoznak.",
