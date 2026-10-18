@@ -156,7 +156,10 @@
     "CONTINUE": "Continue",
     "COPIED": "Copied",
     "PASSWORD_SUCCESSFULLY_CHANGED": "You successfully changed your password!",
-    "TEACHER_UPDATED_HOMEWORK": "Homework successfully updated!"
+    "TEACHER_UPDATED_HOMEWORK": "Homework successfully updated!",
+    "NO_HOMEWORK.guardian": "Your kid's got no homework",
+    "NO_HOMEWORK.student": "You've no homework. Lucky you!",
+    "NO_HOMEWORK.teacher": "You've no homework submissions"
   },
   "errors": {
     "NO_CRYPTO": "The enrolled E2EE keys are missing.",
