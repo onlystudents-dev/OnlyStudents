@@ -194,7 +194,7 @@ func E2EERewrap(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	if err != nil {
 		slog.Error("update wrapped mk password", "err", err)
-		if isUniqueViolation(err) {
+		if helpers.IsUniqueViolation(err) {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "CONFLICT"})
 		} else {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
