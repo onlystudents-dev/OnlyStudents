@@ -5,6 +5,7 @@ import Button from "../../util/button/button.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight} from "@fortawesome/free-solid-svg-icons";
 import Loading from "../../util/loading.tsx";
+import {toast} from "react-toastify";
 
 export default function AdminLogin() {
     const [wrong, setWrong] = useState(false)
@@ -54,11 +55,11 @@ export default function AdminLogin() {
                 case 429: {
                     const after = Number(response.headers.get("retry-after"))
                     updateRemaining(after)
-                    await fromResponse(response)
+                    toast.error(await fromResponse(response))
                     break
                 }
                 default:
-                    await fromResponse(response)
+                    toast.error(await fromResponse(response))
             }
         } finally { setWaiting(false) }
     }, [wrong, remaining, token, updateRemaining])

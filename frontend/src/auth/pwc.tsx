@@ -5,12 +5,12 @@ import {getKey} from "../util/language.ts";
 import {getPasswordConfig, isPasswordExposed, type PasswordConfig} from "./authConfig.ts";
 
 export default function PasswordCheck({ password, confirmPassword, setPassed }: {password: string, confirmPassword?: string, setPassed: React.Dispatch<React.SetStateAction<boolean>>}) {
-    const [config, setConfig] = useState<PasswordConfig | null>(null);
-    const [exposed, setExposed] = useState<boolean | null>(null);
+    const [config, setConfig] = useState<PasswordConfig | null>(null)
+    const [exposed, setExposed] = useState<boolean | null>(null)
 
     useEffect(() => {
         void getPasswordConfig().then(setConfig);
-    }, []);
+    }, [])
 
     useEffect(() => {
         function Fetch() {
@@ -33,7 +33,7 @@ export default function PasswordCheck({ password, confirmPassword, setPassed }: 
         }
 
         Fetch()
-    }, [password, config?.hibp_check_enabled]);
+    }, [password, config?.hibp_check_enabled])
 
     const min_length = config?.min_length ?? 12
     const max_length = config?.max_length ?? 256
@@ -44,7 +44,7 @@ export default function PasswordCheck({ password, confirmPassword, setPassed }: 
         { label: getKey("CONDITION.UPPER"), ok: /[A-Z]/.test(password) },
         { label: getKey("CONDITION.NUMBERS"), ok: /[0-9]/.test(password) },
         { label: getKey("CONDITION.SPECIAL"), ok: /[^a-zA-Z0-9]/.test(password) },
-    ];
+    ]
     if (confirmPassword !== undefined) {
         checks.push({ label: getKey("CONDITION.MATCH"), ok: password === confirmPassword })
     }
@@ -71,5 +71,5 @@ export default function PasswordCheck({ password, confirmPassword, setPassed }: 
                 </p>
             ))}
         </div>
-    );
+    )
 }

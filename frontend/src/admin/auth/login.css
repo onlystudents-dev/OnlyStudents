@@ -10,6 +10,21 @@
     overflow: hidden;
 }
 
+.loginput {
+    @apply flex flex-col m-4 gap-4 w-full;
+
+    input {
+        @apply h-12 w-full rounded-lg p-3;
+        background-color: var(--hover-color);
+        transition: box-shadow 400ms ease-in-out;
+    }
+    input:focus, input:hover {
+        @apply outline-none;
+        box-shadow: 0 0 15px var(--hover-color);
+        transition: box-shadow 200ms ease-in-out;
+    }
+}
+
 .box:hover {
     box-shadow: 0 0 10px var(--txt-color);
     transition: box-shadow 200ms ease-in-out, height 200ms ease-in-out;

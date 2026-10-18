@@ -1,5 +1,6 @@
 import { toast } from "react-toastify"
 import { fromResponse } from "./language"
+import React from "react";
 
 export function postJSON(url: string, body?: unknown) {
     return fetch(url, {
@@ -31,10 +32,7 @@ export async function readJSON<T>(response: Response): Promise<T> {
     return await response.json() as T
 }
 
-export async function fetchInto<T>(
-    api: string,
-    method?: React.Dispatch<React.SetStateAction<T>>
-) {
+export async function fetchInto<T>(api: string, method?: React.Dispatch<React.SetStateAction<T>>) {
     const response = await fetchWithSchool(api)
 
     if (!response.ok) {

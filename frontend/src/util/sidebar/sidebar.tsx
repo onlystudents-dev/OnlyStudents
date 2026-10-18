@@ -10,7 +10,7 @@ import {Children} from "preact/compat";
 type ClickableProps = {
     onClick?: (e: MouseEvent) => void;
     onMouseEnter?: (e: MouseEvent) => void;
-};
+}
 
 export default function Sidebar({ children, me }: { children: ComponentChildren; me?: Me }) {
     const [hoverTop, setHoverTop] = useState(0)
