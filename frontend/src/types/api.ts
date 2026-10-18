@@ -148,7 +148,7 @@ export type Exam = {
     room: string,
 }
 
-export type StudentGrades = {
+export type Grade = {
     id:	number,
     subject: string,
     has_subject_code: boolean,
@@ -161,4 +161,21 @@ export type StudentGrades = {
     date: number,
     has_note: boolean,
     note: string,
+}
+
+export type Absence = {
+    id: number,
+    subject: string,
+    has_subject_code: boolean,
+    subject_code: string,
+    has_teacher_last_name: boolean,
+    has_teacher_first_name: boolean,
+    teacher_last_name: string,
+    teacher_first_name: string,
+    date: number,
+    type: string,
+    justified: boolean,
+    has_note: boolean,
+    note: string,
+    verified_by: string,
 }

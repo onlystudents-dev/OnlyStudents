@@ -119,7 +119,7 @@ INSERT INTO grades (
     student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note
 ) VALUES
       -- Matematika
-      (1, 1, 1, 1, 1, 2, '2026-09-10', 'Első témazáró'),
+      (1, 1, 1, 1, 1, 5, '2026-09-10', 'Első témazáró'),
       (1, 1, 1, 1, 2, 1, '2026-09-08', 'Házi feladat'),
       (1, 1, 1, 1, 3, 3, '2026-09-14', 'Felelés'),
       (1, 1, 1, 1, 4, 2, '2026-09-18', 'Dolgozat'),

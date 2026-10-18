@@ -4,7 +4,7 @@ import {faHouseChimney, faPenToSquare, faStar, faStopwatch, faTable} from "@fort
 import Button from "../util/button/button.tsx";
 import type {Me} from "../types/api.ts";
 import {getKey} from "../util/language.ts";
-import {useRef, useState} from "react";
+import {useCallback, useRef, useState} from "react";
 import Skeleton from "../util/skeleton/skeleton.tsx";
 import {features} from "../features.ts";
 import {reloadSchoolStuff} from "../util/school.ts";
@@ -123,7 +123,7 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
         setSelectWidth((e.currentTarget as Element).getBoundingClientRect().width)
     }
 
-    useLayoutEffect(() => {
+    const handleSelect = useCallback(() => {
         const button = buttons.current.get(path)
 
         if (!button) {
@@ -138,6 +138,13 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
         setSelectLeft(button.getBoundingClientRect().left - container.getBoundingClientRect().left)
         setSelectWidth(button.getBoundingClientRect().width)
     }, [path])
+
+    useLayoutEffect(() => {
+        handleSelect()
+
+        window.addEventListener("resize", handleSelect)
+        return () => window.removeEventListener("resize", handleSelect)
+    }, [handleSelect])
 
     return (
         <>

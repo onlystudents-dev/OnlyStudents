@@ -12,7 +12,7 @@
 }
 
 .popup {
-    @apply absolute bg-(--hover-color) border-2 border-(--border-color) rounded-lg z-151;
+    @apply fixed bg-(--hover-color) border-2 border-(--border-color) rounded-lg z-151;
     inset: calc(10vh - 62px) 16vw 10vh;
 }
 

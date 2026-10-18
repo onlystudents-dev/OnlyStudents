@@ -1,4 +1,3 @@
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import type {Lesson, LessonTime, Me, Room} from "../../types/api"
 import { getKey } from "../../util/language"
@@ -8,6 +7,7 @@ import Skeleton from "../../util/skeleton/skeleton.tsx";
 import "./timetable.css";
 import { faAngleLeft } from "@fortawesome/free-solid-svg-icons/faAngleLeft";
 import React from "preact/compat";
+import {Badge} from "../../util/button/button.tsx";
 
 export const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
 
@@ -56,7 +56,7 @@ export function Timetable(props: TimetableProps) {
         <>
             <div className="w-full flex flex-row justify-center pt-4">
                 <h1 className="text-5xl rubik">
-                    {getKey("TERM", props.year)}
+                    {getKey("SCHOOL_YEAR", props.year)}
                 </h1>
             </div>
             <div className="w-full h-fit p-4 gap-4 flex flex-row justify-center items-stretch">
@@ -115,12 +115,4 @@ function toHoursAndMinutes(me: Me, lesson: Lesson, lessonTime: LessonTime[]) {
     if (!time) return ""
 
     return `${formatSecondsToHourAndMinute(time.at_start, me)}-${formatSecondsToHourAndMinute(time.at_end, me)}`
-}
-
-export function Badge({ icon, className }: {icon: IconDefinition, className: string}) {
-    return (
-        <span className={`rounded-full size-8 inline-flex items-center justify-center ${className}`}>
-            <FontAwesomeIcon icon={icon} />
-        </span>
-    )
 }

@@ -19,11 +19,8 @@ export default function StudentExams({ me }: { me: Me }) {
         return fetchWithSchool("/api/v1/me/student/exams").then(async res => setExams(await res.json() as Exam[]))
     }
 
-    useEffect(() => {
-        void Fetch()
-    }, [])
-
-    useReloadSchoolStuff(() => { void Fetch() })
+    useEffect(() => void Fetch(), [])
+    useReloadSchoolStuff(() => void Fetch())
 
     return (
         <>

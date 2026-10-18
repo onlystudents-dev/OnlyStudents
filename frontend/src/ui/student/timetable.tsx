@@ -5,7 +5,7 @@ import {toast} from "react-toastify";
 import "../homeworks/homeworks.css";
 import {fetchInto, fetchWithSchool, getRetryAfter, readJSON} from "../../util/api.ts";
 import type { FeatureProps } from "../../types/props.ts";
-import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps, Badge} from "../timetable/timetable.tsx"
+import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../timetable/timetable.tsx"
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
 import Loading from "../../util/loading.tsx";
 import RateLimit from "../../util/ratelimit.tsx";
@@ -14,6 +14,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faHouseChimney, faPenToSquare, faXmark} from "@fortawesome/free-solid-svg-icons";
 import Overlay from "../../util/overlay/overlay.tsx";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
+import {Badge} from "../../util/button/button.tsx";
 
 export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
@@ -136,7 +137,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         void Fetch()
     }, [Fetch])
 
-    useReloadSchoolStuff(() => { void Fetch() })
+    useReloadSchoolStuff(() => void Fetch())
 
     return (
         <>

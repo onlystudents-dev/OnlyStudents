@@ -135,7 +135,7 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
         void Fetch()
     }, [Fetch])
 
-    useReloadSchoolStuff(() => { void Fetch() })
+    useReloadSchoolStuff(() => void Fetch())
 
     return (
         <>

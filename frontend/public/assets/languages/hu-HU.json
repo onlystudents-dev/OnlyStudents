@@ -67,7 +67,8 @@
     "DAYS.friday": "Péntek",
     "DAYS.saturday": "Szombat",
     "DAYS.sunday": "Vasárnap",
-    "TERM": "%1 Tanév",
+    "SCHOOL_YEAR": "%1 tanév",
+    "TERM": "Félév",
     "TIMETABLE_DISPLAY": "Napok mutatása az órarendben",
     "TIMETABLE_DISPLAY.LESSONS": "Csak azok, amelyeken van óra",
     "TIMETABLE_DISPLAY.WEEKDAYS": "Hétköznapok",
@@ -160,7 +161,9 @@
     "TEACHER_UPDATED_HOMEWORK": "Házi feladat sikeresen frissítve!",
     "NO_HOMEWORK.guardian": "A gyerekednek nincsen házi feladata.",
     "NO_HOMEWORK.student": "Nincs házi feladatod. De jó neked!",
-    "NO_HOMEWORK.teacher": "Nincs beküldött házi feladat amit értékelned kéne."
+    "NO_HOMEWORK.teacher": "Nincs beküldött házi feladat amit értékelned kéne.",
+    "TYPE": "Típus",
+    "TEACHER": "Tanár"
   },
   "errors": {
     "NO_CRYPTO": "A beállított végponti titkosítási kulcsok hiányoznak.",
