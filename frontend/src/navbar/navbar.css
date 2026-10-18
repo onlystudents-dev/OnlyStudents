@@ -14,4 +14,21 @@ nav {
     @apply h-15 w-full flex justify-between items-center p-4 z-100 fixed top-0 left-0 right-0;
     border-bottom: var(--border-color) solid 2px;
     background-color: var(--bg-color);
+
+    .buttons {
+        @apply flex flex-row items-center gap-2 relative;
+        .hid {
+            opacity: 0;
+        }
+        .navbbg {
+            @apply absolute z-0 w-full h-10 rounded-lg left-0;
+            pointer-events: none;
+            transition: opacity 200ms ease-in-out, left 100ms ease-in-out;
+            background-color: var(--hover-color);
+        }
+        .navbbgs {
+            background-color: var(--border-color);
+            transition: left 300ms ease-in-out;
+        }
+    }
 }

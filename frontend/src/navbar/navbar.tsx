@@ -4,9 +4,10 @@ import {faHouseChimney, faPenToSquare, faStar, faStopwatch, faTable} from "@fort
 import Button from "../util/button/button.tsx";
 import type {Me} from "../types/api.ts";
 import {getKey} from "../util/language.ts";
-import {useState} from "react";
+import {useRef, useState} from "react";
 import Skeleton from "../util/skeleton/skeleton.tsx";
 import {features} from "../app.tsx";
+import {useLayoutEffect} from "preact/hooks";
 
 export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolStuff?: () => void}) {
     const icons = {
@@ -84,15 +85,57 @@ export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolS
         ? me.children?.find(c => c.account_id === child)?.school_memberships
         : me.school_memberships
 
+    const [hoverLeft, setHoverLeft] = useState(0)
+    const [hoverWidth, setHoverWidth] = useState(0)
+    const [selectLeft, setSelectLeft] = useState(0)
+    const [selectWidth, setSelectWidth] = useState(0)
+
+    const selectedRef = useRef<HTMLButtonElement | null>(null)
+    const [hidden, setHidden] = useState(true)
+
+    function getLeft(e: MouseEvent): number {
+        const button = e.currentTarget as Element
+        const container = button.closest(".buttons")
+
+        if (!container) return 0
+
+        return button.getBoundingClientRect().left - container.getBoundingClientRect().left
+    }
+
+    function handleEnter(e: MouseEvent) {
+        setHidden(false)
+        setHoverLeft(getLeft(e))
+        setHoverWidth((e.currentTarget as Element).getBoundingClientRect().width)
+    }
+
+    function handleClick(e: MouseEvent) {
+        setSelectLeft(getLeft(e))
+        setSelectWidth((e.currentTarget as Element).getBoundingClientRect().width)
+    }
+
+    useLayoutEffect(() => {
+        const selected = selectedRef.current
+        if (!selected) return
+
+        setSelectWidth(selected.getBoundingClientRect().width)
+
+        const container = selected.closest(".buttons")
+        if (!container) return
+
+        setSelectLeft(selected.getBoundingClientRect().left - container.getBoundingClientRect().left)
+    }, [])
+
     return (
         <>
             <nav>
-                <div className="flex flex-row items-center gap-2">
+                <div className="buttons" onMouseLeave={() => setHidden(true)}>
                     {links.map(({href, icon, key}) => (
-                        <Button href={href} key={href}>
+                        <Button key={href} className="hover:bg-inherit! z-1" onMouseEnter={handleEnter} onClick={handleClick} refB={location.pathname === href && selectedRef || undefined}>
                             <FontAwesomeIcon icon={icon} /> {getKey(key)}
                         </Button>
                     ))}
+                    <div className={`navbbg ${hidden && "hid"}`} style={{ left: `${hoverLeft}px`, width: `${hoverWidth}px` }} />
+                    <div className="navbbg navbbgs" style={{ left: `${selectLeft}px`, width: `${selectWidth}px` }} />
                 </div>
                 <div className="flex flex-row-reverse items-center gap-2">
                     <a className="rounded-[50%] h-10 cursor-pointer" href="/me">
