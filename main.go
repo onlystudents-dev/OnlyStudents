@@ -34,7 +34,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 	authRateWindow := helpers.GetInt64EnvFallback("AUTH_RATELIMIT_WINDOW", 60, 1000000)
 	apiRateMax := helpers.GetInt64EnvFallback("API_RATE_MAX", 60, 1000000)
 	apiRateWindow := helpers.GetInt64EnvFallback("API_RATELIMIT_WINDOW", 60, 1000000)
-	forgetRateMax := helpers.GetInt64EnvFallback("FORGET_RATE_MAX", 1, 1000000)
+	forgetRateMax := helpers.GetInt64EnvFallback("FORGET_RATE_MAX", 8, 1000000) // 2 forget password tries (4 requests each) per 2 minutes
 	forgetRateWindow := helpers.GetInt64EnvFallback("FORGET_RATELIMIT_WINDOW", 120, 1000000)
 
 	authLimit := func(c fiber.Ctx) error {
@@ -88,6 +88,10 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			forgetLimit,
 			func(c fiber.Ctx) error { return meapi.ForgetPassword(c, pool, rdb) },
 		}),
+		"forget_password_check": helpers.Post([]fiber.Handler{
+			forgetLimit,
+			func(c fiber.Ctx) error { return meapi.ForgetPasswordCheck(c, pool, rdb) },
+		}),
 		"forget_password_confirm": helpers.Post([]fiber.Handler{
 			forgetLimit,
 			func(c fiber.Ctx) error { return meapi.ForgetPasswordConfirm(c, pool, rdb) },
@@ -122,9 +126,9 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			"logout":                 helpers.Post(func(c fiber.Ctx) error { return meapi.Logout(c, pool, rdb) }),
 			"update_preferences":     helpers.Post(func(c fiber.Ctx) error { return meapi.UpdatePreferences(c, pool, rdb) }),
 			"change_email":           helpers.Post(func(c fiber.Ctx) error { return meapi.ChangeEmail(c, pool, rdb) }),
-			"verify_email": helpers.Post([]fiber.Handler{authLimit,
+			"verify_email": helpers.Post([]fiber.Handler{forgetLimit,
 				func(c fiber.Ctx) error { return meapi.VerifyEmailRequest(c, pool, rdb) }}),
-			"verify_email_confirm": helpers.Post([]fiber.Handler{authLimit,
+			"verify_email_confirm": helpers.Post([]fiber.Handler{forgetLimit,
 				func(c fiber.Ctx) error { return meapi.VerifyEmailConfirm(c, pool, rdb) }}),
 			"status": helpers.Get(func(c fiber.Ctx) error { return meapi.Status(c, pool, rdb) }),
 
@@ -140,6 +144,11 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				"crypto": helpers.Get(
 					func(c fiber.Ctx) error { return meapi.GetE2EE(c, pool, rdb) },
 				),
+				"rewrap": helpers.Post([]fiber.Handler{
+					forgetLimit,
+					func(c fiber.Ctx) error { return meapi.E2EERewrap(c, pool, rdb) },
+				}),
+
 				"enroll": helpers.Post([]fiber.Handler{
 					forgetLimit,
 					func(c fiber.Ctx) error { return meapi.EnrollE2EE(c, pool, rdb) },

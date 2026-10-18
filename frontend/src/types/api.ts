@@ -178,4 +178,17 @@ export type Absence = {
     has_note: boolean,
     note: string,
     verified_by: string,
+    class_subjects_id: number,
+}
+
+export type ForgetPasswordCheckResponse = {
+    wrapped_mk_recovery: string
+    recovery_key_hash: string
+    recovery_key_salt: string
+    recovery_key_params: string
+}
+
+export type ForgetPasswordConfirmResponse = {
+    enroll_token: string
+    crypto_grant_handle: string
 }

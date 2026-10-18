@@ -29,6 +29,18 @@ export function b64encode(u8: Uint8Array): string {
     return btoa(s)
 }
 
+export function b64decode(str: string): Bytes {
+  const bin = atob(str)
+  return Uint8Array.from(bin, c => c.charCodeAt(0))
+}
+
+export function constantTimeEqual(a: Bytes, b: Bytes): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0)
+  return diff === 0
+}
+
 export function recoveryDigest(mnemonic: string, salt: Bytes, cfg: E2EEConfig): Bytes {
     return argon2.argon2id(normalizeMnemonicSecret(mnemonic), salt, {
         t: cfg.argon2_time,
