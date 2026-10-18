@@ -45,6 +45,7 @@
     "EMAIL_CHANGED": "Email changed successfully",
     "NICKNAME_CHANGED": "Nickname changed successfully",
     "RESEND": "Resend",
+    "SUCCESSFULLY_RESENT": "Email successfully resent!",
     "USE_DIFFERENT_EMAIL": "Use different email",
     "APPEARANCE_SETTINGS": "Appearance",
     "LANGUAGE": "Language",

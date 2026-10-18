@@ -45,6 +45,7 @@
     "EMAIL_CHANGED": "Email sikeresen megváltoztatva",
     "NICKNAME_CHANGED": "Becenév sikeresen megváltoztatva",
     "RESEND": "Resend",
+    "SUCCESSFULLY_RESENT": "E-mail sikeresen újraküldve!",
     "USE_DIFFERENT_EMAIL": "Use different email",
     "APPEARANCE_SETTINGS": "Megjelenítés",
     "LANGUAGE": "Nyelv",
