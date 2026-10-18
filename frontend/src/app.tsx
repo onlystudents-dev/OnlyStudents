@@ -24,6 +24,10 @@ export const features = {
         student: lazy(() => import("./ui/student/grades.tsx")),
         guardian: lazy(() => import("./ui/guardian/grades.tsx"))
     },
+    exams: {
+        student: lazy(() => import("./ui/student/exams.tsx")),
+        guardian: lazy(() => import("./ui/guardian/exams.tsx"))
+    },
     homeworks: {
         student: lazy(() => import("./ui/student/homeworks.tsx")),
         teacher: lazy(() => import("./ui/teacher/homeworks.tsx")),
@@ -132,6 +136,7 @@ export default function App({ reload }: {reload: () => void}) {
                             <Route path="/timetable">{byFeature("timetable", me)}</Route>
                             <Route path="/absences">{byFeature("absences", me)}</Route>
                             <Route path="/grades">{byFeature("grades", me)}</Route>
+                            <Route path="/exams">{byFeature("exams", me)}</Route>
                         </>
                     )}
                 </Switch>

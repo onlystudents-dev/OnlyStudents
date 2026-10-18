@@ -5,14 +5,14 @@ import {toast} from "react-toastify";
 
 import {fetchInto, fetchWithSchool, getRetryAfter, readJSON} from "../../util/api.ts";
 import type { FeatureProps } from "../../types/props.ts";
-import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps, Badge} from "../timetable/timetable.tsx"
+import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../timetable/timetable.tsx"
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
 import Loading from "../../util/loading.tsx";
 import RateLimit from "../../util/ratelimit.tsx";
 import Navbar from "../../navbar/navbar.tsx";
 import Overlay from "../../util/overlay/overlay.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faHouseChimney, faPenToSquare, faXmark} from "@fortawesome/free-solid-svg-icons";
+import {faXmark} from "@fortawesome/free-solid-svg-icons";
 
 export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
@@ -164,15 +164,6 @@ function Popup({ lesson, rooms, clear }: PopupProps) {
                     </div>
                     <div className="absolute top-6 right-6 action-button hover:text-(--wrong-color)" onClick={clear}>
                         <FontAwesomeIcon icon={faXmark} />
-                    </div>
-
-                    <div className="absolute top-28 left-6 right-6 h-fit fredoka flex flex-row">
-                        {lesson.has_homework_id && <div className="min-w-[50%] flex flex-col">
-                            <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />
-                        </div>}
-                        {lesson.has_exam_id && <div className="min-w-[50%] flex flex-col">
-                            <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />
-                        </div>}
                     </div>
                 </div>
             </div>
