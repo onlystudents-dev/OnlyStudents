@@ -1,5 +1,4 @@
 import "./exams.css";
-import Navbar from "../../navbar/navbar.tsx";
 import {getLanguage} from "../../util/language.ts";
 import {formatUnixDate} from "../../util/time.ts";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
@@ -8,6 +7,7 @@ import {useState} from "preact/hooks";
 import {fetchWithSchool} from "../../util/api.ts";
 import {useEffect} from "react";
 import Overlay from "../../util/overlay/overlay.tsx";
+import {useReloadSchoolStuff} from "../../util/school.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
 
@@ -23,9 +23,10 @@ export default function StudentExams({ me }: { me: Me }) {
         void Fetch()
     }, [])
 
+    useReloadSchoolStuff(() => { void Fetch() })
+
     return (
         <>
-            <Navbar me={me} reloadSchoolStuff={Fetch} />
             <div className="w-full min-h-full flex flex-col items-center justify-start pt-8 gap-4">
                 {current && <>
                     <Overlay onClick={() => setCurrent(null)} />

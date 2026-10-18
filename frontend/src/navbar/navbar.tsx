@@ -6,10 +6,11 @@ import type {Me} from "../types/api.ts";
 import {getKey} from "../util/language.ts";
 import {useRef, useState} from "react";
 import Skeleton from "../util/skeleton/skeleton.tsx";
-import {features} from "../app.tsx";
+import {features} from "../features.ts";
+import {reloadSchoolStuff} from "../util/school.ts";
 import {useLayoutEffect} from "preact/hooks";
 
-export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolStuff?: () => void}) {
+export default function Navbar({ me, path, navigate }: {me: Me, path: string, navigate: (href: string) => void}) {
     const icons = {
         homeworks: faHouseChimney,
         absences: faStopwatch,
@@ -58,7 +59,7 @@ export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolS
     function setSchool(schoolId: string) {
         localStorage.setItem("school_id", schoolId)
         setSchoolR(Number(schoolId))
-        reloadSchoolStuff?.()
+        reloadSchoolStuff()
     }
 
     function setChild(childId: string) {
@@ -78,7 +79,7 @@ export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolS
             setSchoolR(undefined)
         }
 
-        reloadSchoolStuff?.()
+        reloadSchoolStuff()
     }
 
     const memberships = me.role === "guardian"
@@ -90,8 +91,14 @@ export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolS
     const [selectLeft, setSelectLeft] = useState(0)
     const [selectWidth, setSelectWidth] = useState(0)
 
-    const selectedRef = useRef<HTMLButtonElement | null>(null)
+    const buttons = useRef(new Map<string, HTMLAnchorElement>())
+    const [selected, setSelected] = useState(false)
     const [hidden, setHidden] = useState(true)
+
+    function redirect(href: string) {
+        if (path === href) return
+        navigate(href)
+    }
 
     function getLeft(e: MouseEvent): number {
         const button = e.currentTarget as Element
@@ -109,36 +116,43 @@ export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolS
     }
 
     function handleClick(e: MouseEvent) {
+        e.preventDefault()
+        redirect((e.currentTarget as HTMLAnchorElement).pathname)
+
         setSelectLeft(getLeft(e))
         setSelectWidth((e.currentTarget as Element).getBoundingClientRect().width)
     }
 
     useLayoutEffect(() => {
-        const selected = selectedRef.current
-        if (!selected) return
+        const button = buttons.current.get(path)
 
-        setSelectWidth(selected.getBoundingClientRect().width)
+        if (!button) {
+            setSelected(false)
+            return
+        }
 
-        const container = selected.closest(".buttons")
+        const container = button.closest(".buttons")
         if (!container) return
 
-        setSelectLeft(selected.getBoundingClientRect().left - container.getBoundingClientRect().left)
-    }, [])
+        setSelected(true)
+        setSelectLeft(button.getBoundingClientRect().left - container.getBoundingClientRect().left)
+        setSelectWidth(button.getBoundingClientRect().width)
+    }, [path])
 
     return (
         <>
             <nav>
                 <div className="buttons" onMouseLeave={() => setHidden(true)}>
                     {links.map(({href, icon, key}) => (
-                        <Button key={href} className="hover:bg-inherit! z-1" onMouseEnter={handleEnter} onClick={handleClick} refB={location.pathname === href && selectedRef || undefined}>
+                        <Button key={href} href={href} className="hover:bg-inherit! z-1" onMouseEnter={handleEnter} onClick={handleClick} refA={element => {if (element) buttons.current.set(href, element); else buttons.current.delete(href)}}>
                             <FontAwesomeIcon icon={icon} /> {getKey(key)}
                         </Button>
                     ))}
                     <div className={`navbbg ${hidden && "hid"}`} style={{ left: `${hoverLeft}px`, width: `${hoverWidth}px` }} />
-                    <div className="navbbg navbbgs" style={{ left: `${selectLeft}px`, width: `${selectWidth}px` }} />
+                    <div className={`navbbg navbbgs ${!selected && "hid"}`} style={{ left: `${selectLeft}px`, width: `${selectWidth}px` }} />
                 </div>
                 <div className="flex flex-row-reverse items-center gap-2">
-                    <a className="rounded-[50%] h-10 cursor-pointer" href="/me">
+                    <a className="rounded-[50%] h-10 cursor-pointer" href="/me" onClick={e => {e.preventDefault(); redirect("/me")}}>
                         <img className={`rounded-[inherit] max-h-full ${!pfpLoaded && "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
                         {!pfpLoaded && <Skeleton width={40} height={40} color={"var(--bg-color)"} className="rounded-[inherit]!" />}
                     </a>

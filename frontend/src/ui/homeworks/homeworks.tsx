@@ -1,10 +1,10 @@
-import Navbar from "../../navbar/navbar.tsx";
 import type {HomeworkSubmission, HomeworkSummary, Me} from "../../types/api.ts";
 import React from "react";
 import {formatUnixDate} from "../../util/time.ts";
 import {getKey, getLanguage} from "../../util/language.ts";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useState} from "preact/hooks";
+import {useReloadSchoolStuff} from "../../util/school.ts";
 
 export type PopupProps = {
     homework: HomeworkSummary | HomeworkSubmission,
@@ -16,9 +16,10 @@ export default function Homeworks({ me, homeworks, Popup, reloadSchoolStuff }: {
 
     const [now] = useState(Date.now)
 
+    useReloadSchoolStuff(reloadSchoolStuff)
+
     return (
         <>
-            <Navbar me={me} reloadSchoolStuff={reloadSchoolStuff} />
             <div className="w-full min-h-full flex flex-col items-center justify-start pt-8 gap-4">
                 {current && <Popup homework={current} clear={() => {setCurrent(null); reloadSchoolStuff()}} />}
                 {homeworks?.length === 0 ? <p className="text-4xl">{getKey(`NO_HOMEWORK.${me.role}`)}</p> : homeworks?.map((homework) => (

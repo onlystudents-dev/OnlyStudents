@@ -28,7 +28,7 @@ nav {
         }
         .navbbgs {
             background-color: var(--border-color);
-            transition: left 300ms ease-in-out;
+            transition: left 300ms ease-in-out, width 300ms ease-in-out, opacity 200ms ease-in-out;
         }
     }
 }

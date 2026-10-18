@@ -9,7 +9,7 @@ import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
 import Loading from "../../util/loading.tsx";
 import RateLimit from "../../util/ratelimit.tsx";
-import Navbar from "../../navbar/navbar.tsx";
+import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
@@ -135,9 +135,10 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
         void Fetch()
     }, [Fetch])
 
+    useReloadSchoolStuff(() => { void Fetch() })
+
     return (
         <>
-            <Navbar me={me} reloadSchoolStuff={Fetch} />
             {loading && <Loading />}
             {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
             <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffset.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffset.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} />
