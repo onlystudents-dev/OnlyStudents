@@ -34,6 +34,23 @@ WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id);
 
+-- name: GetTeacherHomework :one
+SELECT
+    h.id,
+    h.class_subjects_id,
+    h.title,
+    h.description,
+    h.due_date,
+    h.created_at,
+    COALESCE(cs.subject_name, s.subject_name) AS subject
+FROM homework h
+JOIN class_subjects csub ON csub.id = h.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+WHERE h.id = $1
+  AND csub.school_id = $2
+  AND csub.teacher_id = $3;
+
 -- name: TeacherEditHomework :execrows
 UPDATE homework h
 SET class_subjects_id = $2,

@@ -206,6 +206,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddHomework(c, pool, rdb) },
 					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditHomework(c, pool, rdb) },
 					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveHomework(c, pool, rdb) },
+					"get":              helpers.Get(func(c fiber.Ctx) error { return teacherapi.GetHomework(c, pool, rdb) }),
 				},
 
 				"homework_submissions": fiber.Map{

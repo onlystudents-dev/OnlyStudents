@@ -91,6 +91,55 @@ func (q *Queries) GetStudentHomework(ctx context.Context, arg GetStudentHomework
 	return items, nil
 }
 
+const getTeacherHomework = `-- name: GetTeacherHomework :one
+SELECT
+    h.id,
+    h.class_subjects_id,
+    h.title,
+    h.description,
+    h.due_date,
+    h.created_at,
+    COALESCE(cs.subject_name, s.subject_name) AS subject
+FROM homework h
+JOIN class_subjects csub ON csub.id = h.class_subjects_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+WHERE h.id = $1
+  AND csub.school_id = $2
+  AND csub.teacher_id = $3
+`
+
+type GetTeacherHomeworkParams struct {
+	ID        int64
+	SchoolID  int32
+	TeacherID int32
+}
+
+type GetTeacherHomeworkRow struct {
+	ID              int64
+	ClassSubjectsID int32
+	Title           string
+	Description     pgtype.Text
+	DueDate         pgtype.Date
+	CreatedAt       pgtype.Timestamptz
+	Subject         string
+}
+
+func (q *Queries) GetTeacherHomework(ctx context.Context, arg GetTeacherHomeworkParams) (GetTeacherHomeworkRow, error) {
+	row := q.db.QueryRow(ctx, getTeacherHomework, arg.ID, arg.SchoolID, arg.TeacherID)
+	var i GetTeacherHomeworkRow
+	err := row.Scan(
+		&i.ID,
+		&i.ClassSubjectsID,
+		&i.Title,
+		&i.Description,
+		&i.DueDate,
+		&i.CreatedAt,
+		&i.Subject,
+	)
+	return i, err
+}
+
 const getTeacherHomeworkSubmissions = `-- name: GetTeacherHomeworkSubmissions :many
 SELECT
     hs.id,
