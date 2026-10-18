@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/redis/go-redis/v9"
 )
@@ -276,6 +277,24 @@ func CacheOrGetTeacherHomeworkSubmissions(ctx context.Context, rdb *redis.Client
 			SchoolID:   scope.SchoolID,
 		})
 	})
+}
+
+func CacheOrGetTeacherHomework(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, homeworkID int32, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherHomeworkRow, error) {
+	key := fmt.Sprintf("teacher_homework:%d:%d:%d", homeworkID, scope.SchoolID, scope.TeacherID)
+	homework, err := CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.GetTeacherHomeworkRow, error) {
+		return queries.GetTeacherHomework(ctx, db_queries.GetTeacherHomeworkParams{
+			ID:        int64(homeworkID), //nolint:gosec // G115 -- homework_id is bounded to int32 by the request binding
+			SchoolID:  scope.SchoolID,
+			TeacherID: scope.TeacherID,
+		})
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return []db_queries.GetTeacherHomeworkRow{homework}, nil
 }
 
 func CacheOrGetTeacherAbsences(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesRow, error) {

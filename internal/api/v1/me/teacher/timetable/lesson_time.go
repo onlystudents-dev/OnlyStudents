@@ -103,7 +103,7 @@ func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummaryByID(c, pool, rdb, "MANAGE_BELL_SCHEDULE", "GROUP_STUDENTS_CACHE_TTL",
+	return TeacherTimeTableSummaryByID(c, pool, rdb, "MANAGE_BELL_SCHEDULE", "LESSON_TIME_CACHE_TTL",
 		func(req ReadLessonTimeRequest) bool { return req.TypeID <= 0 },
 		func(req ReadLessonTimeRequest) int32 { return req.TypeID },
 		helpers.CacheOrGetTeacherLessonTime, convertBellSchedule)
