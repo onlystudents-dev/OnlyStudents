@@ -5,25 +5,25 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.strictTypeChecked,
-      reactHooks.configs.flat.recommended,
-    ],
-    languageOptions: {
-      globals: globals.browser,
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
+    globalIgnores(['dist']),
+    {
+        files: ['**/*.{ts,tsx}'],
+        extends: [
+            js.configs.recommended,
+            tseslint.configs.strictTypeChecked,
+            reactHooks.configs.flat.recommended,
+        ],
+        languageOptions: {
+            globals: globals.browser,
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+        rules: {
+            '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+            '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
+            '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+        },
     },
-    rules: {
-      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
-      '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
-      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
-    },
-  },
 ])
