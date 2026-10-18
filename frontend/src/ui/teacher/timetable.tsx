@@ -133,13 +133,11 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
     }, [Fetch])
 
     return (
-      <>
-        <Navbar me={me} reloadSchoolStuff={Fetch} />
-        {loading && <Loading />}
-        {ratelimit !== -1 && (
-          <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />
-        )}
-        <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffset.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffset.current + 1)}/>
-      </>
-    );
+        <>
+            <Navbar me={me} reloadSchoolStuff={Fetch} />
+            {loading && <Loading />}
+            {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
+            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffset.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffset.current + 1)} />
+        </>
+    )
 }
