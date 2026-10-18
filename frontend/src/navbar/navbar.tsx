@@ -6,16 +6,27 @@ import type {Me} from "../types/api.ts";
 import {getKey} from "../util/language.ts";
 import {useState} from "react";
 import Skeleton from "../util/skeleton/skeleton.tsx";
-
-const links = [
-    {href: "/", icon: faHouseChimney, key: "HOME"},
-    {href: "/timetable", icon: faTable, key: "TIMETABLE"},
-    {href: "/grades", icon: faStar, key: "GRADES"},
-    {href: "/homeworks", icon: faHouseChimney, key: "HOMEWORKS"},
-    {href: "/absences", icon: faStopwatch, key: "ABSENCES"},
-]
+import {features} from "../app.tsx";
 
 export default function Navbar({ me, reloadSchoolStuff }: {me: Me, reloadSchoolStuff?: () => void}) {
+    const icons = {
+        homeworks: faHouseChimney,
+        absences: faStopwatch,
+        timetable: faTable,
+        grades: faStar,
+    }
+
+    const links = [
+        { href: "/", icon: faHouseChimney, key: "HOME" },
+        ...Object.entries(features)
+            .filter(([, roles]) => me.role in roles)
+            .map(([feature]) => ({
+                href: `/${feature}`,
+                icon: icons[feature as keyof typeof icons],
+                key: feature.toUpperCase(),
+            })),
+    ]
+
     const [pfpLoaded, setPfpLoaded] = useState(false)
 
     const [child, setChildR] = useState<number | undefined>(() => {

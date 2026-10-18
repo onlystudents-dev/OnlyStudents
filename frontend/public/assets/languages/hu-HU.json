@@ -66,7 +66,7 @@
     "DAYS.friday": "Péntek",
     "DAYS.saturday": "Szombat",
     "DAYS.sunday": "Vasárnap",
-    "TERM": "Tanév",
+    "TERM": "%1 Tanév",
     "TIMETABLE_DISPLAY": "Napok mutatása az órarendben",
     "TIMETABLE_DISPLAY.LESSONS": "Csak azok, amelyeken van óra",
     "TIMETABLE_DISPLAY.WEEKDAYS": "Hétköznapok",

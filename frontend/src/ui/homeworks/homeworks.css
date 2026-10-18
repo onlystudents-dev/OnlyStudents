@@ -18,13 +18,4 @@
 
 .popup-content {
     @apply relative w-full h-full flex flex-col;
-
-    textarea, input {
-        @apply rounded-lg;
-        box-shadow: 0 0 0 0 transparent;
-        transition: box-shadow 200ms ease-in-out;
-    }
-    textarea:hover, textarea:focus, input:hover, input:focus {
-        box-shadow: 0 0 0 4px var(--txt-color);
-    }
 }

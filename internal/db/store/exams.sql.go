@@ -11,6 +11,74 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getStudentExam = `-- name: GetStudentExam :one
+SELECT
+    e.id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
+    e.title,
+    e.description,
+    e.date,
+    e.start_time,
+    e.end_time,
+    r.name AS room
+FROM exams e
+         JOIN class_subjects csub ON csub.id = e.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = e.teacher_id
+         LEFT JOIN rooms r ON r.id = e.room_id
+WHERE csub.school_id = $2
+  AND csub.class_id = (
+    SELECT ss.class_id
+    FROM student_school ss
+    WHERE ss.student_id = $3
+      AND ss.school_id = $2
+) AND e.id = $1
+ORDER BY e.date, e.start_time
+`
+
+type GetStudentExamParams struct {
+	ID        int64
+	SchoolID  int32
+	StudentID int32
+}
+
+type GetStudentExamRow struct {
+	ID               int64
+	Subject          string
+	SubjectCode      pgtype.Text
+	TeacherFirstName string
+	TeacherLastName  string
+	Title            string
+	Description      pgtype.Text
+	Date             pgtype.Date
+	StartTime        pgtype.Time
+	EndTime          pgtype.Time
+	Room             pgtype.Text
+}
+
+func (q *Queries) GetStudentExam(ctx context.Context, arg GetStudentExamParams) (GetStudentExamRow, error) {
+	row := q.db.QueryRow(ctx, getStudentExam, arg.ID, arg.SchoolID, arg.StudentID)
+	var i GetStudentExamRow
+	err := row.Scan(
+		&i.ID,
+		&i.Subject,
+		&i.SubjectCode,
+		&i.TeacherFirstName,
+		&i.TeacherLastName,
+		&i.Title,
+		&i.Description,
+		&i.Date,
+		&i.StartTime,
+		&i.EndTime,
+		&i.Room,
+	)
+	return i, err
+}
+
 const getStudentExams = `-- name: GetStudentExams :many
 SELECT
     e.id,
@@ -25,18 +93,18 @@ SELECT
     e.end_time,
     r.name AS room
 FROM exams e
-JOIN class_subjects csub ON csub.id = e.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN teachers t ON t.id = e.teacher_id
-LEFT JOIN rooms r ON r.id = e.room_id
+         JOIN class_subjects csub ON csub.id = e.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = e.teacher_id
+         LEFT JOIN rooms r ON r.id = e.room_id
 WHERE csub.school_id = $1
   AND csub.class_id = (
-      SELECT ss.class_id
-      FROM student_school ss
-      WHERE ss.student_id = $2
-        AND ss.school_id = $1
-  )
+    SELECT ss.class_id
+    FROM student_school ss
+    WHERE ss.student_id = $2
+      AND ss.school_id = $1
+)
 ORDER BY e.date, e.start_time
 `
 

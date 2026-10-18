@@ -12,18 +12,46 @@ SELECT
     hs.submitted_at,
     hs.graded_value
 FROM homework h
-JOIN class_subjects csub ON csub.id = h.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN teachers t ON t.id = h.teacher_id
-LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = sqlc.arg(student_id)
+         JOIN class_subjects csub ON csub.id = h.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = h.teacher_id
+         LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = sqlc.arg(student_id)
 WHERE csub.school_id = sqlc.arg(school_id)
   AND csub.class_id = (
-      SELECT ss.class_id
-      FROM student_school ss
-      WHERE ss.student_id = sqlc.arg(student_id)
-        AND ss.school_id = sqlc.arg(school_id)
-  )
+    SELECT ss.class_id
+    FROM student_school ss
+    WHERE ss.student_id = sqlc.arg(student_id)
+      AND ss.school_id = sqlc.arg(school_id)
+)
+ORDER BY h.due_date, h.created_at;
+
+-- name: GetStudentHomeworkByID :one
+SELECT
+    h.id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
+    h.title,
+    h.description,
+    h.due_date,
+    h.created_at,
+    hs.submitted_at,
+    hs.graded_value
+FROM homework h
+         JOIN class_subjects csub ON csub.id = h.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = h.teacher_id
+         LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = sqlc.arg(student_id)
+WHERE csub.school_id = sqlc.arg(school_id)
+  AND csub.class_id = (
+    SELECT ss.class_id
+    FROM student_school ss
+    WHERE ss.student_id = sqlc.arg(student_id)
+      AND ss.school_id = sqlc.arg(school_id)
+) AND h.id = $1
 ORDER BY h.due_date, h.created_at;
 
 -- name: TeacherAddHomework :execrows

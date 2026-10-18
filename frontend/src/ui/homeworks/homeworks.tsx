@@ -4,6 +4,7 @@ import React from "react";
 import {formatUnixDate} from "../../util/time.ts";
 import {getKey, getLanguage} from "../../util/language.ts";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
+import {useState} from "preact/hooks";
 
 export type PopupProps = {
     homework: HomeworkSummary | HomeworkSubmission,
@@ -13,6 +14,8 @@ export type PopupProps = {
 export default function Homeworks({ me, homeworks, Popup, reloadSchoolStuff }: { me: Me, homeworks: HomeworkSummary[] | HomeworkSubmission[] | null, Popup: React.ComponentType<PopupProps>, reloadSchoolStuff: () => void }) {
     const [current, setCurrent] = React.useState<HomeworkSummary | HomeworkSubmission | null>(null)
 
+    const [now] = useState(Date.now)
+
     return (
         <>
             <Navbar me={me} reloadSchoolStuff={reloadSchoolStuff} />
@@ -20,13 +23,13 @@ export default function Homeworks({ me, homeworks, Popup, reloadSchoolStuff }: {
                 {current && <Popup homework={current} clear={() => {setCurrent(null); reloadSchoolStuff()}} />}
                 {homeworks?.length === 0 ? <p className="text-4xl">{getKey(`NO_HOMEWORK.${me.role}`)}</p> : homeworks?.map((homework) => (
                     <>
-                        <div className="homework" onClick={() => setCurrent(homework)}>
+                        <div className={`homework ${homework.due_date < now && "wrong"}`} onClick={() => setCurrent(homework)}>
                             <div className="flex flex-col items-start justify-between">
                                 <p className="max-w-100 truncate">{homework.title}</p>
                                 <p className="max-w-100 truncate opacity-70">{homework.subject}</p>
                             </div>
                             <div className="flex flex-col items-start justify-between">
-                                <p>{formatUnixDate(homework.created_at, getLanguage(me)?.key || "en-US")}</p>
+                                <p>{formatUnixDate(me.role === "teacher" ? homework.created_at : homework.due_date, getLanguage(me)?.key || "en-US")}</p>
                             </div>
                         </div>
                     </>

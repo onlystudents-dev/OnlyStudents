@@ -25,18 +25,18 @@ SELECT
     hs.submitted_at,
     hs.graded_value
 FROM homework h
-JOIN class_subjects csub ON csub.id = h.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN teachers t ON t.id = h.teacher_id
-LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $1
+         JOIN class_subjects csub ON csub.id = h.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = h.teacher_id
+         LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $1
 WHERE csub.school_id = $2
   AND csub.class_id = (
-      SELECT ss.class_id
-      FROM student_school ss
-      WHERE ss.student_id = $1
-        AND ss.school_id = $2
-  )
+    SELECT ss.class_id
+    FROM student_school ss
+    WHERE ss.student_id = $1
+      AND ss.school_id = $2
+)
 ORDER BY h.due_date, h.created_at
 `
 
@@ -89,6 +89,74 @@ func (q *Queries) GetStudentHomework(ctx context.Context, arg GetStudentHomework
 		return nil, err
 	}
 	return items, nil
+}
+
+const getStudentHomeworkByID = `-- name: GetStudentHomeworkByID :one
+SELECT
+    h.id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
+    h.title,
+    h.description,
+    h.due_date,
+    h.created_at,
+    hs.submitted_at,
+    hs.graded_value
+FROM homework h
+         JOIN class_subjects csub ON csub.id = h.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = h.teacher_id
+         LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $2
+WHERE csub.school_id = $3
+  AND csub.class_id = (
+    SELECT ss.class_id
+    FROM student_school ss
+    WHERE ss.student_id = $2
+      AND ss.school_id = $3
+) AND h.id = $1
+ORDER BY h.due_date, h.created_at
+`
+
+type GetStudentHomeworkByIDParams struct {
+	ID        int64
+	StudentID int32
+	SchoolID  int32
+}
+
+type GetStudentHomeworkByIDRow struct {
+	ID               int64
+	Subject          string
+	SubjectCode      pgtype.Text
+	TeacherFirstName string
+	TeacherLastName  string
+	Title            string
+	Description      pgtype.Text
+	DueDate          pgtype.Date
+	CreatedAt        pgtype.Timestamptz
+	SubmittedAt      pgtype.Timestamptz
+	GradedValue      pgtype.Int2
+}
+
+func (q *Queries) GetStudentHomeworkByID(ctx context.Context, arg GetStudentHomeworkByIDParams) (GetStudentHomeworkByIDRow, error) {
+	row := q.db.QueryRow(ctx, getStudentHomeworkByID, arg.ID, arg.StudentID, arg.SchoolID)
+	var i GetStudentHomeworkByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Subject,
+		&i.SubjectCode,
+		&i.TeacherFirstName,
+		&i.TeacherLastName,
+		&i.Title,
+		&i.Description,
+		&i.DueDate,
+		&i.CreatedAt,
+		&i.SubmittedAt,
+		&i.GradedValue,
+	)
+	return i, err
 }
 
 const getTeacherHomework = `-- name: GetTeacherHomework :one

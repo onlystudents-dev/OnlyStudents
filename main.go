@@ -154,9 +154,13 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					"submit_reason": helpers.Post(func(c fiber.Ctx) error { return studentapi.SubmitAbsenceReason(c, pool, rdb) }),
 				},
 				"final_grades": helpers.Get(func(c fiber.Ctx) error { return studentapi.FinalGrades(c, pool, rdb) }),
-				"exams":        helpers.Get(func(c fiber.Ctx) error { return studentapi.Exams(c, pool, rdb) }),
+				"exams": fiber.Map{
+					fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Exams(c, pool, rdb) },
+					"get":           helpers.Get(func(c fiber.Ctx) error { return studentapi.Exam(c, pool, rdb) }),
+				},
 				"homework": fiber.Map{
 					fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Homework(c, pool, rdb) },
+					"get":           helpers.Get(func(c fiber.Ctx) error { return studentapi.HomeworkByID(c, pool, rdb) }),
 					"submit":        helpers.Post(func(c fiber.Ctx) error { return studentapi.SubmitHomework(c, pool, rdb) }),
 				},
 				"class":  helpers.Get(func(c fiber.Ctx) error { return studentapi.ReadClass(c, pool, rdb) }),

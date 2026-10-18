@@ -129,5 +129,36 @@ export type HomeworkSubmission = {
     content: string,
     created_at: number,
     due_date: number,
-    class_subjects_id: number,
+}
+
+export type Exam = {
+    id: number,
+    subject: string,
+    has_subject_code: boolean,
+    subject_code: string,
+    teacher_last_name: string,
+    teacher_first_name: string,
+    title: string,
+    has_description: boolean,
+    description: string,
+    date: number,
+    start_time: number,
+    end_time: number,
+    has_room: boolean,
+    room: string,
+}
+
+export type StudentGrades = {
+    id:	number,
+    subject: string,
+    has_subject_code: boolean,
+    subject_code: string,
+    teacher_last_name: string,
+    teacher_first_name: string,
+    term: string,
+    type: string,
+    value: number,
+    date: number,
+    has_note: boolean,
+    note: string,
 }

@@ -12,18 +12,46 @@ SELECT
     e.end_time,
     r.name AS room
 FROM exams e
-JOIN class_subjects csub ON csub.id = e.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN teachers t ON t.id = e.teacher_id
-LEFT JOIN rooms r ON r.id = e.room_id
+         JOIN class_subjects csub ON csub.id = e.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = e.teacher_id
+         LEFT JOIN rooms r ON r.id = e.room_id
 WHERE csub.school_id = sqlc.arg(school_id)
   AND csub.class_id = (
-      SELECT ss.class_id
-      FROM student_school ss
-      WHERE ss.student_id = sqlc.arg(student_id)
-        AND ss.school_id = sqlc.arg(school_id)
-  )
+    SELECT ss.class_id
+    FROM student_school ss
+    WHERE ss.student_id = sqlc.arg(student_id)
+      AND ss.school_id = sqlc.arg(school_id)
+)
+ORDER BY e.date, e.start_time;
+
+-- name: GetStudentExam :one
+SELECT
+    e.id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
+    e.title,
+    e.description,
+    e.date,
+    e.start_time,
+    e.end_time,
+    r.name AS room
+FROM exams e
+         JOIN class_subjects csub ON csub.id = e.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = e.teacher_id
+         LEFT JOIN rooms r ON r.id = e.room_id
+WHERE csub.school_id = sqlc.arg(school_id)
+  AND csub.class_id = (
+    SELECT ss.class_id
+    FROM student_school ss
+    WHERE ss.student_id = sqlc.arg(student_id)
+      AND ss.school_id = sqlc.arg(school_id)
+) AND e.id = $1
 ORDER BY e.date, e.start_time;
 
 -- name: GetTeacherExams :many
