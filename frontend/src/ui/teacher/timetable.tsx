@@ -167,10 +167,10 @@ function Popup({ lesson, rooms, clear }: PopupProps) {
                     </div>
 
                     <div className="absolute top-28 left-6 right-6 h-fit fredoka flex flex-row">
-                        {lesson.has_homework && <div className="min-w-[50%] flex flex-col">
+                        {lesson.has_homework_id && <div className="min-w-[50%] flex flex-col">
                             <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />
                         </div>}
-                        {lesson.has_exam && <div className="min-w-[50%] flex flex-col">
+                        {lesson.has_exam_id && <div className="min-w-[50%] flex flex-col">
                             <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />
                         </div>}
                     </div>
