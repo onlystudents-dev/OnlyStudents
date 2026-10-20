@@ -1,6 +1,6 @@
 module onlystudents
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/bytemare/ecc v0.9.0
