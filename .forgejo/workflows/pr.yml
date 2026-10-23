@@ -66,6 +66,9 @@ jobs:
       - name: govulncheck
         run: |
           $(go env GOPATH)/bin/govulncheck -show verbose ./...
+      - name: gosec
+        run: |
+          $(go env GOPATH)/bin/gosec -exclude=G104 --exclude-dir frontend --exclude-dir internal/db/store ./...
       - name: go vet
         run: |
           go vet ./...
