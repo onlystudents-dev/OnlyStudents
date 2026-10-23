@@ -19,7 +19,7 @@ const colors: Record<number, string> = {
     5: "edit",
 }
 
-export default function StudentGrades({ me }: { me: Me }) {
+export default function StudentGrades(/*{ me }: { me: Me }*/) {
     const [subjects, setSubjects] = useState<Subject[]>([]);
 
     async function Fetch() {
