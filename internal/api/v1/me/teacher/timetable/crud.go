@@ -130,7 +130,7 @@ func TeacherTimeTableModify[request_type any](
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	teacher_scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, required_permission)

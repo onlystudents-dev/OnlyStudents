@@ -188,6 +188,16 @@ func CacheOrGetStudentGroups(ctx context.Context, rdb *redis.Client, queries db_
 	})
 }
 
+func CacheOrGetStudentSubjects(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.GetStudentSubjectsRow, error) {
+	key := fmt.Sprintf("student_subjects:%d:%d", scope.SchoolID, scope.StudentID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentSubjectsRow, error) {
+		return queries.GetStudentSubjects(ctx, db_queries.GetStudentSubjectsParams{
+			StudentID: scope.StudentID,
+			SchoolID:  scope.SchoolID,
+		})
+	})
+}
+
 func CacheOrGetStudentClass(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.Class, error) {
 	key := fmt.Sprintf("student_class:%d:%d", scope.SchoolID, scope.StudentID)
 	class, err := CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.Class, error) {
@@ -301,6 +311,16 @@ func CacheOrGetTeacherHomeworkSubmissions(ctx context.Context, rdb *redis.Client
 			HomeworkID: homeworkID,
 			TeacherID:  scope.TeacherID,
 			SchoolID:   scope.SchoolID,
+		})
+	})
+}
+
+func CacheOrGetTeacherSubjects(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherSubjectsRow, error) {
+	key := fmt.Sprintf("teacher_subjects:%d:%d", scope.SchoolID, scope.TeacherID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherSubjectsRow, error) {
+		return queries.GetTeacherSubjects(ctx, db_queries.GetTeacherSubjectsParams{
+			TeacherID: scope.TeacherID,
+			SchoolID:  scope.SchoolID,
 		})
 	})
 }

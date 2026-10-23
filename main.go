@@ -155,10 +155,9 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				}),
 			},
 
-			"subjects": helpers.Get(func(c fiber.Ctx) error { return meapi.Subjects(c, pool, rdb) }),
-
 			"student": fiber.Map{
 				helpers.RoutesGroupMWKey: []fiber.Handler{role("student", "guardian")},
+				"subjects":               helpers.Get(func(c fiber.Ctx) error { return studentapi.Subjects(c, pool, rdb) }),
 				"grades":                 helpers.Get(func(c fiber.Ctx) error { return studentapi.Grades(c, pool, rdb) }),
 				"absences": fiber.Map{
 					fiber.MethodGet: func(c fiber.Ctx) error { return studentapi.Absences(c, pool, rdb) },
@@ -195,6 +194,8 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditGrade(c, pool, rdb) },
 					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveGrade(c, pool, rdb) },
 				},
+
+				"subjects": helpers.Get(func(c fiber.Ctx) error { return teacherapi.Subjects(c, pool, rdb) }),
 
 				"final_grades": fiber.Map{
 					fiber.MethodGet:   func(c fiber.Ctx) error { return teacherapi.ListFinalGrades(c, pool, rdb) },

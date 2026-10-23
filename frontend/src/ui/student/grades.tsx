@@ -23,7 +23,7 @@ export default function StudentGrades(/*{ me }: { me: Me }*/) {
     const [subjects, setSubjects] = useState<Subject[]>([]);
 
     async function Fetch() {
-        return fetchWithSchool("/api/v1/me/subjects").then(async res => setSubjects(await res.json() as Subject[]))
+        return fetchWithSchool("/api/v1/me/student/subjects").then(async res => setSubjects(await res.json() as Subject[]))
     }
 
     useEffect(() => void Fetch(), [])
