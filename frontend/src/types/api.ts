@@ -181,6 +181,17 @@ export type Absence = {
     class_subjects_id: number,
 }
 
+export type Subject = {
+    id: number,
+    name: string,
+    is_custom: boolean,
+    teacher_id: number,
+    teacher_first_name: string,
+    teacher_last_name: string,
+    group_id: number,
+    group_name: string,
+}
+
 export type ForgetPasswordCheckResponse = {
     wrapped_mk_recovery: string
     recovery_key_hash: string

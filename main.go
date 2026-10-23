@@ -155,6 +155,8 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				}),
 			},
 
+			"subjects": helpers.Get(func(c fiber.Ctx) error { return meapi.Subjects(c, pool, rdb) }),
+
 			"student": fiber.Map{
 				helpers.RoutesGroupMWKey: []fiber.Handler{role("student", "guardian")},
 				"grades":                 helpers.Get(func(c fiber.Ctx) error { return studentapi.Grades(c, pool, rdb) }),

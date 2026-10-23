@@ -1,5 +1,5 @@
 import "./grades.css";
-import type {Me, Grade} from "../../types/api.ts";
+import type {Me, Grade, Subject} from "../../types/api.ts";
 import {useState} from "preact/hooks";
 import {fetchWithSchool} from "../../util/api.ts";
 import {useEffect} from "react";
@@ -11,7 +11,43 @@ import {getKey, getLanguage} from "../../util/language.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
 
+const colors: Record<number, string> = {
+    1: "wrong",
+    2: "warning",
+    3: "yellow",
+    4: "right",
+    5: "edit",
+}
+
 export default function StudentGrades({ me }: { me: Me }) {
+    const [subjects, setSubjects] = useState<Subject[]>([]);
+
+    async function Fetch() {
+        return fetchWithSchool("/api/v1/me/subjects").then(async res => setSubjects(await res.json() as Subject[]))
+    }
+
+    useEffect(() => void Fetch(), [])
+    useReloadSchoolStuff(() => void Fetch())
+
+    return (
+        <>
+            <div className="w-full flex justify-center items-center pt-8">
+                <div className="subjects">
+                    {subjects.map(subject => (
+                        <div className="subject" key={subject.id}>
+                            <div className="flex flex-col">
+                                <h1 className="rubik truncate">{subject.name}</h1>
+                                <p className="poppins truncate">{subject.teacher_first_name} {subject.teacher_last_name}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </>
+    )
+}
+
+export function StudentGradesList({ me }: { me: Me }) {
     const [grades, setGrades] = useState<Grade[] | null>(null)
     const [current, setCurrent] = useState<Grade | null>(null)
 
@@ -21,14 +57,6 @@ export default function StudentGrades({ me }: { me: Me }) {
 
     useEffect(() => void Fetch(), [])
     useReloadSchoolStuff(() => void Fetch())
-
-    const colors: Record<number, string> = {
-        1: "wrong",
-        2: "warning",
-        3: "yellow",
-        4: "right",
-        5: "edit",
-    }
 
     return (
         <>
