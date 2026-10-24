@@ -11,6 +11,7 @@ import {getKey, getLanguage} from "../../util/language.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
 import {useLocation, useSearch} from "wouter";
+import Loading from "../../util/loading.tsx";
 
 const colors: Record<number, string> = {
     1: "wrong",
@@ -38,6 +39,8 @@ export function StudentSubjects() {
     const [subjects, setSubjects] = useState<Subject[]>([])
     const [grades, setGrades] = useState<Grade[]>([])
 
+    const [loading, setLoading] = useState(true)
+
     async function Fetch() {
         return Promise.all([
             fetchWithSchool("/api/v1/me/student/subjects").then(async res => setSubjects(await res.json() as Subject[])),
@@ -45,11 +48,12 @@ export function StudentSubjects() {
         ])
     }
 
-    useEffect(() => void Fetch(), [])
+    useEffect(() => void Fetch().then(() => setLoading(false)), [])
     useReloadSchoolStuff(() => void Fetch())
 
     return (
         <>
+            {loading && <Loading />}
             <div className="w-full flex justify-center items-center pt-8">
                 <div className="subjects">
                     {subjects.map(subject => {
