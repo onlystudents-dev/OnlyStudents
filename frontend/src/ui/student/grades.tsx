@@ -63,6 +63,7 @@ export function StudentSubjects() {
                             : 0
 
                         const color = colors[Math.round(average)]
+                        const rounded = average.toFixed(2)
 
                         return (
                             <div className="subject" key={subject.id} onClick={() => navigate(`/grades?subject=${subject.is_custom ? "t" : "f"}${subject.id}`)}>
@@ -74,7 +75,7 @@ export function StudentSubjects() {
                                     <div className={`rounded-full h-8 w-fit pl-2 pr-2 inline-flex items-center justify-center poppins text-2xl`} style={{
                                         backgroundColor: `var(--${color}-base-color)`,
                                         color: `var(--${color}-color)`, fontWeight: "900"
-                                    }}>{average.toFixed(2)}</div>
+                                    }}>{Number(rounded) ? rounded : "---"}</div>
                                 </div>
                             </div>
                         )
