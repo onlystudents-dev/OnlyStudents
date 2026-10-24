@@ -211,7 +211,8 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
         if (!await post("/api/v1/me/update_preferences", preferences)) return false
 
         setMe({ ...me, preferences })
-        if (diff.lang !== undefined || diff.time_format !== undefined) reload()
+
+        if (diff.lang !== undefined) reload()
         if (diff.theme !== undefined) applyTheme(diff.theme)
         return true
     }
