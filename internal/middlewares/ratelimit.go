@@ -13,7 +13,7 @@ import (
 func RateLimitMiddleware(c fiber.Ctx, rdb *redis.Client, scope string, max, window int64) error {
 	ctx := context.Background()
 	ip := c.IP()
-	key := fmt.Sprintf("ratelimit:%s:%s", scope, ip)
+	key := fmt.Sprintf("ip_ratelimit:%s:%s", scope, ip)
 
 	count, err := rdb.Incr(ctx, key).Result()
 	if err != nil {

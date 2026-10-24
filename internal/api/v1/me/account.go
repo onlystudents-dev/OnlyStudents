@@ -175,6 +175,14 @@ func VerifyEmailRequest(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
+	userVerifyRateMax := helpers.GetInt64EnvFallback("USER_VERIFY_RATE_MAX", 1, 1000000)
+	userVerifyRateWindow := helpers.GetInt64EnvFallback("USER_VERIFY_RATELIMIT_WINDOW", 60, 1000000)
+	ratelimit_middleware_err, should_return := helpers.UserRateLimit(c, rdb, "verify", userVerifyRateMax, userVerifyRateWindow, session_data.AccountID, session_data.Role)
+
+	if should_return {
+		return ratelimit_middleware_err
+	}
+
 	queries := db_queries.New(pool)
 	account, err := helpers.CacheOrGetAccount(c.Context(), rdb, *queries, session_data.Role, session_data.AccountID, helpers.GetInt32EnvFallback("ACCOUNT_CACHE_TTL", 5*60, 604800))
 
