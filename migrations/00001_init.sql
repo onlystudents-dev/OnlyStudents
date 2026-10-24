@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE school_type (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL
@@ -447,3 +448,200 @@ INSERT INTO permission_type (name, description) VALUES
     ('MANAGE_ROOMS', 'Can manage all rooms'),
     ('MANAGE_SUBSTITUTIONS', 'Can manage daily substitutions and cancel lessons.'),
     ('MANAGE_CUSTOM_SUBJECT', 'Can create, edit, or delete custom subjects.');
+
+ALTER TABLE accounts DROP COLUMN password_hash;
+
+CREATE TABLE account_opaque (
+    account_uuid UUID PRIMARY KEY,
+    registration_record bytea,
+    credential_identifier bytea UNIQUE,
+    created_at DATE NOT NULL,
+    updated_at DATE NOT NULL
+);
+
+CREATE TABLE sessions (
+    id UUID PRIMARY KEY,
+    account_uuid UUID,
+    created_at DATE NOT NULL,
+    last_seen_at DATE NOT NULL
+);
+
+ALTER TABLE accounts DROP CONSTRAINT chk_accounts_role_link;
+
+ALTER TABLE accounts ADD CONSTRAINT chk_accounts_role_link CHECK (
+    (role = 'student' AND student_id IS NOT NULL AND teacher_id IS NULL AND guardian_id IS NULL) OR
+    (role = 'teacher' AND teacher_id IS NOT NULL AND student_id IS NULL AND guardian_id IS NULL) OR
+    (role = 'guardian' AND guardian_id IS NOT NULL AND student_id IS NULL AND teacher_id IS NULL) OR
+    (role = 'moderator' AND guardian_id IS NULL AND student_id IS NULL AND teacher_id IS NULL) OR
+    (role = 'admin' AND guardian_id IS NULL AND student_id IS NULL AND teacher_id IS NULL)
+);
+
+CREATE TABLE class_subjects (
+    id SERIAL PRIMARY KEY,
+    school_id INT NOT NULL REFERENCES schools(id),
+    class_id INT NOT NULL REFERENCES classes(id),
+    subject_id INT REFERENCES subjects(id),
+    custom_subject bool NOT NULL DEFAULT FALSE,
+    custom_subject_id INT REFERENCES custom_subjects(id),
+    teacher_id INT NOT NULL REFERENCES teachers(id),
+    CONSTRAINT chk_class_subjects CHECK (
+      (custom_subject = FALSE AND subject_id IS NOT NULL AND custom_subject_id IS NULL) OR
+      (custom_subject = TRUE  AND custom_subject_id IS NOT NULL AND subject_id IS NULL)),
+    CONSTRAINT uq_class_subjects UNIQUE (class_id, subject_id, custom_subject_id)
+);
+
+ALTER TABLE grades
+    ADD CONSTRAINT fk_grades_class_subjects
+    FOREIGN KEY (class_subjects_id) REFERENCES class_subjects (id) ON DELETE RESTRICT;
+
+ALTER TABLE final_grades
+    ADD CONSTRAINT fk_final_grades_class_subjects
+    FOREIGN KEY (class_subjects_id) REFERENCES class_subjects (id) ON DELETE RESTRICT;
+
+ALTER TABLE exams
+    ADD CONSTRAINT fk_exams_class_subjects
+    FOREIGN KEY (class_subjects_id) REFERENCES class_subjects (id) ON DELETE CASCADE;
+
+ALTER TABLE homework
+    ADD CONSTRAINT fk_homework_class_subjects
+    FOREIGN KEY (class_subjects_id) REFERENCES class_subjects (id) ON DELETE CASCADE;
+
+ALTER TABLE absences
+    ADD COLUMN class_subjects_id INT DEFAULT NULL REFERENCES class_subjects (id) ON DELETE RESTRICT;
+
+CREATE INDEX idx_absences_class_subjects_id ON absences (class_subjects_id);
+
+ALTER TABLE class_subjects
+    DROP CONSTRAINT uq_class_subjects;
+
+CREATE UNIQUE INDEX uq_class_subjects_subject
+    ON class_subjects (class_id, subject_id)
+    WHERE NOT custom_subject;
+
+CREATE UNIQUE INDEX uq_class_subjects_custom
+    ON class_subjects (class_id, custom_subject_id)
+    WHERE custom_subject;
+
+CREATE TABLE student_school (
+    id SERIAL PRIMARY KEY,
+    student_id INT NOT NULL REFERENCES students (id) ON DELETE CASCADE,
+    school_id  INT NOT NULL REFERENCES schools (id)  ON DELETE CASCADE,
+    class_id INT NOT NULL REFERENCES classes (id)  ON DELETE CASCADE,
+    id_number  INT NOT NULL,
+    CONSTRAINT uq_student_school          UNIQUE (student_id, school_id),
+    CONSTRAINT uq_student_school_id_number UNIQUE (school_id, id_number)
+);
+CREATE INDEX idx_student_school_school_id  ON student_school (school_id);
+CREATE INDEX idx_student_school_class_id ON student_school (class_id);
+
+INSERT INTO student_school (student_id, school_id, class_id, id_number)
+SELECT s.id, s.school_id, s.class_id, s.id_number FROM students s;
+
+ALTER TABLE students DROP CONSTRAINT fk_students_school;
+ALTER TABLE students DROP CONSTRAINT fk_students_class;
+DROP INDEX idx_students_school_id;
+DROP INDEX idx_students_class_id;
+ALTER TABLE students DROP COLUMN school_id;
+ALTER TABLE students DROP COLUMN class_id;
+ALTER TABLE students DROP COLUMN id_number;
+
+CREATE TABLE themes (
+    name VARCHAR(64) PRIMARY KEY,
+    colors JSONB
+);
+
+INSERT INTO themes (name, colors)
+VALUES
+    (
+        'dark',
+        '{
+          "bg-color": "#1a1b1c",
+          "txt-color": "#eee5e9",
+          "hover-color": "#262626",
+          "card-color": "#3a3a3a",
+          "border-color": "#2b303a",
+          "wrong-color": "#ed474a",
+          "wrong-base-color": "rgb(207 41 44 / 0.5)",
+          "warning-color": "#ff8200",
+          "warning-base-color": "rgb(255 130 0 / 0.5)",
+          "right-color": "#21fa90",
+          "right-base-color": "rgb(33 250 144 / 0.5)",
+          "edit-color": "#007fff",
+          "edit-base-color": "rgb(0 127 255 / 0.5)",
+          "yellow-color": "#fec601",
+          "yellow-base-color": "rgb(254 198 1 / 0.5)"
+        }'::jsonb
+    ),
+    (
+        'oled',
+        '{
+          "bg-color": "#000000",
+          "txt-color": "#eee5e9",
+          "hover-color": "#262626",
+          "card-color": "#3a3a3a",
+          "border-color": "#2b303a",
+          "wrong-color": "#ed474a",
+          "wrong-base-color": "rgb(207 41 44 / 0.5)",
+          "warning-color": "#ff8200",
+          "warning-base-color": "rgb(255 130 0 / 0.5)",
+          "right-color": "#21fa90",
+          "right-base-color": "rgb(33 250 144 / 0.5)",
+          "edit-color": "#007fff",
+          "edit-base-color": "rgb(0 127 255 / 0.5)",
+          "yellow-color": "#fec601",
+          "yellow-base-color": "rgb(254 198 1 / 0.5)"
+        }'::jsonb
+    ),
+    (
+        'light',
+        '{
+          "bg-color": "#ffffff",
+          "txt-color": "#111111",
+          "hover-color": "#e8e8e8",
+          "card-color": "#fcfcfc",
+          "border-color": "#d0d0d0",
+          "wrong-color": "#ed474a",
+          "wrong-base-color": "rgb(207 41 44 / 0.5)",
+          "warning-color": "#ff8200",
+          "warning-base-color": "rgb(255 130 0 / 0.5)",
+          "right-color": "#1ab369",
+          "right-base-color": "rgb(26 179 105 / 0.5)",
+          "edit-color": "#007fff",
+          "edit-base-color": "rgb(0 127 255 / 0.5)",
+          "yellow-color": "#fec601",
+          "yellow-base-color": "rgb(254 198 1 / 0.5)"
+        }'::jsonb
+    );
+
+CREATE TABLE account_crypto (
+    account_uuid UUID PRIMARY KEY,
+    wrapped_mk_password BYTEA NOT NULL,
+    wrapped_mk_recovery BYTEA NOT NULL,
+    recovery_key_hash   BYTEA NOT NULL,
+    recovery_key_salt   BYTEA NOT NULL,
+    recovery_key_params TEXT  NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE homework
+    ADD COLUMN assigned_date DATE DEFAULT NULL;
+
+CREATE INDEX idx_homework_assigned
+    ON homework (class_subjects_id, COALESCE(assigned_date, due_date));
+
+CREATE UNIQUE INDEX uq_exams_class_subject_date
+    ON exams (class_subjects_id, date);
+
+-- +goose Down
+DROP TABLE IF EXISTS
+    school_type, teachers, schools, bell_schedule_type, classes, students,
+    guardians, guardians_access, teacher_school, student_citizenships,
+    guardian_citizenships, teacher_citizenships, accounts, school_years, terms,
+    rooms, grade_types, grades, final_grades, absences, homework,
+    homework_submissions, announcements, lesson_logs, exams, bell_schedule,
+    subjects, custom_subjects, groups, group_members, base_schedule, time_table,
+    principal, permission_type, permissions, account_opaque, sessions,
+    class_subjects, student_school, themes, account_crypto,
+    schema_migrations
+CASCADE;
