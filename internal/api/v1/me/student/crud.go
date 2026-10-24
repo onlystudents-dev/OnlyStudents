@@ -2,7 +2,6 @@ package studentapi
 
 import (
 	"context"
-	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -54,7 +53,8 @@ func StudentSummary[Row, T, request_type any](
 		data, err := cache_or_get_func(c.Context(), rdb, *queries, req, me_scope, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+			error_code, status_code := helpers.MapDBError(err)
+			return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 		}
 
 		for _, row := range data {
@@ -113,8 +113,8 @@ func StudentModify[request_type any](
 	}
 
 	if err != nil {
-		slog.Error("student modify err", "err", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+		error_code, status_code := helpers.MapDBError(err)
+		return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 	}
 
 	if rows_affected == 0 {

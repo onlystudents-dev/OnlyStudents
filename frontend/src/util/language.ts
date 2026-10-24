@@ -79,8 +79,13 @@ export function t(key: string, vars?: Vars) {
 }
 
 export function getKey(key: string, ...args: string[]) {
-    return t(key, positional(args))
+    const vars = positional(args)
+    if (!i18n.exists(key)) {
+        return i18n.t(key, {ns: "errors", ...vars})
+    }
+    return t(key, vars)
 }
+
 
 export async function fromResponse(response: Response, ...args: string[]) {
     if (response.status === 429) {

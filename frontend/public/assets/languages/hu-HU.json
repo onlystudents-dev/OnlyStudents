@@ -169,6 +169,10 @@
         "TEACHER": "Tanár"
     },
     "errors": {
+        "LOGIN_FAILED": "A bejelentkezés sikertelen. Kérem próbálja újra.",
+        "REQUEST_CANCELLED": "A kérelme meg lett szakítva, ismeretlen okokból. Kérem, próbálja újra.",
+        "GATEWAY_TIMEOUT": "A kérelme nem sikerült időben. Kérem, próbálja újra.",
+        "SERVICE_UNAVAILABLE": "A szolgáltatás nem elérhető. Kérem, próbálja újra később.",
         "NO_CRYPTO": "A beállított végponti titkosítási kulcsok hiányoznak.",
         "CONFLICT": "A megadott adat már létezik a rendszerben, és nem felülírható!",
         "FORBIDDEN": "Nincs jogod ennek az erőforrásnak az eléréséhez vagy megváltoztatásához!",
