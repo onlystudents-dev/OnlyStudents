@@ -1,3 +1,5 @@
+import i18n from "i18next";
+import {initReactI18next} from "react-i18next";
 import {match} from "@formatjs/intl-localematcher";
 import type {Me} from "../types/api.ts";
 import {type ApiError, getRetryAfter, readJSON} from "./api.ts";
@@ -18,15 +20,40 @@ type LanguageFile = {
     errors: Record<string, string>,
 }
 
-let language: LanguageFile = { messages: {}, errors: {} }
+type Vars = Record<string, string | number>
+
+function positional(args: string[]): Vars {
+    return Object.fromEntries(args.map((arg, i) => [String(i + 1), arg]))
+}
 
 export async function fetchLanguage(me: Me | null) {
-    const response = await fetch(`/assets/languages/${getLanguage(me)?.key ?? "en-US"}.json`);
-    language = await readJSON<LanguageFile>(response);
+    const lng = getLanguage(me)?.key ?? "en-US"
+    const response = await fetch(`/assets/languages/${lng}.json`)
+    const {messages, errors} = await readJSON<LanguageFile>(response)
+
+    if (!i18n.isInitialized) {
+        await i18n.use(initReactI18next).init({
+            lng,
+            fallbackLng: "en-US",
+            ns: ["translation", "errors"],
+            defaultNS: "translation",
+            resources: {[lng]: {translation: messages, errors}},
+            keySeparator: false,
+            nsSeparator: false,
+            interpolation: {escapeValue: false},
+            parseMissingKeyHandler: () => "",
+            returnEmptyString: true,
+        })
+        return
+    }
+
+    i18n.addResourceBundle(lng, "translation", messages, true, true)
+    i18n.addResourceBundle(lng, "errors", errors, true, true)
+    await i18n.changeLanguage(lng)
 }
 
 export function getLanguage(me: Me | null, auto?: boolean) {
-    const stored = !auto ? me?.preferences.lang : null;
+    const stored = !auto ? me?.preferences.lang : null
 
     return languages.find(o => o.key === match(
         stored ? [stored] : navigator.languages,
@@ -35,13 +62,12 @@ export function getLanguage(me: Me | null, auto?: boolean) {
     ))
 }
 
-function fill(template: string, args: string[]) {
-    return args.reduce((val, arg, i) => val.replace(`%${i + 1}`, arg), template)
+export function t(key: string, vars?: Vars) {
+    return i18n.t(key, vars)
 }
 
 export function getKey(key: string, ...args: string[]) {
-    const val = language.messages[key]
-    return val ? fill(val, args) : ""
+    return t(key, positional(args))
 }
 
 export async function fromResponse(response: Response, ...args: string[]) {
@@ -52,6 +78,8 @@ export async function fromResponse(response: Response, ...args: string[]) {
 
     const json = await readJSON<ApiError | null>(response).catch(() => null)
 
-    const val = json?.error ? language.errors[json.error] : undefined
-    return val ? fill(val, args) : JSON.stringify(json)
+    if (json?.error && i18n.exists(json.error, {ns: "errors"})) {
+        return i18n.t(json.error, {ns: "errors", ...positional(args)})
+    }
+    return JSON.stringify(json)
 }
