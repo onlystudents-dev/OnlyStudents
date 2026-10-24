@@ -11,7 +11,6 @@ import {getKey, getLanguage} from "../../util/language.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
 import {useLocation, useSearch} from "wouter";
-import Loading from "../../util/loading.tsx";
 
 const colors: Record<number, string> = {
     1: "wrong",
@@ -36,10 +35,8 @@ export default function StudentGrades({ me }: { me: Me }) {
 
 export function StudentSubjects() {
     const [, navigate] = useLocation()
-    const [subjects, setSubjects] = useState<Subject[]>([])
-    const [grades, setGrades] = useState<Grade[]>([])
-
-    const [loading, setLoading] = useState(true)
+    const [subjects, setSubjects] = useState<Subject[] | null>(null)
+    const [grades, setGrades] = useState<Grade[] | null>(null)
 
     async function Fetch() {
         return Promise.all([
@@ -48,15 +45,15 @@ export function StudentSubjects() {
         ])
     }
 
-    useEffect(() => void Fetch().then(() => setLoading(false)), [])
+    useEffect(() => void Fetch(), [])
     useReloadSchoolStuff(() => void Fetch())
 
     return (
         <>
-            {loading && <Loading />}
             <div className="w-full flex justify-center items-center pt-8">
                 <div className="subjects">
-                    {subjects.map(subject => {
+                    {subjects?.map(subject => {
+                        if (!grades) return <Skeleton width={640} height={64} color="var(--hover-color)" key={subject.id} className="border-b-2 border-r-2 border-(--border-color) rounded-3xl!" />
                         const gradeS = grades.filter(grade => grade.subject === subject.name)
                         const average = gradeS.length
                             ? gradeS.reduce((sum, grade) => sum + grade.value, 0) / gradeS.length
@@ -66,10 +63,10 @@ export function StudentSubjects() {
                         const rounded = average.toFixed(2)
 
                         return (
-                            <div className="subject" key={subject.id} onClick={() => navigate(`/grades?subject=${subject.is_custom ? "t" : "f"}${subject.id}`)}>
+                            <div className="grade" key={subject.id} onClick={() => navigate(`/grades?subject=${subject.is_custom ? "t" : "f"}${subject.id}`)}>
                                 <div className="flex flex-col">
                                     <h1 className="rubik truncate">{subject.name}</h1>
-                                    <p className="poppins truncate">{subject.teacher_first_name} {subject.teacher_last_name}</p>
+                                    <p className="poppins opacity-70 truncate">{subject.teacher_first_name} {subject.teacher_last_name}</p>
                                 </div>
                                 <div className="flex flex-col">
                                     <div className={`rounded-full h-8 w-fit pl-2 pr-2 inline-flex items-center justify-center poppins text-2xl`} style={{
@@ -79,7 +76,9 @@ export function StudentSubjects() {
                                 </div>
                             </div>
                         )
-                    })}
+                    }) || Array.from({ length: 9 }).map((_, i) => (
+                        <Skeleton width={640} height={64} color="var(--hover-color)" key={i} className="border-b-2 border-r-2 border-(--border-color) rounded-3xl!" />
+                    ))}
                 </div>
             </div>
         </>
