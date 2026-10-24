@@ -608,7 +608,7 @@ VALUES
           "right-base-color": "rgb(26 179 105 / 0.5)",
           "edit-color": "#007fff",
           "edit-base-color": "rgb(0 127 255 / 0.5)",
-          "yellow-color": "#fec601",
+          "yellow-color": "#bc9303",
           "yellow-base-color": "rgb(254 198 1 / 0.5)"
         }'::jsonb
     );
