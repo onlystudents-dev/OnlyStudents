@@ -48,11 +48,7 @@ function AbsenceFileCard({ absence }: { absence: Absence }) {
                 <div className="fredoka text-lg truncate">{absence.file_name}</div>
                 <div className="text-sm opacity-60">{(absence.file_size / 1024).toFixed(1)} KB</div>
             </div>
-            <a
-                href={`/uploads/${absence.file_uuid}`}
-                className="action-button w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition"
-                download
-            >
+            <a href={`/uploads/${absence.file_uuid}`} className="action-button w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition" download>
                 <FontAwesomeIcon icon={faDownload} />
             </a>
         </div>
