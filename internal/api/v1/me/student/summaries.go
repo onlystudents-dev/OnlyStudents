@@ -42,10 +42,14 @@ type AbsenceSummary struct {
 	TeacherLastName     string      `json:"teacher_last_name"`
 	TeacherFirstName    string      `json:"teacher_first_name"`
 	Date                int64       `json:"date"`
-	Type                string      `json:"type"`
-	Justified           bool        `json:"justified"`
-	HasNote             bool        `json:"has_note"`
+	ReasonType          string      `json:"reason_type"`
+	FileName            string      `json:"file_name"`
+	FileType            string      `json:"file_type"`
+	FileSize            int64       `json:"file_size"`
+	FileUUID            string      `json:"file_uuid"`
+	ReasonNote          string      `json:"reason_note"`
 	Note                string      `json:"note"`
+	Justified           bool        `json:"justified"`
 	VerifiedBy          interface{} `json:"verified_by"`
 }
 
@@ -161,10 +165,14 @@ func convertAbsence(row db_queries.GetStudentAbsencesRow) AbsenceSummary {
 		TeacherFirstName:    row.TeacherFirstName.String,
 		TeacherLastName:     row.TeacherLastName.String,
 		Date:                row.Date.Time.Unix(),
-		Type:                row.Type,
-		Justified:           row.Justified,
-		HasNote:             row.Note.Valid,
+		ReasonType:          row.ReasonType.String,
+		FileName:            row.FileName.String,
+		FileType:            row.FileType.String,
+		FileSize:            row.FileSize.Int64,
+		FileUUID:            row.FileUuid.String(),
+		ReasonNote:          row.ReasonNote.String,
 		Note:                row.Note.String,
+		Justified:           row.Justified,
 		VerifiedBy:          row.VerifiedBy,
 	}
 }

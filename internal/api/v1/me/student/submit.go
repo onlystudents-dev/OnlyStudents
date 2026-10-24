@@ -12,30 +12,62 @@ import (
 
 type SubmitHomeworkRequest struct {
 	HomeworkID int32
-	Content    string
+	Type       string
+	Note       string
+	FileType   string
+	FileID     int64
 }
 
-type SubmitAbsenceRequest struct {
-	HomeworkID int32
-	Content    string
+type SubmitAbsenceReasonRequest struct {
+	AbsenceID int32
+	Type      string
+	Note      string
+	FileType  string
+	FileID    int64
 }
 
 func SubmitHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return StudentModify(c, pool, rdb,
 		func(req SubmitHomeworkRequest) bool {
-			return req.HomeworkID <= 0 || req.Content == ""
+			if req.HomeworkID <= 0 || (req.Type != "note" && req.Type != "file") {
+				return true
+			}
+			if req.Type == "note" {
+				return req.Note == "" || req.FileID > 0
+			}
+			return req.FileType == "" || req.FileID <= 0 || req.Note != ""
 		},
 		func(ctx context.Context, school_id int32, account_id int32, queries *db_queries.Queries, req SubmitHomeworkRequest) (int64, error) {
 			return queries.StudentUpsertHomeworkSubmission(c.Context(), db_queries.StudentUpsertHomeworkSubmissionParams{
-				HomeworkID: req.HomeworkID,
-				StudentID:  account_id,
-				SchoolID:   school_id,
-				Content:    pgtype.Text{String: req.Content, Valid: true},
+				HomeworkID:     req.HomeworkID,
+				StudentID:      account_id,
+				SchoolID:       school_id,
+				SubmissionType: req.Type,
+				Note:           pgtype.Text{String: req.Note, Valid: req.Note != ""},
+				FileID:         pgtype.Int8{Int64: req.FileID, Valid: req.FileID > 0},
 			})
 		})
 }
 
 func SubmitAbsenceReason(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	// TODO: make this work, needs a new sql table
-	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
+	return StudentModify(c, pool, rdb,
+		func(req SubmitAbsenceReasonRequest) bool {
+			if req.AbsenceID <= 0 || (req.Type != "note" && req.Type != "file") {
+				return true
+			}
+			if req.Type == "note" {
+				return req.Note == "" || req.FileID > 0
+			}
+			return req.FileType == "" || req.FileID <= 0
+		},
+		func(ctx context.Context, school_id int32, account_id int32, queries *db_queries.Queries, req SubmitAbsenceReasonRequest) (int64, error) {
+			return queries.StudentUpsertAbsenceReason(c.Context(), db_queries.StudentUpsertAbsenceReasonParams{
+				AbsenceID:      req.AbsenceID,
+				StudentID:      account_id,
+				SchoolID:       school_id,
+				SubmissionType: req.Type,
+				Note:           pgtype.Text{String: req.Note, Valid: req.Note != ""},
+				FileID:         pgtype.Int8{Int64: req.FileID, Valid: req.FileID > 0},
+			})
+		})
 }
