@@ -16,7 +16,7 @@ func CacheLanguages() {
 		if lang == "" {
 			continue
 		}
-		language, err := os.ReadFile("frontend/dist/assets/languages/" + lang + ".json")
+		language, err := os.ReadFile("frontend/dist/assets/languages/" + lang + ".json") // #nosec G304 -- It's a hardcoded list + the files are public anyway
 		if err != nil {
 			panic(err)
 		}
