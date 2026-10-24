@@ -38,7 +38,7 @@ type StatusData struct {
 }
 
 func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusData, error) {
-	session_token := c.Cookies("session_token", "")
+	session_token := helpers.GetSessionToken(c)
 
 	if session_token == "" {
 		return &StatusData{}, errors.New("no session")

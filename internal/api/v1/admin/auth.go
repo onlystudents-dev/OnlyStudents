@@ -56,5 +56,7 @@ func AdminTokenLogin(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		SameSite: "Strict",
 	})
 
-	return c.SendStatus(fiber.StatusOK)
+	return c.JSON(fiber.Map{
+		"session_token": session_token,
+	})
 }

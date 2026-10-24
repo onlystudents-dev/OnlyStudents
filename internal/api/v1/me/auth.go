@@ -142,7 +142,9 @@ func LoginFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_serv
 		SameSite: "Strict",
 	})
 
-	return c.SendStatus(fiber.StatusOK)
+	return c.JSON(fiber.Map{
+		"session_token": sessionToken,
+	})
 }
 
 func EnrollInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) error {
@@ -182,11 +184,13 @@ func EnrollFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_ser
 		SameSite: "Strict",
 	})
 
-	return c.SendStatus(fiber.StatusOK)
+	return c.JSON(fiber.Map{
+		"session_token": sessionToken,
+	})
 }
 
 func Logout(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	session_token := c.Cookies("session_token", "")
+	session_token := helpers.GetSessionToken(c)
 
 	if session_token == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
