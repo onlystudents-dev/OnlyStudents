@@ -150,11 +150,8 @@ func ChangeEmail(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	}
 
 	if err != nil {
-		if helpers.IsUniqueViolation(err) {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-		}
-		slog.Error("change email error", "err", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+		error_code, status_code := helpers.MapDBError(err)
+		return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 	}
 
 	helpers.InvalidateCachedAccount(c.Context(), rdb, session_data.Role, session_data.AccountID)

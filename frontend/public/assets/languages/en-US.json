@@ -169,6 +169,10 @@
         "TEACHER": "Teacher"
     },
     "errors": {
+        "LOGIN_FAILED": "Login failed. Please try again.",
+        "REQUEST_CANCELLED": "Your request was cancelled for an unknown reason. Please try again.",
+        "GATEWAY_TIMEOUT": "Your request did not complete in time. Please try again later.",
+        "SERVICE_UNAVAILABLE": "The service is currently unavailable. Please try again later.",
         "NO_CRYPTO": "The enrolled E2EE keys are missing.",
         "CONFLICT": "The submitted data exists in the system and cannot be overwritten!",
         "FORBIDDEN": "You do not have permission to access or modify this resource!",

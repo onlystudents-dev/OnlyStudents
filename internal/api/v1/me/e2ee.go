@@ -126,11 +126,8 @@ func EnrollE2EE(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		RecoveryKeyParams: req.RecoveryKeyParams,
 	})
 	if err != nil {
-		if helpers.IsUniqueViolation(err) {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "CONFLICT"})
-		} else {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-		}
+		error_code, status_code := helpers.MapDBError(err)
+		return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -164,7 +161,7 @@ func E2EERewrap(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	unmarshal_err := json.Unmarshal(raw, &crypto_grant)
 
 	if unmarshal_err != nil {
-		slog.Error("json unmarshall error", "err", unmarshal_err)
+		slog.Error("json unmarshal error", "err", unmarshal_err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
@@ -193,12 +190,8 @@ func E2EERewrap(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	})
 
 	if err != nil {
-		slog.Error("update wrapped mk password", "err", err)
-		if helpers.IsUniqueViolation(err) {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "CONFLICT"})
-		} else {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-		}
+		error_code, status_code := helpers.MapDBError(err)
+		return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 	}
 
 	if rows != 1 {

@@ -2,7 +2,6 @@ package timetable
 
 import (
 	"context"
-	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -53,7 +52,8 @@ func TeacherTimeTableSummaryByID[request_type, Row, T any](
 		data, err := cache_or_get_func(c.Context(), rdb, *queries, get_id_func(req), teacher_scope, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+			error_code, status_code := helpers.MapDBError(err)
+			return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 		}
 
 		for _, row := range data {
@@ -96,7 +96,8 @@ func TeacherTimeTableSummary[Row, T any](
 		data, err := cache_or_get_func(c.Context(), rdb, *queries, teacher_scope, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+			error_code, status_code := helpers.MapDBError(err)
+			return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 		}
 
 		for _, row := range data {
@@ -144,8 +145,8 @@ func TeacherTimeTableModify[request_type any](
 	rows_affected, err := query_func(c.Context(), teacher_scope, queries, req)
 
 	if err != nil {
-		slog.Error("teacher modify err", "err", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+		error_code, status_code := helpers.MapDBError(err)
+		return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 	}
 
 	if rows_affected == 0 {
