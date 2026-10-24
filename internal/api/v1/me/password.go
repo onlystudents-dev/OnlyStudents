@@ -107,6 +107,7 @@ func ChangePasswordFinish(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, op
 
 	return c.JSON(fiber.Map{
 		"crypto_grant_handle": crypto_grant_handle,
+		"session_token":       sessionToken,
 	})
 }
 

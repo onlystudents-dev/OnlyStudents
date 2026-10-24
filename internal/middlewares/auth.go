@@ -8,7 +8,7 @@ import (
 )
 
 func AuthMiddleware(c fiber.Ctx, rdb *redis.Client) error {
-	session_token := c.Cookies("session_token", "")
+	session_token := helpers.GetSessionToken(c)
 
 	if session_token == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})

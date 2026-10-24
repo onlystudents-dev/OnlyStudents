@@ -83,7 +83,7 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
                         <input className={`${(red || wrong) && "wrong"}`} type="text" placeholder={getKey("USER_ID")} value={id} onChange={(e) => {setId(e.currentTarget.value); checkUserID(e.currentTarget.value); setWrong(false)}} />
                         <input className={`${wrong && "wrong"}`} type="password" placeholder={getKey("PASSWORD")} value={password} onChange={(e) => {setPassword(e.currentTarget.value); setWrong(false)}} />
                     </div>
-                    <div aria-disabled className="logbutton">
+                    <div className="logbutton">
                         <Button onClick={openReset}>
                             <FontAwesomeIcon icon={faQuestion} /> {getKey("FORGOT_PASSWORD")}
                         </Button>

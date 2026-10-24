@@ -5,11 +5,29 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/goccy/go-json"
+	"github.com/gofiber/fiber/v3"
 	"github.com/redis/go-redis/v9"
 )
+
+func GetSessionToken(c fiber.Ctx) string {
+	session_token_cookie := c.Cookies("session_token", "")
+
+	if session_token_cookie != "" {
+		return session_token_cookie
+	}
+
+	session_token_api_key := strings.Replace(c.Get("Authorization"), "Bearer ", "", 1)
+
+	if session_token_api_key != "" {
+		return session_token_api_key
+	}
+
+	return ""
+}
 
 type SessionData struct {
 	Role        string `json:"role"`
