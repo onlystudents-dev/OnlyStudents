@@ -49,7 +49,7 @@ func AdminLogs(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	log_dir := helpers.LogDir()
@@ -122,7 +122,7 @@ func AdminListSchools(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	queries := db_queries.New(pool)
@@ -152,7 +152,7 @@ func AdminListClasses(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	queries := db_queries.New(pool)
@@ -191,7 +191,7 @@ func AdminStatus(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	queries := db_queries.New(pool)

@@ -309,7 +309,7 @@ func EnrollStudent(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *o
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	var req EnrollStudentRequest
@@ -426,7 +426,7 @@ func EnrollTeacher(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *o
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	var req EnrollTeacherRequest
@@ -543,7 +543,7 @@ func EnrollGuardian(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	var req EnrollGuardianRequest
@@ -566,7 +566,7 @@ func MassEnroll(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, server *opaq
 	_, ok := c.Locals("session").(helpers.SessionData)
 
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "UNAUTHORIZED"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
 	var req MassEnrollRequest

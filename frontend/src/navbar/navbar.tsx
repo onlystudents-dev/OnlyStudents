@@ -96,7 +96,9 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
     const [hidden, setHidden] = useState(true)
 
     function redirect(href: string) {
-        if (path === href) return
+        // Clear any query string (e.g. /grades?subject=…) when re-clicking the
+        // current section so it returns to its root view instead of doing nothing.
+        if (path === href && !window.location.search) return
         navigate(href)
     }
 

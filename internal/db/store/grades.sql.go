@@ -21,11 +21,11 @@ SELECT
     ter.name AS term,
     fg.value
 FROM final_grades fg
-JOIN class_subjects csub ON csub.id = fg.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN teachers t ON t.id = fg.teacher_id
-JOIN terms ter ON ter.id = fg.term_id
+         JOIN class_subjects csub ON csub.id = fg.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = fg.teacher_id
+         JOIN terms ter ON ter.id = fg.term_id
 WHERE fg.student_id = $1
   AND csub.school_id = $2
 ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name)
@@ -87,12 +87,12 @@ SELECT
     g.date,
     g.note
 FROM grades g
-JOIN class_subjects csub ON csub.id = g.class_subjects_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN teachers t ON t.id = g.teacher_id
-JOIN terms ter ON ter.id = g.term_id
-JOIN grade_types gt ON gt.id = g.grade_type_id
+         JOIN class_subjects csub ON csub.id = g.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = g.teacher_id
+         JOIN terms ter ON ter.id = g.term_id
+         JOIN grade_types gt ON gt.id = g.grade_type_id
 WHERE g.student_id = $1
   AND csub.school_id = $2
 ORDER BY g.term_id, COALESCE(cs.subject_name, s.subject_name), g.date
@@ -125,6 +125,91 @@ func (q *Queries) GetStudentGrades(ctx context.Context, arg GetStudentGradesPara
 	var items []GetStudentGradesRow
 	for rows.Next() {
 		var i GetStudentGradesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Subject,
+			&i.SubjectCode,
+			&i.TeacherFirstName,
+			&i.TeacherLastName,
+			&i.Term,
+			&i.Type,
+			&i.Value,
+			&i.Date,
+			&i.Note,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getStudentGradesBySubject = `-- name: GetStudentGradesBySubject :many
+SELECT
+    g.id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    t.first_name AS teacher_first_name,
+    t.last_name AS teacher_last_name,
+    ter.name AS term,
+    gt.name AS type,
+    g.value,
+    g.date,
+    g.note
+FROM grades g
+         JOIN class_subjects csub ON csub.id = g.class_subjects_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN teachers t ON t.id = g.teacher_id
+         JOIN terms ter ON ter.id = g.term_id
+         JOIN grade_types gt ON gt.id = g.grade_type_id
+WHERE g.student_id = $1
+  AND csub.school_id = $2
+  AND (
+    (NOT $3::bool AND csub.subject_id = $4::int)
+        OR
+    ($3::bool AND csub.custom_subject_id = $4::int)
+    )
+ORDER BY g.term_id, g.date
+`
+
+type GetStudentGradesBySubjectParams struct {
+	StudentID     int32
+	SchoolID      int32
+	CustomSubject bool
+	SubjectID     int32
+}
+
+type GetStudentGradesBySubjectRow struct {
+	ID               int64
+	Subject          string
+	SubjectCode      pgtype.Text
+	TeacherFirstName string
+	TeacherLastName  string
+	Term             string
+	Type             string
+	Value            int16
+	Date             pgtype.Date
+	Note             pgtype.Text
+}
+
+func (q *Queries) GetStudentGradesBySubject(ctx context.Context, arg GetStudentGradesBySubjectParams) ([]GetStudentGradesBySubjectRow, error) {
+	rows, err := q.db.Query(ctx, getStudentGradesBySubject,
+		arg.StudentID,
+		arg.SchoolID,
+		arg.CustomSubject,
+		arg.SubjectID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetStudentGradesBySubjectRow
+	for rows.Next() {
+		var i GetStudentGradesBySubjectRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Subject,

@@ -4,6 +4,8 @@ import (
 	"context"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
+	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -90,7 +92,35 @@ type FinalGradeSummary struct {
 	Value            int16  `json:"value"`
 }
 
+type SubjectSummary struct {
+	ID               int32  `json:"id"`
+	Name             string `json:"name"`
+	Custom           bool   `json:"is_custom"`
+	TeacherID        int32  `json:"teacher_id"`
+	TeacherFirstName string `json:"teacher_first_name"`
+	TeacherLastName  string `json:"teacher_last_name"`
+	GroupID          int32  `json:"group_id"`
+	GroupName        string `json:"group_name"`
+}
+
 func convertGrade(row db_queries.GetStudentGradesRow) GradeSummary {
+	return GradeSummary{
+		ID:               row.ID,
+		Subject:          row.Subject,
+		HasSubjectCode:   row.SubjectCode.Valid,
+		SubjectCode:      row.SubjectCode.String,
+		TeacherLastName:  row.TeacherLastName,
+		TeacherFirstName: row.TeacherFirstName,
+		Term:             row.Term,
+		Type:             row.Type,
+		Value:            row.Value,
+		Date:             row.Date.Time.Unix(),
+		HasNote:          row.Note.Valid,
+		Note:             row.Note.String,
+	}
+}
+
+func convertGradeBySubject(row db_queries.GetStudentGradesBySubjectRow) GradeSummary {
 	return GradeSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
@@ -215,7 +245,56 @@ func convertExam(row db_queries.GetStudentExamRow) ExamSummary {
 	}
 }
 
+func convertSubject(row db_queries.GetStudentSubjectsRow) SubjectSummary {
+	return SubjectSummary{
+		ID:               row.ID,
+		Name:             row.Name,
+		Custom:           row.Custom,
+		TeacherID:        row.TeacherID,
+		TeacherLastName:  row.TeacherLastName,
+		TeacherFirstName: row.TeacherFirstName,
+		GroupID:          row.GroupID,
+		GroupName:        row.GroupName,
+	}
+}
+
+type subjectArg struct {
+	custom bool
+	id     int32
+}
+
 func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	if subjects := c.Query("subject"); subjects != "" {
+		var wanted []subjectArg
+
+		for arg := range strings.SplitSeq(subjects, ",") {
+			if len(arg) < 2 {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+			}
+
+			n, err := strconv.ParseInt(arg[1:], 10, 32)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+			}
+
+			wanted = append(wanted, subjectArg{custom: arg[:1] == "t", id: int32(n)})
+		}
+
+		return StudentSummary(c, pool, rdb, "GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentGradesBySubjectRow, error) {
+			var grades []db_queries.GetStudentGradesBySubjectRow
+
+			for _, w := range wanted {
+				rows, err := helpers.CacheOrGetStudentGradesBySubject(ctx, rdb, queries, scope, ttl, w.custom, w.id)
+				if err != nil {
+					return nil, err
+				}
+				grades = append(grades, rows...)
+			}
+
+			return grades, nil
+		}, convertGradeBySubject)
+	}
+
 	return StudentSummary(c, pool, rdb, "GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentGradesRow, error) {
 		return helpers.CacheOrGetStudentGrades(ctx, rdb, queries, scope, ttl)
 	}, convertGrade)
@@ -255,4 +334,10 @@ func Exam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return StudentSummary(c, pool, rdb, "EXAMS_CACHE_TTL", true, func(req RequestWithID) bool { return req.ID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req RequestWithID, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentExamRow, error) {
 		return helpers.CacheOrGetStudentExam(ctx, rdb, queries, scope, ttl, req.ID)
 	}, convertExam)
+}
+
+func Subjects(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	return StudentSummary(c, pool, rdb, "SUBJECTS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentSubjectsRow, error) {
+		return helpers.CacheOrGetStudentSubjects(ctx, rdb, queries, scope, ttl)
+	}, convertSubject)
 }
