@@ -2,7 +2,7 @@ import "./grades.css";
 import type {Me, Grade, Subject} from "../../types/api.ts";
 import {useState} from "preact/hooks";
 import {fetchWithSchool} from "../../util/api.ts";
-import {useEffect} from "react";
+import {useCallback, useEffect} from "react";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
@@ -10,6 +10,7 @@ import {formatUnixDate} from "../../util/time.ts";
 import {getKey, getLanguage} from "../../util/language.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
+import {useLocation, useSearch} from "wouter";
 
 const colors: Record<number, string> = {
     1: "wrong",
@@ -19,11 +20,29 @@ const colors: Record<number, string> = {
     5: "edit",
 }
 
-export default function StudentGrades(/*{ me }: { me: Me }*/) {
-    const [subjects, setSubjects] = useState<Subject[]>([]);
+export default function StudentGrades({ me }: { me: Me }) {
+    const search = useSearch()
+    const subject = new URLSearchParams(search).get("subject")
+
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [subject])
+
+    return subject
+        ? <StudentGradesList me={me} subject={subject} />
+        : <StudentSubjects />
+}
+
+export function StudentSubjects() {
+    const [, navigate] = useLocation()
+    const [subjects, setSubjects] = useState<Subject[]>([])
+    const [grades, setGrades] = useState<Grade[]>([])
 
     async function Fetch() {
-        return fetchWithSchool("/api/v1/me/student/subjects").then(async res => setSubjects(await res.json() as Subject[]))
+        return Promise.all([
+            fetchWithSchool("/api/v1/me/student/subjects").then(async res => setSubjects(await res.json() as Subject[])),
+            fetchWithSchool("/api/v1/me/student/grades").then(async res => setGrades(await res.json() as Grade[])),
+        ])
     }
 
     useEffect(() => void Fetch(), [])
@@ -33,29 +52,44 @@ export default function StudentGrades(/*{ me }: { me: Me }*/) {
         <>
             <div className="w-full flex justify-center items-center pt-8">
                 <div className="subjects">
-                    {subjects.map(subject => (
-                        <div className="subject" key={subject.id}>
-                            <div className="flex flex-col">
-                                <h1 className="rubik truncate">{subject.name}</h1>
-                                <p className="poppins truncate">{subject.teacher_first_name} {subject.teacher_last_name}</p>
+                    {subjects.map(subject => {
+                        const gradeS = grades.filter(grade => grade.subject === subject.name)
+                        const average = gradeS.length
+                            ? gradeS.reduce((sum, grade) => sum + grade.value, 0) / gradeS.length
+                            : 0
+
+                        const color = colors[Math.round(average)]
+
+                        return (
+                            <div className="subject" key={subject.id} onClick={() => navigate(`/grades?subject=${subject.is_custom ? "t" : "f"}${subject.id}`)}>
+                                <div className="flex flex-col">
+                                    <h1 className="rubik truncate">{subject.name}</h1>
+                                    <p className="poppins truncate">{subject.teacher_first_name} {subject.teacher_last_name}</p>
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className={`rounded-full h-8 w-fit pl-2 pr-2 inline-flex items-center justify-center poppins text-2xl`} style={{
+                                        backgroundColor: `var(--${color}-base-color)`,
+                                        color: `var(--${color}-color)`, fontWeight: "900"
+                                    }}>{average.toFixed(2)}</div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
         </>
     )
 }
 
-export function StudentGradesList({ me }: { me: Me }) {
+export function StudentGradesList({ me, subject }: { me: Me, subject: string }) {
     const [grades, setGrades] = useState<Grade[] | null>(null)
     const [current, setCurrent] = useState<Grade | null>(null)
 
-    async function Fetch() {
-        return fetchWithSchool("/api/v1/me/student/grades").then(async res => setGrades(await res.json() as Grade[]))
-    }
+    const Fetch = useCallback(async () => {
+        return fetchWithSchool(`/api/v1/me/student/grades?subject=${subject}`).then(async res => setGrades(await res.json() as Grade[]))
+    }, [subject])
 
-    useEffect(() => void Fetch(), [])
+    useEffect(() => void Fetch(), [Fetch])
     useReloadSchoolStuff(() => void Fetch())
 
     return (

@@ -21,7 +21,7 @@
 }
 
 .subjects {
-    @apply flex flex-wrap w-[80vw] h-[80vh] gap-4;
+    @apply flex flex-wrap justify-start items-start w-[80vw] h-[80vh] gap-4;
 }
 
 .subject {

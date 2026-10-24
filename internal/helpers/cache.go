@@ -145,6 +145,18 @@ func CacheOrGetStudentGrades(ctx context.Context, rdb *redis.Client, queries db_
 	})
 }
 
+func CacheOrGetStudentGradesBySubject(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32, custom bool, sid int32) ([]db_queries.GetStudentGradesBySubjectRow, error) {
+	key := fmt.Sprintf("student_grades:%d:%d:%t:%d", scope.SchoolID, scope.StudentID, custom, sid)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentGradesBySubjectRow, error) {
+		return queries.GetStudentGradesBySubject(ctx, db_queries.GetStudentGradesBySubjectParams{
+			SchoolID:      scope.SchoolID,
+			StudentID:     scope.StudentID,
+			CustomSubject: custom,
+			SubjectID:     sid,
+		})
+	})
+}
+
 func CacheOrGetStudentExams(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope MeScope, ttl int32) ([]db_queries.GetStudentExamsRow, error) {
 	key := fmt.Sprintf("student_exams:%d:%d", scope.SchoolID, scope.StudentID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetStudentExamsRow, error) {
