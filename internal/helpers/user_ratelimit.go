@@ -20,7 +20,7 @@ func UserRateLimit(c fiber.Ctx, rdb *redis.Client, scope string, max int64, wind
 	}
 
 	ctx := context.Background()
-	key := fmt.Sprintf("user_ratelimit:%s:%s:%s", scope, role, user_id)
+	key := fmt.Sprintf("user_ratelimit:%s:%s:%d", scope, role, user_id)
 
 	count, err := rdb.Incr(ctx, key).Result()
 	if err != nil {
