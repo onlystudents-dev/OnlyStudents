@@ -70,6 +70,14 @@ func LoginInit(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, opaque_server
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
+	userAuthRateMax := helpers.GetInt64EnvFallback("USER_AUTH_RATE_MAX", 5, 1000000)
+	userAuthRateWindow := helpers.GetInt64EnvFallback("USER_AUTH_RATELIMIT_WINDOW", 60, 1000000)
+	ratelimit_middleware_err, should_return := helpers.UserRateLimit(c, rdb, "login", userAuthRateMax, userAuthRateWindow, req.User, req.Role)
+
+	if should_return {
+		return ratelimit_middleware_err
+	}
+
 	var record *opaque.ClientRecord
 
 	queries := db_queries.New(pool)
@@ -240,6 +248,14 @@ func ForgetPassword(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 	if req.User <= 0 || req.Role == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	userForgetRateMax := helpers.GetInt64EnvFallback("USER_FORGET_RATE_MAX", 2, 1000000)
+	userForgetRateWindow := helpers.GetInt64EnvFallback("USER_FORGET_RATELIMIT_WINDOW", 60, 1000000)
+	ratelimit_middleware_err, should_return := helpers.UserRateLimit(c, rdb, "forget", userForgetRateMax, userForgetRateWindow, req.User, req.Role)
+
+	if should_return {
+		return ratelimit_middleware_err
 	}
 
 	queries := db_queries.New(pool)
