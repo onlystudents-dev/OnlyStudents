@@ -21,6 +21,12 @@ SELECT
     a.date,
     a.type,
     a.justified,
+    ar.type AS reason_type,
+    f.original_name AS file_name,
+    f.size AS file_size,
+    f.type AS file_type,
+    f.uuid AS file_uuid,
+    ar.note AS reason_note,
     a.note,
     CONCAT(v.first_name, ' ', v.last_name) AS verified_by
 FROM absences a
@@ -30,6 +36,8 @@ LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 LEFT JOIN base_schedule bs ON bs.id = a.lesson_id
 LEFT JOIN teachers t ON t.id = COALESCE(bs.teacher_id, csub.teacher_id)
 LEFT JOIN teachers v ON v.id = a.verified_by
+LEFT JOIN absence_reason ar ON ar.absence_id = a.id
+LEFT JOIN files f ON f.id = ar.file_id
 WHERE a.student_id = $1
   AND (
     csub.school_id = $2
@@ -52,6 +60,12 @@ type GetStudentAbsencesRow struct {
 	Date             pgtype.Date
 	Type             string
 	Justified        bool
+	ReasonType       pgtype.Text
+	FileName         pgtype.Text
+	FileSize         pgtype.Int8
+	FileType         pgtype.Text
+	FileUuid         pgtype.UUID
+	ReasonNote       pgtype.Text
 	Note             pgtype.Text
 	VerifiedBy       interface{}
 }
@@ -74,6 +88,12 @@ func (q *Queries) GetStudentAbsences(ctx context.Context, arg GetStudentAbsences
 			&i.Date,
 			&i.Type,
 			&i.Justified,
+			&i.ReasonType,
+			&i.FileName,
+			&i.FileSize,
+			&i.FileType,
+			&i.FileUuid,
+			&i.ReasonNote,
 			&i.Note,
 			&i.VerifiedBy,
 		); err != nil {
@@ -99,6 +119,12 @@ SELECT
     a.date,
     a.type,
     a.justified,
+    ar.type AS reason_type,
+    f.original_name AS file_name,
+    f.size AS file_size,
+    f.type AS file_type,
+    f.uuid AS file_uuid,
+    ar.note AS reason_note,
     a.note,
     a.verified_by
 FROM absences a
@@ -106,6 +132,8 @@ JOIN class_subjects csub ON csub.id = a.class_subjects_id
 JOIN students st ON st.id = a.student_id
 LEFT JOIN subjects s ON s.id = csub.subject_id
 LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+LEFT JOIN absence_reason ar ON ar.absence_id = a.id
+LEFT JOIN files f ON f.id = ar.file_id
 WHERE csub.school_id = $1
   AND csub.teacher_id = $2
 ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id
@@ -127,6 +155,12 @@ type GetTeacherAbsencesRow struct {
 	Date            pgtype.Date
 	Type            string
 	Justified       bool
+	ReasonType      pgtype.Text
+	FileName        pgtype.Text
+	FileSize        pgtype.Int8
+	FileType        pgtype.Text
+	FileUuid        pgtype.UUID
+	ReasonNote      pgtype.Text
 	Note            pgtype.Text
 	VerifiedBy      pgtype.Int4
 }
@@ -151,6 +185,12 @@ func (q *Queries) GetTeacherAbsences(ctx context.Context, arg GetTeacherAbsences
 			&i.Date,
 			&i.Type,
 			&i.Justified,
+			&i.ReasonType,
+			&i.FileName,
+			&i.FileSize,
+			&i.FileType,
+			&i.FileUuid,
+			&i.ReasonNote,
 			&i.Note,
 			&i.VerifiedBy,
 		); err != nil {
@@ -162,6 +202,48 @@ func (q *Queries) GetTeacherAbsences(ctx context.Context, arg GetTeacherAbsences
 		return nil, err
 	}
 	return items, nil
+}
+
+const studentUpsertAbsenceReason = `-- name: StudentUpsertAbsenceReason :execrows
+INSERT INTO absence_reason (absence_id, submitted_at, type, note, file_id)
+SELECT $1, CURRENT_DATE, $2, $3, $4
+WHERE EXISTS (
+    SELECT 1
+    FROM absences a
+    JOIN student_school ss ON ss.student_id = a.student_id
+    WHERE a.id = $1
+      AND a.student_id = $5
+      AND ss.school_id = $6
+)
+ON CONFLICT (absence_id) DO UPDATE
+SET submitted_at = CURRENT_DATE,
+    type = EXCLUDED.type,
+    note = CASE WHEN EXCLUDED.type = 'note' THEN EXCLUDED.note ELSE NULL END,
+    file_id = CASE WHEN EXCLUDED.type = 'file' THEN EXCLUDED.file_id ELSE NULL END
+`
+
+type StudentUpsertAbsenceReasonParams struct {
+	AbsenceID      int32
+	SubmissionType string
+	Note           pgtype.Text
+	FileID         pgtype.Int8
+	StudentID      int32
+	SchoolID       int32
+}
+
+func (q *Queries) StudentUpsertAbsenceReason(ctx context.Context, arg StudentUpsertAbsenceReasonParams) (int64, error) {
+	result, err := q.db.Exec(ctx, studentUpsertAbsenceReason,
+		arg.AbsenceID,
+		arg.SubmissionType,
+		arg.Note,
+		arg.FileID,
+		arg.StudentID,
+		arg.SchoolID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const teacherAddAbsence = `-- name: TeacherAddAbsence :execrows

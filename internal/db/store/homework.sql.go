@@ -214,12 +214,18 @@ SELECT
     st.first_name,
     st.last_name,
     h.due_date,
-    hs.content,
+    f.original_name AS file_name,
+    f.size AS file_size,
+    f.type AS file_type,
+    f.uuid AS file_uuid,
+    hs.type,
+    hs.note,
     hs.submitted_at,
     hs.graded_value
 FROM homework_submissions hs
 JOIN homework h ON h.id = hs.homework_id
 JOIN students st ON st.id = hs.student_id
+LEFT JOIN files f ON f.id = hs.file_id
 WHERE hs.homework_id = $1
   AND EXISTS (
       SELECT 1
@@ -243,7 +249,12 @@ type GetTeacherHomeworkSubmissionsRow struct {
 	FirstName   string
 	LastName    string
 	DueDate     pgtype.Date
-	Content     pgtype.Text
+	FileName    pgtype.Text
+	FileSize    pgtype.Int8
+	FileType    pgtype.Text
+	FileUuid    pgtype.UUID
+	Type        string
+	Note        pgtype.Text
 	SubmittedAt pgtype.Timestamptz
 	GradedValue pgtype.Int2
 }
@@ -262,7 +273,12 @@ func (q *Queries) GetTeacherHomeworkSubmissions(ctx context.Context, arg GetTeac
 			&i.FirstName,
 			&i.LastName,
 			&i.DueDate,
-			&i.Content,
+			&i.FileName,
+			&i.FileSize,
+			&i.FileType,
+			&i.FileUuid,
+			&i.Type,
+			&i.Note,
 			&i.SubmittedAt,
 			&i.GradedValue,
 		); err != nil {
@@ -287,7 +303,12 @@ SELECT
     st.id AS student_id,
     st.first_name,
     st.last_name,
-    hs.content,
+    f.original_name AS file_name,
+    f.size AS file_size,
+    f.type AS file_type,
+    f.uuid AS file_uuid,
+    hs.type,
+    hs.note,
     hs.submitted_at
 FROM homework_submissions hs
          JOIN homework h ON h.id = hs.homework_id
@@ -295,6 +316,7 @@ FROM homework_submissions hs
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN students st ON st.id = hs.student_id
+         LEFT JOIN files f ON f.id = hs.file_id
 WHERE hs.graded_value IS NULL
   AND csub.school_id = $1
   AND csub.teacher_id = $2
@@ -316,7 +338,12 @@ type GetTeacherUngradedHomeworkSubmissionsRow struct {
 	StudentID       int32
 	FirstName       string
 	LastName        string
-	Content         pgtype.Text
+	FileName        pgtype.Text
+	FileSize        pgtype.Int8
+	FileType        pgtype.Text
+	FileUuid        pgtype.UUID
+	Type            string
+	Note            pgtype.Text
 	SubmittedAt     pgtype.Timestamptz
 }
 
@@ -339,7 +366,12 @@ func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg
 			&i.StudentID,
 			&i.FirstName,
 			&i.LastName,
-			&i.Content,
+			&i.FileName,
+			&i.FileSize,
+			&i.FileType,
+			&i.FileUuid,
+			&i.Type,
+			&i.Note,
 			&i.SubmittedAt,
 		); err != nil {
 			return nil, err
@@ -353,38 +385,44 @@ func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg
 }
 
 const studentUpsertHomeworkSubmission = `-- name: StudentUpsertHomeworkSubmission :execrows
-INSERT INTO homework_submissions (homework_id, student_id, content)
-SELECT $1, $2, $3
+INSERT INTO homework_submissions (homework_id, student_id, type, note, file_id)
+SELECT $1, $2, $3, $4, $5
 WHERE EXISTS (
     SELECT 1
     FROM homework h
     JOIN class_subjects csub ON csub.id = h.class_subjects_id
     WHERE h.id = $1
-      AND csub.school_id = $4
+      AND csub.school_id = $6
       AND csub.class_id = (
           SELECT ss.class_id
           FROM student_school ss
           WHERE ss.student_id = $2
-            AND ss.school_id = $4
+            AND ss.school_id = $6
       )
 )
 ON CONFLICT (homework_id, student_id) DO UPDATE
-SET content = EXCLUDED.content,
+SET type = EXCLUDED.type,
+    note = CASE WHEN EXCLUDED.type = 'note' THEN EXCLUDED.note ELSE NULL END,
+    file_id = CASE WHEN EXCLUDED.type = 'file' THEN EXCLUDED.file_id ELSE NULL END,
     submitted_at = NOW()
 `
 
 type StudentUpsertHomeworkSubmissionParams struct {
-	HomeworkID int32
-	StudentID  int32
-	Content    pgtype.Text
-	SchoolID   int32
+	HomeworkID     int32
+	StudentID      int32
+	SubmissionType string
+	Note           pgtype.Text
+	FileID         pgtype.Int8
+	SchoolID       int32
 }
 
 func (q *Queries) StudentUpsertHomeworkSubmission(ctx context.Context, arg StudentUpsertHomeworkSubmissionParams) (int64, error) {
 	result, err := q.db.Exec(ctx, studentUpsertHomeworkSubmission,
 		arg.HomeworkID,
 		arg.StudentID,
-		arg.Content,
+		arg.SubmissionType,
+		arg.Note,
+		arg.FileID,
 		arg.SchoolID,
 	)
 	if err != nil {
@@ -506,24 +544,22 @@ func (q *Queries) TeacherEditHomework(ctx context.Context, arg TeacherEditHomewo
 	return result.RowsAffected(), nil
 }
 
-const teacherUpdateHomeworkSubmission = `-- name: TeacherUpdateHomeworkSubmission :execrows
+const teacherGradeHomeworkSubmission = `-- name: TeacherGradeHomeworkSubmission :execrows
 UPDATE homework_submissions hs
-SET content = $1,
-    graded_value = $2
-WHERE hs.homework_id = $3
-  AND hs.student_id = $4
+SET graded_value = $1
+WHERE hs.homework_id = $2
+  AND hs.student_id = $3
   AND EXISTS (
       SELECT 1
       FROM homework h
       JOIN class_subjects cs ON cs.id = h.class_subjects_id
       WHERE h.id = hs.homework_id
-        AND cs.school_id = $5
-        AND cs.teacher_id = $6
+        AND cs.school_id = $4
+        AND cs.teacher_id = $5
   )
 `
 
-type TeacherUpdateHomeworkSubmissionParams struct {
-	Content     pgtype.Text
+type TeacherGradeHomeworkSubmissionParams struct {
 	GradedValue pgtype.Int2
 	HomeworkID  int32
 	StudentID   int32
@@ -531,9 +567,8 @@ type TeacherUpdateHomeworkSubmissionParams struct {
 	TeacherID   int32
 }
 
-func (q *Queries) TeacherUpdateHomeworkSubmission(ctx context.Context, arg TeacherUpdateHomeworkSubmissionParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherUpdateHomeworkSubmission,
-		arg.Content,
+func (q *Queries) TeacherGradeHomeworkSubmission(ctx context.Context, arg TeacherGradeHomeworkSubmissionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherGradeHomeworkSubmission,
 		arg.GradedValue,
 		arg.HomeworkID,
 		arg.StudentID,

@@ -37,13 +37,10 @@ type EditHomeworkRequest struct {
 	ClassSubjectsID int32  `json:"class_subjects_id"`
 }
 
-type UpdateHomeworkSubmissionRequest struct {
-	HomeworkID     int32  `json:"homework_id"`
-	StudentID      int32  `json:"student_id"`
-	HasContent     bool   `json:"has_content"`
-	Content        string `json:"content"`
-	HasGradedValue bool   `json:"has_graded_value"`
-	GradedValue    int16  `json:"graded_value"`
+type GradeHomeworkSubmissionRequest struct {
+	HomeworkID  int32 `json:"homework_id"`
+	StudentID   int32 `json:"student_id"`
+	GradedValue int16 `json:"graded_value"`
 }
 
 type RemoveHomeworkRequest struct {
@@ -74,8 +71,12 @@ type UngradedHomeworkSubmissionSummary struct {
 	FirstName       string `json:"first_name"`
 	LastName        string `json:"last_name"`
 	DueDate         int64  `json:"due_date"`
-	HasContent      bool   `json:"has_content"`
-	Content         string `json:"content"`
+	Type            string `json:"type"`
+	FileName        string `json:"file_name"`
+	FileType        string `json:"file_type"`
+	FileSize        int64  `json:"file_size"`
+	FileUUID        string `json:"file_uuid"`
+	Note            string `json:"note"`
 	SubmittedAt     int64  `json:"created_at"`
 	ClassSubjectsID int32  `json:"class_subjects_id"`
 }
@@ -85,8 +86,12 @@ type HomeworkSubmissionSummary struct {
 	FirstName      string `json:"first_name"`
 	LastName       string `json:"last_name"`
 	DueDate        int64  `json:"due_date"`
-	HasContent     bool   `json:"has_content"`
-	Content        string `json:"content"`
+	Type           string `json:"type"`
+	Note           string `json:"note"`
+	FileName       string `json:"file_name"`
+	FileType       string `json:"file_type"`
+	FileSize       int64  `json:"file_size"`
+	FileUUID       string `json:"file_uuid"`
 	SubmittedAt    int64  `json:"submitted_at"`
 	HasGradedValue bool   `json:"has_graded_value"`
 	GradedValue    int16  `json:"graded_value"`
@@ -98,8 +103,12 @@ func convertHomeworkSubmission(row db_queries.GetTeacherHomeworkSubmissionsRow) 
 		FirstName:      row.FirstName,
 		LastName:       row.LastName,
 		DueDate:        row.DueDate.Time.Unix(),
-		HasContent:     row.Content.Valid,
-		Content:        row.Content.String,
+		Type:           row.Type,
+		FileName:       row.FileName.String,
+		FileType:       row.FileType.String,
+		FileSize:       row.FileSize.Int64,
+		FileUUID:       row.FileUuid.String(),
+		Note:           row.Note.String,
 		SubmittedAt:    row.SubmittedAt.Time.Unix(),
 		HasGradedValue: row.GradedValue.Valid,
 		GradedValue:    row.GradedValue.Int16,
@@ -116,8 +125,12 @@ func convertUngradedHomeworkSubmission(row db_queries.GetTeacherUngradedHomework
 		FirstName:       row.FirstName,
 		LastName:        row.LastName,
 		DueDate:         row.DueDate.Time.Unix(),
-		HasContent:      row.Content.Valid,
-		Content:         row.Content.String,
+		Type:            row.Type,
+		FileName:        row.FileName.String,
+		FileType:        row.FileType.String,
+		FileSize:        row.FileSize.Int64,
+		FileUUID:        row.FileUuid.String(),
+		Note:            row.Note.String,
 		SubmittedAt:     row.SubmittedAt.Time.Unix(),
 		ClassSubjectsID: row.ClassSubjectsID,
 	}
@@ -203,15 +216,14 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		})
 }
 
-func UpdateHomeworkSubmission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func GradeHomeworkSubmission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return TeacherModify(c, pool, rdb,
-		func(req UpdateHomeworkSubmissionRequest) bool {
-			return req.HomeworkID <= 0 || req.StudentID <= 0 || (req.HasContent && req.Content == "") || (req.HasGradedValue && req.GradedValue == 0)
+		func(req GradeHomeworkSubmissionRequest) bool {
+			return req.HomeworkID <= 0 || req.StudentID <= 0 || req.GradedValue == 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req UpdateHomeworkSubmissionRequest) (int64, error) {
-			return queries.TeacherUpdateHomeworkSubmission(ctx, db_queries.TeacherUpdateHomeworkSubmissionParams{
-				Content:     pgtype.Text{String: req.Content, Valid: req.HasContent},
-				GradedValue: pgtype.Int2{Int16: req.GradedValue, Valid: req.HasGradedValue},
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req GradeHomeworkSubmissionRequest) (int64, error) {
+			return queries.TeacherGradeHomeworkSubmission(ctx, db_queries.TeacherGradeHomeworkSubmissionParams{
+				GradedValue: pgtype.Int2{Int16: req.GradedValue, Valid: true},
 				HomeworkID:  req.HomeworkID,
 				StudentID:   req.StudentID,
 				SchoolID:    teacher_scope.SchoolID,

@@ -20,6 +20,15 @@ type Absence struct {
 	ClassSubjectsID pgtype.Int4
 }
 
+type AbsenceReason struct {
+	ID          int64
+	AbsenceID   int32
+	SubmittedAt pgtype.Date
+	Type        string
+	Note        pgtype.Text
+	FileID      pgtype.Int8
+}
+
 type Account struct {
 	ID            pgtype.UUID
 	Role          string
@@ -126,6 +135,16 @@ type Exam struct {
 	RoomID          pgtype.Int4
 }
 
+type File struct {
+	ID           int64
+	AccountUuid  pgtype.UUID
+	Type         string
+	Size         int64
+	OriginalName pgtype.Text
+	Uuid         pgtype.UUID
+	CreatedAt    pgtype.Date
+}
+
 type FinalGrade struct {
 	ID              int64
 	StudentID       int32
@@ -211,9 +230,11 @@ type HomeworkSubmission struct {
 	ID          int64
 	HomeworkID  int32
 	StudentID   int32
-	Content     pgtype.Text
 	SubmittedAt pgtype.Timestamptz
 	GradedValue pgtype.Int2
+	Type        string
+	Note        pgtype.Text
+	FileID      pgtype.Int8
 }
 
 type LessonLog struct {

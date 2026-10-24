@@ -3,7 +3,6 @@ This is a student diary app, mimicking e-kreta.hu, but modern, fast and just bet
 
 # WARNING
 This is pre-alpha software, untested, and does have a ton of breaking API and other changes constantly. There is no versioning system yet either.
-For testing/development, `DEMO_MODE=true` can be used right now which registers demo accounts to OPAQUE. See `Demo Mode Credentials`
 
 # Installation
 - Copy `.env.example` to `.env`

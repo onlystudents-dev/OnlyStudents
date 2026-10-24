@@ -114,8 +114,8 @@ WHERE h.id = $1
   );
 
 -- name: StudentUpsertHomeworkSubmission :execrows
-INSERT INTO homework_submissions (homework_id, student_id, content)
-SELECT sqlc.arg(homework_id), sqlc.arg(student_id), sqlc.arg(content)
+INSERT INTO homework_submissions (homework_id, student_id, type, note, file_id)
+SELECT sqlc.arg(homework_id), sqlc.arg(student_id), sqlc.arg(submission_type), sqlc.arg(note), sqlc.arg(file_id)
 WHERE EXISTS (
     SELECT 1
     FROM homework h
@@ -130,22 +130,23 @@ WHERE EXISTS (
       )
 )
 ON CONFLICT (homework_id, student_id) DO UPDATE
-SET content = EXCLUDED.content,
+SET type = EXCLUDED.type,
+    note = CASE WHEN EXCLUDED.type = 'note' THEN EXCLUDED.note ELSE NULL END,
+    file_id = CASE WHEN EXCLUDED.type = 'file' THEN EXCLUDED.file_id ELSE NULL END,
     submitted_at = NOW();
 
--- name: TeacherUpdateHomeworkSubmission :execrows
+-- name: TeacherGradeHomeworkSubmission :execrows
 UPDATE homework_submissions hs
-SET content = $1,
-    graded_value = $2
-WHERE hs.homework_id = $3
-  AND hs.student_id = $4
+SET graded_value = sqlc.arg(graded_value)
+WHERE hs.homework_id = sqlc.arg(homework_id)
+  AND hs.student_id = sqlc.arg(student_id)
   AND EXISTS (
       SELECT 1
       FROM homework h
       JOIN class_subjects cs ON cs.id = h.class_subjects_id
       WHERE h.id = hs.homework_id
-        AND cs.school_id = $5
-        AND cs.teacher_id = $6
+        AND cs.school_id = sqlc.arg(school_id)
+        AND cs.teacher_id = sqlc.arg(teacher_id)
   );
 
 -- name: GetTeacherHomeworkSubmissions :many
@@ -154,12 +155,18 @@ SELECT
     st.first_name,
     st.last_name,
     h.due_date,
-    hs.content,
+    f.original_name AS file_name,
+    f.size AS file_size,
+    f.type AS file_type,
+    f.uuid AS file_uuid,
+    hs.type,
+    hs.note,
     hs.submitted_at,
     hs.graded_value
 FROM homework_submissions hs
 JOIN homework h ON h.id = hs.homework_id
 JOIN students st ON st.id = hs.student_id
+LEFT JOIN files f ON f.id = hs.file_id
 WHERE hs.homework_id = $1
   AND EXISTS (
       SELECT 1
@@ -182,7 +189,12 @@ SELECT
     st.id AS student_id,
     st.first_name,
     st.last_name,
-    hs.content,
+    f.original_name AS file_name,
+    f.size AS file_size,
+    f.type AS file_type,
+    f.uuid AS file_uuid,
+    hs.type,
+    hs.note,
     hs.submitted_at
 FROM homework_submissions hs
          JOIN homework h ON h.id = hs.homework_id
@@ -190,6 +202,7 @@ FROM homework_submissions hs
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN students st ON st.id = hs.student_id
+         LEFT JOIN files f ON f.id = hs.file_id
 WHERE hs.graded_value IS NULL
   AND csub.school_id = $1
   AND csub.teacher_id = $2
