@@ -4,6 +4,10 @@ import {match} from "@formatjs/intl-localematcher";
 import type {Me} from "../types/api.ts";
 import {type ApiError, getRetryAfter, readJSON} from "./api.ts";
 
+declare global {
+    interface Window { __INITIAL_LANGUAGE__?: LanguageFile, __INITIAL_LANG__?: string }
+}
+
 export type Language = {
     key: string,
     name: string,
@@ -28,8 +32,7 @@ function positional(args: string[]): Vars {
 
 export async function fetchLanguage(me: Me | null) {
     const lng = getLanguage(me)?.key ?? "en-US"
-    const response = await fetch(`/assets/languages/${lng}.json`)
-    const {messages, errors} = await readJSON<LanguageFile>(response)
+    const {messages, errors} = await getLanguageFile(lng)
 
     if (!i18n.isInitialized) {
         await i18n.use(initReactI18next).init({
@@ -50,6 +53,15 @@ export async function fetchLanguage(me: Me | null) {
     i18n.addResourceBundle(lng, "translation", messages, true, true)
     i18n.addResourceBundle(lng, "errors", errors, true, true)
     await i18n.changeLanguage(lng)
+}
+
+async function getLanguageFile(key: string): Promise<LanguageFile> {
+    if (window.__INITIAL_LANG__ === key && window.__INITIAL_LANGUAGE__) {
+        return window.__INITIAL_LANGUAGE__
+    }
+
+    const response = await fetch(`/assets/languages/${key}.json`)
+    return await response.json() as LanguageFile
 }
 
 export function getLanguage(me: Me | null, auto?: boolean) {

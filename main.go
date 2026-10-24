@@ -402,6 +402,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	helpers.CacheLanguages()
 
 	initCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	if err := helpers.InitCss(initCtx, pool, rdb, indexHTML); err != nil {

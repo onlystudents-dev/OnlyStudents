@@ -21,25 +21,5 @@
 }
 
 .subjects {
-    @apply flex flex-wrap justify-start items-start w-[80vw] h-[80vh] gap-4;
-}
-
-.subject {
-    @apply flex flex-row justify-between p-4 bg-(--hover-color) rounded-2xl w-80 h-36 cursor-pointer;
-    h1 {
-        @apply text-2xl;
-    }
-    p {
-        @apply opacity-70;
-    }
-    border-bottom: 2px solid var(--border-color);
-    border-color: var(--border-color);
-    transition: transform 400ms ease-in-out, border 200ms ease-in-out;
-}
-
-.subject:hover {
-    transition: transform 200ms ease-in-out, border 100ms ease-in-out;
-    transform: translateY(-4px) translateX(-4px);
-    border-right: 4px solid var(--border-color);
-    border-bottom: 5px solid var(--border-color);
+    @apply flex flex-col justify-start items-center w-[80vw] h-[80vh] gap-4;
 }

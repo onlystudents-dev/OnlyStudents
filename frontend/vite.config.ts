@@ -1,12 +1,37 @@
 import preact from '@preact/preset-vite'
-import { defineConfig } from 'vite'
+import {defineConfig, type Plugin} from 'vite'
 import tailwindcss from "@tailwindcss/vite";
+import * as path from "node:path";
+import * as fs from "node:fs";
+
+// yes this is made by ai but i thought of the idea
+function minifyPublicJSON(): Plugin {
+    return {
+        name: "minify-public-json",
+        closeBundle() {
+            const dir = path.resolve("dist/assets/languages");
+
+            if (!fs.existsSync(dir)) return;
+
+            for (const file of fs.readdirSync(dir)) {
+                if (!file.endsWith(".json")) continue;
+
+                const filePath = path.join(dir, file);
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+                fs.writeFileSync(filePath, JSON.stringify(data));
+            }
+        },
+    };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [
         preact(),
         tailwindcss(),
+        minifyPublicJSON(),
     ],
     build: {
         rolldownOptions: {
