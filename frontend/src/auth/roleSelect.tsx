@@ -1,11 +1,12 @@
 import {getKey} from "../util/language.ts";
+import Select from "react-select";
+import {selectStyles} from "../util/select.tsx";
 
 export default function RoleSelect({ value, onChange }: {value: string, onChange: (role: string) => void}) {
-    return (
-        <select className="poppins" value={value} onChange={(e) => onChange(e.currentTarget.value)}>
-            <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
-            <option value="student">{getKey("ROLE.STUDENT")}</option>
-            <option value="teacher">{getKey("ROLE.TEACHER")}</option>
-        </select>
-    )
+    const options = [
+        { label: getKey("ROLE.GUARDIAN"), value: "guardian" },
+        { label: getKey("ROLE.STUDENT"), value: "student" },
+        { label: getKey("ROLE.TEACHER"), value: "teacher" },
+    ]
+    return <Select isSearchable={false} value={options.find(val => val.value === value)} options={options} onChange={val => val && onChange(val.value)} styles={selectStyles("100%", "3rem", "var(--hover-color)", "var(--card-color)")} />
 }
