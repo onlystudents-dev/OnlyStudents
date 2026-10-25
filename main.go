@@ -70,6 +70,15 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				},
 			})
 		}),
+		"files": fiber.Map{
+			helpers.RoutesGroupMWKey: []fiber.Handler{authLimit, auth},
+			":file_uuid": fiber.Map{
+				fiber.MethodGet:    func(c fiber.Ctx) error { return meapi.GetFile(c, pool, rdb) },
+				fiber.MethodDelete: func(c fiber.Ctx) error { return meapi.FileDelete(c, pool, rdb) },
+			},
+			fiber.MethodPost: func(c fiber.Ctx) error { return meapi.FileUpload(c, pool, rdb) },
+		},
+		"uploads/:file_uuid": helpers.Get(func(c fiber.Ctx) error { return meapi.FetchFile(c, pool, rdb) }),
 		"admin_token_login": helpers.Post([]fiber.Handler{
 			authLimit,
 			func(c fiber.Ctx) error { return adminapi.AdminTokenLogin(c, pool, rdb) },

@@ -169,6 +169,10 @@
         "TEACHER": "Tanár"
     },
     "errors": {
+        "NOT_FOUND": "Upsz! Ez nem létezik. Kérem, próbálja újra.",
+        "FILE_TOO_BIG": "A fájl amit fel akart tölteni nem engedélyezett! Kérem, próbálja újra.",
+        "MISSING_FILE": "Upsz! Elfelejtett csatolni egy fájlt.",
+        "FILE_TYPE_NOT_ALLOWED": "A fájl típus, amit fel akart tölteni, nem engedélyezett. Kérem, próbálja újra.",
         "LOGIN_FAILED": "A bejelentkezés sikertelen. Kérem próbálja újra.",
         "REQUEST_CANCELLED": "A kérelme meg lett szakítva, ismeretlen okokból. Kérem, próbálja újra.",
         "GATEWAY_TIMEOUT": "A kérelme nem sikerült időben. Kérem, próbálja újra.",

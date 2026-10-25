@@ -9,7 +9,6 @@ import {
     faXmark,
     faFileLines,
     faFilePowerpoint,
-    faFilePdf,
     faFileImage,
     faBookOpen,
     faFolder,
@@ -57,19 +56,17 @@ function Popup({ homework: hw, clear }: PopupProps) {
                             <div className="flex flex-row items-center gap-3 bg-white/5 border border-white/10 rounded-lg p-3">
                                 <div className={`flex items-center justify-center w-12 h-12 rounded-lg text-2xl ${
                                     homework_submission.file_type === "document" ? "bg-blue-500/20 text-blue-400" :
-                                    homework_submission.file_type === "pptx" ? "bg-orange-500/20 text-orange-400" :
-                                    homework_submission.file_type === "pdf" ? "bg-red-500/20 text-red-400" :
+                                    homework_submission.file_type === "presentation" ? "bg-orange-500/20 text-orange-400" :
                                     homework_submission.file_type === "image" ? "bg-green-500/20 text-green-400" :
-                                    homework_submission.file_type === "workbook" ? "bg-purple-500/20 text-purple-400" :
+                                    homework_submission.file_type === "spreadsheet" ? "bg-purple-500/20 text-purple-400" :
                                     "bg-gray-500/20 text-gray-400"
                                 }`}>
                                     <FontAwesomeIcon
                                         icon={
                                             homework_submission.file_type === "document" ? faFileLines :
-                                            homework_submission.file_type === "pptx" ? faFilePowerpoint :
-                                            homework_submission.file_type === "pdf" ? faFilePdf :
+                                            homework_submission.file_type === "presentation" ? faFilePowerpoint :
                                             homework_submission.file_type === "image" ? faFileImage :
-                                            homework_submission.file_type === "workbook" ? faBookOpen :
+                                            homework_submission.file_type === "spreadsheet" ? faBookOpen :
                                             homework_submission.file_type === "archive" || homework_submission.file_type === "zip" ? faFileZipper :
                                             faFolder
                                         }

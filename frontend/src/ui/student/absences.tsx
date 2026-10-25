@@ -13,7 +13,6 @@ import {
     faXmark,
     faFileLines,
     faFilePowerpoint,
-    faFilePdf,
     faFileImage,
     faBookOpen,
     faFolder,
@@ -26,19 +25,17 @@ function AbsenceFileCard({ absence }: { absence: Absence }) {
         <div className="flex flex-row items-center gap-3 bg-white/5 border border-white/10 rounded-lg p-3">
             <div className={`flex items-center justify-center w-12 h-12 rounded-lg text-2xl ${
                 absence.file_type === "document" ? "bg-blue-500/20 text-blue-400" :
-                absence.file_type === "pptx" ? "bg-orange-500/20 text-orange-400" :
-                absence.file_type === "pdf" ? "bg-red-500/20 text-red-400" :
+                absence.file_type === "presentation" ? "bg-orange-500/20 text-orange-400" :
                 absence.file_type === "image" ? "bg-green-500/20 text-green-400" :
-                absence.file_type === "workbook" ? "bg-purple-500/20 text-purple-400" :
+                absence.file_type === "spreadsheet" ? "bg-purple-500/20 text-purple-400" :
                 "bg-gray-500/20 text-gray-400"
             }`}>
                 <FontAwesomeIcon
                     icon={
                         absence.file_type === "document" ? faFileLines :
-                        absence.file_type === "pptx" ? faFilePowerpoint :
-                        absence.file_type === "pdf" ? faFilePdf :
+                        absence.file_type === "presentation" ? faFilePowerpoint :
                         absence.file_type === "image" ? faFileImage :
-                        absence.file_type === "workbook" ? faBookOpen :
+                        absence.file_type === "spreadsheet" ? faBookOpen :
                         absence.file_type === "archive" || absence.file_type === "zip" ? faFileZipper :
                         faFolder
                     }

@@ -26,7 +26,7 @@ type AbsenceReason struct {
 	SubmittedAt pgtype.Date
 	Type        string
 	Note        pgtype.Text
-	FileID      pgtype.Int8
+	FileUuid    pgtype.UUID
 }
 
 type Account struct {
@@ -234,7 +234,7 @@ type HomeworkSubmission struct {
 	GradedValue pgtype.Int2
 	Type        string
 	Note        pgtype.Text
-	FileID      pgtype.Int8
+	FileUuid    pgtype.UUID
 }
 
 type LessonLog struct {

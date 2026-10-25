@@ -114,8 +114,8 @@ WHERE h.id = $1
   );
 
 -- name: StudentUpsertHomeworkSubmission :execrows
-INSERT INTO homework_submissions (homework_id, student_id, type, note, file_id)
-SELECT sqlc.arg(homework_id), sqlc.arg(student_id), sqlc.arg(submission_type), sqlc.arg(note), sqlc.arg(file_id)
+INSERT INTO homework_submissions (homework_id, student_id, type, note, file_uuid)
+SELECT sqlc.arg(homework_id), sqlc.arg(student_id), sqlc.arg(submission_type), sqlc.arg(note), sqlc.arg(file_uuid)
 WHERE EXISTS (
     SELECT 1
     FROM homework h
@@ -132,7 +132,7 @@ WHERE EXISTS (
 ON CONFLICT (homework_id, student_id) DO UPDATE
 SET type = EXCLUDED.type,
     note = CASE WHEN EXCLUDED.type = 'note' THEN EXCLUDED.note ELSE NULL END,
-    file_id = CASE WHEN EXCLUDED.type = 'file' THEN EXCLUDED.file_id ELSE NULL END,
+    file_uuid = CASE WHEN EXCLUDED.type = 'file' THEN EXCLUDED.file_uuid ELSE NULL END,
     submitted_at = NOW();
 
 -- name: TeacherGradeHomeworkSubmission :execrows
@@ -166,7 +166,7 @@ SELECT
 FROM homework_submissions hs
 JOIN homework h ON h.id = hs.homework_id
 JOIN students st ON st.id = hs.student_id
-LEFT JOIN files f ON f.id = hs.file_id
+LEFT JOIN files f ON f.id = hs.file_uuid
 WHERE hs.homework_id = $1
   AND EXISTS (
       SELECT 1
@@ -202,7 +202,7 @@ FROM homework_submissions hs
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN students st ON st.id = hs.student_id
-         LEFT JOIN files f ON f.id = hs.file_id
+         LEFT JOIN files f ON f.id = hs.file_uuid
 WHERE hs.graded_value IS NULL
   AND csub.school_id = $1
   AND csub.teacher_id = $2
