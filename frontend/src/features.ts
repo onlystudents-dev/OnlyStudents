@@ -14,10 +14,10 @@ export const features = {
         student: lazy(() => import("./ui/student/exams.tsx")),
         guardian: lazy(() => import("./ui/guardian/exams.tsx"))
     },
-    homeworks: {
-        student: lazy(() => import("./ui/student/homeworks.tsx")),
-        teacher: lazy(() => import("./ui/teacher/homeworks.tsx")),
-        guardian: lazy(() => import("./ui/guardian/homeworks.tsx"))
+    homework: {
+        student: lazy(() => import("./ui/student/homework.tsx")),
+        teacher: lazy(() => import("./ui/teacher/homework.tsx")),
+        guardian: lazy(() => import("./ui/guardian/homework.tsx"))
     },
     absences: {
         student: lazy(() => import("./ui/student/absences.tsx")),

@@ -11,7 +11,7 @@ export type PopupProps = {
     clear: () => void,
 }
 
-export default function Homeworks({ me, homeworks, Popup, reloadSchoolStuff }: { me: Me, homeworks: HomeworkSummary[] | HomeworkSubmission[] | null, Popup: React.ComponentType<PopupProps>, reloadSchoolStuff: () => void }) {
+export default function Homework({ me, homework, Popup, reloadSchoolStuff }: { me: Me, homework: HomeworkSummary[] | HomeworkSubmission[] | null, Popup: React.ComponentType<PopupProps>, reloadSchoolStuff: () => void }) {
     const [current, setCurrent] = React.useState<HomeworkSummary | HomeworkSubmission | null>(null)
 
     const [now] = useState(Date.now)
@@ -22,7 +22,7 @@ export default function Homeworks({ me, homeworks, Popup, reloadSchoolStuff }: {
         <>
             <div className="w-full min-h-full flex flex-col items-center justify-start pt-8 gap-4">
                 {current && <Popup homework={current} clear={() => {setCurrent(null); reloadSchoolStuff()}} />}
-                {homeworks?.length === 0 ? <p className="text-4xl">{getKey(`NO_HOMEWORK.${me.role}`)}</p> : homeworks?.map((homework) => (
+                {homework?.length === 0 ? <p className="text-4xl">{getKey(`NO_HOMEWORK.${me.role}`)}</p> : homework?.map((homework) => (
                     <>
                         <div className={`homework ${homework.due_date < now && "wrong"}`} onClick={() => setCurrent(homework)}>
                             <div className="flex flex-col items-start justify-between">

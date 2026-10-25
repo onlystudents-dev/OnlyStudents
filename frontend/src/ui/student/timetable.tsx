@@ -2,7 +2,7 @@ import type {Class, Exam, HomeworkSummary, Lesson, LessonTime, Room} from "../..
 import {fromResponse, getLanguage} from "../../util/language.ts";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {toast} from "react-toastify";
-import "../homeworks/homeworks.css";
+import "../homework/homework.css";
 import {fetchInto, fetchWithSchool, getRetryAfter, readJSON} from "../../util/api.ts";
 import type { FeatureProps } from "../../types/props.ts";
 import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../timetable/timetable.tsx"

@@ -14,7 +14,7 @@ import {selectStyles} from "../util/select.tsx";
 
 export default function Navbar({ me, path, navigate }: {me: Me, path: string, navigate: (href: string) => void}) {
     const icons = {
-        homeworks: faHouseChimney,
+        homework: faHouseChimney,
         absences: faStopwatch,
         timetable: faTable,
         grades: faStar,
