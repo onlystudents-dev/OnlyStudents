@@ -37,7 +37,7 @@ export default function Layout({ me, unauthorized, fetchMe, setMe, reload }: Lay
         switch (path) {
             case "/": return <Home me={me} />
             case "/me": return <MeSettings me={me} fetchMe={fetchMe} setMe={setMe} reload={reload} />
-            case "/homeworks": return byFeature("homeworks")
+            case "/homework": return byFeature("homework")
             case "/timetable": return byFeature("timetable")
             case "/absences": return byFeature("absences")
             case "/grades": return byFeature("grades")
