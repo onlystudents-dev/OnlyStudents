@@ -1,5 +1,4 @@
 // i hate eslint AND typecheck
-// @ts-nocheck
 /* eslint-disable */
 export function selectStyles(width: string = "20rem", height: string = "2.5rem", backgroundColor: string = "var(--card-color)", hoverColor: string = "var(--hover-color)") {
     return {

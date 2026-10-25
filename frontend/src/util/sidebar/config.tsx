@@ -15,7 +15,7 @@ export default function Button({ onClick, onMouseEnter, className, icon, text }:
     )
 }
 
-export function DropdownConfig({ text, icon, value, children, className, onChange, styles = selectStyles2() }: { text?: string, icon?: IconDefinition, value: string, children: Option[], className?: string, onChange: (raw: string) => void, styles: StylesConfig<Option, false, GroupBase<Option>> | undefined }) {
+export function DropdownConfig({ text, icon, value, children, className, onChange, styles = selectStyles2() }: { text?: string, icon?: IconDefinition, value: string, children: Option[], className?: string, onChange: (raw: string) => void, styles?: StylesConfig<Option, false, GroupBase<Option>> | undefined }) {
     return (
         <>
             <div className={`config ${className}`}>
