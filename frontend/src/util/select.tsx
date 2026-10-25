@@ -1,6 +1,6 @@
 // i hate eslint AND typecheck
 /* eslint-disable */
-export function selectStyles(width: string = "20rem", height: string = "2.5rem", backgroundColor: string = "var(--card-color)", hoverColor: string = "var(--hover-color)", stuffBgColor: string = backgroundColor) {
+export function selectStyles(width: string = "20rem", height: string = "2.5rem", backgroundColor: string = "var(--card-color)", hoverColor: string = "var(--hover-color)", stuffBgColor: string = backgroundColor, padding: string = "0 0.25rem") {
     return {
         control: (base: any) => ({
             ...base,
@@ -12,7 +12,7 @@ export function selectStyles(width: string = "20rem", height: string = "2.5rem",
             border: 'none',
             boxShadow: 'none',
             cursor: 'text',
-            padding: '0 0.25rem',
+            padding,
         }),
         indicatorSeparator: (base: any) => ({
             ...base,
