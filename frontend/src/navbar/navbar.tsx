@@ -10,7 +10,7 @@ import {features} from "../features.ts";
 import {reloadSchoolStuff} from "../util/school.ts";
 import {useLayoutEffect} from "preact/hooks";
 import Select from "react-select";
-import {selectStyles} from "../util/select.tsx";
+import {selectStyles} from "../util/select.ts";
 
 export default function Navbar({ me, path, navigate }: {me: Me, path: string, navigate: (href: string) => void}) {
     const icons = {

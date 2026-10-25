@@ -21,7 +21,7 @@ import type {Theme} from "../../types/api.ts";
 import {postJSON} from "../../util/api.ts";
 import countries from "world-countries";
 import Select from "react-select";
-import {selectStyles, selectStyles2} from "../../util/select.tsx";
+import {selectStyles, selectStyles2} from "../../util/select.ts";
 
 type enrollable = "guardian" | "student" | "teacher"
 
