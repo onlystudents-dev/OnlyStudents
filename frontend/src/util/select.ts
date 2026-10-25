@@ -16,7 +16,7 @@ export function selectStyles(width: string = "20rem", height: string = "2.5rem",
         }),
         indicatorSeparator: (base: any) => ({
             ...base,
-            marginLeft: '0.5rem',
+            display: "none",
         }),
         valueContainer: (base: any) => ({
             ...base,

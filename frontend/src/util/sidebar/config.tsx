@@ -2,7 +2,7 @@ import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {type HTMLInputTypeAttribute, type MouseEventHandler} from "preact";
 import "./config.css";
-import {type Option, selectStyles2} from "../select.tsx";
+import {type Option, selectStyles2} from "../select.ts";
 import Select, {type GroupBase, type StylesConfig} from "react-select";
 
 export default function Button({ onClick, onMouseEnter, className, icon, text }: {onClick?: MouseEventHandler<HTMLButtonElement>, onMouseEnter?: MouseEventHandler<HTMLButtonElement>, className?: string, icon: IconDefinition, text: string}) {

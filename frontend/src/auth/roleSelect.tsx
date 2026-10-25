@@ -1,6 +1,6 @@
 import {getKey} from "../util/language.ts";
 import Select from "react-select";
-import {selectStyles} from "../util/select.tsx";
+import {selectStyles} from "../util/select.ts";
 
 export default function RoleSelect({ value, onChange }: {value: string, onChange: (role: string) => void}) {
     const options = [
