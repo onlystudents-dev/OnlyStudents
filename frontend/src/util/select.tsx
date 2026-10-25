@@ -1,6 +1,6 @@
 // i hate eslint AND typecheck
 /* eslint-disable */
-export function selectStyles(width: string = "20rem", height: string = "2.5rem", backgroundColor: string = "var(--card-color)", hoverColor: string = "var(--hover-color)") {
+export function selectStyles(width: string = "20rem", height: string = "2.5rem", backgroundColor: string = "var(--card-color)", hoverColor: string = "var(--hover-color)", stuffBgColor: string = backgroundColor) {
     return {
         control: (base: any) => ({
             ...base,
@@ -34,7 +34,7 @@ export function selectStyles(width: string = "20rem", height: string = "2.5rem",
         }),
         menu: (base: any) => ({
             ...base,
-            backgroundColor,
+            backgroundColor: stuffBgColor,
             borderRadius: '0.5rem',
             overflow: 'hidden',
             zIndex: 50,

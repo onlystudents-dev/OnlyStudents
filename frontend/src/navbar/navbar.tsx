@@ -168,8 +168,8 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
                         <img className={`rounded-[inherit] max-h-full ${!pfpLoaded && "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
                         {!pfpLoaded && <Skeleton width={40} height={40} color={"var(--bg-color)"} className="rounded-[inherit]!" />}
                     </a>
-                    <Select options={membershipOptions} value={membershipOptions?.find(membership => membership.value === String(school))} onChange={val => val && setSchool(val.value)} styles={selectStyles("fit-content", "100%", "var(--hover-color)", "var(--card-color)")} />
-                    {me.role === "guardian" && <Select options={childrenOptions} value={childrenOptions?.find(chilD => chilD.value === String(child))} onChange={val => val && setChild(val.value)} styles={selectStyles("fit-content", "100%", "var(--hover-color)", "var(--card-color)")} />}
+                    <Select options={membershipOptions} value={membershipOptions?.find(membership => membership.value === String(school))} onChange={val => val && setSchool(val.value)} styles={selectStyles("fit-content", "100%", "var(--bg-color)", "var(--card-color)", "var(--hover-color)")} />
+                    {me.role === "guardian" && <Select options={childrenOptions} value={childrenOptions?.find(chilD => chilD.value === String(child))} onChange={val => val && setChild(val.value)} styles={selectStyles("fit-content", "100%", "var(--bg-color)", "var(--card-color)", "var(--hover-color)")} />}
                 </div>
             </nav>
         </>
