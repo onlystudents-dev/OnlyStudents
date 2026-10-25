@@ -5,7 +5,6 @@ import Loading from "./util/loading.tsx";
 import type { Me } from "./types/api.ts";
 import { fetchLanguage } from "./util/language.ts";
 import RateLimit from "./util/ratelimit.tsx";
-import { readJSON } from "./util/api.ts";
 import {applyTheme} from "./util/theme.ts";
 import Layout from "./layout.tsx";
 
@@ -57,7 +56,7 @@ export default function App({ reload }: {reload: () => void}) {
                 return null
             }
 
-            const me = response.status === 401 ? null : await readJSON<Me>(response)
+            const me = response.status === 401 ? null : await response.json() as Me
             setMe(me)
             return me
         } catch {

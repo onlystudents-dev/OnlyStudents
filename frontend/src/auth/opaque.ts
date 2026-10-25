@@ -1,39 +1,39 @@
-import {type ApiError, getRetryAfter, postJSON, readJSON} from "../util/api.ts";
+import {type ApiError, getRetryAfter, postJSON} from "../util/api.ts";
 import { decodeOpaqueExportKey, deriveWrapKey, unwrapMK, wrapMK, b64encode, type Bytes } from "../util/crypto/keys.ts";
 
 type Identifiers = {client?: string, server?: string}
 
 type OpaqueParams = {
-    password: string;
-    userId?: number;
-    role?: string;
-    enrollToken?: string;
-    identifiers?: Identifiers;
+    password: string,
+    userId?: number,
+    role?: string,
+    enrollToken?: string,
+    identifiers?: Identifiers,
 }
 
 export type ChangePasswordParams = {
-    password: string;
-    identifiers?: Identifiers;
+    password: string,
+    identifiers?: Identifiers,
 }
 
 export type RekeyParams = {
-    password: string;
-    wrapped_mk_password: Bytes;
-    crypto_grant_handle: string;
-    exportKey: string;
+    password: string,
+    wrapped_mk_password: Bytes,
+    crypto_grant_handle: string,
+    exportKey: string,
 }
 
 type LoginInitResponse = {
-    login_response: string;
-    login_handle: string;
+    login_response: string,
+    login_handle: string,
 }
 
 type EnrollInitResponse = {
-    enroll_response: string;
+    enroll_response: string,
 }
 
 type ReauthFinishResponse = {
-    crypto_grant_handle: string;
+    crypto_grant_handle: string,
 }
 
 type Failure = {status: "error"; error?: string | undefined}
@@ -51,7 +51,7 @@ const rateLimited = (res: Response): RateLimited => ({
 
 const failure = (error?: string): Failure => ({status: "error", error})
 
-const readError = async (res: Response): Promise<string | undefined> => (await readJSON<ApiError | null>(res).catch(() => null))?.error
+const readError = async (res: Response): Promise<string | undefined> => (await res.json().catch(() => null) as ApiError | null)?.error
 
 const identifierOpts = ({identifiers}: OpaqueParams) =>
     identifiers ? {identifiers} : {};
@@ -64,7 +64,7 @@ async function loadOpaque() {
 
 export async function opaqueLogin(params: OpaqueParams): Promise<OpaqueLoginResult> {
     try {
-        const client = await loadOpaque();
+        const client = await loadOpaque()
 
         const {clientLoginState, startLoginRequest} = client.startLogin({password: params.password})
 
@@ -77,7 +77,7 @@ export async function opaqueLogin(params: OpaqueParams): Promise<OpaqueLoginResu
         if (initRes.status === 429) return rateLimited(initRes)
         if (!initRes.ok) return failure(await readError(initRes))
 
-        const {login_response, login_handle} = await readJSON<LoginInitResponse>(initRes)
+        const {login_response, login_handle} = await initRes.json() as LoginInitResponse
 
         const result = client.finishLogin({
             clientLoginState,
@@ -111,7 +111,7 @@ export async function opaqueLogin(params: OpaqueParams): Promise<OpaqueLoginResu
 
 export async function opaqueRegister(params: OpaqueParams): Promise<OpaqueRegisterResult> {
     try {
-        const client = await loadOpaque();
+        const client = await loadOpaque()
 
         const {clientRegistrationState, registrationRequest} = client.startRegistration({password: params.password})
 
@@ -123,7 +123,7 @@ export async function opaqueRegister(params: OpaqueParams): Promise<OpaqueRegist
         if (initRes.status === 429) return rateLimited(initRes)
         if (!initRes.ok) return failure(await readError(initRes))
 
-        const {enroll_response} = await readJSON<EnrollInitResponse>(initRes)
+        const {enroll_response} = await initRes.json() as EnrollInitResponse
 
         const result = client.finishRegistration({
             clientRegistrationState,
@@ -162,7 +162,7 @@ export async function opaqueReauth(params: ChangePasswordParams): Promise<Opaque
         if (initRes.status === 429) return rateLimited(initRes)
         if (!initRes.ok) return failure(await readError(initRes))
 
-        const {login_response, login_handle} = await readJSON<LoginInitResponse>(initRes)
+        const {login_response, login_handle} = await initRes.json() as LoginInitResponse
 
         const result = client.finishLogin({
             clientLoginState,
@@ -185,7 +185,7 @@ export async function opaqueReauth(params: ChangePasswordParams): Promise<Opaque
             return error === "WRONG_CREDENTIALS" ? {status: "wrong"} : failure(error)
         }
 
-        const crypto_grant_handle = (await readJSON<ReauthFinishResponse>(finRes)).crypto_grant_handle
+        const crypto_grant_handle = (await finRes.json() as ReauthFinishResponse).crypto_grant_handle
 
         return {
             "status": "ok",
@@ -199,7 +199,7 @@ export async function opaqueReauth(params: ChangePasswordParams): Promise<Opaque
 
 export async function opaqueRekey(params: RekeyParams): Promise<OpaqueRekeyResult> {
     try {
-        const client = await loadOpaque();
+        const client = await loadOpaque()
 
         const {clientRegistrationState, registrationRequest} = client.startRegistration({password: params.password})
 
@@ -210,8 +210,7 @@ export async function opaqueRekey(params: RekeyParams): Promise<OpaqueRekeyResul
         if (initRes.status === 429) return rateLimited(initRes)
         if (!initRes.ok) return failure(await readError(initRes))
 
-        const {enroll_response} =
-            await readJSON<EnrollInitResponse>(initRes)
+        const {enroll_response} = await initRes.json() as EnrollInitResponse
 
         const result = client.finishRegistration({
             clientRegistrationState,

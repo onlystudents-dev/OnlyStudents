@@ -107,9 +107,11 @@ export default function SubjectAverageChart({ grades, me }: { grades: Grade[]; m
 
         const items: { timestamp: number; date: string; average: number }[] = []
         let sum = 0
+        let totalWeight = 0
         for (const g of source) {
-            sum += g.value
-            items.push({ timestamp: g.date, date: formatUnixDate(g.date, lang), average: Number((sum / (items.length + 1)).toFixed(2)) })
+            sum += g.value * g.weight
+            totalWeight += g.weight
+            items.push({ timestamp: g.date, date: formatUnixDate(g.date, lang), average: Number((sum / totalWeight).toFixed(2)) })
         }
 
         const first = sorted.at(0)

@@ -21,7 +21,7 @@ import {applyTheme, getAutoTheme} from "../../util/theme.ts";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import type {Dispatch, StateUpdater} from "preact/hooks";
 import {getTimeFormat} from "../../util/time.ts";
-import {postJSON, readJSON} from "../../util/api.ts";
+import {postJSON} from "../../util/api.ts";
 import { opaqueReauth, opaqueRekey, type OpaqueReauthResult} from "../../auth/opaque.ts";
 import type { Bytes } from "../../util/crypto/keys.ts";
 
@@ -302,7 +302,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
               return
           }
 
-          const {wrapped_mk_password: wrapped_mk_password_b64} = await readJSON<{wrapped_mk_password: string}>(cryptoRes)
+          const {wrapped_mk_password: wrapped_mk_password_b64} = await cryptoRes.json() as {wrapped_mk_password: string}
           const bin = atob(wrapped_mk_password_b64)
           const wrapped_mk_password = Uint8Array.from(bin, c => c.charCodeAt(0))
 

@@ -14,7 +14,7 @@ import { generateMnemonicSecret, MnemonicSecrettoSeed } from "../../util/crypto/
 import { getRetryAfter } from "../../util/api.ts";
 
 export default function Enroll() {
-    const enrollToken = new URLSearchParams(location.search).get("enroll_token");
+    const enrollToken = new URLSearchParams(location.search).get("enroll_token")
 
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")

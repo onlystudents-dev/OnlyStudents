@@ -7,6 +7,7 @@ SELECT
     t.last_name AS teacher_last_name,
     ter.name AS term,
     gt.name AS type,
+    gt.weight AS weight,
     g.value,
     g.date,
     g.note
@@ -30,6 +31,7 @@ SELECT
     t.last_name AS teacher_last_name,
     ter.name AS term,
     gt.name AS type,
+    gt.weight AS weight,
     g.value,
     g.date,
     g.note

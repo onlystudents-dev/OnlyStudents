@@ -79,6 +79,7 @@ type GradeSummary struct {
 	TeacherFirstName string `json:"teacher_first_name"`
 	Term             string `json:"term"`
 	Type             string `json:"type"`
+	Weight           int32  `json:"weight"`
 	Value            int16  `json:"value"`
 	Date             int64  `json:"date"`
 	HasNote          bool   `json:"has_note"`
@@ -117,6 +118,7 @@ func convertGrade(row db_queries.GetStudentGradesRow) GradeSummary {
 		TeacherFirstName: row.TeacherFirstName,
 		Term:             row.Term,
 		Type:             row.Type,
+		Weight:           row.Weight,
 		Value:            row.Value,
 		Date:             row.Date.Time.Unix(),
 		HasNote:          row.Note.Valid,
@@ -134,6 +136,7 @@ func convertGradeBySubject(row db_queries.GetStudentGradesBySubjectRow) GradeSum
 		TeacherFirstName: row.TeacherFirstName,
 		Term:             row.Term,
 		Type:             row.Type,
+		Weight:           row.Weight,
 		Value:            row.Value,
 		Date:             row.Date.Time.Unix(),
 		HasNote:          row.Note.Valid,

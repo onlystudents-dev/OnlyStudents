@@ -161,6 +161,7 @@ export type Grade = {
     teacher_first_name: string,
     term: string,
     type: string,
+    weight: number,
     value: number,
     date: number,
     has_note: boolean,

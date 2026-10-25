@@ -28,10 +28,6 @@ export function getRetryAfter(response: Response): number {
     return Number.isNaN(seconds) ? -1 : seconds
 }
 
-export async function readJSON<T>(response: Response): Promise<T> {
-    return await response.json() as T
-}
-
 export async function fetchInto<T>(api: string, method?: React.Dispatch<React.SetStateAction<T>>) {
     const response = await fetchWithSchool(api)
 
@@ -40,7 +36,7 @@ export async function fetchInto<T>(api: string, method?: React.Dispatch<React.Se
         return
     }
 
-    const json = await readJSON<T>(response)
+    const json = await response.json() as T
 
     if (method) method(json)
     return json

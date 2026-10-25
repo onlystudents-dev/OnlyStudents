@@ -2,8 +2,7 @@ import type {Lesson, LessonTime, Room} from "../../types/api.ts";
 import {fromResponse, getLanguage} from "../../util/language.ts";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {toast} from "react-toastify";
-
-import {fetchInto, fetchWithSchool, getRetryAfter, readJSON} from "../../util/api.ts";
+import {fetchInto, fetchWithSchool, getRetryAfter} from "../../util/api.ts";
 import type { FeatureProps } from "../../types/props.ts";
 import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../timetable/timetable.tsx"
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
@@ -75,7 +74,7 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
                 setYear(`${monday.getFullYear() - 1}-${monday.getFullYear()}`)
             }
 
-            const lessons = await readJSON<Lesson[]>(response)
+            const lessons = await response.json() as Lesson[]
             const daySeconds = 86400
             const language = getLanguage(meRef.current)?.key || "en-US"
             const now = new Date()

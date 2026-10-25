@@ -56,7 +56,7 @@ export function StudentSubjects({ me }: { me: Me }) {
                         if (!grades) return <Skeleton width={640} height={64} color="var(--hover-color)" key={subject.id} className="border-b-2 border-r-2 border-(--border-color) rounded-3xl!" />
                         const gradeS = grades.filter(grade => grade.subject === subject.name)
                         const average = gradeS.length
-                            ? gradeS.reduce((sum, grade) => sum + grade.value, 0) / gradeS.length
+                            ? gradeS.reduce((sum, grade) => sum + grade.value * grade.weight, 0) / gradeS.reduce((sum, grade) => sum + grade.weight, 0)
                             : 0
 
                         const color = colors[Math.round(average)]
