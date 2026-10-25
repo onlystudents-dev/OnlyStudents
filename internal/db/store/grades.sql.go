@@ -83,6 +83,7 @@ SELECT
     t.last_name AS teacher_last_name,
     ter.name AS term,
     gt.name AS type,
+    gt.weight AS weight,
     g.value,
     g.date,
     g.note
@@ -111,6 +112,7 @@ type GetStudentGradesRow struct {
 	TeacherLastName  string
 	Term             string
 	Type             string
+	Weight           int32
 	Value            int16
 	Date             pgtype.Date
 	Note             pgtype.Text
@@ -133,6 +135,7 @@ func (q *Queries) GetStudentGrades(ctx context.Context, arg GetStudentGradesPara
 			&i.TeacherLastName,
 			&i.Term,
 			&i.Type,
+			&i.Weight,
 			&i.Value,
 			&i.Date,
 			&i.Note,
@@ -156,6 +159,7 @@ SELECT
     t.last_name AS teacher_last_name,
     ter.name AS term,
     gt.name AS type,
+    gt.weight AS weight,
     g.value,
     g.date,
     g.note
@@ -191,6 +195,7 @@ type GetStudentGradesBySubjectRow struct {
 	TeacherLastName  string
 	Term             string
 	Type             string
+	Weight           int32
 	Value            int16
 	Date             pgtype.Date
 	Note             pgtype.Text
@@ -218,6 +223,7 @@ func (q *Queries) GetStudentGradesBySubject(ctx context.Context, arg GetStudentG
 			&i.TeacherLastName,
 			&i.Term,
 			&i.Type,
+			&i.Weight,
 			&i.Value,
 			&i.Date,
 			&i.Note,
