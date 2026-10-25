@@ -9,7 +9,7 @@ import {fromResponse, getKey} from "../../util/language.ts";
 import {AUTH_DEFAULT_CONFIG, getPasswordConfig, type PasswordConfig} from "../authConfig.ts";
 import RoleSelect from "../roleSelect.tsx";
 import {useCountdown} from "../../util/countdown.ts";
-import {getRetryAfter, postJSON, readJSON} from "../../util/api.ts";
+import {getRetryAfter, postJSON} from "../../util/api.ts";
 import type { ForgetPasswordCheckResponse, ForgetPasswordConfirmResponse } from "../../types/api.ts";
 import { MnemonicSecrettoSeed, normalizeMnemonicWords, validateMnemonicSecret } from "../../util/crypto/mnemonic.ts";
 import { b64decode, b64encode, constantTimeEqual, decodeOpaqueExportKey, deriveWrapKey, parseParams, recoveryDigest, unwrapMK, wrapMK, type Bytes } from "../../util/crypto/keys.ts";
@@ -75,7 +75,7 @@ export default function PasswordReset({ resetActive, onClose, role, setRole, id,
         void (async () => {
           let unwrappedMk: Bytes
           try {
-            const json = await readJSON<ForgetPasswordCheckResponse>(checkResponse)
+            const json = await checkResponse.json() as ForgetPasswordCheckResponse
 
             const params = parseParams(json.recovery_key_params)
             const digest = recoveryDigest(recoveryKeyNormalized, b64decode(json.recovery_key_salt), {
@@ -105,7 +105,7 @@ export default function PasswordReset({ resetActive, onClose, role, setRole, id,
               let json: ForgetPasswordConfirmResponse
               let res: Awaited<ReturnType<typeof opaqueRegister>>
               try {
-                json = await readJSON<ForgetPasswordConfirmResponse>(confirmResponse)
+                json = await confirmResponse.json() as ForgetPasswordConfirmResponse
                 res = await opaqueRegister({ enrollToken: json.enroll_token, password })
               } catch {
                 toast.error(getKey("RECOVERY_FAILED"))

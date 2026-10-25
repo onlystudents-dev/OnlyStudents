@@ -2,7 +2,7 @@ import i18n from "i18next";
 import {initReactI18next} from "react-i18next";
 import {match} from "@formatjs/intl-localematcher";
 import type {Me} from "../types/api.ts";
-import {type ApiError, getRetryAfter, readJSON} from "./api.ts";
+import {type ApiError, getRetryAfter} from "./api.ts";
 
 declare global {
     interface Window { __INITIAL_LANGUAGE__?: LanguageFile, __INITIAL_LANG__?: string }
@@ -93,7 +93,7 @@ export async function fromResponse(response: Response, ...args: string[]) {
         args[0] = String(getRetryAfter(response))
     }
 
-    const json = await readJSON<ApiError | null>(response).catch(() => null)
+    const json = await response.json().catch(() => null) as ApiError | null
 
     if (json?.error && i18n.exists(json.error, {ns: "errors"})) {
         return i18n.t(json.error, {ns: "errors", ...positional(args)})

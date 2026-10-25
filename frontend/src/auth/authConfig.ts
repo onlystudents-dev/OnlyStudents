@@ -1,4 +1,3 @@
-import {readJSON} from "../util/api.ts";
 
 export type PasswordConfig = {
     min_length: number;
@@ -64,7 +63,7 @@ export async function getPasswordConfig(): Promise<PasswordConfig> {
         const response = await fetch("/api/v1/config");
         if (!response.ok) return AUTH_DEFAULT_CONFIG.password;
 
-        const json = await readJSON<{ password?: unknown } | null>(response);
+        const json = await response.json() as { password?: unknown } | null;
         return normalize_password(json?.password);
     } catch {
         return AUTH_DEFAULT_CONFIG.password;
@@ -76,7 +75,7 @@ export async function getE2EEConfig(): Promise<E2EEConfig> {
         const response = await fetch("/api/v1/config");
         if (!response.ok) return AUTH_DEFAULT_CONFIG.e2ee;
 
-        const json = await readJSON<{ e2ee?: unknown } | null>(response);
+        const json = await response.json() as { e2ee?: unknown } | null;
         return normalize_e2ee(json?.e2ee);
     } catch {
         return AUTH_DEFAULT_CONFIG.e2ee;
