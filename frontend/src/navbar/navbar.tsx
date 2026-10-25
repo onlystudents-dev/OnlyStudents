@@ -102,8 +102,7 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
         navigate(href)
     }
 
-    function getLeft(e: MouseEvent): number {
-        const button = e.currentTarget as Element
+    function getLeft(button: Element): number {
         const container = button.closest(".buttons")
 
         if (!container) return 0
@@ -112,17 +111,21 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
     }
 
     function handleEnter(e: MouseEvent) {
+        const element = e.currentTarget as Element
+
         setHidden(false)
-        setHoverLeft(getLeft(e))
-        setHoverWidth((e.currentTarget as Element).getBoundingClientRect().width)
+        setHoverLeft(getLeft(element))
+        setHoverWidth(element.getBoundingClientRect().width)
     }
 
     function handleClick(e: MouseEvent) {
         e.preventDefault()
         redirect((e.currentTarget as HTMLAnchorElement).pathname)
 
-        setSelectLeft(getLeft(e))
-        setSelectWidth((e.currentTarget as Element).getBoundingClientRect().width)
+        const element = e.currentTarget as Element
+
+        setSelectLeft(getLeft(element))
+        setSelectWidth(element.getBoundingClientRect().width)
     }
 
     const handleSelect = useCallback(() => {
@@ -133,19 +136,26 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
             return
         }
 
-        const container = button.closest(".buttons")
-        if (!container) return
-
         setSelected(true)
-        setSelectLeft(button.getBoundingClientRect().left - container.getBoundingClientRect().left)
+        setSelectLeft(getLeft(button))
         setSelectWidth(button.getBoundingClientRect().width)
     }, [path])
 
     useLayoutEffect(() => {
-        handleSelect()
+        function handleStuff() {
+            handleSelect()
 
-        window.addEventListener("resize", handleSelect)
-        return () => window.removeEventListener("resize", handleSelect)
+            const hover = [...buttons.current.values()].find(el => el.matches(":hover"))
+            if (hover) {
+                setHoverLeft(getLeft(hover))
+                setHoverWidth(hover.getBoundingClientRect().width)
+            }
+        }
+
+        handleStuff()
+
+        window.addEventListener("resize", handleStuff)
+        return () => window.removeEventListener("resize", handleStuff)
     }, [handleSelect])
 
     const membershipOptions = memberships?.map(membership => ({ label: membership.school_name, value: String(membership.school_id) }))
@@ -160,16 +170,16 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
                             <FontAwesomeIcon icon={icon} /> {getKey(key)}
                         </Button>
                     ))}
-                    <div className={`navbbg ${hidden && "hid"}`} style={{ left: `${hoverLeft}px`, width: `${hoverWidth}px` }} />
-                    <div className={`navbbg navbbgs ${!selected && "hid"}`} style={{ left: `${selectLeft}px`, width: `${selectWidth}px` }} />
+                    <div className={`navbbg ${hidden && "hid"}`} style={{ transform: `translateX(${hoverLeft}px)`, width: `${hoverWidth}px` }} />
+                    <div className={`navbbg navbbgs ${!selected && "hid"}`} style={{ transform: `translateX(${selectLeft}px)`, width: `${selectWidth}px` }} />
                 </div>
                 <div className="flex flex-row-reverse items-center gap-2">
                     <a className="rounded-[50%] h-10 cursor-pointer" href="/me" onClick={e => {e.preventDefault(); redirect("/me")}}>
                         <img className={`rounded-[inherit] max-h-full ${!pfpLoaded && "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
                         {!pfpLoaded && <Skeleton width={40} height={40} color={"var(--bg-color)"} className="rounded-[inherit]!" />}
                     </a>
-                    <Select options={membershipOptions} value={membershipOptions?.find(membership => membership.value === String(school))} onChange={val => val && setSchool(val.value)} styles={selectStyles("fit-content", "100%", "var(--hover-color)", "var(--card-color)")} />
-                    {me.role === "guardian" && <Select options={childrenOptions} value={childrenOptions?.find(chilD => chilD.value === String(child))} onChange={val => val && setChild(val.value)} styles={selectStyles("fit-content", "100%", "var(--hover-color)", "var(--card-color)")} />}
+                    <Select options={membershipOptions} value={membershipOptions?.find(membership => membership.value === String(school))} onChange={val => val && setSchool(val.value)} styles={selectStyles("fit-content", "100%", "var(--bg-color)", "var(--card-color)", "var(--hover-color)")} />
+                    {me.role === "guardian" && <Select options={childrenOptions} value={childrenOptions?.find(chilD => chilD.value === String(child))} onChange={val => val && setChild(val.value)} styles={selectStyles("fit-content", "100%", "var(--bg-color)", "var(--card-color)", "var(--hover-color)")} />}
                 </div>
             </nav>
         </>

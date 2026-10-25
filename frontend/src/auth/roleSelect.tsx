@@ -8,5 +8,5 @@ export default function RoleSelect({ value, onChange }: {value: string, onChange
         { label: getKey("ROLE.STUDENT"), value: "student" },
         { label: getKey("ROLE.TEACHER"), value: "teacher" },
     ]
-    return <Select isSearchable={false} value={options.find(val => val.value === value)} options={options} onChange={val => val && onChange(val.value)} styles={selectStyles("100%", "3rem", "var(--hover-color)", "var(--card-color)")} />
+    return <Select isSearchable={false} value={options.find(val => val.value === value)} options={options} onChange={val => val && onChange(val.value)} styles={selectStyles("100%", "3rem", "var(--hover-color)", "var(--card-color)", undefined, "0 0.5rem")} />
 }
