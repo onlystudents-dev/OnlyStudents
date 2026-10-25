@@ -83,30 +83,40 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
                                 return (
                                     <>
                                         <DropdownConfig text={getKey("LANGUAGE")} icon={faLanguage} value={options.lang} onChange={(raw) => setOption("lang", raw)}>
-                                            <option value="">{getKey("AUTOLANG", `${autolang?.emoji} ${autolang?.name}`)}</option>
-                                            {languages.map((language) => (
-                                                <option value={language.key}>{language.emoji} {language.name}</option>
-                                            ))}
+                                            {[
+                                                { label: getKey("AUTOLANG", `${autolang?.emoji} ${autolang?.name}`), value: "" },
+                                                ...(languages.map(language => ({
+                                                    label: `${language.emoji} ${language.name}`, value: language.key
+                                                })))
+                                            ]}
                                         </DropdownConfig>
                                         <DropdownConfig text={getKey("TIME_FORMAT")} icon={faClock} value={options.time_format} onChange={(raw) => isTimeFormat(raw) && setOption("time_format", raw)}>
-                                            <option value="">{getKey("AUTO_TIME_FORMAT", getKey(getTimeFormat(getLanguage(me)) ? "24_TIME_FORMAT" : "12_TIME_FORMAT"))}</option>
-                                            <option value="h12">{getKey("12_TIME_FORMAT")}</option>
-                                            <option value="h23">{getKey("24_TIME_FORMAT")}</option>
+                                            {[
+                                                { label: getKey("AUTO_TIME_FORMAT", getKey(getTimeFormat(getLanguage(me)) ? "24_TIME_FORMAT" : "12_TIME_FORMAT")), value: "" },
+                                                { label: getKey("12_TIME_FORMAT"), value: "h12" },
+                                                { label: getKey("24_TIME_FORMAT"), value: "h23" },
+                                            ]}
                                         </DropdownConfig>
                                         <DropdownConfig text={getKey("THEME")} icon={faPaintRoller} value={options.theme} onChange={(raw) => setOption("theme", raw)}>
-                                            <option value="">{getKey("AUTOTHEME", getKey(`THEMES.${getAutoTheme()}`))}</option>
-                                            {themes?.map(theme => (
-                                                <option value={theme.name}>{getKey(`THEMES.${theme.name}`) || theme.name}</option>
-                                            ))}
+                                            {[
+                                                { label: getKey("AUTOTHEME", getKey(`THEMES.${getAutoTheme()}`)), value: "" },
+                                                ...(themes?.map(theme => ({
+                                                    label: getKey(`THEMES.${theme.name}`) || theme.name, value: theme.name
+                                                })) || [])
+                                            ]}
                                         </DropdownConfig>
                                         <DropdownConfig text={getKey("TIMETABLE_DISPLAY")} icon={faTable} value={String(options.timetable_display)} onChange={(raw) => setOption("timetable_display", Number(raw))}>
-                                            <option value="1">{getKey("TIMETABLE_DISPLAY.LESSONS")}</option>
-                                            <option value="2">{getKey("TIMETABLE_DISPLAY.WEEKDAYS")}</option>
-                                            <option value="3">{getKey("TIMETABLE_DISPLAY.ALL")}</option>
+                                            {[
+                                                { label: getKey("TIMETABLE_DISPLAY.LESSONS"), value: "1" },
+                                                { label: getKey("TIMETABLE_DISPLAY.WEEKDAYS"), value: "2" },
+                                                { label: getKey("TIMETABLE_DISPLAY.ALL"), value: "3" },
+                                            ]}
                                         </DropdownConfig>
                                         <DropdownConfig text={getKey("TIMETABLE_NEXT")} icon={faCalendarDays} value={String(options.timetable_next)} onChange={(raw) => setOption("timetable_next", raw === "true")}>
-                                            <option value="true">{getKey("TIMETABLE_NEXT.NEXT")}</option>
-                                            <option value="false">{getKey("TIMETABLE_NEXT.THIS")}</option>
+                                            {[
+                                                { label: getKey("TIMETABLE_NEXT.NEXT"), value: "true" },
+                                                { label: getKey("TIMETABLE_NEXT.THIS"), value: "false" },
+                                            ]}
                                         </DropdownConfig>
                                     </>
                                 )

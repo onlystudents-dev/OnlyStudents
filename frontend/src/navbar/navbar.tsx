@@ -9,6 +9,8 @@ import Skeleton from "../util/skeleton/skeleton.tsx";
 import {features} from "../features.ts";
 import {reloadSchoolStuff} from "../util/school.ts";
 import {useLayoutEffect} from "preact/hooks";
+import Select from "react-select";
+import {selectStyles} from "../util/select.tsx";
 
 export default function Navbar({ me, path, navigate }: {me: Me, path: string, navigate: (href: string) => void}) {
     const icons = {
@@ -96,8 +98,6 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
     const [hidden, setHidden] = useState(true)
 
     function redirect(href: string) {
-        // Clear any query string (e.g. /grades?subject=…) when re-clicking the
-        // current section so it returns to its root view instead of doing nothing.
         if (path === href && !window.location.search) return
         navigate(href)
     }
@@ -148,6 +148,9 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
         return () => window.removeEventListener("resize", handleSelect)
     }, [handleSelect])
 
+    const membershipOptions = memberships?.map(membership => ({ label: membership.school_name, value: String(membership.school_id) }))
+    const childrenOptions = me.children?.map(child => ({ label: `${child.first_name} ${child.last_name}`, value: String(child.account_id) }))
+
     return (
         <>
             <nav>
@@ -165,16 +168,8 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
                         <img className={`rounded-[inherit] max-h-full ${!pfpLoaded && "hidden"}`} src={me.preferences.pfp_url} alt="" onLoad={() => setPfpLoaded(true)} />
                         {!pfpLoaded && <Skeleton width={40} height={40} color={"var(--bg-color)"} className="rounded-[inherit]!" />}
                     </a>
-                    <select className="button text-start!" value={school} onChange={e => setSchool(e.currentTarget.value)}>
-                        {memberships?.map(membership => (
-                            <option value={membership.school_id} key={membership.school_id}>{membership.school_name}</option>
-                        ))}
-                    </select>
-                    {me.role === "guardian" && <select className="button text-start!" value={child} onChange={e => setChild(e.currentTarget.value)}>
-                        {me.children?.map(child => (
-                            <option value={child.account_id} key={child.account_id}>{child.first_name} {child.last_name}</option>
-                        ))}
-                    </select>}
+                    <Select options={membershipOptions} value={membershipOptions?.find(membership => membership.value === String(school))} onChange={val => val && setSchool(val.value)} styles={selectStyles("fit-content", "100%", "var(--hover-color)", "var(--card-color)")} />
+                    {me.role === "guardian" && <Select options={childrenOptions} value={childrenOptions?.find(chilD => chilD.value === String(child))} onChange={val => val && setChild(val.value)} styles={selectStyles("fit-content", "100%", "var(--hover-color)", "var(--card-color)")} />}
                 </div>
             </nav>
         </>

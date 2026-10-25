@@ -1,8 +1,9 @@
 import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import type {HTMLInputTypeAttribute, MouseEventHandler} from "preact";
-import React from "preact/compat";
+import {type HTMLInputTypeAttribute, type MouseEventHandler} from "preact";
 import "./config.css";
+import {type Option, selectStyles2} from "../select.tsx";
+import Select, {type GroupBase, type StylesConfig} from "react-select";
 
 export default function Button({ onClick, onMouseEnter, className, icon, text }: {onClick?: MouseEventHandler<HTMLButtonElement>, onMouseEnter?: MouseEventHandler<HTMLButtonElement>, className?: string, icon: IconDefinition, text: string}) {
     return (
@@ -14,16 +15,22 @@ export default function Button({ onClick, onMouseEnter, className, icon, text }:
     )
 }
 
-export function DropdownConfig({ text, icon, value, children, className, onChange }: { text?: string, icon?: IconDefinition, value: string, children: React.ReactNode, className?: string, onChange: (raw: string) => void }) {
+export function DropdownConfig({ text, icon, value, children, className, onChange, styles = selectStyles2() }: { text?: string, icon?: IconDefinition, value: string, children: Option[], className?: string, onChange: (raw: string) => void, styles: StylesConfig<Option, false, GroupBase<Option>> | undefined }) {
     return (
         <>
             <div className={`config ${className}`}>
                 <p>
                     {icon && <FontAwesomeIcon icon={icon} />} {text}
                 </p>
-                <select className="poppins" value={value} onChange={(e) => onChange(e.currentTarget.value)}>
-                    {children}
-                </select>
+                <Select
+                    className="poppins"
+                    value={children.find(val => val.value === value)}
+                    options={children}
+                    onChange={(val) => onChange(val?.value || "")}
+                    isSearchable={false}
+                    components={{ IndicatorSeparator: null }}
+                    styles={styles}
+                />
             </div>
         </>
     )

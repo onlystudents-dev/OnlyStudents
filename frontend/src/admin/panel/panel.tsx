@@ -21,55 +21,9 @@ import type {Theme} from "../../types/api.ts";
 import {postJSON} from "../../util/api.ts";
 import countries from "world-countries";
 import Select from "react-select";
+import {selectStyles, selectStyles2} from "../../util/select.tsx";
 
 type enrollable = "guardian" | "student" | "teacher"
-
-// i hate eslint
-/* eslint-disable */
-const selectStyles = {
-    control: (base: any) => ({
-        ...base,
-        width: '20rem',
-        height: '2.5rem',
-        minHeight: '2.5rem',
-        borderRadius: '0.5rem',
-        backgroundColor: 'var(--card-color)',
-        border: 'none',
-        boxShadow: 'none',
-        cursor: 'text',
-        padding: '0 0.25rem',
-    }),
-    valueContainer: (base: any) => ({
-        ...base,
-        padding: '0',
-    }),
-    input: (base: any) => ({
-        ...base,
-        color: 'inherit',
-        margin: 0,
-        padding: 0,
-    }),
-    singleValue: (base: any) => ({
-        ...base,
-        color: 'inherit',
-    }),
-    menu: (base: any) => ({
-        ...base,
-        backgroundColor: 'var(--card-color)',
-        borderRadius: '0.5rem',
-        overflow: 'hidden',
-        zIndex: 50,
-        marginTop: '0.25rem',
-    }),
-    option: (base: any, state: any) => ({
-        ...base,
-        backgroundColor: state.isFocused ? 'var(--hover-color)' : 'transparent',
-        color: 'inherit',
-        cursor: 'pointer',
-        padding: '0.5rem 1rem',
-    }),
-};
-/* eslint-enable */
 
 function rootColors(): Record<string, string> {
     const style = document.getElementById("root-theme")
@@ -169,10 +123,10 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                             return (
                                 <>
                                     {!logs ? <Loading /> : <>
-                                        <DropdownConfig value={activeLog} onChange={e => setActiveLog(e)} className="sselect">
-                                            {logs.map((log: Log) => (
-                                                <option key={log.name} value={log.name}>{log.name}</option>
-                                            ))}
+                                        <DropdownConfig value={activeLog} onChange={e => setActiveLog(e)} className="sselect" styles={selectStyles2(undefined, "start")}>
+                                            {logs.map((log: Log) => ({
+                                                label: log.name, value: log.name
+                                            }))}
                                         </DropdownConfig>
                                         <div className="box">
                                             <div ref={logsRef} className="w-full overflow-y-auto font-mono text-sm whitespace-pre" style={{height: "calc(100vh - 124px)"}}>
@@ -187,10 +141,12 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                         case "enroll":
                             return (
                                 <>
-                                    <DropdownConfig value={enroll} onChange={e => { setEnroll(e as enrollable); setOptions({}); setWrong([]) }} className="sselect">
-                                        <option value="guardian">{getKey("ROLE.GUARDIAN")}</option>
-                                        <option value="student">{getKey("ROLE.STUDENT")}</option>
-                                        <option value="teacher">{getKey("ROLE.TEACHER")}</option>
+                                    <DropdownConfig value={enroll} onChange={e => { setEnroll(e as enrollable); setOptions({}); setWrong([]) }} className="sselect" styles={selectStyles2(undefined, "start")}>
+                                        {[
+                                            { label: getKey("ROLE.GUARDIAN"), value: "guardian" },
+                                            { label: getKey("ROLE.STUDENT"), value: "student" },
+                                            { label: getKey("ROLE.TEACHER"), value: "teacher" },
+                                        ]}
                                     </DropdownConfig>
                                     <div className="box pr-2!">
                                         <div className="inputs" style={{height: "calc(100vh - 164px)"}}>
@@ -212,7 +168,7 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                                                     value={selectedSchool}
                                                                     onChange={val => { setOptions({ ...options, [key]: val?.value || "" }); void setSchool(val?.value || ""); setWrong(wrong.filter(k => k !== key)) }}
                                                                     isSearchable
-                                                                    styles={selectStyles}
+                                                                    styles={selectStyles()}
                                                                     components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
                                                                     onFocus={() => setFocused(key)}
                                                                     onBlur={() => focused === key && setFocused("")}
@@ -235,7 +191,7 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                                                     value={selectedClass}
                                                                     onChange={val => { setOptions({ ...options, [key]: val?.value || "" }); setWrong(wrong.filter(k => k !== key)) }}
                                                                     isSearchable
-                                                                    styles={selectStyles}
+                                                                    styles={selectStyles()}
                                                                     components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
                                                                     onFocus={() => setFocused(key)}
                                                                     onBlur={() => focused === key && setFocused("")}
@@ -254,7 +210,7 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                                                     value={countryList.find(c => c.value === options[key]) || null}
                                                                     onChange={val => { setOptions({ ...options, [key]: val?.value || "" }); setWrong(wrong.filter(k => k !== key)) }}
                                                                     isSearchable
-                                                                    styles={selectStyles}
+                                                                    styles={selectStyles()}
                                                                     components={{ DropdownIndicator: () => null, IndicatorSeparator: () => null }}
                                                                     onFocus={() => setFocused(key)}
                                                                     onBlur={() => focused === key && setFocused("")}
@@ -264,8 +220,6 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                                                             </div>
                                                         )
                                                     default:
-                                                        // i have a 4k monitor so it fits for me
-                                                        // well not anymore
                                                         return <InputConfig value={options[key] || ""} onChange={value => { setOptions({ ...options, [key]: value }); setWrong(wrong.filter(k => k !== key)) }} onFocusIn={() => setFocused(key)} onFocusOut={() => focused === key && setFocused("")} key={key}
                                                                             text={getKey(`ADMIN_ENROLL.${enroll.toUpperCase()}.${key.toUpperCase()}`)} type={type} className={`enroll rubik ${focused === key && "bg-(--hover-color)"} ${wrong.includes(key as EnrollKey) ? "wronggg" : "keyinput"}`} />
                                                 }
