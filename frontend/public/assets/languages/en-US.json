@@ -27,6 +27,8 @@
         "GRADES": "Grades",
         "EXAMS": "Exams",
         "HOMEWORK": "Homework",
+        "SUBMISSION": "Submission",
+        "GIVEN_REASON": "Given Reason",
         "ABSENCES": "Absences",
         "SETTINGS": "Settings",
         "USER_SETTINGS": "User settings",

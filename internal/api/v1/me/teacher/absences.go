@@ -43,7 +43,6 @@ type AbsenceSummary struct {
 	Date           int64       `json:"date"`
 	Type           string      `json:"type"`
 	Justified      bool        `json:"justified"`
-	ReasonType     string      `json:"reason_type"`
 	FileName       string      `json:"file_name"`
 	FileType       string      `json:"file_type"`
 	FileSize       int64       `json:"file_size"`
@@ -62,7 +61,6 @@ func convertAbsence(row db_queries.GetTeacherAbsencesRow) AbsenceSummary {
 		Date:           row.Date.Time.Unix(),
 		Type:           row.Type,
 		Justified:      row.Justified,
-		ReasonType:     row.ReasonType.String,
 		FileName:       row.FileName.String,
 		FileSize:       row.FileSize.Int64,
 		FileUUID:       row.FileUuid.String(),

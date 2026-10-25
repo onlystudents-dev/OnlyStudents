@@ -78,13 +78,13 @@ export function Timetable(props: TimetableProps) {
                                     <div className="flex flex-col min-w-0">
                                         <h1 className="rubik truncate">{lesson.subject_name}</h1>
                                         <h2 className="poppins truncate">{[
-                                            lesson.has_teacher_first_name && lesson.teacher_first_name,
-                                            lesson.has_teacher_last_name && lesson.teacher_last_name,
+                                            lesson.teacher_first_name != "" && lesson.teacher_first_name,
+                                            lesson.teacher_last_name != "" && lesson.teacher_last_name,
                                         ].filter(Boolean).join(" ")}</h2>
                                     </div>
                                     <div className="flex flex-col gap-1 items-end shrink-0">
-                                        {lesson.has_exam_id && <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />}
-                                        {lesson.has_homework_id && <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />}
+                                        {lesson.exam_id != 0 && <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />}
+                                        {lesson.homework_id != 0 && <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />}
                                     </div>
                                 </div>
 
@@ -111,7 +111,7 @@ export function Timetable(props: TimetableProps) {
 }
 
 function toHoursAndMinutes(me: Me, lesson: Lesson, lessonTime: LessonTime[]) {
-    const time = lessonTime.find(lt => lt.has_lesson_number && lt.lesson_number === lesson.lesson_num)
+    const time = lessonTime.find(lt => lt.lesson_number != 0 && lt.lesson_number === lesson.lesson_num)
     if (!time) return ""
 
     return `${formatSecondsToHourAndMinute(time.at_start, me)}-${formatSecondsToHourAndMinute(time.at_end, me)}`

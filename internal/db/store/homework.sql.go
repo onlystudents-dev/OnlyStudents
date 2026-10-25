@@ -23,13 +23,19 @@ SELECT
     h.due_date,
     h.created_at,
     hs.submitted_at,
-    hs.graded_value
+    hs.graded_value,
+    hs.note AS submission_note,
+    f.uuid AS submission_file_uuid,
+    f.original_name AS submission_file_name,
+    f.size AS submission_file_size,
+    f.type AS submission_file_type
 FROM homework h
          JOIN class_subjects csub ON csub.id = h.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN teachers t ON t.id = h.teacher_id
          LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $1
+         LEFT JOIN files f ON f.uuid = hs.file_uuid
 WHERE csub.school_id = $2
   AND csub.class_id = (
     SELECT ss.class_id
@@ -46,17 +52,22 @@ type GetStudentHomeworkParams struct {
 }
 
 type GetStudentHomeworkRow struct {
-	ID               int64
-	Subject          string
-	SubjectCode      pgtype.Text
-	TeacherFirstName string
-	TeacherLastName  string
-	Title            string
-	Description      pgtype.Text
-	DueDate          pgtype.Date
-	CreatedAt        pgtype.Timestamptz
-	SubmittedAt      pgtype.Timestamptz
-	GradedValue      pgtype.Int2
+	ID                 int64
+	Subject            string
+	SubjectCode        pgtype.Text
+	TeacherFirstName   string
+	TeacherLastName    string
+	Title              string
+	Description        pgtype.Text
+	DueDate            pgtype.Date
+	CreatedAt          pgtype.Timestamptz
+	SubmittedAt        pgtype.Timestamptz
+	GradedValue        pgtype.Int2
+	SubmissionNote     pgtype.Text
+	SubmissionFileUuid pgtype.UUID
+	SubmissionFileName pgtype.Text
+	SubmissionFileSize pgtype.Int8
+	SubmissionFileType pgtype.Text
 }
 
 func (q *Queries) GetStudentHomework(ctx context.Context, arg GetStudentHomeworkParams) ([]GetStudentHomeworkRow, error) {
@@ -80,6 +91,11 @@ func (q *Queries) GetStudentHomework(ctx context.Context, arg GetStudentHomework
 			&i.CreatedAt,
 			&i.SubmittedAt,
 			&i.GradedValue,
+			&i.SubmissionNote,
+			&i.SubmissionFileUuid,
+			&i.SubmissionFileName,
+			&i.SubmissionFileSize,
+			&i.SubmissionFileType,
 		); err != nil {
 			return nil, err
 		}
@@ -103,13 +119,19 @@ SELECT
     h.due_date,
     h.created_at,
     hs.submitted_at,
-    hs.graded_value
+    hs.graded_value,
+    hs.note AS submission_note,
+    f.uuid AS submission_file_uuid,
+    f.original_name AS submission_file_name,
+    f.size AS submission_file_size,
+    f.type AS submission_file_type
 FROM homework h
          JOIN class_subjects csub ON csub.id = h.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN teachers t ON t.id = h.teacher_id
          LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $2
+         LEFT JOIN files f ON f.uuid = hs.file_uuid
 WHERE csub.school_id = $3
   AND csub.class_id = (
     SELECT ss.class_id
@@ -127,17 +149,22 @@ type GetStudentHomeworkByIDParams struct {
 }
 
 type GetStudentHomeworkByIDRow struct {
-	ID               int64
-	Subject          string
-	SubjectCode      pgtype.Text
-	TeacherFirstName string
-	TeacherLastName  string
-	Title            string
-	Description      pgtype.Text
-	DueDate          pgtype.Date
-	CreatedAt        pgtype.Timestamptz
-	SubmittedAt      pgtype.Timestamptz
-	GradedValue      pgtype.Int2
+	ID                 int64
+	Subject            string
+	SubjectCode        pgtype.Text
+	TeacherFirstName   string
+	TeacherLastName    string
+	Title              string
+	Description        pgtype.Text
+	DueDate            pgtype.Date
+	CreatedAt          pgtype.Timestamptz
+	SubmittedAt        pgtype.Timestamptz
+	GradedValue        pgtype.Int2
+	SubmissionNote     pgtype.Text
+	SubmissionFileUuid pgtype.UUID
+	SubmissionFileName pgtype.Text
+	SubmissionFileSize pgtype.Int8
+	SubmissionFileType pgtype.Text
 }
 
 func (q *Queries) GetStudentHomeworkByID(ctx context.Context, arg GetStudentHomeworkByIDParams) (GetStudentHomeworkByIDRow, error) {
@@ -155,6 +182,11 @@ func (q *Queries) GetStudentHomeworkByID(ctx context.Context, arg GetStudentHome
 		&i.CreatedAt,
 		&i.SubmittedAt,
 		&i.GradedValue,
+		&i.SubmissionNote,
+		&i.SubmissionFileUuid,
+		&i.SubmissionFileName,
+		&i.SubmissionFileSize,
+		&i.SubmissionFileType,
 	)
 	return i, err
 }
@@ -218,14 +250,13 @@ SELECT
     f.size AS file_size,
     f.type AS file_type,
     f.uuid AS file_uuid,
-    hs.type,
     hs.note,
     hs.submitted_at,
     hs.graded_value
 FROM homework_submissions hs
 JOIN homework h ON h.id = hs.homework_id
 JOIN students st ON st.id = hs.student_id
-LEFT JOIN files f ON f.id = hs.file_uuid
+LEFT JOIN files f ON f.uuid = hs.file_uuid
 WHERE hs.homework_id = $1
   AND EXISTS (
       SELECT 1
@@ -253,7 +284,6 @@ type GetTeacherHomeworkSubmissionsRow struct {
 	FileSize    pgtype.Int8
 	FileType    pgtype.Text
 	FileUuid    pgtype.UUID
-	Type        string
 	Note        pgtype.Text
 	SubmittedAt pgtype.Timestamptz
 	GradedValue pgtype.Int2
@@ -277,7 +307,6 @@ func (q *Queries) GetTeacherHomeworkSubmissions(ctx context.Context, arg GetTeac
 			&i.FileSize,
 			&i.FileType,
 			&i.FileUuid,
-			&i.Type,
 			&i.Note,
 			&i.SubmittedAt,
 			&i.GradedValue,
@@ -307,7 +336,6 @@ SELECT
     f.size AS file_size,
     f.type AS file_type,
     f.uuid AS file_uuid,
-    hs.type,
     hs.note,
     hs.submitted_at
 FROM homework_submissions hs
@@ -316,7 +344,7 @@ FROM homework_submissions hs
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN students st ON st.id = hs.student_id
-         LEFT JOIN files f ON f.id = hs.file_uuid
+         LEFT JOIN files f ON f.uuid = hs.file_uuid
 WHERE hs.graded_value IS NULL
   AND csub.school_id = $1
   AND csub.teacher_id = $2
@@ -342,7 +370,6 @@ type GetTeacherUngradedHomeworkSubmissionsRow struct {
 	FileSize        pgtype.Int8
 	FileType        pgtype.Text
 	FileUuid        pgtype.UUID
-	Type            string
 	Note            pgtype.Text
 	SubmittedAt     pgtype.Timestamptz
 }
@@ -370,7 +397,6 @@ func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg
 			&i.FileSize,
 			&i.FileType,
 			&i.FileUuid,
-			&i.Type,
 			&i.Note,
 			&i.SubmittedAt,
 		); err != nil {
@@ -385,42 +411,39 @@ func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg
 }
 
 const studentUpsertHomeworkSubmission = `-- name: StudentUpsertHomeworkSubmission :execrows
-INSERT INTO homework_submissions (homework_id, student_id, type, note, file_uuid)
-SELECT $1, $2, $3, $4, $5
+INSERT INTO homework_submissions (homework_id, student_id, note, file_uuid)
+SELECT $1, $2, $3, $4
 WHERE EXISTS (
     SELECT 1
     FROM homework h
     JOIN class_subjects csub ON csub.id = h.class_subjects_id
     WHERE h.id = $1
-      AND csub.school_id = $6
+      AND csub.school_id = $5
       AND csub.class_id = (
           SELECT ss.class_id
           FROM student_school ss
           WHERE ss.student_id = $2
-            AND ss.school_id = $6
+            AND ss.school_id = $5
       )
 )
 ON CONFLICT (homework_id, student_id) DO UPDATE
-SET type = EXCLUDED.type,
-    note = CASE WHEN EXCLUDED.type = 'note' THEN EXCLUDED.note ELSE NULL END,
-    file_uuid = CASE WHEN EXCLUDED.type = 'file' THEN EXCLUDED.file_uuid ELSE NULL END,
+SET note = EXCLUDED.note,
+    file_uuid = EXCLUDED.file_uuid,
     submitted_at = NOW()
 `
 
 type StudentUpsertHomeworkSubmissionParams struct {
-	HomeworkID     int32
-	StudentID      int32
-	SubmissionType string
-	Note           pgtype.Text
-	FileUuid       pgtype.UUID
-	SchoolID       int32
+	HomeworkID int32
+	StudentID  int32
+	Note       pgtype.Text
+	FileUuid   pgtype.UUID
+	SchoolID   int32
 }
 
 func (q *Queries) StudentUpsertHomeworkSubmission(ctx context.Context, arg StudentUpsertHomeworkSubmissionParams) (int64, error) {
 	result, err := q.db.Exec(ctx, studentUpsertHomeworkSubmission,
 		arg.HomeworkID,
 		arg.StudentID,
-		arg.SubmissionType,
 		arg.Note,
 		arg.FileUuid,
 		arg.SchoolID,

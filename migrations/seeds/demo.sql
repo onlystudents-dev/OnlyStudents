@@ -385,27 +385,27 @@ VALUES (1, NULL, 'image', 245760, 'feladatlap_megoldas.jpg', '00000000-0000-0000
        (34, NULL, 'archive', 184320, 'angol_nyelvtani_gyakorlatok.zip', '00000000-0000-0000-0000-000000000034', '2026-09-23'),
        (35, NULL, 'image', 122880, 'geometria_abrák.png', '00000000-0000-0000-0000-000000000035', '2026-09-21');
 
-INSERT INTO homework_submissions (homework_id, student_id, type, note, file_id, submitted_at, graded_value)
-VALUES (1, 1, 'file', NULL, 7, '2026-09-20 17:45:00+02', 5),
-       (2, 1, 'file', NULL, 8, '2026-09-20 19:10:00+02', 4),
-       (3, 1, 'file', NULL, 1, '2026-09-21 16:20:00+02', 3),
-       (4, 1, 'file', NULL, 10, '2026-09-21 18:05:00+02', 4),
-       (5, 1, 'file', NULL, 11, '2026-09-22 20:30:00+02', 5),
-       (6, 1, 'file', NULL, 12, '2026-09-23 17:00:00+02', NULL),
-       (7, 1, 'file', NULL, 13, '2026-09-24 15:40:00+02', NULL),
-       (8, 1, 'file', NULL, 14, '2026-09-24 21:15:00+02', NULL),
-       (9, 1, 'file', NULL, 2, '2026-09-24 21:15:00+02', NULL),
-       (10, 1, 'file', NULL, 15, '2026-09-27 14:20:00+02', 4),
-       (11, 1, 'file', NULL, 16, '2026-09-27 16:45:00+02', 5),
-       (12, 1, 'file', NULL, 17, '2026-09-28 18:30:00+02', 3),
-       (13, 1, 'file', NULL, 6, '2026-09-29 20:10:00+02', 4),
-       (14, 1, 'file', NULL, 5, '2026-09-30 17:50:00+02', NULL),
-       (15, 1, 'file', NULL, 3, '2026-09-30 19:25:00+02', NULL),
-       (16, 1, 'file', NULL, 18, '2026-10-02 09:15:00+02', NULL),
-       (17, 1, 'file', NULL, 19, '2026-09-30 21:40:00+02', NULL),
-       (18, 1, 'file', NULL, 20, '2026-10-01 15:35:00+02', NULL),
-       (19, 1, 'file', NULL, 4, '2026-10-02 16:55:00+02', NULL),
-       (20, 1, 'file', NULL, 9, '2026-10-03 11:20:00+02', NULL);
+INSERT INTO homework_submissions (homework_id, student_id, note, file_uuid, submitted_at, graded_value)
+VALUES (1, 1, 'Megoldottam mind a 9 feladatot, a 12. feladatban a törtek egyszerűsítésénél bizonytalan voltam, de végül sikerült.', '00000000-0000-0000-0000-000000000007', '2026-09-20 17:45:00+02', 5),
+       (2, 1, 'A szavak nagy részét már tudtam, az újakat kártyákkal tanultam meg.', '00000000-0000-0000-0000-000000000008', '2026-09-20 19:10:00+02', 4),
+       (3, 1, 'A feladatlap utolsó két feladatában segítségre volt szükségem.', '00000000-0000-0000-0000-000000000001', '2026-09-21 16:20:00+02', 3),
+       (4, 1, 'A háromszögekre vonatkozó feladatokat könnyebbnek találtam a szögeknél.', '00000000-0000-0000-0000-000000000010', '2026-09-21 18:05:00+02', 4),
+       (5, 1, 'A bemutatót PowerPointban készítettem el, 8 diát tartalmaz.', '00000000-0000-0000-0000-000000000011', '2026-09-22 20:30:00+02', 5),
+       (6, 1, 'Átnéztem a füzeteimet, de a szögek kiszámításánál még gyakorolnom kell.', '00000000-0000-0000-0000-000000000012', '2026-09-23 17:00:00+02', NULL),
+       (7, 1, 'A 4–8. feladatokat megoldottam, a 7. feladatban egy jelölési hibát vettem észre, és javítottam is.', '00000000-0000-0000-0000-000000000013', '2026-09-24 15:40:00+02', NULL),
+       (8, 1, 'A törtes feladatokat a munkafüzet segítségével oldottam meg.', '00000000-0000-0000-0000-000000000014', '2026-09-24 21:15:00+02', NULL),
+       (9, 1, 'A Java programot elindítottam, a tesztelésnél találtam egy hibát, amit javítottam.', '00000000-0000-0000-0000-000000000002', '2026-09-24 21:15:00+02', NULL),
+       (10, 1, 'A szöveget kétszer olvastam el, hogy minden kérdésre pontosan tudjak válaszolni.', '00000000-0000-0000-0000-000000000015', '2026-09-27 14:20:00+02', 4),
+       (11, 1, 'A térképen folyókat és városokat is bejelöltem a provinciák mellett.', '00000000-0000-0000-0000-000000000016', '2026-09-27 16:45:00+02', 5),
+       (12, 1, 'A mozgásos feladatok közül a gyorsulásos részben kellett több időt töltenem.', '00000000-0000-0000-0000-000000000017', '2026-09-28 18:30:00+02', 3),
+       (13, 1, 'A kísérletet otthon végeztem el, a sav-bázis indikátor színváltozását fényképeztem.', '00000000-0000-0000-0000-000000000006', '2026-09-29 20:10:00+02', 4),
+       (14, 1, 'A jegyzetet készítettem, a folyamatokat diagramokkal is kiegészítettem.', '00000000-0000-0000-0000-000000000005', '2026-09-30 17:50:00+02', NULL),
+       (15, 1, 'A prezentáció elkészítéséhez az iskolai könyvtár forrásait is használtam.', '00000000-0000-0000-0000-000000000003', '2026-09-30 19:25:00+02', NULL),
+       (16, 1, 'A mozgásnaplót egész héten vezettem, a hétvégi futásokat is beírtam.', '00000000-0000-0000-0000-000000000018', '2026-10-02 09:15:00+02', NULL),
+       (17, 1, 'A 25–30. feladatokat megoldottam, ezek közül a 27. feladat okozta a legnagyobb gondot.', '00000000-0000-0000-0000-000000000019', '2026-09-30 21:40:00+02', NULL),
+       (18, 1, 'Az esszét 150 szóban írtam meg, a nyári szünidőről.', '00000000-0000-0000-0000-000000000020', '2026-10-01 15:35:00+02', NULL),
+       (19, 1, 'A mérési jegyzőkönyvet a laboratóriumi gyakorlat alapján készítettem el.', '00000000-0000-0000-0000-000000000004', '2026-10-02 16:55:00+02', NULL),
+       (20, 1, 'A kémiai reakciók feladatait megoldottam, a redoxi reakciók okoztak nehézséget.', '00000000-0000-0000-0000-000000000009', '2026-10-03 11:20:00+02', NULL);
 
 -- Exams
 
@@ -462,6 +462,12 @@ WHERE bs.school_id = 1
   AND bs.group_id = 1
   AND bs.day_of_week = 4
   AND bs.lesson_num = 4;
+
+-- Absence reasons (student-submitted justification)
+
+INSERT INTO absence_reason (absence_id, submitted_at, note)
+VALUES (1, '2026-09-16', 'Orvosi igazolást küldtem, másnap leadtam az iskolában.'),
+       (3, '2026-09-18', 'Reggel elaludtam, ezért késtem a tanóráról.');
 
 SELECT setval(pg_get_serial_sequence('school_type', 'id'), (SELECT MAX(id) FROM school_type));
 SELECT setval(pg_get_serial_sequence('teachers', 'id'), (SELECT MAX(id) FROM teachers));

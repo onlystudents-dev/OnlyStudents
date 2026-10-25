@@ -27,6 +27,8 @@
         "GRADES": "Jegyek",
         "EXAMS": "Dolgozatok",
         "HOMEWORK": "Házi feladatok",
+        "SUBMISSION": "Beadott munka",
+        "GIVEN_REASON": "Megadott Ok",
         "ABSENCES": "Hiányzások",
         "SETTINGS": "Beállítások",
         "USER_SETTINGS": "Felhasználó beállítások",
