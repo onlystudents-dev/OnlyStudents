@@ -1,6 +1,6 @@
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faCheck, faXmark} from "@fortawesome/free-solid-svg-icons";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState} from "preact/compat";
 import {getKey} from "../util/language.ts";
 import {getPasswordConfig, isPasswordExposed, type PasswordConfig} from "./authConfig.ts";
 

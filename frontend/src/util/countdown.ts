@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "preact/compat";
 
 export function useCountdown(onExpire?: () => void) {
     const [remaining, setRemaining] = useState("")

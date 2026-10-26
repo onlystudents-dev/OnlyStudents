@@ -1,5 +1,5 @@
 import type {HomeworkSubmission, HomeworkSummary, Me} from "../../types/api.ts";
-import React from "react";
+import React from "preact/compat";
 import {formatUnixDate} from "../../util/time.ts";
 import {getKey, getLanguage} from "../../util/language.ts";
 import Skeleton from "../../util/skeleton/skeleton.tsx";

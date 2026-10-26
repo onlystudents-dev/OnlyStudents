@@ -15,65 +15,60 @@ import (
 type RequestWithID struct {
 	ID int64 `query:"id"`
 }
+
 type HomeworkSummary struct {
-	ID               int64  `json:"id"`
-	Subject          string `json:"subject"`
-	HasSubjectCode   bool   `json:"has_subject_code"`
-	SubjectCode      string `json:"subject_code"`
-	TeacherLastName  string `json:"teacher_last_name"`
-	TeacherFirstName string `json:"teacher_first_name"`
-	Title            string `json:"title"`
-	HasDescription   bool   `json:"has_description"`
-	Description      string `json:"description"`
-	DueDate          int64  `json:"due_date"`
-	CreatedAt        int64  `json:"created_at"`
-	SubmittedAt      int64  `json:"submitted_at"`
-	HasGradedValue   bool   `json:"has_graded_value"`
-	GradedValue      int16  `json:"graded_value"`
+	ID                 int64  `json:"id"`
+	Subject            string `json:"subject"`
+	SubjectCode        string `json:"subject_code"`
+	TeacherLastName    string `json:"teacher_last_name"`
+	TeacherFirstName   string `json:"teacher_first_name"`
+	Title              string `json:"title"`
+	Description        string `json:"description"`
+	DueDate            int64  `json:"due_date"`
+	CreatedAt          int64  `json:"created_at"`
+	SubmittedAt        int64  `json:"submitted_at"`
+	GradedValue        int16  `json:"graded_value"`
+	SubmissionNote     string `json:"submission_note"`
+	SubmissionFileName string `json:"submission_file_name"`
+	SubmissionFileType string `json:"submission_file_type"`
+	SubmissionFileSize int64  `json:"submission_file_size"`
+	SubmissionFileUUID string `json:"submission_file_uuid"`
 }
 
 type AbsenceSummary struct {
-	ID                  int64       `json:"id"`
-	Subject             string      `json:"subject"`
-	HasSubjectCode      bool        `json:"has_subject_code"`
-	SubjectCode         string      `json:"subject_code"`
-	HasTeacherLastName  bool        `json:"has_teacher_last_name"`
-	HasTeacherFirstName bool        `json:"has_teacher_first_name"`
-	TeacherLastName     string      `json:"teacher_last_name"`
-	TeacherFirstName    string      `json:"teacher_first_name"`
-	Date                int64       `json:"date"`
-	ReasonType          string      `json:"reason_type"`
-	FileName            string      `json:"file_name"`
-	FileType            string      `json:"file_type"`
-	FileSize            int64       `json:"file_size"`
-	FileUUID            string      `json:"file_uuid"`
-	ReasonNote          string      `json:"reason_note"`
-	Note                string      `json:"note"`
-	Justified           bool        `json:"justified"`
-	VerifiedBy          interface{} `json:"verified_by"`
+	ID               int64       `json:"id"`
+	Subject          string      `json:"subject"`
+	SubjectCode      string      `json:"subject_code"`
+	TeacherLastName  string      `json:"teacher_last_name"`
+	TeacherFirstName string      `json:"teacher_first_name"`
+	Date             int64       `json:"date"`
+	FileName         string      `json:"file_name"`
+	FileType         string      `json:"file_type"`
+	FileSize         int64       `json:"file_size"`
+	FileUUID         string      `json:"file_uuid"`
+	ReasonNote       string      `json:"reason_note"`
+	Note             string      `json:"note"`
+	Justified        bool        `json:"justified"`
+	VerifiedBy       interface{} `json:"verified_by"`
 }
 
 type ExamSummary struct {
 	ID               int64  `json:"id"`
 	Subject          string `json:"subject"`
-	HasSubjectCode   bool   `json:"has_subject_code"`
 	SubjectCode      string `json:"subject_code"`
 	TeacherLastName  string `json:"teacher_last_name"`
 	TeacherFirstName string `json:"teacher_first_name"`
 	Title            string `json:"title"`
-	HasDescription   bool   `json:"has_description"`
 	Description      string `json:"description"`
 	Date             int64  `json:"date"`
 	StartTime        int64  `json:"start_time"`
 	EndTime          int64  `json:"end_time"`
-	HasRoom          bool   `json:"has_room"`
 	Room             string `json:"room"`
 }
 
 type GradeSummary struct {
 	ID               int64  `json:"id"`
 	Subject          string `json:"subject"`
-	HasSubjectCode   bool   `json:"has_subject_code"`
 	SubjectCode      string `json:"subject_code"`
 	TeacherLastName  string `json:"teacher_last_name"`
 	TeacherFirstName string `json:"teacher_first_name"`
@@ -82,14 +77,12 @@ type GradeSummary struct {
 	Weight           int32  `json:"weight"`
 	Value            int16  `json:"value"`
 	Date             int64  `json:"date"`
-	HasNote          bool   `json:"has_note"`
 	Note             string `json:"note"`
 }
 
 type FinalGradeSummary struct {
 	ID               int64  `json:"id"`
 	Subject          string `json:"subject"`
-	HasSubjectCode   bool   `json:"has_subject_code"`
 	SubjectCode      string `json:"subject_code"`
 	TeacherLastName  string `json:"teacher_last_name"`
 	TeacherFirstName string `json:"teacher_first_name"`
@@ -112,7 +105,6 @@ func convertGrade(row db_queries.GetStudentGradesRow) GradeSummary {
 	return GradeSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
-		HasSubjectCode:   row.SubjectCode.Valid,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -121,7 +113,6 @@ func convertGrade(row db_queries.GetStudentGradesRow) GradeSummary {
 		Weight:           row.Weight,
 		Value:            row.Value,
 		Date:             row.Date.Time.Unix(),
-		HasNote:          row.Note.Valid,
 		Note:             row.Note.String,
 	}
 }
@@ -130,7 +121,6 @@ func convertGradeBySubject(row db_queries.GetStudentGradesBySubjectRow) GradeSum
 	return GradeSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
-		HasSubjectCode:   row.SubjectCode.Valid,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -139,7 +129,6 @@ func convertGradeBySubject(row db_queries.GetStudentGradesBySubjectRow) GradeSum
 		Weight:           row.Weight,
 		Value:            row.Value,
 		Date:             row.Date.Time.Unix(),
-		HasNote:          row.Note.Valid,
 		Note:             row.Note.String,
 	}
 }
@@ -148,7 +137,6 @@ func convertFinalGrade(row db_queries.GetStudentFinalGradesRow) FinalGradeSummar
 	return FinalGradeSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
-		HasSubjectCode:   row.SubjectCode.Valid,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -159,43 +147,41 @@ func convertFinalGrade(row db_queries.GetStudentFinalGradesRow) FinalGradeSummar
 
 func convertAbsence(row db_queries.GetStudentAbsencesRow) AbsenceSummary {
 	return AbsenceSummary{
-		ID:                  row.ID,
-		Subject:             row.Subject,
-		HasSubjectCode:      row.SubjectCode.Valid,
-		SubjectCode:         row.SubjectCode.String,
-		HasTeacherFirstName: row.TeacherFirstName.Valid,
-		HasTeacherLastName:  row.TeacherLastName.Valid,
-		TeacherFirstName:    row.TeacherFirstName.String,
-		TeacherLastName:     row.TeacherLastName.String,
-		Date:                row.Date.Time.Unix(),
-		ReasonType:          row.ReasonType.String,
-		FileName:            row.FileName.String,
-		FileType:            row.FileType.String,
-		FileSize:            row.FileSize.Int64,
-		FileUUID:            row.FileUuid.String(),
-		ReasonNote:          row.ReasonNote.String,
-		Note:                row.Note.String,
-		Justified:           row.Justified,
-		VerifiedBy:          row.VerifiedBy,
+		ID:               row.ID,
+		Subject:          row.Subject,
+		SubjectCode:      row.SubjectCode.String,
+		TeacherFirstName: row.TeacherFirstName.String,
+		TeacherLastName:  row.TeacherLastName.String,
+		Date:             row.Date.Time.Unix(),
+		FileName:         row.FileName.String,
+		FileType:         row.FileType.String,
+		FileSize:         row.FileSize.Int64,
+		FileUUID:         row.FileUuid.String(),
+		ReasonNote:       row.ReasonNote.String,
+		Note:             row.Note.String,
+		Justified:        row.Justified,
+		VerifiedBy:       row.VerifiedBy,
 	}
 }
 
 func convertHomework(row db_queries.GetStudentHomeworkRow) HomeworkSummary {
 	return HomeworkSummary{
-		ID:               row.ID,
-		Subject:          row.Subject,
-		HasSubjectCode:   row.SubjectCode.Valid,
-		SubjectCode:      row.SubjectCode.String,
-		TeacherLastName:  row.TeacherLastName,
-		TeacherFirstName: row.TeacherFirstName,
-		Title:            row.Title,
-		HasDescription:   row.Description.Valid,
-		Description:      row.Description.String,
-		DueDate:          row.DueDate.Time.Unix(),
-		CreatedAt:        row.CreatedAt.Time.Unix(),
-		SubmittedAt:      row.SubmittedAt.Time.Unix(),
-		HasGradedValue:   row.GradedValue.Valid,
-		GradedValue:      row.GradedValue.Int16,
+		ID:                 row.ID,
+		Subject:            row.Subject,
+		SubjectCode:        row.SubjectCode.String,
+		TeacherLastName:    row.TeacherLastName,
+		TeacherFirstName:   row.TeacherFirstName,
+		Title:              row.Title,
+		Description:        row.Description.String,
+		DueDate:            row.DueDate.Time.Unix(),
+		CreatedAt:          row.CreatedAt.Time.Unix(),
+		SubmittedAt:        row.SubmittedAt.Time.Unix(),
+		GradedValue:        row.GradedValue.Int16,
+		SubmissionNote:     row.SubmissionNote.String,
+		SubmissionFileName: row.SubmissionFileName.String,
+		SubmissionFileType: row.SubmissionFileType.String,
+		SubmissionFileSize: row.SubmissionFileSize.Int64,
+		SubmissionFileUUID: row.SubmissionFileUuid.String(),
 	}
 }
 
@@ -203,17 +189,14 @@ func convertHomeworkByID(row db_queries.GetStudentHomeworkByIDRow) HomeworkSumma
 	return HomeworkSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
-		HasSubjectCode:   row.SubjectCode.Valid,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
 		Title:            row.Title,
-		HasDescription:   row.Description.Valid,
 		Description:      row.Description.String,
 		DueDate:          row.DueDate.Time.Unix(),
 		CreatedAt:        row.CreatedAt.Time.Unix(),
 		SubmittedAt:      row.SubmittedAt.Time.Unix(),
-		HasGradedValue:   row.GradedValue.Valid,
 		GradedValue:      row.GradedValue.Int16,
 	}
 }
@@ -222,17 +205,14 @@ func convertExams(row db_queries.GetStudentExamsRow) ExamSummary {
 	return ExamSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
-		HasSubjectCode:   row.SubjectCode.Valid,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
 		Title:            row.Title,
-		HasDescription:   row.Description.Valid,
 		Description:      row.Description.String,
 		Date:             row.Date.Time.Unix(),
 		StartTime:        row.StartTime.Microseconds / 1000000,
 		EndTime:          row.EndTime.Microseconds / 1000000,
-		HasRoom:          row.Room.Valid,
 		Room:             row.Room.String,
 	}
 }
@@ -241,17 +221,14 @@ func convertExam(row db_queries.GetStudentExamRow) ExamSummary {
 	return ExamSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
-		HasSubjectCode:   row.SubjectCode.Valid,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
 		Title:            row.Title,
-		HasDescription:   row.Description.Valid,
 		Description:      row.Description.String,
 		Date:             row.Date.Time.Unix(),
 		StartTime:        row.StartTime.Microseconds / 1000000,
 		EndTime:          row.EndTime.Microseconds / 1000000,
-		HasRoom:          row.Room.Valid,
 		Room:             row.Room.String,
 	}
 }

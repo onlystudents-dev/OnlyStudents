@@ -9,7 +9,7 @@ import {
     faUser,
     faUserLock
 } from "@fortawesome/free-solid-svg-icons";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState} from "preact/compat";
 import Loading from "../../util/loading.tsx";
 import {fromResponse, getKey, getLanguage, languages} from "../../util/language.ts";
 import Config from "./config.tsx";

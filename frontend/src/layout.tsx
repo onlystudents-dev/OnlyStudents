@@ -1,5 +1,5 @@
-import {Fragment, Suspense, lazy, useEffect} from "react";
-import type {ComponentType} from "react";
+import {Fragment, Suspense, lazy, useEffect} from "preact/compat";
+import type {ComponentType} from "preact/compat";
 import type {Dispatch, StateUpdater} from "preact/hooks";
 import {useLocation} from "wouter";
 import type {Me, Role} from "./types/api.ts";

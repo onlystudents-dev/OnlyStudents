@@ -27,6 +27,8 @@
         "GRADES": "Grades",
         "EXAMS": "Exams",
         "HOMEWORK": "Homework",
+        "SUBMISSION": "Submission",
+        "GIVEN_REASON": "Given Reason",
         "ABSENCES": "Absences",
         "SETTINGS": "Settings",
         "USER_SETTINGS": "User settings",
@@ -169,6 +171,10 @@
         "TEACHER": "Teacher"
     },
     "errors": {
+        "NOT_FOUND": "Oops! That doesn't exist. Please try again.",
+        "FILE_TOO_BIG": "The file you tried to upload is too big. Please try again.",
+        "MISSING_FILE": "Oops! You forgot to upload a file!",
+        "FILE_TYPE_NOT_ALLOWED": "The type of file you tried to upload is not allowed. Please try again.",
         "LOGIN_FAILED": "Login failed. Please try again.",
         "REQUEST_CANCELLED": "Your request was cancelled for an unknown reason. Please try again.",
         "GATEWAY_TIMEOUT": "Your request did not complete in time. Please try again later.",

@@ -1,5 +1,5 @@
 import "./button.css";
-import type {ReactNode} from "react";
+import type {ReactNode} from "preact/compat";
 import type {Ref} from "preact";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";

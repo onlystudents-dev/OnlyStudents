@@ -2,7 +2,7 @@ import "./grades.css";
 import type {Me, Grade, Subject} from "../../types/api.ts";
 import {useState} from "preact/hooks";
 import {fetchWithSchool} from "../../util/api.ts";
-import {useCallback, useEffect} from "react";
+import {useCallback, useEffect} from "preact/compat";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";

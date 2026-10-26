@@ -1,6 +1,6 @@
 import type {Class, Exam, HomeworkSummary, Lesson, LessonTime, Room} from "../../types/api.ts";
 import {fromResponse, getLanguage} from "../../util/language.ts";
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "preact/compat";
 import {toast} from "react-toastify";
 import "../homework/homework.css";
 import {fetchInto, fetchWithSchool, getRetryAfter} from "../../util/api.ts";
@@ -31,7 +31,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         unauthorizedRef.current = unauthorized
     })
 
-    const weekOffset = useRef(0)
+    const weekOffsetRef = useRef(0)
 
     const fetchWeekLessons = useCallback(async (target: number) => {
         setLoading(true)
@@ -69,7 +69,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
                 return
             }
 
-            weekOffset.current = target
+            weekOffsetRef.current = target
 
             if (monday.getMonth() >= 7) {
                 setYear(`${monday.getFullYear()}-${monday.getFullYear() + 1}`)
@@ -133,7 +133,6 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
     }, [fetchWeekLessons])
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         void Fetch()
     }, [Fetch])
 
@@ -143,7 +142,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         <>
             {loading && <Loading />}
             {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
-            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffset.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffset.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} />
+            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} />
         </>
     )
 }
@@ -153,13 +152,13 @@ function Popup({ lesson, rooms, clear }: PopupProps) {
     const [exam, setExam] = useState<Exam | null>(null)
 
     useEffect(() => {
-        if (lesson.has_homework_id) {
+        if (lesson.homework_id != 0) {
             void fetchWithSchool(`/api/v1/me/student/homework/get?id=${lesson.homework_id}`).then(async res => setHomework(await res.json() as HomeworkSummary))
         }
-        if (lesson.has_exam_id) {
+        if (lesson.exam_id != 0) {
             void fetchWithSchool(`/api/v1/me/student/exams/get?id=${lesson.exam_id}`).then(async res => setExam(await res.json() as Exam))
         }
-    }, [lesson.exam_id, lesson.has_exam_id, lesson.has_homework_id, lesson.homework_id]);
+    }, [lesson.exam_id, lesson.homework_id]);
 
     return (
         <>
@@ -182,14 +181,14 @@ function Popup({ lesson, rooms, clear }: PopupProps) {
                     </div>
 
                     <div className="absolute top-28 left-6 right-6 h-fit fredoka flex flex-row gap-2">
-                        {lesson.has_homework_id && <div className="min-w-[50%] flex flex-col gap-1">
+                        {lesson.homework_id != 0 && <div className="min-w-[50%] flex flex-col gap-1">
                             <div className="flex flex-row w-full items-center gap-2">
                                 <Badge icon={faHouseChimney} className="bg-(--warning-base-color) text-(--warning-color)" />
                                 <p className="text-3xl rubik truncate">{homework?.title || <Skeleton width={128} height={36} color="var(--hover-color)" />}</p>
                             </div>
                             <p className="fredoka wrap-break-word">{homework?.description || <Skeleton width={256} height={24} color="var(--hover-color)" />}</p>
                         </div>}
-                        {lesson.has_exam_id && <div className="min-w-[50%] flex flex-col">
+                        {lesson.exam_id != 0 && <div className="min-w-[50%] flex flex-col">
                             <div className="flex flex-row w-full items-center gap-2">
                                 <Badge icon={faPenToSquare} className="bg-(--wrong-base-color) text-(--wrong-color)" />
                                 <p className="text-3xl rubik truncate">{exam?.title || <Skeleton width={128} height={36} color="var(--hover-color)" />}</p>

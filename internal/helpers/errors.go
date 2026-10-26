@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -38,6 +39,8 @@ var db_errors = map[string]ErrorType{
 }
 
 func MapDBError(err error) (string, int) {
+	slog.Debug("DB Error", "error", err.Error())
+
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
 		return "NOT_FOUND", 404

@@ -71,7 +71,6 @@ type UngradedHomeworkSubmissionSummary struct {
 	FirstName       string `json:"first_name"`
 	LastName        string `json:"last_name"`
 	DueDate         int64  `json:"due_date"`
-	Type            string `json:"type"`
 	FileName        string `json:"file_name"`
 	FileType        string `json:"file_type"`
 	FileSize        int64  `json:"file_size"`
@@ -86,7 +85,6 @@ type HomeworkSubmissionSummary struct {
 	FirstName      string `json:"first_name"`
 	LastName       string `json:"last_name"`
 	DueDate        int64  `json:"due_date"`
-	Type           string `json:"type"`
 	Note           string `json:"note"`
 	FileName       string `json:"file_name"`
 	FileType       string `json:"file_type"`
@@ -103,7 +101,6 @@ func convertHomeworkSubmission(row db_queries.GetTeacherHomeworkSubmissionsRow) 
 		FirstName:      row.FirstName,
 		LastName:       row.LastName,
 		DueDate:        row.DueDate.Time.Unix(),
-		Type:           row.Type,
 		FileName:       row.FileName.String,
 		FileType:       row.FileType.String,
 		FileSize:       row.FileSize.Int64,
@@ -125,7 +122,6 @@ func convertUngradedHomeworkSubmission(row db_queries.GetTeacherUngradedHomework
 		FirstName:       row.FirstName,
 		LastName:        row.LastName,
 		DueDate:         row.DueDate.Time.Unix(),
-		Type:            row.Type,
 		FileName:        row.FileName.String,
 		FileType:        row.FileType.String,
 		FileSize:        row.FileSize.Int64,

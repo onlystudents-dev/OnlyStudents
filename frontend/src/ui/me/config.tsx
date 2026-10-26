@@ -1,6 +1,6 @@
 import type {IconDefinition} from "@fortawesome/fontawesome-svg-core";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import React, {useState} from "react";
+import React, {useState} from "preact/compat";
 import Overlay from "../../util/overlay/overlay.tsx";
 
 export default function Config({ icon, text, value, children, className}: {icon: IconDefinition, text: string, value: string, children: React.ReactNode | ((close: () => void) => React.ReactNode), className?: string}) {

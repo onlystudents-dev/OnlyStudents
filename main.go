@@ -70,6 +70,15 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				},
 			})
 		}),
+		"files": fiber.Map{
+			helpers.RoutesGroupMWKey: []fiber.Handler{authLimit, auth},
+			":file_uuid": fiber.Map{
+				fiber.MethodGet:    func(c fiber.Ctx) error { return meapi.GetFile(c, pool, rdb) },
+				fiber.MethodDelete: func(c fiber.Ctx) error { return meapi.FileDelete(c, pool, rdb) },
+			},
+			fiber.MethodPost: func(c fiber.Ctx) error { return meapi.FileUpload(c, pool, rdb) },
+		},
+		"uploads/:file_uuid": helpers.Get(func(c fiber.Ctx) error { return meapi.FetchFile(c, pool, rdb) }),
 		"admin_token_login": helpers.Post([]fiber.Handler{
 			authLimit,
 			func(c fiber.Ctx) error { return adminapi.AdminTokenLogin(c, pool, rdb) },
@@ -299,15 +308,13 @@ func main() {
 		slog.Warn("DEMO_MODE = true is not recommended in production!")
 	}
 
-	if !fiber.IsChild() {
-		f, err := helpers.SetupLogging()
+	f, err := helpers.SetupLogging()
 
-		if err != nil {
-			panic(err)
-		}
-
-		defer f.Close()
+	if err != nil {
+		panic(err)
 	}
+
+	defer f.Close()
 
 	pool := db.Connect()
 
@@ -346,7 +353,7 @@ func main() {
 		JSONEncoder:  json.Marshal,
 		JSONDecoder:  json.Unmarshal,
 		AppName:      helpers.AppName,
-		BodyLimit:    1 << 18,
+		BodyLimit:    int(1 << 20 * (helpers.GetInt64EnvFallback("MAX_FILE_SIZE", 10, 99999) + 1)),
 		ReadTimeout:  time.Duration(helpers.GetInt64EnvFallback("SERVER_READ_TIMEOUT", 10, 3600)) * time.Second,
 		WriteTimeout: time.Duration(helpers.GetInt64EnvFallback("SERVER_WRITE_TIMEOUT", 30, 3600)) * time.Second,
 		IdleTimeout:  time.Duration(helpers.GetInt64EnvFallback("SERVER_IDLE_TIMEOUT", 120, 86400)) * time.Second,
@@ -403,6 +410,7 @@ func main() {
 		panic(err)
 	}
 	helpers.CacheLanguages()
+	helpers.InitFileExts()
 
 	initCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	if err := helpers.InitCss(initCtx, pool, rdb, indexHTML); err != nil {
@@ -420,6 +428,10 @@ func main() {
 
 	api := app.Group("/api/v1")
 	helpers.RegisterRoutes(api, buildRoutes(pool, rdb, opaque_server))
+
+	app.Use(func(c fiber.Ctx) error {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "NOT_FOUND"})
+	})
 
 	log.Fatal(app.Listen(":8080",
 		fiber.ListenConfig{

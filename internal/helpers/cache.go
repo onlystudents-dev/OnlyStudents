@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/redis/go-redis/v9"
@@ -437,6 +438,13 @@ func CacheOrGetBaseScheduleGroup(ctx context.Context, rdb *redis.Client, queries
 			SchoolID: scope.SchoolID,
 			GroupID:  groupID,
 		})
+	})
+}
+
+func CacheOrGetFile(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, file_uuid uuid.UUID, ttl int32) (db_queries.GetFileRow, error) {
+	key := fmt.Sprintf("file:%s", file_uuid)
+	return CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.GetFileRow, error) {
+		return queries.GetFile(ctx, pgtype.UUID{Bytes: file_uuid, Valid: true})
 	})
 }
 

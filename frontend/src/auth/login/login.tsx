@@ -1,6 +1,6 @@
 import "./login.css";
 import Button from "../../util/button/button.tsx";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "preact/compat";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight, faQuestion} from "@fortawesome/free-solid-svg-icons";
 import PasswordReset from "../pwr/pwr.tsx";

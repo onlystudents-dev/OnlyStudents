@@ -16,6 +16,7 @@ services:
       - .env
     volumes:
       - app-logs:/app/logs
+      - app-uploads:/app/uploads
     depends_on:
       logs-init:
         condition: service_completed_successfully
@@ -73,3 +74,4 @@ services:
 volumes:
   postgresql:
   app-logs:
+  app-uploads:

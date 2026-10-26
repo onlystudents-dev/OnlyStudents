@@ -1,6 +1,6 @@
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTriangleExclamation} from "@fortawesome/free-solid-svg-icons";
-import {useEffect} from "react";
+import {useEffect} from "preact/compat";
 import {getKey} from "./language.ts";
 import Overlay from "./overlay/overlay.tsx";
 import {useCountdown} from "./countdown.ts";

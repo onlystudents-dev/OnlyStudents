@@ -8,7 +8,6 @@ SELECT
     a.date,
     a.type,
     a.justified,
-    ar.type AS reason_type,
     f.original_name AS file_name,
     f.size AS file_size,
     f.type AS file_type,
@@ -24,7 +23,7 @@ LEFT JOIN base_schedule bs ON bs.id = a.lesson_id
 LEFT JOIN teachers t ON t.id = COALESCE(bs.teacher_id, csub.teacher_id)
 LEFT JOIN teachers v ON v.id = a.verified_by
 LEFT JOIN absence_reason ar ON ar.absence_id = a.id
-LEFT JOIN files f ON f.id = ar.file_id
+LEFT JOIN files f ON f.uuid = ar.file_uuid
 WHERE a.student_id = sqlc.arg(student_id)
   AND (
     csub.school_id = sqlc.arg(school_id)
@@ -33,8 +32,8 @@ WHERE a.student_id = sqlc.arg(student_id)
 ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id;
 
 -- name: StudentUpsertAbsenceReason :execrows
-INSERT INTO absence_reason (absence_id, submitted_at, type, note, file_id)
-SELECT sqlc.arg(absence_id), CURRENT_DATE, sqlc.arg(submission_type), sqlc.arg(note), sqlc.arg(file_id)
+INSERT INTO absence_reason (absence_id, submitted_at, note, file_uuid)
+SELECT sqlc.arg(absence_id)::int, CURRENT_DATE, sqlc.arg(note), sqlc.arg(file_uuid)
 WHERE EXISTS (
     SELECT 1
     FROM absences a
@@ -45,9 +44,8 @@ WHERE EXISTS (
 )
 ON CONFLICT (absence_id) DO UPDATE
 SET submitted_at = CURRENT_DATE,
-    type = EXCLUDED.type,
-    note = CASE WHEN EXCLUDED.type = 'note' THEN EXCLUDED.note ELSE NULL END,
-    file_id = CASE WHEN EXCLUDED.type = 'file' THEN EXCLUDED.file_id ELSE NULL END;
+    note = EXCLUDED.note,
+    file_uuid = EXCLUDED.file_uuid;
 
 -- name: GetTeacherAbsences :many
 SELECT
@@ -61,7 +59,6 @@ SELECT
     a.date,
     a.type,
     a.justified,
-    ar.type AS reason_type,
     f.original_name AS file_name,
     f.size AS file_size,
     f.type AS file_type,
@@ -75,7 +72,7 @@ JOIN students st ON st.id = a.student_id
 LEFT JOIN subjects s ON s.id = csub.subject_id
 LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
 LEFT JOIN absence_reason ar ON ar.absence_id = a.id
-LEFT JOIN files f ON f.id = ar.file_id
+LEFT JOIN files f ON f.uuid = ar.file_uuid
 WHERE csub.school_id = $1
   AND csub.teacher_id = $2
 ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id;

@@ -2,6 +2,7 @@ package timetable
 
 import (
 	"context"
+	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -28,6 +29,7 @@ func TeacherTimeTableSummaryByID[request_type, Row, T any](
 	}
 
 	if request_check_func(req) {
+		slog.Debug("TeacherTimeTableSummaryByID bad request check failed")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
@@ -125,6 +127,7 @@ func TeacherTimeTableModify[request_type any](
 	}
 
 	if request_check_func(req) {
+		slog.Debug("TeacherTimeTableModify bad request check failed")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 

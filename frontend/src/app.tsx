@@ -1,6 +1,6 @@
 import {Route, Switch} from "wouter";
 import {ToastContainer} from "react-toastify";
-import {lazy, Suspense, useEffect, useRef, useState} from "react";
+import {lazy, Suspense, useEffect, useRef, useState} from "preact/compat";
 import Loading from "./util/loading.tsx";
 import type { Me } from "./types/api.ts";
 import { fetchLanguage } from "./util/language.ts";
@@ -16,21 +16,21 @@ const Login = lazy(() => import("./auth/login/login.tsx"))
 
 export default function App({ reload }: {reload: () => void}) {
     const [popupLogin, setPopupLogin] = useState(false)
-    const loginResolver = useRef<((me: Me | null) => void) | null>(null)
+    const loginResolverRef = useRef<((me: Me | null) => void) | null>(null)
 
     function unauthorized() {
         setPopupLogin(true)
 
         return new Promise<Me | null>(resolve => {
-            loginResolver.current = resolve
+            loginResolverRef.current = resolve
         })
     }
 
     async function popupLoginF() {
         const me = await fetchMe()
         setPopupLogin(false)
-        loginResolver.current?.(me)
-        loginResolver.current = null
+        loginResolverRef.current?.(me)
+        loginResolverRef.current = null
         return me
     }
 

@@ -1,5 +1,5 @@
 import AdminLogin from "./auth/login.tsx";
-import {useEffect} from "react";
+import {useEffect} from "preact/compat";
 import {useState} from "preact/hooks";
 import Loading from "../util/loading.tsx";
 import {type AdminStatusData} from "../types/admin.ts";

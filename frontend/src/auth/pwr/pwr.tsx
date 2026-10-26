@@ -2,7 +2,7 @@ import "./pwr.css";
 import Button from "../../util/button/button.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faPaperPlane, faPlane} from "@fortawesome/free-solid-svg-icons";
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "preact/compat";
 import {toast} from "react-toastify";
 import PasswordCheck from "../pwc.tsx";
 import {fromResponse, getKey} from "../../util/language.ts";

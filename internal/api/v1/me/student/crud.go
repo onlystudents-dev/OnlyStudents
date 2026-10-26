@@ -2,6 +2,7 @@ package studentapi
 
 import (
 	"context"
+	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -30,6 +31,7 @@ func StudentSummary[Row, T, request_type any](
 
 	if request_check_func != nil {
 		if err := c.Bind().Query(&req); err != nil {
+			slog.Debug("StudentSummary bad request check failed")
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 		}
 
@@ -85,6 +87,7 @@ func StudentModify[request_type any](
 	}
 
 	if request_check_func(req) {
+		slog.Debug("StudentModify bad request check failed")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
