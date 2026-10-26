@@ -39,7 +39,7 @@ var db_errors = map[string]ErrorType{
 }
 
 func MapDBError(err error) (string, int) {
-	slog.Debug("DB Error", err.Error())
+	slog.Debug("DB Error", "error", err.Error())
 
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
