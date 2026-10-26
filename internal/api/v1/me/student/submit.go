@@ -14,14 +14,12 @@ import (
 type SubmitHomeworkRequest struct {
 	HomeworkID int32  `json:"homework_id"`
 	Note       string `json:"note"`
-	FileType   string `json:"file_type"`
 	FileUUID   string `json:"file_uuid"`
 }
 
 type SubmitAbsenceReasonRequest struct {
 	AbsenceID int32  `json:"absence_id"`
 	Note      string `json:"note"`
-	FileType  string `json:"file_type"`
 	FileUUID  string `json:"file_uuid"`
 }
 

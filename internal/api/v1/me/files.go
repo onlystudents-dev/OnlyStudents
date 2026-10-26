@@ -1,6 +1,7 @@
 package meapi
 
 import (
+	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"os"
@@ -42,12 +43,14 @@ func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
-	if float64(file.Size/MB) > float64(helpers.GetInt64EnvFallback("MAX_FILE_SIZE", 10, 99999)) {
+	if float64(file.Size)/float64(MB) > float64(helpers.GetInt64EnvFallback("MAX_FILE_SIZE", 10, 99999)) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "FILE_TOO_BIG"})
 	}
 
 	if helpers.GetEnvFallback("FILE_UPLOAD_BACKEND", "directory") == "directory" {
-		if err := c.SaveFile(file, filepath.Join(helpers.GetEnvFallback("FILE_UPLOADS_DIR", "./uploads"), fileUuid.String())); err != nil {
+		err := c.SaveFile(file, filepath.Join(helpers.GetEnvFallback("FILE_UPLOADS_DIR", "./uploads"), fileUuid.String()))
+		if err != nil {
+			slog.Error(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 		}
 	} else {
@@ -70,14 +73,16 @@ func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	})
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+		slog.Error(err.Error())
+		error_code, status_code := helpers.MapDBError(err)
+		return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 	}
 
 	if rows_changed != 1 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	return c.JSON(fiber.Map{"uuid": fileUuid.String()})
+	return c.JSON(fiber.Map{"file_uuid": fileUuid.String()})
 }
 
 func FileDelete(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {

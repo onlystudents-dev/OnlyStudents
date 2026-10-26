@@ -2,6 +2,7 @@ package teacherapi
 
 import (
 	"context"
+	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 
@@ -28,6 +29,7 @@ func TeacherSummaryByID[request_type, Row, T any](
 	}
 
 	if request_check_func(req) {
+		slog.Debug("TeacherSummaryByID bad request check failed")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
@@ -129,6 +131,7 @@ func TeacherModify[request_type any](
 	}
 
 	if request_check_func(req) {
+		slog.Debug("TeacherModify bad request check failed")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 

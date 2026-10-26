@@ -30,6 +30,7 @@ var sniffedMIMEs = map[FileCategory][]string{
 	CategoryDocument: {
 		"text/plain; charset=utf-8",
 		"application/zip", // docx sniffs as zip
+		"application/pdf",
 	},
 	CategoryArchive: {
 		"application/zip",

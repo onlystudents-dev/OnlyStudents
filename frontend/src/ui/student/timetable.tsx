@@ -1,6 +1,6 @@
 import type {Class, Exam, HomeworkSummary, Lesson, LessonTime, Room} from "../../types/api.ts";
 import {fromResponse, getLanguage} from "../../util/language.ts";
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "preact/compat";
 import {toast} from "react-toastify";
 import "../homework/homework.css";
 import {fetchInto, fetchWithSchool, getRetryAfter} from "../../util/api.ts";
@@ -31,7 +31,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         unauthorizedRef.current = unauthorized
     })
 
-    const weekOffset = useRef(0)
+    const weekOffsetRef = useRef(0)
 
     const fetchWeekLessons = useCallback(async (target: number) => {
         setLoading(true)
@@ -69,7 +69,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
                 return
             }
 
-            weekOffset.current = target
+            weekOffsetRef.current = target
 
             if (monday.getMonth() >= 7) {
                 setYear(`${monday.getFullYear()}-${monday.getFullYear() + 1}`)
@@ -133,7 +133,6 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
     }, [fetchWeekLessons])
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         void Fetch()
     }, [Fetch])
 
@@ -143,7 +142,7 @@ export default function StudentTimetable({ me, unauthorized }: FeatureProps) {
         <>
             {loading && <Loading />}
             {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
-            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffset.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffset.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} />
+            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} />
         </>
     )
 }

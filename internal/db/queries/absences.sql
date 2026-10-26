@@ -33,7 +33,7 @@ ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id;
 
 -- name: StudentUpsertAbsenceReason :execrows
 INSERT INTO absence_reason (absence_id, submitted_at, note, file_uuid)
-SELECT sqlc.arg(absence_id), CURRENT_DATE, sqlc.arg(note), sqlc.arg(file_uuid)
+SELECT sqlc.arg(absence_id)::int, CURRENT_DATE, sqlc.arg(note), sqlc.arg(file_uuid)
 WHERE EXISTS (
     SELECT 1
     FROM absences a

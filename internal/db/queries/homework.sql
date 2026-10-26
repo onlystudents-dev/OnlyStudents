@@ -127,7 +127,7 @@ WHERE h.id = $1
 
 -- name: StudentUpsertHomeworkSubmission :execrows
 INSERT INTO homework_submissions (homework_id, student_id, note, file_uuid)
-SELECT sqlc.arg(homework_id), sqlc.arg(student_id), sqlc.arg(note), sqlc.arg(file_uuid)
+SELECT sqlc.arg(homework_id)::int, sqlc.arg(student_id), sqlc.arg(note), sqlc.arg(file_uuid)
 WHERE EXISTS (
     SELECT 1
     FROM homework h

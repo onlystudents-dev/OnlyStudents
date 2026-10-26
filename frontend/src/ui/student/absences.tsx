@@ -2,7 +2,7 @@ import "./absences.css";
 import type {Me, Absence} from "../../types/api.ts";
 import {useState} from "preact/hooks";
 import {fetchInto} from "../../util/api.ts";
-import {useEffect} from "react";
+import {useEffect} from "preact/compat";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";

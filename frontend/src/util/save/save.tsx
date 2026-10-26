@@ -1,5 +1,5 @@
 import "./save.css";
-import React from "react";
+import React from "preact/compat";
 import Button from "../button/button.tsx";
 import {getKey} from "../language.ts";
 

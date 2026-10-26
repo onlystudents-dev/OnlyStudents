@@ -21,7 +21,7 @@ const (
 
 var FileCategories = map[FileCategory][]string{
 	CategoryImage:        {".jpg", ".jpeg", ".png", ".webp"},
-	CategoryDocument:     {".docx", ".txt"},
+	CategoryDocument:     {".docx", ".txt", ".pdf"},
 	CategoryArchive:      {".zip", ".7z", ".tar", ".tar.gz", ".tar.xz", ".rar"},
 	CategorySpreadSheet:  {".xls", ".xlsx"},
 	CategoryPresentation: {".pptx", ".ppt"},

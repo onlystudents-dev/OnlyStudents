@@ -200,7 +200,7 @@ func (q *Queries) GetTeacherAbsences(ctx context.Context, arg GetTeacherAbsences
 
 const studentUpsertAbsenceReason = `-- name: StudentUpsertAbsenceReason :execrows
 INSERT INTO absence_reason (absence_id, submitted_at, note, file_uuid)
-SELECT $1, CURRENT_DATE, $2, $3
+SELECT $1::int, CURRENT_DATE, $2, $3
 WHERE EXISTS (
     SELECT 1
     FROM absences a

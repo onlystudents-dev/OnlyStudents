@@ -4,7 +4,7 @@ import {faHouseChimney, faPenToSquare, faStar, faStopwatch, faTable} from "@fort
 import Button from "../util/button/button.tsx";
 import type {Me} from "../types/api.ts";
 import {getKey} from "../util/language.ts";
-import {useCallback, useRef, useState} from "react";
+import {useCallback, useRef, useState} from "preact/compat";
 import Skeleton from "../util/skeleton/skeleton.tsx";
 import {features} from "../features.ts";
 import {reloadSchoolStuff} from "../util/school.ts";

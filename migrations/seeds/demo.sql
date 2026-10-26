@@ -480,3 +480,4 @@ SELECT setval(pg_get_serial_sequence('rooms', 'id'), (SELECT MAX(id) FROM rooms)
 SELECT setval(pg_get_serial_sequence('groups', 'id'), (SELECT MAX(id) FROM groups));
 SELECT setval(pg_get_serial_sequence('class_subjects', 'id'), (SELECT MAX(id) FROM class_subjects));
 SELECT setval(pg_get_serial_sequence('subjects', 'id'), (SELECT MAX(id) FROM subjects));
+SELECT setval(pg_get_serial_sequence('files', 'id'), (SELECT MAX(id) FROM files));

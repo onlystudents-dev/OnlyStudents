@@ -5,7 +5,7 @@ import Skeleton from "../../util/skeleton/skeleton.tsx";
 import type {Exam, Me} from "../../types/api.ts";
 import {useState} from "preact/hooks";
 import {fetchWithSchool} from "../../util/api.ts";
-import {useEffect} from "react";
+import {useEffect} from "preact/compat";
 import Overlay from "../../util/overlay/overlay.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";

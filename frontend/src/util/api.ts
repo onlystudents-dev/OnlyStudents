@@ -1,6 +1,6 @@
 import { toast } from "react-toastify"
 import { fromResponse } from "./language"
-import React from "react";
+import React from "preact/compat";
 
 export function postJSON(url: string, body?: unknown) {
     return fetch(url, {

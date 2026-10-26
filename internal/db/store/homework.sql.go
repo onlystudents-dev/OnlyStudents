@@ -412,7 +412,7 @@ func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg
 
 const studentUpsertHomeworkSubmission = `-- name: StudentUpsertHomeworkSubmission :execrows
 INSERT INTO homework_submissions (homework_id, student_id, note, file_uuid)
-SELECT $1, $2, $3, $4
+SELECT $1::int, $2, $3, $4
 WHERE EXISTS (
     SELECT 1
     FROM homework h
