@@ -1,16 +1,6 @@
-import {
-    faFileLines,
-    faFilePowerpoint,
-    faFileImage,
-    faBookOpen,
-    faFolder,
-    faFileZipper,
-} from "@fortawesome/free-solid-svg-icons";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import { useState, type Dispatch, type StateUpdater } from "preact/hooks";
 import { toast } from "react-toastify";
 import { fromResponse } from "../util/language";
-import { fetchWithSchool } from "../util/api";
 
 type attachmentFile = {
   file_name: string
