@@ -65,7 +65,7 @@ function Popup({ homework: hw, clear }: PopupProps) {
                         <div className="text-3xl rubik truncate">{homework.title}</div>
                         <div className="text-2xl opacity-70 rubik truncate">{homework.subject}</div>
                         <div className="fredoka whitespace-pre-wrap wrap-break-word">{homework.description}</div>
-                        <Attachment label={getKey("SUBMISSION")} attachment={
+                        <Attachment label={getKey("SUBMISSION")} missing_label={getKey("NO_SUBMISSION")} attachment={
                           {
                             note: homework.submission_note,
                             file_type: homework.submission_file_type,
@@ -76,7 +76,7 @@ function Popup({ homework: hw, clear }: PopupProps) {
                         } />
                     </div>
                     <div className="shrink-0 px-6 pb-6 pr-14">
-                        <SubmissionAttachmentInput label={getKey("SUBMISSION")} onSubmit={(note: string, file_uuid: string) => {
+                        <SubmissionAttachmentInput note_placeholder={getKey("HOMEWORK_SUBMISSION_NOTE_EXAMPLE")} label={getKey("HOMEWORK_SUBMISSION_SUBMIT")} onSubmit={(note: string, file_uuid: string) => {
                           void submitHomework(note, file_uuid, homework)
                         }}/>
                     </div>

@@ -34,7 +34,7 @@ function Popup({ homework: hw, clear }: PopupProps) {
                     <div className="flex flex-1 flex-col gap-3 min-h-0 overflow-y-auto p-6 pr-14">
                         <div className="text-3xl rubik truncate">{homework_submission.title}</div>
                         <div className="text-2xl opacity-70 rubik truncate">{homework_submission.subject}</div>
-                        <Attachment label={getKey("SUBMISSION")} attachment={homework_submission}/>
+                        <Attachment missing_label={getKey("NO_SUBMISSION")} label={getKey("SUBMISSION")} attachment={homework_submission}/>
                     </div>
                 </div>
             </div>

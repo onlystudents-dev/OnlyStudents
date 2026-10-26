@@ -6,7 +6,7 @@ import React, {useCallback, useEffect, useState} from "preact/compat";
 import {toast} from "react-toastify";
 import PasswordCheck from "../pwc.tsx";
 import {fromResponse, getKey} from "../../util/language.ts";
-import {AUTH_DEFAULT_CONFIG, getPasswordConfig, type PasswordConfig} from "../authConfig.ts";
+import {DEFAULT_CONFIG, getPasswordConfig, type PasswordConfig} from "../config.ts";
 import RoleSelect from "../roleSelect.tsx";
 import {useCountdown} from "../../util/countdown.ts";
 import {getRetryAfter, postJSON} from "../../util/api.ts";
@@ -79,7 +79,7 @@ export default function PasswordReset({ resetActive, onClose, role, setRole, id,
 
             const params = parseParams(json.recovery_key_params)
             const digest = recoveryDigest(recoveryKeyNormalized, b64decode(json.recovery_key_salt), {
-              ...AUTH_DEFAULT_CONFIG.e2ee,
+              ...DEFAULT_CONFIG.e2ee,
               argon2_time: params.t,
               argon2_memory: params.m,
               argon2_threads: params.p,

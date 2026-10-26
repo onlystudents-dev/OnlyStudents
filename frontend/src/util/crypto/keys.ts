@@ -1,7 +1,7 @@
 import * as argon2 from '@noble/hashes/argon2.js';
 import * as hkdf from '@noble/hashes/hkdf.js';
 import * as sha2 from '@noble/hashes/sha2.js';
-import { AUTH_DEFAULT_CONFIG, type E2EEConfig } from '../../auth/authConfig';
+import { DEFAULT_CONFIG, type E2EEConfig } from '../../auth/config';
 import { normalizeMnemonicSecret } from './mnemonic';
 import { concatBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 
@@ -63,7 +63,7 @@ export function parseParams(s: string): {t: number, m: number, p: number, dkLen:
         }
         out[k] = Number(v)
     }
-    return {t: out.t ? out.t : AUTH_DEFAULT_CONFIG.e2ee.argon2_time, m: out.m ? out.m : AUTH_DEFAULT_CONFIG.e2ee.argon2_memory, p: out.p ? out.p : AUTH_DEFAULT_CONFIG.e2ee.argon2_threads, dkLen: out.dkLen ? out.dkLen : AUTH_DEFAULT_CONFIG.e2ee.argon2_key_len}
+    return {t: out.t ? out.t : DEFAULT_CONFIG.e2ee.argon2_time, m: out.m ? out.m : DEFAULT_CONFIG.e2ee.argon2_memory, p: out.p ? out.p : DEFAULT_CONFIG.e2ee.argon2_threads, dkLen: out.dkLen ? out.dkLen : DEFAULT_CONFIG.e2ee.argon2_key_len}
 }
 
 function base64UrlDecode(str: string): Bytes {

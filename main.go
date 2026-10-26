@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -67,6 +69,10 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					"argon2_threads":          helpers.GetIntEnvFallback("ARGON2_THREADS", 1, 16),
 					"argon2_key_len":          helpers.GetIntEnvFallback("ARGON2_KEYLEN", 32, 256),
 					"recovery_key_word_count": helpers.GetIntEnvFallback("RECOVERY_KEY_WORD_COUNT", 24, 24),
+				},
+				"files": fiber.Map{
+					"max_file_size": helpers.GetIntEnvFallback("MAX_FILE_SIZE", 10, 99999),
+					"allowed_exts":  slices.Collect(maps.Keys(helpers.CategoryByExt)),
 				},
 			})
 		}),

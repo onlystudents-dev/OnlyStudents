@@ -22,30 +22,37 @@ var FrontendPaths = []string{
 }
 
 var sniffedMIMEs = map[FileCategory][]string{
+	CategoryVideo: {
+		"video/mp4",
+		"video/avi",
+		"video/webm", // also matches .mkv (same EBML magic)
+	},
 	CategoryImage: {
 		"image/jpeg",
 		"image/png",
 		"image/webp",
+		"image/gif",
+		"image/bmp",
+		"image/x-icon", // .ico
+	},
+	CategoryAudio: {
+		"audio/wave",      // .wav
+		"application/ogg", // .ogg
 	},
 	CategoryDocument: {
-		"text/plain; charset=utf-8",
-		"application/zip", // docx sniffs as zip
+		"text/plain; charset=utf-8", // txt, md, csv
+		"application/zip",           // docx, odt, epub sniff as zip
 		"application/pdf",
 	},
 	CategoryArchive: {
 		"application/zip",
-		"application/gzip",
-		"application/x-xz",
-		"application/x-tar",
-		"application/x-7z-compressed", // 7z
-		"application/vnd.rar",         // rar
+		"application/x-gzip",           // gzip, tar.gz, tgz
+		"application/x-rar-compressed", // rar
 	},
 	CategorySpreadSheet: {
-		"application/vnd.ms-excel", // xls
-		"application/zip",          // xlsx sniffs as zip
+		"application/zip", // xlsx, ods sniff as zip
 	},
 	CategoryPresentation: {
-		"application/vnd.ms-powerpoint", // ppt
-		"application/zip",               // pptx sniffs as zip
+		"application/zip", // pptx, odp sniff as zip
 	},
 }

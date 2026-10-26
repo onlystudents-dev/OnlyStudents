@@ -1,6 +1,8 @@
-import { useState, type Dispatch, type StateUpdater } from "preact/hooks";
+import { useEffect, useState, type Dispatch, type StateUpdater } from "preact/hooks";
 import { toast } from "react-toastify";
-import { fromResponse } from "../util/language";
+import { fromResponse, getKey } from "../util/language";
+import { getFilesConfig, type FilesConfig } from "../auth/config";
+import { fileCategory, KiB } from "../util/files";
 
 type attachmentFile = {
   file_name: string
@@ -11,15 +13,19 @@ type attachmentFile = {
 
 type FileUploadResponse = {file_uuid: string}
 
-function fileCategory(file: File): string {
-  if (file.type.startsWith("image/")) return "image"
-  if (file.type.includes("presentation") || /\.(ppt|pptx)$/i.test(file.name)) return "presentation"
-  if (file.type.includes("spreadsheet") || /\.(xls|xlsx|csv)$/i.test(file.name)) return "spreadsheet"
-  if (/\.(zip|rar|7z|tar|gz)$/i.test(file.name)) return "archive"
-  return "document"
-}
+async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFileUploaded: Dispatch<StateUpdater<boolean>>, file: File, config: FilesConfig) {
+  const match = config.allowed_exts.some(ext => file.name.endsWith(ext))
 
-async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFileUploaded: Dispatch<StateUpdater<boolean>>, file: File) {
+  if (!match) {
+    toast.error(getKey("FILE_TYPE_NOT_ALLOWED"))
+    return
+  }
+
+  if ((file.size / KiB) > config.max_file_size) {
+    toast.error(getKey("FILE_TOO_BIG"))
+    return
+  }
+
   const data = new FormData()
   data.append('file', file)
 
@@ -46,42 +52,53 @@ async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFi
   })
 }
 
-export default function SubmissionAttachmentInput({ label, onSubmit }: { label?: string, onSubmit: (note: string, file_uuid: string) => void } ) {
+export default function SubmissionAttachmentInput({ note_placeholder, label, onSubmit }: { note_placeholder: string, label?: string, onSubmit: (note: string, file_uuid: string) => void } ) {
   const [file, setFile] = useState<attachmentFile>({file_name: "", file_type: "", file_uuid: "", file_size: 0})
   const [fileUploaded, setFileUploaded] = useState(false)
   const [note, setNote] = useState("")
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [config, setConfig] = useState<FilesConfig>()
+
+  useEffect(() => {
+    async function fetchData() {
+      await getFilesConfig().then(setConfig)
+    }
+    void fetchData();
+  }, [setConfig])
 
   return (
     <>
       <div className="flex flex-col gap-3 border-t border-(--border-color) pt-3">
-        {label && (
-            <div className="text-xs font-medium uppercase tracking-wider opacity-50">{label} Submit</div>
-        )}
-      <input type="text" placeholder="Your justification here..." onChange={(e) => setNote(e.currentTarget.value)} />
-      <input type="file" onChange={(e) => {
-        if (e.currentTarget.files) {
-          const file = e.currentTarget.files[0];
-          if (file) {
-            if (previewUrl) URL.revokeObjectURL(previewUrl)
-            setPreviewUrl(URL.createObjectURL(file))
-            void FileUpload(setFile, setFileUploaded, file);
-          };
-        };
-      }
-      }></input>
+        <div className="text-xs font-medium uppercase tracking-wider opacity-50">{label}</div>
+        <input type="text" placeholder={note_placeholder} onChange={(e) => setNote(e.currentTarget.value)} />
+        <input type="file" onChange={(e) => {
+          if (e.currentTarget.files) {
+            const file = e.currentTarget.files[0];
+            if (file) {
+              if (previewUrl) URL.revokeObjectURL(previewUrl)
+              setPreviewUrl(URL.createObjectURL(file))
 
-      <button type="button" className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10" onClick={() => {
-        if (!fileUploaded && note == "") {
-          return
+              if (!config) {
+                return
+              }
+
+              void FileUpload(setFile, setFileUploaded, file, config);
+            };
+          };
         }
-        onSubmit(
-          note,
-          file.file_uuid
-        )
-      }}>
-          Submit
-      </button>
+        }></input>
+
+        <button type="button" className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10" onClick={() => {
+          if (!fileUploaded && note == "") {
+            return
+          }
+          onSubmit(
+            note,
+            file.file_uuid
+          )
+        }}>
+            {getKey("SUBMIT")}
+        </button>
       </div>
     </>
   )
