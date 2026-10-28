@@ -15,7 +15,7 @@ export type E2EEConfig = {
 
 export type FilesConfig = {
   max_file_size: number,
-  allowed_exts: string[]
+  allowed_exts: string[],
 }
 
 export type Config = {

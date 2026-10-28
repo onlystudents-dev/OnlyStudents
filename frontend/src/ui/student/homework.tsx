@@ -28,14 +28,14 @@ export default function StudentHomework({ me }: { me: Me }) {
 
 async function submitHomework(note: string, file_uuid: string, homework: HomeworkSummary) {
   await fetchWithSchool("/api/v1/me/student/homework/submit", {
-    method: "POST", body: JSON.stringify({
-      "file_uuid": file_uuid,
-      "homework_id": homework.id,
-      "note": note,
-    }),
-    headers: {
-        "Content-Type": "application/json",
-    },
+      method: "POST", body: JSON.stringify({
+          "file_uuid": file_uuid,
+          "homework_id": homework.id,
+          "note": note,
+      }),
+      headers: {
+          "Content-Type": "application/json",
+      },
   }).then(async response => {
       switch (response.status) {
           case 200: {
@@ -65,18 +65,16 @@ function Popup({ homework: hw, clear }: PopupProps) {
                         <div className="text-3xl rubik truncate">{homework.title}</div>
                         <div className="text-2xl opacity-70 rubik truncate">{homework.subject}</div>
                         <div className="fredoka whitespace-pre-wrap wrap-break-word">{homework.description}</div>
-                        <Attachment label={getKey("SUBMISSION")} missing_label={getKey("NO_SUBMISSION")} attachment={
-                          {
+                        <Attachment label={getKey("SUBMISSION")} missingLabel={getKey("NO_SUBMISSION")} attachment={{
                             note: homework.submission_note,
                             file_type: homework.submission_file_type,
                             file_size: homework.submission_file_size,
                             file_name: homework.submission_file_name,
                             file_uuid: homework.submission_file_uuid
-                          }
-                        } />
+                        }} />
                     </div>
                     <div className="shrink-0 px-6 pb-6 pr-14">
-                        <SubmissionAttachmentInput note_placeholder={getKey("HOMEWORK_SUBMISSION_NOTE_EXAMPLE")} label={getKey("HOMEWORK_SUBMISSION_SUBMIT")} onSubmit={(note: string, file_uuid: string) => {
+                        <SubmissionAttachmentInput notePlaceholder={getKey("HOMEWORK_SUBMISSION_NOTE_EXAMPLE")} label={getKey("HOMEWORK_SUBMISSION_SUBMIT")} onSubmit={(note: string, file_uuid: string) => {
                           void submitHomework(note, file_uuid, homework)
                         }}/>
                     </div>

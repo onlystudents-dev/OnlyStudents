@@ -72,10 +72,10 @@ export default function StudentAbsences({ me }: { me: Me }) {
                                 <div className="text-2xl opacity-70 rubik truncate">
                                     {current.teacher_first_name != "" ? `${current.teacher_first_name} ${current.teacher_last_name}` : current.teacher_last_name}
                                 </div>
-                                <Attachment label={getKey("GIVEN_REASON")} missing_label={getKey("NO_GIVEN_REASON")} attachment={{ ...current, note: current.reason_note }} />
+                                <Attachment label={getKey("GIVEN_REASON")} missingLabel={getKey("NO_GIVEN_REASON")} attachment={{ ...current, note: current.reason_note }} />
                             </div>
                             <div className="shrink-0 px-6 pb-6 pr-14">
-                              <SubmissionAttachmentInput note_placeholder={getKey("ABSENCE_REASON_NOTE_EXAMPLE")} label={getKey("ABSENCE_JUSTIFICATION_SUBMIT")} onSubmit={(note: string, file_uuid: string) => {
+                              <SubmissionAttachmentInput notePlaceholder={getKey("ABSENCE_REASON_NOTE_EXAMPLE")} label={getKey("ABSENCE_JUSTIFICATION_SUBMIT")} onSubmit={(note: string, file_uuid: string) => {
                                   void submitAbsenceReason(note, file_uuid, current)
                                 }}/>
                             </div>
