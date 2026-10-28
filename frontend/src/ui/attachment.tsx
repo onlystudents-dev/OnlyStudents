@@ -9,17 +9,17 @@ import {
     faFileAudio,
 } from "@fortawesome/free-solid-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import { formatFileSize } from "../util/files";
+import {formatFileSize} from "../util/files";
 
 type attachmentType = {
   note: string,
   file_type: string,
   file_size: number
   file_name: string,
-  file_uuid: string
+  file_uuid: string,
 }
 
-export default function Attachment({ attachment, label, missing_label }: { attachment: attachmentType, label: string, missing_label: string } ) {
+export default function Attachment({ attachment, label, missingLabel }: { attachment: attachmentType, label: string, missingLabel: string } ) {
   const hasNote = attachment.note != ""
   const hasFile = attachment.file_name != ""
 
@@ -27,7 +27,7 @@ export default function Attachment({ attachment, label, missing_label }: { attac
       <div className="flex flex-col gap-3 border-t border-(--border-color) pt-3">
         <div className="text-xs font-medium uppercase tracking-wider opacity-50">{label}</div>
         {(!hasNote && !hasFile) && (
-          <div className="text-xs font-medium uppercase tracking-wider opacity-50">{missing_label}</div>
+          <div className="text-xs font-medium uppercase tracking-wider opacity-50">{missingLabel}</div>
         )}
         {hasNote && (
             <div className="fredoka whitespace-pre-wrap wrap-break-word">
