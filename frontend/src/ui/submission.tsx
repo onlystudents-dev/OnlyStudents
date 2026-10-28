@@ -19,38 +19,39 @@ async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFi
     const match = config.allowed_exts.some(ext => file.name.endsWith(ext))
 
     if (!match) {
-        toast.error(getKey("FILE_TYPE_NOT_ALLOWED"))
-        return
+      toast.error(getKey("FILE_TYPE_NOT_ALLOWED"))
+      return
     }
 
     if ((file.size / KiB) > config.max_file_size) {
-        toast.error(getKey("FILE_TOO_BIG"))
-        return
+      toast.error(getKey("FILE_TOO_BIG"))
+      return
     }
 
     const data = new FormData()
     data.append('file', file)
 
     await fetch("/api/v1/files", { method: "POST", body: data }).then(async response => {
-        switch (response.status) {
-            case 200: {
-                const json = await response.json() as FileUploadResponse;
+      switch (response.status) {
+        case 200: {
+          const json = await response.json() as FileUploadResponse;
 
-                setFile({
-                    file_name: file.name,
-                    file_type: fileCategory(file),
-                    file_uuid: json.file_uuid,
-                    file_size: file.size,
-                })
-                setFileUploaded(true)
-                break
-            }
-
-            case 401: break
-            default:
-                toast.error(await fromResponse(response))
+          setFile({
+            file_name: file.name,
+            file_type: fileCategory(file),
+            file_uuid: json.file_uuid,
+            file_size: file.size,
+          })
+          setFileUploaded(true)
+          break
         }
 
+        case 401: break
+        default:
+          toast.error(await fromResponse(response))
+      };
+    });
+}
 export default function SubmissionAttachmentInput({ notePlaceholder, label, onSubmit }: { notePlaceholder: string, label?: string, onSubmit: (note: string, file_uuid: string) => void } ) {
     const [file, setFile] = useState<attachmentFile>({file_name: "", file_type: "", file_uuid: "", file_size: 0})
     const [fileUploaded, setFileUploaded] = useState(false)
