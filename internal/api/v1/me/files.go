@@ -43,7 +43,7 @@ func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
-	if float64(file.Size)/float64(KiB) > float64(helpers.GetInt64EnvFallback("MAX_FILE_SIZE", 10, 99999)) {
+	if float64(file.Size)/float64(KiB) > float64(helpers.GetInt64EnvFallback("MAX_FILE_SIZE", 10240, 99999)) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "FILE_TOO_BIG"})
 	}
 

@@ -1,6 +1,6 @@
 export const KiB = 1 << 10
-const MiB = 1 << 17
-const GiB = 1 << 24
+const MiB = 1 << 20
+const GiB = 1 << 30
 const max = 1 << 10
 export function fileCategory(file: File): string {
   if (file.type.startsWith("image/")) return "image"

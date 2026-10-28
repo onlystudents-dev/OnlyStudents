@@ -50,8 +50,6 @@ async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFi
             default:
                 toast.error(await fromResponse(response))
         }
-    })
-}
 
 export default function SubmissionAttachmentInput({ notePlaceholder, label, onSubmit }: { notePlaceholder: string, label?: string, onSubmit: (note: string, file_uuid: string) => void } ) {
     const [file, setFile] = useState<attachmentFile>({file_name: "", file_type: "", file_uuid: "", file_size: 0})
