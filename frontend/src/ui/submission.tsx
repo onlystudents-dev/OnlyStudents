@@ -69,19 +69,18 @@ export default function SubmissionAttachmentInput({ notePlaceholder, label, onSu
                 <div className="text-xs font-medium uppercase tracking-wider opacity-50">{label}</div>
                 <input type="text" placeholder={notePlaceholder} onChange={(e) => setNote(e.currentTarget.value)} />
                 <input type="file" onChange={(e) => {
-                  if (e.currentTarget.files) {
-                      const file = e.currentTarget.files[0];
-                      if (file) {
-                          if (previewUrl) URL.revokeObjectURL(previewUrl)
-                          setPreviewUrl(URL.createObjectURL(file))
+                    if (e.currentTarget.files) {
+                        const file = e.currentTarget.files[0];
+                        if (file) {
+                            if (previewUrl) URL.revokeObjectURL(previewUrl)
+                            setPreviewUrl(URL.createObjectURL(file))
 
-                          if (!config) return
+                            if (!config) return
 
-                          void FileUpload(setFile, setFileUploaded, file, config)
-                      }
-                  }
-                }
-                } />
+                            void FileUpload(setFile, setFileUploaded, file, config)
+                        }
+                    }
+                }} />
 
                 <button type="button" className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10" onClick={() => {
                     if (!fileUploaded && note == "") return
