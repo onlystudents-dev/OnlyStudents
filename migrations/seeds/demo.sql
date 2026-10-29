@@ -190,7 +190,8 @@ VALUES (1, 1, 1, '9.A'),
 
 INSERT INTO group_members (school_id, group_id, student_id)
 VALUES (1, 1, 1),
-       (2, 2, 1);
+       (2, 2, 1),
+       (2, 2, 2);
 
 -- Weekly base timetable
 
@@ -391,20 +392,16 @@ VALUES (1, 1, 'Megoldottam mind a 9 feladatot, a 12. feladatban a törtek egysze
        (3, 1, 'A feladatlap utolsó két feladatában segítségre volt szükségem.', '00000000-0000-0000-0000-000000000001', '2026-09-21 16:20:00+02', 3),
        (4, 1, 'A háromszögekre vonatkozó feladatokat könnyebbnek találtam a szögeknél.', '00000000-0000-0000-0000-000000000010', '2026-09-21 18:05:00+02', 4),
        (5, 1, 'A bemutatót PowerPointban készítettem el, 8 diát tartalmaz.', '00000000-0000-0000-0000-000000000011', '2026-09-22 20:30:00+02', 5),
-       (6, 1, 'Átnéztem a füzeteimet, de a szögek kiszámításánál még gyakorolnom kell.', '00000000-0000-0000-0000-000000000012', '2026-09-23 17:00:00+02', NULL),
+       (6, 1, 'Átnéztem a füzeteimet, de a szögek kiszámításánál még gyakorolnom kell.', NULL, '2026-09-23 17:00:00+02', NULL),
        (7, 1, 'A 4–8. feladatokat megoldottam, a 7. feladatban egy jelölési hibát vettem észre, és javítottam is.', '00000000-0000-0000-0000-000000000013', '2026-09-24 15:40:00+02', NULL),
-       (8, 1, 'A törtes feladatokat a munkafüzet segítségével oldottam meg.', '00000000-0000-0000-0000-000000000014', '2026-09-24 21:15:00+02', NULL),
-       (9, 1, 'A Java programot elindítottam, a tesztelésnél találtam egy hibát, amit javítottam.', '00000000-0000-0000-0000-000000000002', '2026-09-24 21:15:00+02', NULL),
+       (8, 1, 'A törtes feladatokat a munkafüzet segítségével oldottam meg.', NULL, '2026-09-24 21:15:00+02', NULL),
        (10, 1, 'A szöveget kétszer olvastam el, hogy minden kérdésre pontosan tudjak válaszolni.', '00000000-0000-0000-0000-000000000015', '2026-09-27 14:20:00+02', 4),
        (11, 1, 'A térképen folyókat és városokat is bejelöltem a provinciák mellett.', '00000000-0000-0000-0000-000000000016', '2026-09-27 16:45:00+02', 5),
-       (12, 1, 'A mozgásos feladatok közül a gyorsulásos részben kellett több időt töltenem.', '00000000-0000-0000-0000-000000000017', '2026-09-28 18:30:00+02', 3),
+       (12, 1, 'A mozgásos feladatok közül a gyorsulásos részben kellett több időt töltenem.', NULL, '2026-09-28 18:30:00+02', 3),
        (13, 1, 'A kísérletet otthon végeztem el, a sav-bázis indikátor színváltozását fényképeztem.', '00000000-0000-0000-0000-000000000006', '2026-09-29 20:10:00+02', 4),
        (14, 1, 'A jegyzetet készítettem, a folyamatokat diagramokkal is kiegészítettem.', '00000000-0000-0000-0000-000000000005', '2026-09-30 17:50:00+02', NULL),
-       (15, 1, 'A prezentáció elkészítéséhez az iskolai könyvtár forrásait is használtam.', '00000000-0000-0000-0000-000000000003', '2026-09-30 19:25:00+02', NULL),
-       (16, 1, 'A mozgásnaplót egész héten vezettem, a hétvégi futásokat is beírtam.', '00000000-0000-0000-0000-000000000018', '2026-10-02 09:15:00+02', NULL),
-       (17, 1, 'A 25–30. feladatokat megoldottam, ezek közül a 27. feladat okozta a legnagyobb gondot.', '00000000-0000-0000-0000-000000000019', '2026-09-30 21:40:00+02', NULL),
-       (18, 1, 'Az esszét 150 szóban írtam meg, a nyári szünidőről.', '00000000-0000-0000-0000-000000000020', '2026-10-01 15:35:00+02', NULL),
-       (19, 1, 'A mérési jegyzőkönyvet a laboratóriumi gyakorlat alapján készítettem el.', '00000000-0000-0000-0000-000000000004', '2026-10-02 16:55:00+02', NULL),
+       (15, 1, 'A prezentáció elkészítéséhez az iskolai könyvtár forrásait is használtam.', NULL, '2026-09-30 19:25:00+02', NULL),
+       (19, 1, 'A mérési jegyzőkönyvet a laboratóriumi gyakorlat alapján készítettem el.', NULL, '2026-10-02 16:55:00+02', NULL),
        (20, 1, 'A kémiai reakciók feladatait megoldottam, a redoxi reakciók okoztak nehézséget.', '00000000-0000-0000-0000-000000000009', '2026-10-03 11:20:00+02', NULL);
 
 -- Exams
@@ -468,6 +465,99 @@ WHERE bs.school_id = 1
 INSERT INTO absence_reason (absence_id, submitted_at, note)
 VALUES (1, '2026-09-16', 'Orvosi igazolást küldtem, másnap leadtam az iskolában.'),
        (3, '2026-09-18', 'Reggel elaludtam, ezért késtem a tanóráról.');
+
+-- Student 2 demo data (school 2, class 2, group 2)
+
+INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
+VALUES
+    -- Fizika
+    (2, 6, 1, 2, 5, 3, '2026-09-15', 'Témazáró'),
+    (2, 6, 1, 2, 6, 2, '2026-09-10', 'Házi feladat'),
+    (2, 6, 1, 2, 8, 3, '2026-09-24', 'Dolgozat'),
+    -- Kémia
+    (2, 7, 1, 2, 5, 4, '2026-09-16', 'Témazáró'),
+    (2, 7, 1, 2, 6, 5, '2026-09-11', 'Házi feladat'),
+    (2, 7, 1, 2, 7, 4, '2026-09-18', 'Felelés'),
+    -- Biológia
+    (2, 8, 1, 2, 5, 2, '2026-09-17', 'Témazáró'),
+    (2, 8, 1, 2, 7, 3, '2026-09-19', 'Felelés'),
+    (2, 8, 1, 2, 8, 4, '2026-09-26', 'Dolgozat'),
+    -- Földrajz
+    (2, 9, 1, 2, 5, 5, '2026-09-18', 'Témazáró'),
+    (2, 9, 1, 2, 6, 4, '2026-09-13', 'Házi feladat'),
+    -- Testnevelés
+    (2, 10, 1, 2, 6, 5, '2026-09-14', 'Házi feladat'),
+    (2, 10, 1, 2, 7, 5, '2026-09-20', 'Felelés'),
+    (2, 10, 1, 2, 8, 5, '2026-09-27', 'Dolgozat');
+
+INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
+VALUES (2, 6, 2, 1, 3),
+       (2, 7, 2, 1, 4),
+       (2, 8, 2, 1, 3),
+       (2, 9, 2, 1, 4),
+       (2, 10, 2, 1, 5);
+
+INSERT INTO exams (class_subjects_id, teacher_id, title, description, date, start_time, end_time, room_id)
+VALUES (6, 1, 'Fizika témazáró', 'Mozgás – egyenletes és változó mozgás.', '2026-09-28', '08:00', '08:45', 2),
+       (7, 1, 'Kémia témazáró', 'Savak és bázisok.', '2026-09-29', '08:55', '09:40', 2),
+       (8, 1, 'Biológia dolgozat', 'A sejt működése.', '2026-09-30', '09:50', '10:35', 2),
+       (9, 1, 'Földrajz témazáró', 'Európa éghajlata.', '2026-10-01', '08:00', '08:45', 2),
+       (10, 1, 'Testnevelés számonkérés', 'Atlétikai alapok.', '2026-10-02', '08:55', '09:40', 2);
+
+INSERT INTO homework_submissions (homework_id, student_id, note, file_uuid, submitted_at, graded_value)
+VALUES (12, 2, 'A mozgásos feladatokat megoldottam, de a gyorsulásos részben még sokat hibáztam.', NULL, '2026-09-28 18:00:00+02', 4),
+       (13, 2, NULL, '00000000-0000-0000-0000-000000000024', '2026-09-29 17:30:00+02', 5),
+       (14, 2, 'Elolvastam a fejezetet, a jegyzetet saját ábrákkal egészítettem ki.', NULL, '2026-09-30 19:00:00+02', NULL),
+       (15, 2, NULL, '00000000-0000-0000-0000-000000000022', '2026-10-01 16:40:00+02', 3),
+       (19, 2, 'A mérési jegyzőkönyvet a laboratóriumi gyakorlat alapján írtam meg.', NULL, '2026-10-02 15:20:00+02', 4);
+
+INSERT INTO absences (student_id, class_subjects_id, lesson_id, date, type, justified, verified_by, note)
+SELECT 2,
+       10,
+       bs.id,
+       '2026-09-17',
+       'absent',
+       FALSE,
+       NULL,
+       NULL
+FROM base_schedule bs
+WHERE bs.school_id = 2
+  AND bs.group_id = 2
+  AND bs.day_of_week = 4
+  AND bs.lesson_num = 1;
+
+INSERT INTO absences (student_id, class_subjects_id, lesson_id, date, type, justified, verified_by, note)
+SELECT 2,
+       6,
+       bs.id,
+       '2026-09-16',
+       'tardy',
+       FALSE,
+       NULL,
+       'Késett a tanórára.'
+FROM base_schedule bs
+WHERE bs.school_id = 2
+  AND bs.group_id = 2
+  AND bs.day_of_week = 3
+  AND bs.lesson_num = 3;
+
+INSERT INTO absences (student_id, class_subjects_id, lesson_id, date, type, justified, verified_by, note)
+SELECT 2,
+       8,
+       bs.id,
+       '2026-09-15',
+       'absent',
+       TRUE,
+       1,
+       'Betegség miatt nem jelent meg.'
+FROM base_schedule bs
+WHERE bs.school_id = 2
+  AND bs.group_id = 2
+  AND bs.day_of_week = 2
+  AND bs.lesson_num = 1;
+
+INSERT INTO absence_reason (absence_id, submitted_at, note)
+VALUES (6, '2026-09-16', 'Orvosi igazolást másnap leadtam az iskolában.');
 
 SELECT setval(pg_get_serial_sequence('school_type', 'id'), (SELECT MAX(id) FROM school_type));
 SELECT setval(pg_get_serial_sequence('teachers', 'id'), (SELECT MAX(id) FROM teachers));

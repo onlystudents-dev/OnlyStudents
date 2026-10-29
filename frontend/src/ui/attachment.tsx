@@ -2,31 +2,32 @@ import {
     faFileLines,
     faFilePowerpoint,
     faFileImage,
-    faBookOpen,
-    faFolder,
     faDownload,
-    faFileZipper,
+    faFile,
+    faFileExcel,
+    faFileArchive,
+    faFileAudio,
 } from "@fortawesome/free-solid-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {formatFileSize} from "../util/files";
 
 type attachmentType = {
   note: string,
   file_type: string,
   file_size: number
   file_name: string,
-  file_uuid: string
+  file_uuid: string,
 }
 
-export default function Attachment({ attachment, label }: { attachment: attachmentType, label?: string } ) {
+export default function Attachment({ attachment, label, missingLabel }: { attachment: attachmentType, label: string, missingLabel: string } ) {
   const hasNote = attachment.note != ""
   const hasFile = attachment.file_name != ""
 
-  if (!hasNote && !hasFile) return null
-
   return (
       <div className="flex flex-col gap-3 border-t border-(--border-color) pt-3">
-        {label && (
-            <div className="text-xs font-medium uppercase tracking-wider opacity-50">{label}</div>
+        <div className="text-xs font-medium uppercase tracking-wider opacity-50">{label}</div>
+        {(!hasNote && !hasFile) && (
+          <div className="text-xs font-medium uppercase tracking-wider opacity-50">{missingLabel}</div>
         )}
         {hasNote && (
             <div className="fredoka whitespace-pre-wrap wrap-break-word">
@@ -47,15 +48,17 @@ export default function Attachment({ attachment, label }: { attachment: attachme
                             attachment.file_type === "document" ? faFileLines :
                             attachment.file_type === "presentation" ? faFilePowerpoint :
                             attachment.file_type === "image" ? faFileImage :
-                            attachment.file_type === "spreadsheet" ? faBookOpen :
-                            attachment.file_type === "archive" || attachment.file_type === "zip" ? faFileZipper :
-                            faFolder
+                            attachment.file_type === "spreadsheet" ? faFileExcel :
+                            attachment.file_type === "audio" ? faFileAudio :
+                            attachment.file_type === "archive" ? faFileArchive :
+                            attachment.file_type === "image" ? faFileImage :
+                            faFile
                         }
                     />
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="fredoka text-lg truncate">{attachment.file_name}</div>
-                    <div className="text-sm opacity-60">{(attachment.file_size / 1024).toFixed(1)} KB</div>
+                    <div className="text-sm opacity-60">{formatFileSize(attachment.file_size)}</div>
                 </div>
                 <a href={`/uploads/${attachment.file_uuid}`} className="action-button w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition" download>
                     <FontAwesomeIcon icon={faDownload} />

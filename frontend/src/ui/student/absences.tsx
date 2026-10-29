@@ -1,16 +1,42 @@
 import "./absences.css";
 import type {Me, Absence} from "../../types/api.ts";
 import {useState} from "preact/hooks";
-import {fetchInto} from "../../util/api.ts";
+import {fetchInto, fetchWithSchool} from "../../util/api.ts";
 import {useEffect} from "preact/compat";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
 import {formatUnixDate} from "../../util/time.ts";
-import {getKey, getLanguage} from "../../util/language.ts";
+import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
 import Attachment from "../attachment.tsx";
+import SubmissionAttachmentInput from "../submission.tsx";
+import { toast } from "react-toastify";
+
+async function submitAbsenceReason(note: string, file_uuid: string, absence: Absence) {
+  await fetchWithSchool("/api/v1/me/student/absence/submit_reason", {
+    method: "POST", body: JSON.stringify({
+      "file_uuid": file_uuid,
+      "absence_id": absence.id,
+      "note": note,
+    }),
+    headers: {
+        "Content-Type": "application/json",
+    },
+  }).then(async response => {
+      switch (response.status) {
+          case 200: {
+              location.reload()
+              break
+          }
+
+          case 401: break
+          default:
+              toast.error(await fromResponse(response))
+      }
+  })
+}
 
 export default function StudentAbsences({ me }: { me: Me }) {
     const [absences, setAbsences] = useState<Absence[] | null>(null)
@@ -46,7 +72,12 @@ export default function StudentAbsences({ me }: { me: Me }) {
                                 <div className="text-2xl opacity-70 rubik truncate">
                                     {current.teacher_first_name != "" ? `${current.teacher_first_name} ${current.teacher_last_name}` : current.teacher_last_name}
                                 </div>
-                                <Attachment label={getKey("GIVEN_REASON")} attachment={{...current, note: current.reason_note}} />
+                                <Attachment label={getKey("GIVEN_REASON")} missingLabel={getKey("NO_GIVEN_REASON")} attachment={{ ...current, note: current.reason_note }} />
+                            </div>
+                            <div className="shrink-0 px-6 pb-6 pr-14">
+                              <SubmissionAttachmentInput notePlaceholder={getKey("ABSENCE_REASON_NOTE_EXAMPLE")} label={getKey("ABSENCE_JUSTIFICATION_SUBMIT")} onSubmit={(note: string, file_uuid: string) => {
+                                  void submitAbsenceReason(note, file_uuid, current)
+                                }}/>
                             </div>
                         </div>
                     </div>

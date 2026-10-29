@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -67,6 +69,10 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					"argon2_threads":          helpers.GetIntEnvFallback("ARGON2_THREADS", 1, 16),
 					"argon2_key_len":          helpers.GetIntEnvFallback("ARGON2_KEYLEN", 32, 256),
 					"recovery_key_word_count": helpers.GetIntEnvFallback("RECOVERY_KEY_WORD_COUNT", 24, 24),
+				},
+				"files": fiber.Map{
+					"max_file_size": helpers.GetIntEnvFallback("MAX_FILE_SIZE", 10240, 99999),
+					"allowed_exts":  slices.Collect(maps.Keys(helpers.CategoryByExt)),
 				},
 			})
 		}),
@@ -353,7 +359,7 @@ func main() {
 		JSONEncoder:  json.Marshal,
 		JSONDecoder:  json.Unmarshal,
 		AppName:      helpers.AppName,
-		BodyLimit:    int(1 << 20 * (helpers.GetInt64EnvFallback("MAX_FILE_SIZE", 10, 99999) + 1)),
+		BodyLimit:    int(1 << 20 * (helpers.GetInt64EnvFallback("MAX_FILE_SIZE", 10240, 99999) + 1)),
 		ReadTimeout:  time.Duration(helpers.GetInt64EnvFallback("SERVER_READ_TIMEOUT", 10, 3600)) * time.Second,
 		WriteTimeout: time.Duration(helpers.GetInt64EnvFallback("SERVER_WRITE_TIMEOUT", 30, 3600)) * time.Second,
 		IdleTimeout:  time.Duration(helpers.GetInt64EnvFallback("SERVER_IDLE_TIMEOUT", 120, 86400)) * time.Second,
@@ -368,7 +374,7 @@ func main() {
 		XSSProtection:             "0",
 		ContentTypeNosniff:        "nosniff",
 		XFrameOptions:             "SAMEORIGIN",
-		ContentSecurityPolicy:     "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.pwnedpasswords.com; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+		ContentSecurityPolicy:     "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.pwnedpasswords.com; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
 		ReferrerPolicy:            "no-referrer",
 		PermissionPolicy:          "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
 		CrossOriginEmbedderPolicy: "require-corp",

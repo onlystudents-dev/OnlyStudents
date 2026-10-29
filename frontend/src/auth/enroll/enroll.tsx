@@ -5,7 +5,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowRight} from "@fortawesome/free-solid-svg-icons";
 import {useCallback, useEffect, useState} from "preact/compat";
 import PasswordCheck from "../pwc.tsx";
-import {getE2EEConfig, getPasswordConfig, type PasswordConfig} from "../authConfig.ts";
+import {getE2EEConfig, getPasswordConfig, type PasswordConfig} from "../config.ts";
 import {opaqueRegister} from "../opaque.ts";
 import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
