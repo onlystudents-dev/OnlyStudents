@@ -53,18 +53,24 @@ export type Lesson = {
     lesson_num: number,
     day_of_week: number,
     effective_teacher_id: number,
+    has_teacher_first_name: boolean,
+    has_teacher_last_name: boolean,
+    teacher_first_name: string,
+    teacher_last_name: string,
     group_id: number,
     school_id: number,
     custom_subject: boolean,
+    has_subject_id: boolean,
     subject_id: number,
+    has_custom_subject_id: boolean,
     custom_subject_id: number,
     subject_name: string,
+    has_exam_id: boolean,
+    exam_id: number,
+    has_homework_id: boolean,
+    homework_id: number,
     is_substitution: boolean,
     canceled: boolean,
-    exam_id: number,
-    homework_id: number,
-    teacher_first_name: string,
-    teacher_last_name: string,
 }
 
 export type Room = {
@@ -195,4 +201,17 @@ export type ForgetPasswordCheckResponse = {
 export type ForgetPasswordConfirmResponse = {
     enroll_token: string
     crypto_grant_handle: string
+}
+
+export type Group = {
+    id: number,
+    school_id: number,
+    bell_id: number,
+    group_name: string,
+}
+
+export type Student = {
+    id: number,
+    first_name: string,
+    last_name: string,
 }

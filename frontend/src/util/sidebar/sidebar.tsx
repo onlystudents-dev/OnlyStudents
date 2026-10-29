@@ -1,6 +1,6 @@
 import "./sidebar.css";
 import Skeleton from "../skeleton/skeleton.tsx";
-import { cloneElement, isValidElement, type VNode } from "preact";
+import {cloneElement, isValidElement, type VNode} from "preact";
 import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import { getKey } from "../language.ts";
@@ -8,11 +8,11 @@ import type { Me } from "../../types/api.ts";
 import {Children} from "preact/compat";
 
 type ClickableProps = {
-    onClick?: (e: MouseEvent) => void;
-    onMouseEnter?: (e: MouseEvent) => void;
+    onClick?: (e: MouseEvent) => void,
+    onMouseEnter?: (e: MouseEvent) => void,
 }
 
-export default function Sidebar({ children, me }: { children: ComponentChildren; me?: Me }) {
+export default function Sidebar({ children, me, className }: { children: ComponentChildren; me?: Me, className?: string }) {
     const [hoverTop, setHoverTop] = useState(0)
     const [selectTop, setSelectTop] = useState(0)
 
@@ -38,7 +38,7 @@ export default function Sidebar({ children, me }: { children: ComponentChildren;
     }
 
     return (
-        <div className="sidebar">
+        <div className={`sidebar ${className}`}>
             {me && <>
                 <div className="flex flex-row gap-4">
                     <div className="rounded-[50%] h-20">

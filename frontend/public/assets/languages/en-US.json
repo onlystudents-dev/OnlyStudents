@@ -175,7 +175,9 @@
         "NO_HOMEWORK.student": "You don't have any homework. Lucky you!",
         "NO_HOMEWORK.teacher": "You don't have any homework submissions to grade left!",
         "TYPE": "Type",
-        "TEACHER": "Teacher"
+        "TEACHER": "Teacher",
+        "TIMETABLE_OVERVIEW": "Overview",
+        "TIMETABLE_GRADE": "Grade"
     },
     "errors": {
         "NOT_FOUND": "Oops! That doesn't exist. Please try again.",

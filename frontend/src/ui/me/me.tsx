@@ -78,7 +78,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () 
             <div className="main">
                 <div className="border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2">
                     {(() => {
-                        switch(active) {
+                        switch (active) {
                             case "appearance":
                                 return (
                                     <>

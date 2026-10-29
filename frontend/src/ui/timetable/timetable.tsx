@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import type {Lesson, LessonTime, Me, Room} from "../../types/api"
+import type {Group, Lesson, LessonTime, Me, Room} from "../../types/api"
 import { getKey } from "../../util/language"
 import {formatSecondsToHourAndMinute} from "../../util/time.ts";
 import {faAngleRight, faHouseChimney, faPenToSquare} from "@fortawesome/free-solid-svg-icons";
@@ -24,6 +24,7 @@ export type PopupProps = {
     lesson: Lesson,
     clear: () => void,
     rooms: Room[],
+    groups?: Group[],
 }
 
 type TimetableProps = {
@@ -35,6 +36,7 @@ type TimetableProps = {
     onPrevWeek: () => void,
     onNextWeek: () => void,
     reloadSchoolStuff: () => void,
+    groups?: Group[],
     Popup:  React.ComponentType<PopupProps>,
 }
 
@@ -65,7 +67,7 @@ export function Timetable(props: TimetableProps) {
                         <FontAwesomeIcon icon={faAngleLeft} />
                     </span>
                 </div>
-                {current && <props.Popup lesson={current} clear={() => {setCurrent(null); if (props.me.role === "teacher") props.reloadSchoolStuff()}} rooms={props.rooms} />}
+                {current && <props.Popup lesson={current} clear={() => {setCurrent(null); if (props.me.role === "teacher") props.reloadSchoolStuff()}} rooms={props.rooms} groups={props.groups} />}
                 {d.map((day) => (
                     <div className="day" key={day.name}>
                         <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>
