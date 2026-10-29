@@ -3,7 +3,7 @@ import type {ComponentType} from "preact/compat";
 import type {Dispatch, StateUpdater} from "preact/hooks";
 import {useLocation} from "wouter";
 import type {Me, Role} from "./types/api.ts";
-import type {FeatureProps} from "./types/props.ts";
+import type {FeatureProps, FetchMe} from "./types/props.ts";
 import Navbar from "./navbar/navbar.tsx";
 import Home from "./home.tsx";
 import Loading from "./util/loading.tsx";
@@ -13,13 +13,12 @@ const MeSettings = lazy(() => import("./ui/me/me.tsx"))
 
 export type LayoutProps = {
     me: Me,
-    unauthorized: () => Promise<Me | null>,
-    fetchMe: () => Promise<Me | null>,
+    fetchMe: FetchMe,
     setMe: Dispatch<StateUpdater<Me | null>>,
     reload: () => void,
 }
 
-export default function Layout({ me, unauthorized, fetchMe, setMe, reload }: LayoutProps) {
+export default function Layout({ me, fetchMe, setMe, reload }: LayoutProps) {
     const [path, navigate] = useLocation()
 
     useEffect(() => {
@@ -30,7 +29,7 @@ export default function Layout({ me, unauthorized, fetchMe, setMe, reload }: Lay
         const group = features[feature] as Partial<Record<Role, ComponentType<FeatureProps>>>
         const Feature = group[me.role]
         if (!Feature) return <p className="poppins">Not available for your role.</p>
-        return <Feature me={me} unauthorized={unauthorized} />
+        return <Feature me={me} fetchMe={fetchMe} />
     }
 
     function page() {

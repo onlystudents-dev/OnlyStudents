@@ -2,7 +2,7 @@ import i18n from "i18next";
 import {initReactI18next} from "react-i18next";
 import {match} from "@formatjs/intl-localematcher";
 import type {Me} from "../types/api.ts";
-import {type ApiError, getRetryAfter} from "./api.ts";
+import {type ApiError, getRetryAfter} from "./api.tsx";
 
 declare global {
     interface Window { __INITIAL_LANGUAGE__?: LanguageFile, __INITIAL_LANG__?: string }

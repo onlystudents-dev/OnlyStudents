@@ -1,8 +1,8 @@
 import "./absences.css";
-import type {Me, Absence} from "../../types/api.ts";
+import type {Absence} from "../../types/api.ts";
 import {useState} from "preact/hooks";
-import {fetchInto, fetchWithSchool} from "../../util/api.ts";
-import {useEffect} from "preact/compat";
+import {fetchInto, fetchWithSchool} from "../../util/api.tsx";
+import {useCallback, useEffect} from "preact/compat";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
@@ -13,11 +13,12 @@ import {faXmark} from "@fortawesome/free-solid-svg-icons";
 import Attachment from "../attachment.tsx";
 import SubmissionAttachmentInput from "../submission.tsx";
 import { toast } from "react-toastify";
+import type {FeatureProps, FetchMe} from "../../types/props.ts";
 
-async function submitAbsenceReason(note: string, file_uuid: string, absence: Absence) {
-  await fetchWithSchool("/api/v1/me/student/absence/submit_reason", {
+async function submitAbsenceReason(note: string, fileUUID: string, absence: Absence, fetchMe: FetchMe): Promise<void> {
+  await fetchWithSchool(fetchMe, "/api/v1/me/student/absence/submit_reason", {
     method: "POST", body: JSON.stringify({
-      "file_uuid": file_uuid,
+      "file_uuid": fileUUID,
       "absence_id": absence.id,
       "note": note,
     }),
@@ -38,16 +39,16 @@ async function submitAbsenceReason(note: string, file_uuid: string, absence: Abs
   })
 }
 
-export default function StudentAbsences({ me }: { me: Me }) {
+export default function StudentAbsences({ me, fetchMe }: FeatureProps) {
     const [absences, setAbsences] = useState<Absence[] | null>(null)
     const [current, setCurrent] = useState<Absence | null>(null)
 
-    async function Fetch() {
-        const list = await fetchInto<Absence[]>("/api/v1/me/student/absences")
+    const Fetch = useCallback(async () => {
+        const list = await fetchInto<Absence[]>(fetchMe, "/api/v1/me/student/absences")
         if (list) setAbsences(list)
-    }
+    }, [fetchMe])
 
-    useEffect(() => void Fetch(), [])
+    useEffect(() => void Fetch(), [Fetch])
     useReloadSchoolStuff(() => void Fetch())
 
     return (
@@ -75,9 +76,7 @@ export default function StudentAbsences({ me }: { me: Me }) {
                                 <Attachment label={getKey("GIVEN_REASON")} missingLabel={getKey("NO_GIVEN_REASON")} attachment={{ ...current, note: current.reason_note }} />
                             </div>
                             <div className="shrink-0 px-6 pb-6 pr-14">
-                              <SubmissionAttachmentInput notePlaceholder={getKey("ABSENCE_REASON_NOTE_EXAMPLE")} label={getKey("ABSENCE_JUSTIFICATION_SUBMIT")} onSubmit={(note: string, file_uuid: string) => {
-                                  void submitAbsenceReason(note, file_uuid, current)
-                                }}/>
+                              <SubmissionAttachmentInput notePlaceholder={getKey("ABSENCE_REASON_NOTE_EXAMPLE")} label={getKey("ABSENCE_JUSTIFICATION_SUBMIT")} onSubmit={(note: string, fileUUID: string) => void submitAbsenceReason(note, fileUUID, current, fetchMe)} />
                             </div>
                         </div>
                     </div>

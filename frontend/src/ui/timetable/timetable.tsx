@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import type {Lesson, LessonTime, Me, Room} from "../../types/api"
+import type {Group, Lesson, LessonTime, Me, Room} from "../../types/api"
 import { getKey } from "../../util/language"
 import {formatSecondsToHourAndMinute} from "../../util/time.ts";
 import {faAngleRight, faHouseChimney, faPenToSquare} from "@fortawesome/free-solid-svg-icons";
@@ -8,6 +8,7 @@ import "./timetable.css";
 import { faAngleLeft } from "@fortawesome/free-solid-svg-icons/faAngleLeft";
 import React from "preact/compat";
 import {Badge} from "../../util/button/button.tsx";
+import type {FetchMe} from "../../types/props.ts";
 
 export const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
 
@@ -24,6 +25,8 @@ export type PopupProps = {
     lesson: Lesson,
     clear: () => void,
     rooms: Room[],
+    groups?: Group[],
+    fetchMe: FetchMe,
 }
 
 type TimetableProps = {
@@ -35,7 +38,9 @@ type TimetableProps = {
     onPrevWeek: () => void,
     onNextWeek: () => void,
     reloadSchoolStuff: () => void,
+    groups?: Group[],
     Popup:  React.ComponentType<PopupProps>,
+    fetchMe: FetchMe,
 }
 
 export function Timetable(props: TimetableProps) {
@@ -65,7 +70,7 @@ export function Timetable(props: TimetableProps) {
                         <FontAwesomeIcon icon={faAngleLeft} />
                     </span>
                 </div>
-                {current && <props.Popup lesson={current} clear={() => {setCurrent(null); if (props.me.role === "teacher") props.reloadSchoolStuff()}} rooms={props.rooms} />}
+                {current && <props.Popup lesson={current} clear={() => {setCurrent(null); if (props.me.role === "teacher") props.reloadSchoolStuff()}} rooms={props.rooms} groups={props.groups} fetchMe={props.fetchMe} />}
                 {d.map((day) => (
                     <div className="day" key={day.name}>
                         <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>

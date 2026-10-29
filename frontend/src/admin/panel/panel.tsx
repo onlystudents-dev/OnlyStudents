@@ -18,7 +18,7 @@ import Loading from "../../util/loading.tsx";
 import {toast} from "react-toastify";
 import Save from "../../util/save/save.tsx";
 import type {Theme} from "../../types/api.ts";
-import {postJSON} from "../../util/api.ts";
+import {postJSON} from "../../util/api.tsx";
 import countries from "world-countries";
 import Select from "react-select";
 import {selectStyles, selectStyles2} from "../../util/select.ts";
@@ -84,7 +84,7 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
         <>
             <div className="main">
                 {(() => {
-                    switch(active) {
+                    switch (active) {
                         case "status":
                             return (
                                 <div className="box">
@@ -284,7 +284,7 @@ export default function AdminPanel({ status, fetchStatus }: {status: AdminStatus
                 <Button icon={faFileLines} text={getKey("ADMIN_LOGS")} onClick={() => { setActive("logs"); void fetchLogs() }} />
                 <Button icon={faUserPlus} text={getKey("ADMIN_ENROLL")} onClick={() => { setActive("enroll"); void fetchSchools() }} />
                 <Button icon={faPaintRoller} text={getKey("ADMIN_THEMES")} onClick={() => { setActive("themes"); void fetchThemes() }} />
-        </Sidebar>
+            </Sidebar>
         </>
     )
 
