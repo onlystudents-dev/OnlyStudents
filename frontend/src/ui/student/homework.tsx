@@ -1,8 +1,8 @@
 import "../homework/homework.css";
-import type {HomeworkSummary, Me} from "../../types/api.ts";
+import type {HomeworkSummary} from "../../types/api.ts";
 import {useState} from "preact/hooks";
-import {useEffect} from "preact/compat";
-import {fetchWithSchool} from "../../util/api.ts";
+import {useCallback, useEffect} from "preact/compat";
+import {fetchWithSchool} from "../../util/api.tsx";
 import Homework, {type PopupProps} from "../homework/homework.tsx";
 import Overlay from "../../util/overlay/overlay.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -11,25 +11,24 @@ import Attachment from "../attachment.tsx";
 import { fromResponse, getKey } from "../../util/language.ts";
 import SubmissionAttachmentInput from "../submission.tsx";
 import { toast } from "react-toastify";
+import type {FeatureProps, FetchMe} from "../../types/props.ts";
 
-export default function StudentHomework({ me }: { me: Me }) {
+export default function StudentHomework({ me, fetchMe }: FeatureProps) {
     const [homework, setHomework] = useState<HomeworkSummary[] | null>(null)
 
-    async function Fetch() {
-        return fetchWithSchool("/api/v1/me/student/homework").then(async res => setHomework(await res.json() as HomeworkSummary[]))
-    }
+    const Fetch = useCallback(() => fetchWithSchool(fetchMe, "/api/v1/me/student/homework").then(async res => setHomework(await res.json() as HomeworkSummary[])), [fetchMe])
 
     useEffect(() => {
         void Fetch()
-    }, [])
+    }, [Fetch])
 
-    return <Homework me={me} homework={homework} Popup={Popup} reloadSchoolStuff={Fetch} />
+    return <Homework me={me} fetchMe={fetchMe} homework={homework} Popup={Popup} reloadSchoolStuff={Fetch} />
 }
 
-async function submitHomework(note: string, file_uuid: string, homework: HomeworkSummary) {
-  await fetchWithSchool("/api/v1/me/student/homework/submit", {
+async function submitHomework(note: string, fileUUID: string, homework: HomeworkSummary, fetchMe: FetchMe) {
+  await fetchWithSchool(fetchMe, "/api/v1/me/student/homework/submit", {
       method: "POST", body: JSON.stringify({
-          "file_uuid": file_uuid,
+          "file_uuid": fileUUID,
           "homework_id": homework.id,
           "note": note,
       }),
@@ -50,7 +49,7 @@ async function submitHomework(note: string, file_uuid: string, homework: Homewor
   })
 }
 
-function Popup({ homework: hw, clear }: PopupProps) {
+function Popup({ homework: hw, clear, fetchMe }: PopupProps) {
     const homework = hw as HomeworkSummary
 
     return (
@@ -74,8 +73,8 @@ function Popup({ homework: hw, clear }: PopupProps) {
                         }} />
                     </div>
                     <div className="shrink-0 px-6 pb-6 pr-14">
-                        <SubmissionAttachmentInput notePlaceholder={getKey("HOMEWORK_SUBMISSION_NOTE_EXAMPLE")} label={getKey("HOMEWORK_SUBMISSION_SUBMIT")} onSubmit={(note: string, file_uuid: string) => {
-                          void submitHomework(note, file_uuid, homework)
+                        <SubmissionAttachmentInput notePlaceholder={getKey("HOMEWORK_SUBMISSION_NOTE_EXAMPLE")} label={getKey("HOMEWORK_SUBMISSION_SUBMIT")} onSubmit={(note: string, fileUUID: string) => {
+                            void submitHomework(note, fileUUID, homework, fetchMe)
                         }}/>
                     </div>
                 </div>

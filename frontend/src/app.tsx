@@ -1,6 +1,6 @@
 import {Route, Switch} from "wouter";
 import {ToastContainer} from "react-toastify";
-import {lazy, Suspense, useEffect, useRef, useState} from "preact/compat";
+import {lazy, Suspense, useEffect, useState} from "preact/compat";
 import Loading from "./util/loading.tsx";
 import type { Me } from "./types/api.ts";
 import { fetchLanguage } from "./util/language.ts";
@@ -15,24 +15,6 @@ declare global {
 const Login = lazy(() => import("./auth/login/login.tsx"))
 
 export default function App({ reload }: {reload: () => void}) {
-    const [popupLogin, setPopupLogin] = useState(false)
-    const loginResolverRef = useRef<((me: Me | null) => void) | null>(null)
-
-    function unauthorized() {
-        setPopupLogin(true)
-
-        return new Promise<Me | null>(resolve => {
-            loginResolverRef.current = resolve
-        })
-    }
-
-    async function popupLoginF() {
-        const me = await fetchMe()
-        setPopupLogin(false)
-        loginResolverRef.current?.(me)
-        loginResolverRef.current = null
-        return me
-    }
 
     const [ratelimit, setRatelimit] = useState<number>(-1)
     const [loading, setLoading] = useState(true)
@@ -46,6 +28,7 @@ export default function App({ reload }: {reload: () => void}) {
             if (typeof initial !== "object") return null
 
             setMe(initial)
+            localStorage.setItem("user", `${initial.account_id}${initial.role}`)
             return initial
         }
         try {
@@ -58,6 +41,7 @@ export default function App({ reload }: {reload: () => void}) {
 
             const me = response.status === 401 ? null : await response.json() as Me
             setMe(me)
+            if (me) localStorage.setItem("user", `${me.account_id}${me.role}`)
             return me
         } catch {
             return null
@@ -67,19 +51,15 @@ export default function App({ reload }: {reload: () => void}) {
     useEffect(() => {
         const path = window.location.pathname
 
-        function Fetch() {
-            void fetchMe()
-                .then(me => fetchLanguage(me))
-                .then(() => setLoading(false))
-        }
-
         switch (path) {
             case "/admin":
                 void fetchLanguage(null)
                     .then(() => setLoading(false))
                 break
             default:
-                Fetch()
+                void fetchMe()
+                    .then(me => fetchLanguage(me))
+                    .then(() => setLoading(false))
         }
     }, [])
 
@@ -94,16 +74,10 @@ export default function App({ reload }: {reload: () => void}) {
                         {loading ? <Loading /> : lazy(() => import("./auth/enroll/enroll.tsx"))}
                     </Route>
                     {ratelimit !== -1 ? <RateLimit retry={ratelimit} expire={async () => {setRatelimit(-1); await fetchMe().then(me => {if (me !== null) applyTheme(me)})}} /> : loading ? <Loading /> : !me ? <Login /> : (
-                        <Layout me={me} unauthorized={unauthorized} fetchMe={fetchMe} setMe={setMe} reload={reload} />
+                        <Layout me={me} fetchMe={fetchMe} setMe={setMe} reload={reload} />
                     )}
                 </Switch>
             </Suspense>
-
-            {me && popupLogin && (
-                <Suspense fallback={null}>
-                    <Login fetchMe={popupLoginF} />
-                </Suspense>
-            )}
 
             <ToastContainer theme={"dark"} position={"bottom-right"} />
         </>

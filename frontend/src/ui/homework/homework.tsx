@@ -5,13 +5,15 @@ import {getKey, getLanguage} from "../../util/language.ts";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useState} from "preact/hooks";
 import {useReloadSchoolStuff} from "../../util/school.ts";
+import type {FetchMe} from "../../types/props.ts";
 
 export type PopupProps = {
     homework: HomeworkSummary | HomeworkSubmission,
     clear: () => void,
+    fetchMe: FetchMe,
 }
 
-export default function Homework({ me, homework, Popup, reloadSchoolStuff }: { me: Me, homework: HomeworkSummary[] | HomeworkSubmission[] | null, Popup: React.ComponentType<PopupProps>, reloadSchoolStuff: () => void }) {
+export default function Homework({ me, fetchMe, homework, Popup, reloadSchoolStuff }: { me: Me, fetchMe: FetchMe, homework: HomeworkSummary[] | HomeworkSubmission[] | null, Popup: React.ComponentType<PopupProps>, reloadSchoolStuff: () => void }) {
     const [current, setCurrent] = React.useState<HomeworkSummary | HomeworkSubmission | null>(null)
 
     const [now] = useState(Date.now)
@@ -21,7 +23,7 @@ export default function Homework({ me, homework, Popup, reloadSchoolStuff }: { m
     return (
         <>
             <div className="w-full min-h-full flex flex-col items-center justify-start pt-8 gap-4">
-                {current && <Popup homework={current} clear={() => {setCurrent(null); reloadSchoolStuff()}} />}
+                {current && <Popup homework={current} clear={() => {setCurrent(null); reloadSchoolStuff()}} fetchMe={fetchMe} />}
                 {homework?.length === 0 ? <p className="text-4xl">{getKey(`NO_HOMEWORK.${me.role}`)}</p> : homework?.map((homework) => (
                     <>
                         <div className={`homework ${homework.due_date < now && "wrong"}`} onClick={() => setCurrent(homework)}>

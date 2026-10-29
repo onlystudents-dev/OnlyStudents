@@ -9,7 +9,7 @@ import {fromResponse, getKey} from "../../util/language.ts";
 import {DEFAULT_CONFIG, getPasswordConfig, type PasswordConfig} from "../config.ts";
 import RoleSelect from "../roleSelect.tsx";
 import {useCountdown} from "../../util/countdown.ts";
-import {getRetryAfter, postJSON} from "../../util/api.ts";
+import {getRetryAfter, postJSON} from "../../util/api.tsx";
 import type { ForgetPasswordCheckResponse, ForgetPasswordConfirmResponse } from "../../types/api.ts";
 import { MnemonicSecrettoSeed, normalizeMnemonicWords, validateMnemonicSecret } from "../../util/crypto/mnemonic.ts";
 import { b64decode, b64encode, constantTimeEqual, decodeOpaqueExportKey, deriveWrapKey, parseParams, recoveryDigest, unwrapMK, wrapMK, type Bytes } from "../../util/crypto/keys.ts";

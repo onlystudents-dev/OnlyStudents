@@ -11,7 +11,7 @@ import {toast} from "react-toastify";
 import Loading from "../../util/loading.tsx";
 import { decodeOpaqueExportKey, deriveWrapKey, generateMK, paramsToString, randomBytes, recoveryDigest, wrapMK, b64encode } from "../../util/crypto/keys.ts";
 import { generateMnemonicSecret, MnemonicSecrettoSeed } from "../../util/crypto/mnemonic.ts";
-import { getRetryAfter } from "../../util/api.ts";
+import { getRetryAfter } from "../../util/api.tsx";
 
 export default function Enroll() {
     const enrollToken = new URLSearchParams(location.search).get("enroll_token")

@@ -52,7 +52,7 @@ async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFi
         }
     })
 }
-export default function SubmissionAttachmentInput({ notePlaceholder, label, onSubmit }: { notePlaceholder: string, label?: string, onSubmit: (note: string, file_uuid: string) => void } ) {
+export default function SubmissionAttachmentInput({ notePlaceholder, label, onSubmit }: { notePlaceholder: string, label?: string, onSubmit: (note: string, fileUUID: string) => void } ) {
     const [file, setFile] = useState<attachmentFile>({file_name: "", file_type: "", file_uuid: "", file_size: 0})
     const [fileUploaded, setFileUploaded] = useState(false)
     const [note, setNote] = useState("")

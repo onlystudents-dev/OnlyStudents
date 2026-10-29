@@ -34,29 +34,9 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
 
     const [pfpLoaded, setPfpLoaded] = useState(false)
 
-    const [child, setChildR] = useState<number | undefined>(() => {
-        if (me.role !== "guardian") return undefined
+    const [child, setChildR] = useState<number | undefined>(() => defaultChild(me))
 
-        const stored = localStorage.getItem("child_id")
-        const val = stored ? Number(stored) : me.children?.[0]?.account_id
-
-        localStorage.setItem("child_id", String(val))
-        return val
-    })
-
-    const [school, setSchoolR] = useState<number | undefined>(() => {
-        const stored = localStorage.getItem("school_id")
-        if (stored) return Number(stored)
-
-        const memberships = me.role === "guardian"
-            ? me.children?.find(c => c.account_id === child)?.school_memberships
-            : me.school_memberships
-
-        const val = memberships?.[0]?.school_id
-        localStorage.setItem("school_id", String(val))
-
-        return val
-    })
+    const [school, setSchoolR] = useState<number | undefined>(() => defaultSchool(me, child))
 
     function setSchool(schoolId: string) {
         localStorage.setItem("school_id", schoolId)
@@ -184,4 +164,28 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
             </nav>
         </>
     )
+}
+
+export function defaultChild(me: Me) {
+    if (me.role !== "guardian") return undefined
+
+    const stored = localStorage.getItem("child_id")
+    const val = stored ? Number(stored) : me.children?.[0]?.account_id
+
+    localStorage.setItem("child_id", String(val))
+    return val
+}
+
+export function defaultSchool(me: Me, child: number | undefined) {
+    const stored = localStorage.getItem("school_id")
+    if (stored) return Number(stored)
+
+    const memberships = me.role === "guardian"
+        ? me.children?.find(c => c.account_id === child)?.school_memberships
+        : me.school_memberships
+
+    const val = memberships?.[0]?.school_id
+    localStorage.setItem("school_id", String(val))
+
+    return val
 }

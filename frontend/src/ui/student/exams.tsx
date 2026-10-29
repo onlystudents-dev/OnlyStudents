@@ -2,24 +2,23 @@ import "./exams.css";
 import {getLanguage} from "../../util/language.ts";
 import {formatUnixDate} from "../../util/time.ts";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
-import type {Exam, Me} from "../../types/api.ts";
+import type {Exam} from "../../types/api.ts";
 import {useState} from "preact/hooks";
-import {fetchWithSchool} from "../../util/api.ts";
-import {useEffect} from "preact/compat";
+import {fetchWithSchool} from "../../util/api.tsx";
+import {useCallback, useEffect} from "preact/compat";
 import Overlay from "../../util/overlay/overlay.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
+import type {FeatureProps} from "../../types/props.ts";
 
-export default function StudentExams({ me }: { me: Me }) {
+export default function StudentExams({ me, fetchMe }: FeatureProps) {
     const [exams, setExams] = useState<Exam[] | null>(null)
     const [current, setCurrent] = useState<Exam | null>(null)
 
-    async function Fetch() {
-        return fetchWithSchool("/api/v1/me/student/exams").then(async res => setExams(await res.json() as Exam[]))
-    }
+    const Fetch = useCallback(() => fetchWithSchool(fetchMe, "/api/v1/me/student/exams").then(async res => setExams(await res.json() as Exam[])), [fetchMe])
 
-    useEffect(() => void Fetch(), [])
+    useEffect(() => void Fetch(), [Fetch])
     useReloadSchoolStuff(() => void Fetch())
 
     return (

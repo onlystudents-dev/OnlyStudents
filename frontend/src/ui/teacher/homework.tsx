@@ -1,24 +1,26 @@
 import "../homework/homework.css";
-import type {HomeworkSubmission, Me} from "../../types/api.ts";
+import type {HomeworkSubmission} from "../../types/api.ts";
 import {useEffect, useState} from "preact/hooks";
-import {fetchWithSchool} from "../../util/api.ts";
+import {fetchWithSchool} from "../../util/api.tsx";
 import Homework, {type PopupProps} from "../homework/homework.tsx";
 import Overlay from "../../util/overlay/overlay.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
 import Attachment from "../attachment.tsx";
 import { getKey } from "../../util/language.ts";
+import type {FeatureProps} from "../../types/props.ts";
+import {useCallback} from "preact/compat";
 
-export default function TeacherHomework({ me }: { me: Me }) {
+export default function TeacherHomework({ me, fetchMe }: FeatureProps) {
     const [homework, setHomework] = useState<HomeworkSubmission[] | null>(null)
-    async function Fetch() {
-        const res = await fetchWithSchool("/api/v1/me/teacher/homework")
+    const Fetch = useCallback(async () => {
+        const res = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/homework")
         setHomework(await res.json() as HomeworkSubmission[])
-    }
+    }, [fetchMe])
     useEffect(() => {
         void Fetch()
-    }, [])
-    return <Homework me={me} homework={homework} Popup={Popup} reloadSchoolStuff={Fetch} />
+    }, [Fetch])
+    return <Homework me={me} fetchMe={fetchMe} homework={homework} Popup={Popup} reloadSchoolStuff={Fetch} />
 }
 
 function Popup({ homework: hw, clear }: PopupProps) {

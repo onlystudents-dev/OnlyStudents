@@ -1,6 +1,8 @@
-import type {Me} from "./api.ts";
+import type {Me} from "./api.tsx";
 
 export type FeatureProps = {
     me: Me,
-    unauthorized: () => Promise<Me | null>,
+    fetchMe: FetchMe,
 }
+
+export type FetchMe = () => Promise<Me | null>

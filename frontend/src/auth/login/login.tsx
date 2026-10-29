@@ -10,10 +10,9 @@ import {getKey} from "../../util/language.ts";
 import { opaqueLogin } from "../opaque.ts";
 import RoleSelect from "../roleSelect.tsx";
 import { useCountdown } from "../../util/countdown.ts";
-import type {Me} from "../../types/api.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
 
-export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>}) {
+export default function Login({ finished, z = 148 }: {finished?: () => void, z?: number}) {
     const [resetOpen, setResetOpen] = useState(false)
     const [resetActive, setResetActive] = useState(false)
     const [resetSent, setResetSent] = useState(false)
@@ -38,8 +37,9 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
               case "ok":
                   localStorage.removeItem("child_id")
                   localStorage.removeItem("school_id")
-                  if (fetchMe !== undefined) {
-                      await fetchMe()
+                  localStorage.removeItem("user")
+                  if (finished !== undefined) {
+                      finished()
                   } else {
                       location.reload()
                   }
@@ -59,7 +59,7 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
       } finally {
           setWaiting(false)
       }
-    }, [red, wrong, remaining, id, password, role, fetchMe, updateRemaining])
+    }, [red, wrong, remaining, id, password, role, finished, updateRemaining])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -75,7 +75,7 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
 
     return (
         <>
-            <div className={`box cantar ${resetSent ? "h-184" : "h-100"}`}>
+            <div className={`box cantar ${resetSent ? "h-184" : "h-100"}`} style={{ zIndex: z + 1 }}>
                 <div className={`content out ${resetActive && "hid h-86"}`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">
@@ -98,7 +98,7 @@ export default function Login({ fetchMe }: {fetchMe?: () => Promise<Me | null>})
                 {resetOpen && <PasswordReset resetActive={resetActive} onClose={closeReset} role={role} setRole={setRole} id={id} setId={setId} red={red} checkUserID={checkUserID} setWaiting={setWaiting} setResetSent={setResetSent} />}
             </div>
             {waiting && <Loading />}
-            {fetchMe !== undefined && <Overlay z={148} />}
+            {finished !== undefined && <Overlay z={z} />}
         </>
     )
 

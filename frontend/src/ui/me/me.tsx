@@ -21,13 +21,14 @@ import {applyTheme, getAutoTheme} from "../../util/theme.ts";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import type {Dispatch, StateUpdater} from "preact/hooks";
 import {getTimeFormat} from "../../util/time.ts";
-import {postJSON} from "../../util/api.ts";
+import {postJSON} from "../../util/api.tsx";
 import { opaqueReauth, opaqueRekey, type OpaqueReauthResult} from "../../auth/opaque.ts";
 import type { Bytes } from "../../util/crypto/keys.ts";
+import type {FetchMe} from "../../types/props.ts";
 
 type Options = Pick<Preferences, "lang" | "time_format" | "theme" | "timetable_display" | "timetable_next">
 
-export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: () => Promise<Me | null>, setMe: Dispatch<StateUpdater<Me | null>>, reload: () => void}) {
+export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: FetchMe, setMe: Dispatch<StateUpdater<Me | null>>, reload: () => void}) {
     const [waiting, setWaiting] = useState(false)
     const [loading, setLoading] = useState(false)
 

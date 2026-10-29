@@ -1,7 +1,7 @@
 import "./grades.css";
 import type {Me, Grade, Subject} from "../../types/api.ts";
 import {useState} from "preact/hooks";
-import {fetchWithSchool} from "../../util/api.ts";
+import {fetchWithSchool} from "../../util/api.tsx";
 import {useCallback, useEffect} from "preact/compat";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
@@ -12,6 +12,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
 import {useLocation, useSearch} from "wouter";
 import SubjectAverageChart from "./charts.tsx";
+import type {FeatureProps, FetchMe} from "../../types/props.ts";
 
 export const colors: Record<number, string> = {
     1: "wrong",
@@ -21,7 +22,7 @@ export const colors: Record<number, string> = {
     5: "edit",
 }
 
-export default function StudentGrades({ me }: { me: Me }) {
+export default function StudentGrades({ me, fetchMe }: FeatureProps) {
     const search = useSearch()
     const subject = new URLSearchParams(search).get("subject")
 
@@ -29,22 +30,20 @@ export default function StudentGrades({ me }: { me: Me }) {
         window.scrollTo(0, 0)
     }, [subject])
 
-    return subject ? <StudentGradesList me={me} subject={subject} /> : <StudentSubjects me={me} />
+    return subject ? <StudentGradesList me={me} fetchMe={fetchMe} subject={subject} /> : <StudentSubjects me={me} fetchMe={fetchMe} />
 }
 
-export function StudentSubjects({ me }: { me: Me }) {
+export function StudentSubjects({ me, fetchMe }: FeatureProps) {
     const [, navigate] = useLocation()
     const [subjects, setSubjects] = useState<Subject[] | null>(null)
     const [grades, setGrades] = useState<Grade[] | null>(null)
 
-    async function Fetch() {
-        return Promise.all([
-            fetchWithSchool("/api/v1/me/student/subjects").then(async res => setSubjects(await res.json() as Subject[])),
-            fetchWithSchool("/api/v1/me/student/grades").then(async res => setGrades(await res.json() as Grade[])),
-        ])
-    }
+    const Fetch = useCallback(() => Promise.all([
+        fetchWithSchool(fetchMe, "/api/v1/me/student/subjects").then(async res => setSubjects(await res.json() as Subject[])),
+        fetchWithSchool(fetchMe, "/api/v1/me/student/grades").then(async res => setGrades(await res.json() as Grade[])),
+    ]), [fetchMe])
 
-    useEffect(() => void Fetch(), [])
+    useEffect(() => void Fetch(), [Fetch])
     useReloadSchoolStuff(() => void Fetch())
 
     return (
@@ -85,15 +84,15 @@ export function StudentSubjects({ me }: { me: Me }) {
     )
 }
 
-export function StudentGradesList({ me, subject }: { me: Me; subject: string }) {
+export function StudentGradesList({ me, fetchMe, subject }: { me: Me, fetchMe: FetchMe, subject: string }) {
     const [grades, setGrades] = useState<Grade[] | null>(null)
     const [current, setCurrent] = useState<Grade | null>(null)
 
     const Fetch = useCallback(async () => {
-        return fetchWithSchool(`/api/v1/me/student/grades?subject=${subject}`).then(
+        return fetchWithSchool(fetchMe, `/api/v1/me/student/grades?subject=${subject}`).then(
             async (res) => setGrades((await res.json()) as Grade[])
         )
-    }, [subject])
+    }, [fetchMe, subject])
 
     useEffect(() => void Fetch(), [Fetch])
     useReloadSchoolStuff(() => void Fetch())

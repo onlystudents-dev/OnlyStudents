@@ -2,7 +2,7 @@ import type {Group, Lesson, LessonTime, Room, Student} from "../../types/api.ts"
 import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
 import {useCallback, useEffect, useRef, useState} from "preact/compat";
 import {toast} from "react-toastify";
-import {fetchInto, fetchWithSchool, getRetryAfter} from "../../util/api.ts";
+import {fetchInto, fetchWithSchool, getRetryAfter} from "../../util/api.tsx";
 import type { FeatureProps } from "../../types/props.ts";
 import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../timetable/timetable.tsx"
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
@@ -14,7 +14,7 @@ import {faList, faStar} from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import Button from "../../util/sidebar/config.tsx";
 
-export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
+export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
     const [lessonTime, setLessonTime] = useState<LessonTime[]>([])
     const [groups, setGroups] = useState<Group[]>([])
@@ -22,13 +22,6 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
     const [year, setYear] = useState<string>("")
     const [ratelimit, setRateLimit] = useState(-1)
     const [loading, setLoading] = useState(true)
-
-    const meRef = useRef(me)
-    const unauthorizedRef = useRef(unauthorized)
-    useEffect(() => {
-        meRef.current = me
-        unauthorizedRef.current = unauthorized
-    })
 
     const weekOffsetRef = useRef(0)
 
@@ -39,76 +32,59 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
         date.setDate(date.getDate() + target * 7)
         const { start, end, monday, mondayTime } = getWeekRange(date)
 
-        // why on earth would it cry because of while true
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        while (true) {
-            const response = await fetchWithSchool(`/api/v1/me/teacher/timetable/mine?start_date=${start}&end_date=${end}`)
+        const response = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/mine?start_date=${start}&end_date=${end}`)
 
-            if (response.status === 429) {
-                setRateLimit(getRetryAfter(response))
-                setLoading(false)
-                return
-            }
-
-            if (response.status === 401) {
-                setLoading(false)
-                const me = await unauthorizedRef.current()
-                if (me?.role !== "teacher") return
-                setLoading(true)
-                await Promise.all([
-                    fetchInto("/api/v1/me/teacher/timetable/room", setRooms),
-                    fetchInto("/api/v1/me/teacher/timetable/group", setGroups),
-                    fetchInto("/api/v1/me/teacher/timetable/my_lesson_times", setLessonTime),
-                ])
-                continue
-            }
-
-            if (!response.ok) {
-                toast.error(await fromResponse(response))
-                setLoading(false)
-                return
-            }
-
-            weekOffsetRef.current = target
-
-            if (monday.getMonth() >= 7) {
-                setYear(`${monday.getFullYear()}-${monday.getFullYear() + 1}`)
-            } else {
-                setYear(`${monday.getFullYear() - 1}-${monday.getFullYear()}`)
-            }
-
-            const lessons = await response.json() as Lesson[]
-            const daySeconds = 86400
-            const language = getLanguage(meRef.current)?.key || "en-US"
-            const now = new Date()
-
-            const createDayData = (name: DayName, dayOffset: number, dayOfWeek: number): Day => {
-                const targetDate = new Date(monday)
-                targetDate.setDate(monday.getDate() + dayOffset)
-
-                return {
-                    name,
-                    date: formatUnixDate(mondayTime + daySeconds * dayOffset, language),
-                    lessons: lessons.filter(lesson => lesson.day_of_week === dayOfWeek),
-                    today: targetDate.toDateString() === now.toDateString(),
-                }
-            }
-
-            setDays(DAY_NAMES.map((name, i) => createDayData(name, i, (i + 1) % 7)))
-
+        if (response.status === 429) {
+            setRateLimit(getRetryAfter(response))
             setLoading(false)
-            return lessons
+            return
         }
-    }, [])
+
+        if (!response.ok) {
+            toast.error(await fromResponse(response))
+            setLoading(false)
+            return
+        }
+
+        weekOffsetRef.current = target
+
+        if (monday.getMonth() >= 7) {
+            setYear(`${monday.getFullYear()}-${monday.getFullYear() + 1}`)
+        } else {
+            setYear(`${monday.getFullYear() - 1}-${monday.getFullYear()}`)
+        }
+
+        const lessons = await response.json() as Lesson[]
+        const daySeconds = 86400
+        const language = getLanguage(me)?.key || "en-US"
+        const now = new Date()
+
+        const createDayData = (name: DayName, dayOffset: number, dayOfWeek: number): Day => {
+            const targetDate = new Date(monday)
+            targetDate.setDate(monday.getDate() + dayOffset)
+
+            return {
+                name,
+                date: formatUnixDate(mondayTime + daySeconds * dayOffset, language),
+                lessons: lessons.filter(lesson => lesson.day_of_week === dayOfWeek),
+                today: targetDate.toDateString() === now.toDateString(),
+            }
+        }
+
+        setDays(DAY_NAMES.map((name, i) => createDayData(name, i, (i + 1) % 7)))
+
+        setLoading(false)
+        return lessons
+    }, [fetchMe, me])
 
     const Fetch = useCallback(async () => {
         const lessons = await fetchWeekLessons(0)
 
         await Promise.all([
-            fetchInto("/api/v1/me/teacher/timetable/my_rooms", setRooms),
-            fetchInto("/api/v1/me/teacher/timetable/group", setGroups),
-            fetchInto("/api/v1/me/teacher/timetable/my_lesson_times", setLessonTime).then(time => {
-                if (!meRef.current.preferences.timetable_next) return
+            fetchInto(fetchMe, "/api/v1/me/teacher/timetable/my_rooms", setRooms),
+            fetchInto(fetchMe, "/api/v1/me/teacher/timetable/group", setGroups),
+            fetchInto(fetchMe, "/api/v1/me/teacher/timetable/my_lesson_times", setLessonTime).then(time => {
+                if (!me.preferences.timetable_next) return
 
                 if (!time) return
 
@@ -131,7 +107,7 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
                 }
             }),
         ])
-    }, [fetchWeekLessons])
+    }, [fetchMe, fetchWeekLessons, me.preferences.timetable_next])
 
     useEffect(() => {
         void Fetch()
@@ -143,12 +119,12 @@ export default function TeacherTimetable({ me, unauthorized }: FeatureProps) {
         <>
             {loading && <Loading />}
             {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
-            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} groups={groups} />
+            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} groups={groups} fetchMe={fetchMe} />
         </>
     )
 }
 
-function Popup({ lesson, rooms, groups, clear }: PopupProps) {
+function Popup({ lesson, rooms, groups, clear, fetchMe }: PopupProps) {
     const [active, setActive] = useState<"overview" | "grade">("overview")
     const [students, setStudents] = useState<Student[]>([])
 
@@ -156,8 +132,8 @@ function Popup({ lesson, rooms, groups, clear }: PopupProps) {
     const group = groups?.find(g => g.id === lesson.group_id)
 
     useEffect(() => {
-        void fetchWithSchool(`/api/v1/me/teacher/timetable/group/student?group_id=${group?.id}`).then(async response => setStudents(await response.json() as Student[]))
-    }, [group])
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/group/student?group_id=${group?.id}`).then(async response => setStudents(await response.json() as Student[]))
+    }, [fetchMe, group])
 
     if (!group || !room) return
 

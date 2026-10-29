@@ -1,4 +1,4 @@
-import {type ApiError, getRetryAfter, postJSON} from "../util/api.ts";
+import {type ApiError, getRetryAfter, postJSON} from "../util/api.tsx";
 import { decodeOpaqueExportKey, deriveWrapKey, unwrapMK, wrapMK, b64encode, type Bytes } from "../util/crypto/keys.ts";
 
 type Identifiers = {client?: string, server?: string}
