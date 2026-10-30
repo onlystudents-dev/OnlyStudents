@@ -33,6 +33,9 @@ func FrontendMiddleware(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, inde
 	}
 
 	page := helpers.InjectThemes(c.Context(), rdb, indexHTML)
+	language, lKey := helpers.GetLanguage(c, "", true)
+	page = bytes.Replace(page, []byte(`"__INITIAL_LANGUAGE__"`), language, 1)
+	page = bytes.Replace(page, []byte(`"__INITIAL_LANG__"`), []byte(`"`+lKey+`"`), 1)
 
 	if count > max {
 		ttl, err := rdb.TTL(c.Context(), fmt.Sprintf("ratelimit:%s:%s", "api", c.IP())).Result()
@@ -42,13 +45,6 @@ func FrontendMiddleware(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, inde
 	} else if statusData, err := meapi.GetStatusData(c, pool, rdb); err == nil {
 		payload, _ := json.Marshal(statusData)
 		page = bytes.Replace(page, []byte(`"__INITIAL_STATUS__"`), payload, 1)
-		language, lKey := helpers.GetLanguage(c, statusData.Preferences.Lang, false)
-		page = bytes.Replace(page, []byte(`"__INITIAL_LANGUAGE__"`), language, 1)
-		page = bytes.Replace(page, []byte(`"__INITIAL_LANG__"`), []byte(`"`+lKey+`"`), 1)
-	} else {
-		language, lKey := helpers.GetLanguage(c, "", true)
-		page = bytes.Replace(page, []byte(`"__INITIAL_LANGUAGE__"`), language, 1)
-		page = bytes.Replace(page, []byte(`"__INITIAL_LANG__"`), []byte(`"`+lKey+`"`), 1)
 	}
 
 	c.Set("Content-Type", "text/html; charset=utf-8")

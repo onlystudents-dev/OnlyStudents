@@ -1,5 +1,6 @@
 {
     "messages": {
+        "NOT_FOUND": "The page you're looking for doesn't exist",
         "LOGIN_TITLE": "Login",
         "USER_ID": "User ID",
         "PASSWORD": "Password",

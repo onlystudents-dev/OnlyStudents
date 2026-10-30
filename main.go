@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -415,6 +416,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	HTML404, err := os.ReadFile("frontend/dist/404.html")
+	if err != nil {
+		panic(err)
+	}
 	helpers.CacheLanguages()
 	helpers.InitFileExts()
 
@@ -436,7 +441,18 @@ func main() {
 	helpers.RegisterRoutes(api, buildRoutes(pool, rdb, opaque_server))
 
 	app.Use(func(c fiber.Ctx) error {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "NOT_FOUND"})
+		if c.Method() != "GET" {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "NOT_FOUND"})
+		}
+		
+		page := helpers.InjectThemes(c.Context(), rdb, HTML404)
+		language, lKey := helpers.GetLanguage(c, "", true)
+		page = bytes.Replace(page, []byte(`"__INITIAL_LANGUAGE__"`), language, 1)
+		page = bytes.Replace(page, []byte(`"__INITIAL_LANG__"`), []byte(`"`+lKey+`"`), 1)
+
+		c.Set("Content-Type", "text/html; charset=utf-8")
+		c.Set("Cache-Control", "no-store")
+		return c.Status(fiber.StatusNotFound).Send(page)
 	})
 
 	log.Fatal(app.Listen(":8080",
