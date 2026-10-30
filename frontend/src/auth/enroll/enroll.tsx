@@ -117,7 +117,7 @@ export default function Enroll() {
 
     return (
         <>
-            <div className="cantar ebox">
+            <div className="cantar absolute ebox">
                 <div className="econtent">
                     <h1 className="self-center text-5xl font-bold mb-4 rubik">
                         {getKey("ENROLL")}

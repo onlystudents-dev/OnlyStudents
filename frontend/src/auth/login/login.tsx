@@ -75,7 +75,7 @@ export default function Login({ finished, z = 148 }: {finished?: () => void, z?:
 
     return (
         <>
-            <div className={`box cantar ${resetSent ? "h-184" : "h-100"}`} style={{ zIndex: z + 1 }}>
+            <div className={`box cantar absolute ${resetSent ? "h-184" : "h-100"}`} style={{ zIndex: z + 1 }}>
                 <div className={`content out ${resetActive && "hid h-86"}`}>
                     <h1 className="self-center text-5xl font-bold mb-8 rubik">{getKey("LOGIN_TITLE")}</h1>
                     <div className="loginput fredoka">

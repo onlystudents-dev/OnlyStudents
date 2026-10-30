@@ -1,5 +1,6 @@
 {
     "messages": {
+        "NOT_FOUND": "Az oldal amit keresel nem létezik",
         "LOGIN_TITLE": "Bejelentkezés",
         "USER_ID": "Felhasználó azonosító",
         "PASSWORD": "Jelszó",

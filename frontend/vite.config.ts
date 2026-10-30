@@ -35,6 +35,10 @@ export default defineConfig({
     ],
     build: {
         rolldownOptions: {
+            input: {
+                main: path.resolve(__dirname, "index.html"),
+                nf: path.resolve(__dirname, "404.html"),
+            },
             output: {
                 codeSplitting: {
                   groups: [

@@ -78,7 +78,7 @@ export default function AdminLogin() {
 
     return (
         <>
-            <div className="cantar box">
+            <div className="cantar absolute box">
                 <div className="content">
                     <h1 className="self-center text-5xl font-bold mb-4 rubik">{getKey("LOGIN_TITLE")}</h1>
 

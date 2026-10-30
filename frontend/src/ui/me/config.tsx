@@ -18,7 +18,7 @@ export default function Config({ icon, text, value, children, className}: {icon:
                 </p>
             </div>
             {open && <>
-                <div className="cantar configure configs">
+                <div className="cantar absolute configure configs">
                     {typeof children === "function" ? children(close) : children}
                 </div>
                 <Overlay onClick={close} z={1} time={10000} />
