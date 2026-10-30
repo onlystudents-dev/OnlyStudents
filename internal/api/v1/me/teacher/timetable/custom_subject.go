@@ -76,5 +76,7 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 }
 
 func ReadCustomSubjects(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT", "BELL_SCHEDULE_TYPE_CACHE_TTL", helpers.CacheOrGetTeacherCustomSubjects, convertCustomSubject)
+	return TeacherTimeTableSummary(c, pool, rdb, "CUSTOM_SUBJECT_CACHE_TTL", "MANAGE_CUSTOM_SUBJECT", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
+		return helpers.CacheOrGetTeacherCustomSubjects(ctx, rdb, queries, scope, ttl)
+	}, convertCustomSubject)
 }

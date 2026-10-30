@@ -11,32 +11,33 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func TeacherTimeTableSummaryByID[request_type, Row, T any](
+func TeacherTimeTableSummary[Row, T, request_type any](
 	c fiber.Ctx,
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
-	required_permission string,
 	cache_key string,
+	required_permission string,
 	request_check_func func(request_type) bool,
-	get_id_func func(request_type) int32,
-	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, ID int32, scope helpers.TeacherScope, ttl int32) ([]Row, error),
+	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req request_type, scope helpers.TeacherScope, ttl int32) ([]Row, error),
 	convert func(row Row) T,
 ) error {
+	session_data, ok := c.Locals("session").(helpers.SessionData)
+
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
+	}
+
 	var req request_type
 
-	if err := c.Bind().Query(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
+	if request_check_func != nil {
+		if err := c.Bind().Query(&req); err != nil {
+			slog.Debug("StudentSummary bad request check failed")
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+		}
 
-	if request_check_func(req) {
-		slog.Debug("TeacherTimeTableSummaryByID bad request check failed")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	session_data, ok := c.Locals("session").(helpers.SessionData)
-
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
+		if request_check_func(req) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+		}
 	}
 
 	queries := db_queries.New(pool)
@@ -51,51 +52,7 @@ func TeacherTimeTableSummaryByID[request_type, Row, T any](
 
 	switch session_data.Role {
 	case "teacher":
-		data, err := cache_or_get_func(c.Context(), rdb, *queries, get_id_func(req), teacher_scope, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
-
-		if err != nil {
-			error_code, status_code := helpers.MapDBError(err)
-			return c.Status(status_code).JSON(fiber.Map{"error": error_code})
-		}
-
-		for _, row := range data {
-			summaries = append(summaries, convert(row))
-		}
-	default:
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
-	}
-
-	return c.JSON(summaries)
-}
-
-func TeacherTimeTableSummary[Row, T any](
-	c fiber.Ctx,
-	pool *pgxpool.Pool,
-	rdb *redis.Client,
-	required_permission string,
-	cache_key string,
-	cache_or_get_func func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope helpers.TeacherScope, ttl int32) ([]Row, error),
-	convert func(row Row) T,
-) error {
-	session_data, ok := c.Locals("session").(helpers.SessionData)
-
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
-	}
-
-	queries := db_queries.New(pool)
-
-	summaries := []T{}
-
-	teacher_scope, status_code := helpers.ResolveTeacherCapabilityScope(c, pool, rdb, required_permission)
-
-	if status_code != fiber.StatusOK {
-		return helpers.ErrorByStatusCode(c, status_code)
-	}
-
-	switch session_data.Role {
-	case "teacher":
-		data, err := cache_or_get_func(c.Context(), rdb, *queries, teacher_scope, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
+		data, err := cache_or_get_func(c.Context(), rdb, *queries, req, teacher_scope, helpers.GetInt32EnvFallback(cache_key, 5*60, 604800))
 
 		if err != nil {
 			error_code, status_code := helpers.MapDBError(err)

@@ -105,7 +105,9 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "MANAGE_GROUPS", "GROUPS_CACHE_TTL", helpers.CacheOrGetGroups, convertGroup)
+	return TeacherTimeTableSummary(c, pool, rdb, "GROUPS_CACHE_TTL", "MANAGE_GROUPS", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.Group, error) {
+		return helpers.CacheOrGetGroups(ctx, rdb, queries, scope, ttl)
+	}, convertGroup)
 }
 
 func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
@@ -137,8 +139,7 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 }
 
 func ReadStudentsInGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummaryByID(c, pool, rdb, "MANAGE_GROUPS", "GROUP_STUDENTS_CACHE_TTL",
-		func(req ReadStudentGroupRequest) bool { return req.GroupID <= 0 },
-		func(req ReadStudentGroupRequest) int32 { return req.GroupID },
-		helpers.CacheOrGetStudentsInGroup, convertStudentsInGroup)
+	return TeacherTimeTableSummary(c, pool, rdb, "GROUP_STUDENTS_CACHE_TTL", "MANAGE_GROUPS", func(req ReadStudentGroupRequest) bool { return req.GroupID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadStudentGroupRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadListOfStudentsRow, error) {
+		return helpers.CacheOrGetStudentsInGroup(ctx, rdb, queries, req.GroupID, scope, ttl)
+	}, convertStudentsInGroup)
 }
