@@ -366,13 +366,6 @@ func CacheOrGetTeacherMyLessonTimes(ctx context.Context, rdb *redis.Client, quer
 	})
 }
 
-func CacheOrGetTeacherSchoolRooms(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
-	key := fmt.Sprintf("teacher_rooms:%d:%d", scope.SchoolID, scope.TeacherID)
-	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRoomRow, error) {
-		return queries.ReadRoom(ctx, scope.SchoolID)
-	})
-}
-
 func CacheOrGetTeacherAbsences(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesRow, error) {
 	key := fmt.Sprintf("teacher_absences:%d:%d", scope.SchoolID, scope.TeacherID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherAbsencesRow, error) {
