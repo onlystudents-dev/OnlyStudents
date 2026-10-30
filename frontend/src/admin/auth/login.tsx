@@ -65,15 +65,11 @@ export default function AdminLogin() {
     }, [invalidToken, secondsLeft, adminToken, startCountdown])
 
     useEffect(() => {
-        const handleKeyDown = async (e: KeyboardEvent) => {
-            if (e.key === "Enter") await login()
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Enter") void login()
         }
-
-        window.addEventListener("keydown", e => void handleKeyDown(e))
-
-        return () => {
-            window.removeEventListener("keydown", e => void handleKeyDown(e))
-        }
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
     }, [login])
 
     return (
