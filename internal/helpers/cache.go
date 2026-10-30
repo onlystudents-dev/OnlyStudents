@@ -356,6 +356,23 @@ func CacheOrGetTeacherHomework(ctx context.Context, rdb *redis.Client, queries d
 	return []db_queries.GetTeacherHomeworkRow{homework}, nil
 }
 
+func CacheOrGetTeacherMyLessonTimes(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.BellSchedule, error) {
+	key := fmt.Sprintf("teacher_lesson_times:%d:%d", scope.SchoolID, scope.TeacherID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.BellSchedule, error) {
+		return queries.ReadTeacherLessonTimes(ctx, db_queries.ReadTeacherLessonTimesParams{
+			SchoolID:  scope.SchoolID,
+			TeacherID: scope.TeacherID,
+		})
+	})
+}
+
+func CacheOrGetTeacherSchoolRooms(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
+	key := fmt.Sprintf("teacher_rooms:%d:%d", scope.SchoolID, scope.TeacherID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRoomRow, error) {
+		return queries.ReadRoom(ctx, scope.SchoolID)
+	})
+}
+
 func CacheOrGetTeacherAbsences(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesRow, error) {
 	key := fmt.Sprintf("teacher_absences:%d:%d", scope.SchoolID, scope.TeacherID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherAbsencesRow, error) {

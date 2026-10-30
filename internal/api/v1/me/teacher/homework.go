@@ -146,25 +146,32 @@ func convertHomework(row db_queries.GetTeacherHomeworkRow) HomeworkSummary {
 }
 
 func ListHomeworkSubmissions(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherSummaryByID(c, pool, rdb, "HOMEWORK_SUBMISSIONS_CACHE_TTL", false,
+	return helpers.TeacherSummary(c, pool, rdb, "HOMEWORK_SUBMISSIONS_CACHE_TTL", "",
 		func(req ListHomeworkSubmissionsRequest) bool { return req.HomeworkID <= 0 },
-		func(req ListHomeworkSubmissionsRequest) int32 { return req.HomeworkID },
-		helpers.CacheOrGetTeacherHomeworkSubmissions, convertHomeworkSubmission)
+		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ListHomeworkSubmissionsRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherHomeworkSubmissionsRow, error) {
+			return helpers.CacheOrGetTeacherHomeworkSubmissions(ctx, rdb, queries, req.HomeworkID, scope, ttl)
+		}, convertHomeworkSubmission)
 }
 
 func ListUngradedHomeworkSubmissions(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherSummary(c, pool, rdb, "HOMEWORK_SUBMISSIONS_CACHE_TTL", helpers.CacheOrGetTeacherUngradedHomeworkSubmissions, convertUngradedHomeworkSubmission)
+	return helpers.TeacherSummary(c, pool, rdb, "HOMEWORK_SUBMISSIONS_CACHE_TTL", "",
+		nil,
+		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherUngradedHomeworkSubmissionsRow, error) {
+			return helpers.CacheOrGetTeacherUngradedHomeworkSubmissions(ctx, rdb, queries, scope, ttl)
+		}, convertUngradedHomeworkSubmission)
 }
 
 func GetHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherSummaryByID(c, pool, rdb, "HOMEWORK_CACHE_TTL", true,
+	return helpers.TeacherSummary(c, pool, rdb, "HOMEWORK_CACHE_TTL", "",
 		func(req GetHomeworkRequest) bool { return req.HomeworkID <= 0 },
-		func(req GetHomeworkRequest) int32 { return req.HomeworkID },
-		helpers.CacheOrGetTeacherHomework, convertHomework)
+		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req GetHomeworkRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherHomeworkRow, error) {
+			return helpers.CacheOrGetTeacherHomework(ctx, rdb, queries, req.HomeworkID, scope, ttl)
+		}, convertHomework)
 }
 
 func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req AddHomeworkRequest) bool {
 			return req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
 		},
@@ -182,7 +189,8 @@ func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func RemoveHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req RemoveHomeworkRequest) bool { return req.HomeworkID <= 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveHomeworkRequest) (int64, error) {
 			return queries.TeacherDeleteHomework(ctx, db_queries.TeacherDeleteHomeworkParams{
@@ -194,7 +202,8 @@ func RemoveHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req EditHomeworkRequest) bool {
 			return req.HomeworkID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
 		},
@@ -213,7 +222,8 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func GradeHomeworkSubmission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req GradeHomeworkSubmissionRequest) bool {
 			return req.HomeworkID <= 0 || req.StudentID <= 0 || req.GradedValue == 0
 		},

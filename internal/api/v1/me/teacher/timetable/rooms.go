@@ -40,7 +40,7 @@ func convertRoom(row db_queries.ReadRoomRow) RoomSummary {
 }
 
 func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_ROOMS",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_ROOMS",
 		func(req CreateRoomRequest) bool {
 			return req.Name == "" || req.Capacity <= 0
 		},
@@ -54,7 +54,7 @@ func CreateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_ROOMS",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_ROOMS",
 		func(req EditRoomRequest) bool {
 			return req.Capacity <= 0 || req.Id <= 0 || req.Name == ""
 		},
@@ -69,7 +69,7 @@ func UpdateRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_ROOMS",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_ROOMS",
 		func(req DeleteRoomRequest) bool {
 			return req.Id <= 0
 		},
@@ -82,7 +82,7 @@ func DeleteRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "ROOMS_CACHE_TTL", "MANAGE_ROOMS", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
+	return helpers.TeacherSummary(c, pool, rdb, "ROOMS_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
 		return helpers.CacheOrGetTeacherRooms(ctx, rdb, queries, scope, ttl)
 	}, convertRoom)
 }

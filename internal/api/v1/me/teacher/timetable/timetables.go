@@ -202,7 +202,7 @@ func convertRealTimeLesson(row db_queries.ReadRealTimeTableRow) RealTimeLessonRe
 }
 
 func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_TIMETABLES",
 		func(req CreateBaseScheduleLessonRequest) bool {
 			return req.TeacherId <= 0 || req.DayOfWeek <= 0 || req.LessonNumber <= 0 || req.RoomId <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || (req.IsCustomSubject == false && req.SubjectId <= 0)
 		},
@@ -232,7 +232,7 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 }
 
 func DeleteBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_TIMETABLES",
 		func(req DeleteBaseScheduleLessonRequest) bool {
 			return req.Id <= 0
 		},
@@ -245,7 +245,7 @@ func DeleteBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 }
 
 func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_TIMETABLES",
 		func(req EditBaseScheduleLessonRequest) bool {
 			return req.Id <= 0 || req.TeacherId <= 0 || req.DayOfWeek <= 0 || req.LessonNumber <= 0 || req.RoomId <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || (req.IsCustomSubject == false && req.SubjectId <= 0)
 		},
@@ -276,7 +276,7 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 }
 
 func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "BASE_SCHEDULE_CLASS_CACHE_TTL", "MANAGE_TIMETABLES",
+	return helpers.TeacherSummary(c, pool, rdb, "BASE_SCHEDULE_CLASS_CACHE_TTL", "MANAGE_TIMETABLES",
 		func(req ReadBaseScheduleClassRequest) bool { return req.ClassId <= 0 },
 		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadBaseScheduleClassRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadBaseScheduleClassRow, error) {
 			return helpers.CacheOrGetTeacherBaseScheduleClass(ctx, rdb, queries, req.ClassId, scope, ttl)
@@ -284,7 +284,7 @@ func ReadBaseScheduleClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 }
 
 func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "BASE_SCHEDULE_GROUP_CACHE_TTL", "MANAGE_TIMETABLES",
+	return helpers.TeacherSummary(c, pool, rdb, "BASE_SCHEDULE_GROUP_CACHE_TTL", "MANAGE_TIMETABLES",
 		func(req ReadBaseScheduleGroupRequest) bool { return req.GroupId <= 0 },
 		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadBaseScheduleGroupRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadBaseScheduleGroupRow, error) {
 			return helpers.CacheOrGetBaseScheduleGroup(ctx, rdb, queries, req.GroupId, scope, ttl)
@@ -292,16 +292,16 @@ func ReadBaseScheduleGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 }
 
 func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "BASE_SCHEDULE_GROUP_CACHE_TTL", "MANAGE_TIMETABLES",
+	return helpers.TeacherSummary(c, pool, rdb, "BASE_SCHEDULE_GROUP_CACHE_TTL", "MANAGE_TIMETABLES",
 		func(req ReadRealTimetableRequest) bool { return req.ClassId <= 0 || req.Start == "" || req.End == "" },
 		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadRealTimetableRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadRealTimeTableRow, error) {
-			start, err := time.Parse("2006-01-02", req.Start)
+			start, err := time.Parse(time.DateOnly, req.Start)
 
 			if err != nil {
 				return []db_queries.ReadRealTimeTableRow{}, errors.New("bad request")
 			}
 
-			end, err := time.Parse("2006-01-02", req.End)
+			end, err := time.Parse(time.DateOnly, req.End)
 
 			if err != nil {
 				return []db_queries.ReadRealTimeTableRow{}, errors.New("bad request")
@@ -323,7 +323,7 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 }
 
 func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_TIMETABLES",
 		func(req CreateRealTimeLessonRequest) bool {
 			return req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || req.ActualDate <= 0 || req.LessonNumber <= 0
 		},
@@ -355,7 +355,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 }
 
 func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_TIMETABLES",
 		func(req UpdateRealTimeLessonRequest) bool {
 			return req.Id <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || req.ActualDate <= 0 || req.LessonNumber <= 0
 		},
@@ -388,7 +388,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 }
 
 func DeleteRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_TIMETABLES",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_TIMETABLES",
 		func(req DeleteRealTimeLessonRequest) bool {
 			return req.Id <= 0
 		},

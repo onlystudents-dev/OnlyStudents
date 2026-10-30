@@ -36,7 +36,7 @@ func convertCustomSubject(row db_queries.ReadCustomSubjectRow) CustomSubjectSumm
 }
 
 func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT",
 		func(req CreateCustomSubjectRequest) bool {
 			return req.SubjectName == ""
 		},
@@ -49,7 +49,7 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 }
 
 func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT",
 		func(req DeleteCustomSubjectRequest) bool {
 			return req.Id <= 0
 		},
@@ -62,7 +62,7 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 }
 
 func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_CUSTOM_SUBJECT",
 		func(req EditCustomSubjectRequest) bool {
 			return req.Id <= 0 || req.SubjectName == ""
 		},
@@ -76,7 +76,7 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 }
 
 func ReadCustomSubjects(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "CUSTOM_SUBJECT_CACHE_TTL", "MANAGE_CUSTOM_SUBJECT", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
+	return helpers.TeacherSummary(c, pool, rdb, "CUSTOM_SUBJECT_CACHE_TTL", "MANAGE_CUSTOM_SUBJECT", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
 		return helpers.CacheOrGetTeacherCustomSubjects(ctx, rdb, queries, scope, ttl)
 	}, convertCustomSubject)
 }

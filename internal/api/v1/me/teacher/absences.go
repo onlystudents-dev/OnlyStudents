@@ -71,11 +71,14 @@ func convertAbsence(row db_queries.GetTeacherAbsencesRow) AbsenceSummary {
 }
 
 func ListAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", helpers.CacheOrGetTeacherAbsences, convertAbsence)
+	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesRow, error) {
+		return helpers.CacheOrGetTeacherAbsences(ctx, rdb, queries, scope, ttl)
+	}, convertAbsence)
 }
 
 func AddAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req AddAbsenceRequest) bool {
 			return req.Date <= 0 || req.Type == "" || req.StudentID <= 0 || req.ClassSubjectsID <= 0 || (req.HasNote && req.Note == "")
 		},
@@ -93,7 +96,8 @@ func AddAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func RemoveAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req RemoveAbsenceRequest) bool { return req.AbsenceID <= 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveAbsenceRequest) (int64, error) {
 			return queries.TeacherDeleteAbsence(ctx, db_queries.TeacherDeleteAbsenceParams{
@@ -105,7 +109,8 @@ func RemoveAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func EditAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req EditAbsenceRequest) bool {
 			return req.AbsenceID <= 0 || req.Date <= 0 || req.Type == "" || req.StudentID <= 0 || req.ClassSubjectsID <= 0 || (req.HasNote && req.Note == "")
 		},

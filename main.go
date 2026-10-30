@@ -303,7 +303,6 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 
 					"mine":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRealTimeTable(c, pool, rdb) }),
 					"my_lesson_times": helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyLessonTimes(c, pool, rdb) }),
-					"my_rooms":        helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRooms(c, pool, rdb) }),
 				},
 			},
 		},
@@ -444,7 +443,7 @@ func main() {
 		if c.Method() != "GET" {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "NOT_FOUND"})
 		}
-		
+
 		page := helpers.InjectThemes(c.Context(), rdb, HTML404)
 		language, lKey := helpers.GetLanguage(c, "", true)
 		page = bytes.Replace(page, []byte(`"__INITIAL_LANGUAGE__"`), language, 1)

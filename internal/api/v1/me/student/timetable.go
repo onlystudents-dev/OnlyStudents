@@ -208,7 +208,7 @@ func convertBellScheduleType(row db_queries.ReadBellScheduleTypeRow) TimetableBe
 }
 
 func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "REAL_TIMETABLE_CACHE_TTL", false,
+	return helpers.StudentSummary(c, pool, rdb, "REAL_TIMETABLE_CACHE_TTL", false,
 		func(req ReadRealTimetableRequest) bool {
 			_, start_date_err := time.Parse(time.DateOnly, req.StartDate)
 			if start_date_err != nil {
@@ -241,13 +241,13 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 }
 
 func ReadBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "BASE_SCHEDULE_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadBaseScheduleClassRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "BASE_SCHEDULE_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadBaseScheduleClassRow, error) {
 		return helpers.CacheOrGetStudentBaseScheduleClass(ctx, rdb, queries, scope, ttl)
 	}, convertBaseLesson)
 }
 
 func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "LESSON_TIME_CACHE_TTL", false, func(req ReadLessonTimeRequest) bool {
+	return helpers.StudentSummary(c, pool, rdb, "LESSON_TIME_CACHE_TTL", false, func(req ReadLessonTimeRequest) bool {
 		return req.TypeID <= 0
 	}, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadLessonTimeRequest, scope helpers.MeScope, ttl int32) ([]db_queries.BellSchedule, error) {
 		key := fmt.Sprintf("lesson_time:%d:%d", scope.SchoolID, req.TypeID)
@@ -261,19 +261,19 @@ func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadRoom(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "ROOM_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "ROOM_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadRoomRow, error) {
 		return helpers.CacheOrGetStudentRooms(ctx, rdb, queries, scope, ttl)
 	}, convertRoom)
 }
 
 func ReadCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "CUSTOM_SUBJECT_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "CUSTOM_SUBJECT_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadCustomSubjectRow, error) {
 		return helpers.CacheOrGetStudentCustomSubjects(ctx, rdb, queries, scope, ttl)
 	}, convertCustomSubject)
 }
 
 func ReadBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "BELL_SCHEDULE_TYPE_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadBellScheduleTypeRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "BELL_SCHEDULE_TYPE_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.ReadBellScheduleTypeRow, error) {
 		return helpers.CacheOrGetStudentBellScheduleTypes(ctx, rdb, queries, scope, ttl)
 	}, convertBellScheduleType)
 }

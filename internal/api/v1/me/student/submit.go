@@ -3,6 +3,7 @@ package studentapi
 import (
 	"context"
 	db_queries "onlystudents/internal/db/store"
+	"onlystudents/internal/helpers"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -24,7 +25,7 @@ type SubmitAbsenceReasonRequest struct {
 }
 
 func SubmitHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentModify(c, pool, rdb,
+	return helpers.StudentModify(c, pool, rdb,
 		func(req SubmitHomeworkRequest) bool {
 			if req.HomeworkID <= 0 || (req.Note == "" && req.FileUUID == "") {
 				return true
@@ -50,7 +51,7 @@ func SubmitHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func SubmitAbsenceReason(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentModify(c, pool, rdb,
+	return helpers.StudentModify(c, pool, rdb,
 		func(req SubmitAbsenceReasonRequest) bool {
 			if req.AbsenceID <= 0 || (req.Note == "" && req.FileUUID == "") {
 				return true

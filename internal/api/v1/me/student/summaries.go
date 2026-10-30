@@ -268,7 +268,7 @@ func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			wanted = append(wanted, subjectArg{custom: arg[:1] == "t", id: int32(n)})
 		}
 
-		return StudentSummary(c, pool, rdb, "GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentGradesBySubjectRow, error) {
+		return helpers.StudentSummary(c, pool, rdb, "GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentGradesBySubjectRow, error) {
 			var grades []db_queries.GetStudentGradesBySubjectRow
 
 			for _, w := range wanted {
@@ -283,49 +283,49 @@ func Grades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		}, convertGradeBySubject)
 	}
 
-	return StudentSummary(c, pool, rdb, "GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentGradesRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentGradesRow, error) {
 		return helpers.CacheOrGetStudentGrades(ctx, rdb, queries, scope, ttl)
 	}, convertGrade)
 }
 
 func FinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "FINAL_GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentFinalGradesRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "FINAL_GRADES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentFinalGradesRow, error) {
 		return helpers.CacheOrGetStudentFinalGrades(ctx, rdb, queries, scope, ttl)
 	}, convertFinalGrade)
 }
 
 func Absences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentAbsencesRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentAbsencesRow, error) {
 		return helpers.CacheOrGetStudentAbsences(ctx, rdb, queries, scope, ttl)
 	}, convertAbsence)
 }
 
 func Homework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "HOMEWORK_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentHomeworkRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "HOMEWORK_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentHomeworkRow, error) {
 		return helpers.CacheOrGetStudentHomework(ctx, rdb, queries, scope, ttl)
 	}, convertHomework)
 }
 
 func HomeworkByID(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "HOMEWORK_CACHE_TTL", true, func(req RequestWithID) bool { return req.ID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req RequestWithID, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentHomeworkByIDRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "HOMEWORK_CACHE_TTL", true, func(req RequestWithID) bool { return req.ID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req RequestWithID, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentHomeworkByIDRow, error) {
 		return helpers.CacheOrGetStudentHomeworkByID(ctx, rdb, queries, scope, ttl, req.ID)
 	}, convertHomeworkByID)
 }
 
 func Exams(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "EXAMS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentExamsRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "EXAMS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentExamsRow, error) {
 		return helpers.CacheOrGetStudentExams(ctx, rdb, queries, scope, ttl)
 	}, convertExams)
 }
 
 func Exam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "EXAMS_CACHE_TTL", true, func(req RequestWithID) bool { return req.ID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req RequestWithID, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentExamRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "EXAMS_CACHE_TTL", true, func(req RequestWithID) bool { return req.ID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req RequestWithID, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentExamRow, error) {
 		return helpers.CacheOrGetStudentExam(ctx, rdb, queries, scope, ttl, req.ID)
 	}, convertExam)
 }
 
 func Subjects(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "SUBJECTS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentSubjectsRow, error) {
+	return helpers.StudentSummary(c, pool, rdb, "SUBJECTS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.GetStudentSubjectsRow, error) {
 		return helpers.CacheOrGetStudentSubjects(ctx, rdb, queries, scope, ttl)
 	}, convertSubject)
 }

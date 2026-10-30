@@ -35,7 +35,7 @@ func convertSubject(row db_queries.GetTeacherSubjectsRow) SubjectSummary {
 }
 
 func Subjects(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherSummary(c, pool, rdb, "TEACHER_SUBJECTS_CACHE_TTL", func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherSubjectsRow, error) {
+	return helpers.TeacherSummary(c, pool, rdb, "TEACHER_SUBJECTS_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherSubjectsRow, error) {
 		return helpers.CacheOrGetTeacherSubjects(ctx, rdb, queries, scope, ttl)
 	}, convertSubject)
 }
