@@ -34,7 +34,7 @@ async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFi
     await fetch("/api/v1/files", { method: "POST", body: data }).then(async response => {
         switch (response.status) {
             case 200: {
-                const json = await response.json() as FileUploadResponse;
+                const json = await response.json() as FileUploadResponse
 
                 setFile({
                   file_name: file.name,
@@ -66,23 +66,26 @@ export default function SubmissionAttachmentInput({ notePlaceholder, label, onSu
     return (
         <>
             <div className="flex flex-col gap-3 border-t border-(--border-color) pt-3">
-                <div className="text-xs font-medium uppercase tracking-wider opacity-50">{label}</div>
-                <input type="text" placeholder={notePlaceholder} onChange={(e) => setNote(e.currentTarget.value)} />
-                <input type="file" onChange={(e) => {
-                    if (e.currentTarget.files) {
-                        const file = e.currentTarget.files[0];
-                        if (file) {
-                            if (previewUrl) URL.revokeObjectURL(previewUrl)
-                            setPreviewUrl(URL.createObjectURL(file))
+                <div className="text-xs font-medium tracking-wider opacity-50">{label}</div>
+                <input className="bg-(--hover-color) rounded-lg p-[4px_8px] outline-none" type="text" placeholder={notePlaceholder} onChange={(e) => setNote(e.currentTarget.value)} />
+                <div className="flex flex-row gap-2 relative h-8 p-[4px_8px] rounded-lg bg-(--hover-color)">
+                    <input className="p-4 bg-(--hover-color) hover:bg-(--card-color) cursor-pointer rounded-lg absolute inset-0 opacity-0" type="file" accept={config?.allowed_exts.join(",")} onChange={(e) => {
+                        if (e.currentTarget.files) {
+                            const file = e.currentTarget.files[0];
+                            if (file) {
+                                if (previewUrl) URL.revokeObjectURL(previewUrl)
+                                setPreviewUrl(URL.createObjectURL(file))
 
-                            if (!config) return
+                                if (!config) return
 
-                            void FileUpload(setFile, setFileUploaded, file, config)
+                                void FileUpload(setFile, setFileUploaded, file, config)
+                            }
                         }
-                    }
-                }} />
+                    }} />
+                    <p className="absolute inset-0 pointer-events-none p-[4px_8px]">{file.file_name || getKey("NO_FILE_SELECTED")}</p>
+                </div>
 
-                <button type="button" className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10" onClick={() => {
+                <button type="button" className="rounded-lg bg-(--hover-color) px-4 py-2 text-sm font-medium hover:bg-(--card-color) cursor-pointer" onClick={() => {
                     if (!fileUploaded && note == "") return
                     onSubmit(note, file.file_uuid)
                 }}>
