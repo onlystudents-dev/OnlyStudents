@@ -178,7 +178,9 @@
         "TYPE": "Type",
         "TEACHER": "Teacher",
         "TIMETABLE_OVERVIEW": "Overview",
-        "TIMETABLE_GRADE": "Grade"
+        "TIMETABLE_GRADE": "Grade",
+        "PRESENT": "Present",
+        "ABSENT": "Absent"
     },
     "errors": {
         "NOT_FOUND": "Oops! That doesn't exist. Please try again.",

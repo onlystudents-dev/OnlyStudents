@@ -178,7 +178,9 @@
         "TYPE": "Típus",
         "TEACHER": "Tanár",
         "TIMETABLE_OVERVIEW": "Áttekintés",
-        "TIMETABLE_GRADE": "Osztályzás"
+        "TIMETABLE_GRADE": "Osztályzás",
+        "Present": "Jelen",
+        "Absent": "Hiányoz"
     },
     "errors": {
         "NOT_FOUND": "Upsz! Ez nem létezik. Kérem, próbálja újra.",

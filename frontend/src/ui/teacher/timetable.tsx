@@ -4,14 +4,23 @@ import {useCallback, useEffect, useRef, useState} from "preact/compat";
 import {toast} from "react-toastify";
 import {fetchInto, fetchWithSchool} from "../../util/api.tsx";
 import type { FeatureProps } from "../../types/props.ts";
-import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../timetable/timetable.tsx"
+import {
+    type Day,
+    type DayName,
+    DAY_NAMES,
+    Timetable,
+    type PopupProps,
+    toHoursAndMinutes
+} from "../timetable/timetable.tsx"
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
 import Loading from "../../util/loading.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
-import {faList, faStar} from "@fortawesome/free-solid-svg-icons";
+import {faFloppyDisk, faList, faStar, faUser} from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import Button from "../../util/sidebar/config.tsx";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {useLayoutEffect} from "preact/hooks";
 
 export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
@@ -115,16 +124,33 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     )
 }
 
-function Popup({ lesson, rooms, groups, clear, fetchMe }: PopupProps) {
+function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: PopupProps) {
     const [active, setActive] = useState<"overview" | "grade">("overview")
     const [students, setStudents] = useState<Student[]>([])
+
+    const [wasHere, setWasHere] = useState<Record<number, boolean>>({})
+    const presentRef = useRef<HTMLButtonElement>(null)
+    const absentRef = useRef<HTMLButtonElement>(null)
+    const [presentWidth, setPresentWidth] = useState<number>(0)
+    const [absendWidth, setAbsendWidth] = useState<number>(0)
 
     const room = rooms.find(r => r.id === lesson.room_id)
     const group = groups?.find(g => g.id === lesson.group_id)
 
     useEffect(() => {
-        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/group/student?group_id=${group?.id}`).then(async response => setStudents(await response.json() as Student[]))
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/group/student?group_id=${group?.id}`).then(async response => {
+            const data = await response.json() as Student[]
+            setWasHere(Object.fromEntries(data.map(student => [student.id, true])))
+            setStudents(data)
+        })
     }, [fetchMe, group])
+
+    useLayoutEffect(() => {
+        if (!students.length) return
+
+        setPresentWidth(presentRef.current?.offsetWidth || 0)
+        setAbsendWidth(absentRef.current?.offsetWidth || 0)
+    }, [students])
 
     if (!group || !room) return
 
@@ -143,14 +169,31 @@ function Popup({ lesson, rooms, groups, clear, fetchMe }: PopupProps) {
                                                 <p className="text-3xl truncate">{lesson.subject_name}</p>
                                                 <p className="text-2xl opacity-70 truncate fredoka">{group.group_name}</p>
                                             </div>
-                                            <div className="flex flex-col">
+                                            <div className="flex flex-col items-end">
                                                 <p className="text-2xl truncate fredoka">{room.name}</p>
+                                                <p className="truncate rubik opacity-70">{toHoursAndMinutes(me, lesson, lessonTimes)}</p>
                                             </div>
                                         </div>
                                         <div className="border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2">
                                             {students.map(student => (
-                                                <div key={student.id} className="flex flex-row justify-between items-center w-full">
-                                                    <p>{student.first_name} {student.last_name}</p>
+                                                <div key={student.id} className="flex flex-row justify-between items-center w-full hover:bg-(--hover-color) transition-[background-color_400ms_ease-in-out] hover:transition-[background-color_400ms_ease-in-out] p-2 rounded-lg">
+                                                    <p><FontAwesomeIcon icon={faUser} /> {student.first_name} {student.last_name}</p>
+                                                    <div className="flex flex-row items-center h-full justify-end rounded-lg border-2 border-(--border-color) relative">
+                                                        <button className="text-center p-1 cursor-pointer z-1" onClick={() => setWasHere({ ...wasHere, [student.id]: true })} ref={presentRef}>
+                                                            {getKey("PRESENT")}
+                                                        </button>
+                                                        <button className="text-center p-1 cursor-pointer z-1" onClick={() => setWasHere({ ...wasHere, [student.id]: false })} ref={absentRef}>
+                                                            {getKey("ABSENT")}
+                                                        </button>
+                                                        <div className="bg-(--card-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={{
+                                                            left: wasHere[student.id] ? '0px' : `${presentWidth}px`,
+                                                            width: `${wasHere[student.id] ? presentWidth : absendWidth}px`,
+                                                            borderTopLeftRadius: wasHere[student.id] ? '6px' : '0px',
+                                                            borderBottomLeftRadius: wasHere[student.id] ? '6px' : '0px',
+                                                            borderTopRightRadius: !wasHere[student.id] ? '6px' : '0px',
+                                                            borderBottomRightRadius: !wasHere[student.id] ? '6px' : '0px',
+                                                        }} />
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -160,6 +203,9 @@ function Popup({ lesson, rooms, groups, clear, fetchMe }: PopupProps) {
                                 return null
                         }
                     })()}
+                    <button className="absolute bottom-4 right-4 bg-(--card-color) p-2 rounded-lg cursor-pointer" onClick={save}>
+                        <FontAwesomeIcon icon={faFloppyDisk} /> {getKey("SAVE")}
+                    </button>
                 </div>
                 <Sidebar className="border-(--txt-color)!">
                     <Button icon={faList} text={getKey("TIMETABLE_OVERVIEW")} onClick={() => setActive("overview")} />
@@ -168,4 +214,26 @@ function Popup({ lesson, rooms, groups, clear, fetchMe }: PopupProps) {
             </div>
         </>
     )
+
+    async function save() {
+        const now = Math.floor(Date.now() / 1000)
+        for (const [student, here] of Object.entries(wasHere)) {
+            if (here) continue;
+
+            await fetchWithSchool(fetchMe, "/api/v1/me/teacher/absences", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    date: now,
+                    type: "absent",
+                    has_note: false,
+                    note: "",
+                    student_id: Number(student),
+                    class_subjects_id: lesson.subject_id,
+                })
+            })
+        }
+    }
 }
