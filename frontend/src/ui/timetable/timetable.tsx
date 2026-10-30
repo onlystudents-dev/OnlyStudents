@@ -27,6 +27,8 @@ export type PopupProps = {
     rooms: Room[],
     groups?: Group[],
     fetchMe: FetchMe,
+    lessonTimes: LessonTime[],
+    me: Me,
 }
 
 type TimetableProps = {
@@ -70,7 +72,7 @@ export function Timetable(props: TimetableProps) {
                         <FontAwesomeIcon icon={faAngleLeft} />
                     </span>
                 </div>
-                {current && <props.Popup lesson={current} clear={() => {setCurrent(null); if (props.me.role === "teacher") props.reloadSchoolStuff()}} rooms={props.rooms} groups={props.groups} fetchMe={props.fetchMe} />}
+                {current && <props.Popup lesson={current} clear={() => {setCurrent(null); if (props.me.role === "teacher") props.reloadSchoolStuff()}} rooms={props.rooms} groups={props.groups} fetchMe={props.fetchMe} lessonTimes={props.lessonTimes} me={props.me} />}
                 {d.map((day) => (
                     <div className="day" key={day.name}>
                         <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>
@@ -115,7 +117,7 @@ export function Timetable(props: TimetableProps) {
     )
 }
 
-function toHoursAndMinutes(me: Me, lesson: Lesson, lessonTime: LessonTime[]) {
+export function toHoursAndMinutes(me: Me, lesson: Lesson, lessonTime: LessonTime[]) {
     const time = lessonTime.find(lt => lt.lesson_number != 0 && lt.lesson_number === lesson.lesson_num)
     if (!time) return ""
 
