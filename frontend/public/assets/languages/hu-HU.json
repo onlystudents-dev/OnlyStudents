@@ -180,7 +180,8 @@
         "TIMETABLE_OVERVIEW": "Áttekintés",
         "TIMETABLE_GRADE": "Osztályzás",
         "Present": "Jelen",
-        "Absent": "Hiányoz"
+        "Absent": "Hiányoz",
+        "NO_FILE_SELECTED": "Nincs fájl kiválasztva"
     },
     "errors": {
         "NOT_FOUND": "Upsz! Ez nem létezik. Kérem, próbálja újra.",
