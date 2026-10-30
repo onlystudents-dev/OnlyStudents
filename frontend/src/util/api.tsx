@@ -6,6 +6,7 @@ import type {ComponentChild} from "preact";
 import Login from "../auth/login/login.tsx";
 import {defaultChild, defaultSchool} from "../navbar/navbar.tsx";
 import type {FetchMe} from "../types/props.ts";
+import RateLimit from "./ratelimit.tsx";
 
 export function postJSON(url: string, body?: unknown) {
     return fetch(url, {
@@ -17,7 +18,7 @@ export function postJSON(url: string, body?: unknown) {
     })
 }
 
-let login: boolean = false
+let shown: boolean = false
 
 export async function fetchWithSchool(fetchMe: FetchMe, url: string, init?: RequestInit) {
     const school = localStorage.getItem("school_id")
@@ -26,45 +27,62 @@ export async function fetchWithSchool(fetchMe: FetchMe, url: string, init?: Requ
     if (school) headers.set("X-School", school)
     if (child) headers.set("X-Child", child)
     let response = await fetch(url, { ...init, headers })
-    if (response.status === 401) {
-        const id = localStorage.getItem("user")
-        showElement()
-        while (login) {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-        const me = await fetchMe()
-        if (me) {
-            if (`${me.account_id}${me.role}` !== id) {
-                location.reload()
-                return response
+    switch (response.status) {
+        case 401: {
+            const id = localStorage.getItem("user")
+            showElement()
+            while (shown) {
+                await new Promise(resolve => setTimeout(resolve, 1000))
             }
+            const me = await fetchMe()
+            if (me) {
+                if (`${me.account_id}${me.role}` !== id) {
+                    location.reload()
+                    return response
+                }
 
-            defaultSchool(me, defaultChild(me))
+                defaultSchool(me, defaultChild(me))
+            }
+            response = await fetch(url, { ...init, headers })
+            break
         }
-        response = await fetch(url, { ...init, headers })
+        case 429: {
+            showElement(Number(response.headers.get("Retry-After")))
+            while (shown) {
+                await new Promise(resolve => setTimeout(resolve, 1000))
+            }
+            response = await fetch(url, { ...init, headers })
+            break
+        }
     }
     return response
 }
 
 let root: {render(children: ComponentChild): void, unmount(): void} | null = null
 
-export function showElement() {
-    login = true
+export function showElement(ratelimit?: number) {
+    shown = true
     if (!root) {
         const container = document.createElement('div')
         document.body.appendChild(container)
         root = createRoot(container)
     }
 
-    root.render(
-        <Login finished={hideElement} z={200} />
-    )
+    if (ratelimit !== undefined) {
+        root.render(
+            <RateLimit retry={ratelimit} expire={hideElement} z={200} />,
+        )
+    } else {
+        root.render(
+            <Login finished={hideElement} z={200}/>
+        )
+    }
 }
 
 export function hideElement() {
     root?.unmount()
     root = null
-    login = false
+    shown = false
 }
 
 export function getRetryAfter(response: Response): number {

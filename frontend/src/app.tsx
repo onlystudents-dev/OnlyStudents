@@ -4,7 +4,6 @@ import {lazy, Suspense, useEffect, useState} from "preact/compat";
 import Loading from "./util/loading.tsx";
 import type { Me } from "./types/api.ts";
 import { fetchLanguage } from "./util/language.ts";
-import RateLimit from "./util/ratelimit.tsx";
 import {applyTheme} from "./util/theme.ts";
 import Layout from "./layout.tsx";
 
@@ -13,6 +12,7 @@ declare global {
 }
 
 const Login = lazy(() => import("./auth/login/login.tsx"))
+const RateLimit = lazy(() => import("./util/ratelimit.tsx"))
 
 export default function App({ reload }: {reload: () => void}) {
 

@@ -2,12 +2,11 @@ import type {Group, Lesson, LessonTime, Room, Student} from "../../types/api.ts"
 import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
 import {useCallback, useEffect, useRef, useState} from "preact/compat";
 import {toast} from "react-toastify";
-import {fetchInto, fetchWithSchool, getRetryAfter} from "../../util/api.tsx";
+import {fetchInto, fetchWithSchool} from "../../util/api.tsx";
 import type { FeatureProps } from "../../types/props.ts";
 import {type Day, type DayName, DAY_NAMES, Timetable, type PopupProps} from "../timetable/timetable.tsx"
 import { formatUnixDate, getWeekRange } from "../../util/time.ts";
 import Loading from "../../util/loading.tsx";
-import RateLimit from "../../util/ratelimit.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
 import {faList, faStar} from "@fortawesome/free-solid-svg-icons";
@@ -20,7 +19,6 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     const [groups, setGroups] = useState<Group[]>([])
     const [days, setDays] = useState<Day[]>(() => DAY_NAMES.map(name => ({name, date: "", lessons: [], today: false})))
     const [year, setYear] = useState<string>("")
-    const [ratelimit, setRateLimit] = useState(-1)
     const [loading, setLoading] = useState(true)
 
     const weekOffsetRef = useRef(0)
@@ -33,12 +31,6 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
         const { start, end, monday, mondayTime } = getWeekRange(date)
 
         const response = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/mine?start_date=${start}&end_date=${end}`)
-
-        if (response.status === 429) {
-            setRateLimit(getRetryAfter(response))
-            setLoading(false)
-            return
-        }
 
         if (!response.ok) {
             toast.error(await fromResponse(response))
@@ -118,7 +110,6 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     return (
         <>
             {loading && <Loading />}
-            {ratelimit !== -1 && <RateLimit retry={ratelimit} expire={() => setRateLimit(-1)} />}
             <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} groups={groups} fetchMe={fetchMe} />
         </>
     )
