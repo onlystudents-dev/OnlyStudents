@@ -216,7 +216,6 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     )
 
     async function save() {
-        const now = Math.floor(Date.now() / 1000)
         for (const [student, here] of Object.entries(wasHere)) {
             if (here) continue;
 
@@ -226,7 +225,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    date: now,
+                    date: lesson.actual_date,
                     type: "absent",
                     has_note: false,
                     note: "",
