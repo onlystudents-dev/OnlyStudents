@@ -301,8 +301,10 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					},
 					"substitution": helpers.Patch(func(c fiber.Ctx) error { return timetableapi.UpdateSubstitution(c, pool, rdb) }),
 
-					"mine":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRealTimeTable(c, pool, rdb) }),
-					"my_lesson_times": helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyLessonTimes(c, pool, rdb) }),
+					"mine":                 helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyRealTimeTable(c, pool, rdb) }),
+					"my_lesson_times":      helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyLessonTimes(c, pool, rdb) }),
+					"my_groups":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyGroups(c, pool, rdb) }),
+					"students_in_my_group": helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadStudentsInMyGroup(c, pool, rdb) }),
 				},
 			},
 		},

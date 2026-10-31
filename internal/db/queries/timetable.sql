@@ -66,6 +66,58 @@ DELETE FROM groups WHERE school_id = $1 AND id = $2;
 -- name: ReadGroup :many
 SELECT * FROM groups WHERE school_id = $1;
 
+-- name: ReadMyGroups :many
+SELECT g.*
+FROM groups g
+WHERE g.school_id = sqlc.arg(school_id)
+  AND (
+    EXISTS (
+      SELECT 1
+      FROM base_schedule b
+      WHERE b.group_id = g.id
+        AND b.school_id = g.school_id
+        AND b.teacher_id = sqlc.arg(teacher_id)
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM time_table t
+      WHERE t.group_id = g.id
+        AND t.school_id = g.school_id
+        AND (t.teacher_id = sqlc.arg(teacher_id) OR t.substitution_teacher_id = sqlc.arg(teacher_id))
+    )
+  )
+ORDER BY g.group_name;
+
+-- name: ReadStudentsInMyGroup :many
+SELECT s.id, s.first_name, s.last_name
+FROM students s
+JOIN group_members gm ON gm.student_id = s.id
+WHERE gm.group_id = sqlc.arg(group_id)
+  AND gm.school_id = sqlc.arg(school_id)
+  AND EXISTS (
+    SELECT 1
+    FROM student_school ss
+    WHERE ss.student_id = s.id
+      AND ss.school_id = sqlc.arg(school_id)
+  )
+  AND (
+    EXISTS (
+      SELECT 1
+      FROM base_schedule b
+      WHERE b.group_id = gm.group_id
+        AND b.school_id = gm.school_id
+        AND b.teacher_id = sqlc.arg(teacher_id)
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM time_table t
+      WHERE t.group_id = gm.group_id
+        AND t.school_id = gm.school_id
+        AND (t.teacher_id = sqlc.arg(teacher_id) OR t.substitution_teacher_id = sqlc.arg(teacher_id))
+    )
+  )
+ORDER BY s.last_name, s.first_name;
+
 -- name: InsertStudentToGroup :execrows
 INSERT INTO group_members (school_id, group_id, student_id)
 SELECT sqlc.arg(school_id), sqlc.arg(group_id), sqlc.arg(student_id)

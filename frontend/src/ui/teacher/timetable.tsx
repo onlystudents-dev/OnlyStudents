@@ -83,7 +83,7 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
 
         await Promise.all([
             fetchInto(fetchMe, "/api/v1/me/teacher/timetable/room", setRooms),
-            fetchInto(fetchMe, "/api/v1/me/teacher/timetable/group", setGroups),
+            fetchInto(fetchMe, "/api/v1/me/teacher/timetable/my_groups", setGroups),
             fetchInto(fetchMe, "/api/v1/me/teacher/timetable/my_lesson_times", setLessonTime).then(time => {
                 if (!me.preferences.timetable_next) return
 
@@ -138,7 +138,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     const group = groups?.find(g => g.id === lesson.group_id)
 
     useEffect(() => {
-        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/group/student?group_id=${group?.id}`).then(async response => {
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/students_in_my_group?group_id=${group?.id}`).then(async response => {
             const data = await response.json() as Student[]
             setWasHere(Object.fromEntries(data.map(student => [student.id, true])))
             setStudents(data)

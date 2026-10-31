@@ -376,6 +376,27 @@ func CacheOrGetTeacherAbsences(ctx context.Context, rdb *redis.Client, queries d
 	})
 }
 
+func CacheOrGetTeacherMyGroups(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.Group, error) {
+	key := fmt.Sprintf("teacher_groups:%d:%d", scope.SchoolID, scope.TeacherID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.Group, error) {
+		return queries.ReadMyGroups(ctx, db_queries.ReadMyGroupsParams{
+			TeacherID: scope.TeacherID,
+			SchoolID:  scope.SchoolID,
+		})
+	})
+}
+
+func CacheOrGetStudentsInMyGroup(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, groupID int32, scope TeacherScope, ttl int32) ([]db_queries.ReadStudentsInMyGroupRow, error) {
+	key := fmt.Sprintf("students_in_my_group:%d:%d:%d", scope.SchoolID, scope.TeacherID, groupID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadStudentsInMyGroupRow, error) {
+		return queries.ReadStudentsInMyGroup(ctx, db_queries.ReadStudentsInMyGroupParams{
+			SchoolID:  scope.SchoolID,
+			TeacherID: scope.TeacherID,
+			GroupID:   groupID,
+		})
+	})
+}
+
 func CacheOrGetCheckPermission(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, check_permission_params db_queries.CheckPermissionParams, ttl int32) (bool, error) {
 	key := fmt.Sprintf("check_permission:%s:%d:%d", check_permission_params.Name, check_permission_params.SchoolID, check_permission_params.TeacherID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() (bool, error) {
