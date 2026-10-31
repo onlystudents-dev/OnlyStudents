@@ -73,6 +73,14 @@ func convertTimeTableLesson(row db_queries.ReadMyRealTimeTableRow) TimetableLess
 	}
 }
 
+func convertStudentsInMyGroup(row db_queries.ReadStudentsInMyGroupRow) StudentInGroupSummary {
+	return StudentInGroupSummary{
+		ID:        row.ID,
+		FirstName: row.FirstName,
+		LastName:  row.LastName,
+	}
+}
+
 func parseDateRange(c fiber.Ctx) (time.Time, time.Time, error) {
 	start_date := c.Query("start_date", "none")
 
@@ -123,4 +131,16 @@ func ReadMyLessonTimes(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 	return helpers.TeacherSummary(c, pool, rdb, "LESSON_TIME_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.BellSchedule, error) {
 		return helpers.CacheOrGetTeacherMyLessonTimes(c.Context(), rdb, queries, scope, ttl)
 	}, convertBellSchedule)
+}
+
+func ReadMyGroups(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	return helpers.TeacherSummary(c, pool, rdb, "GROUPS_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.Group, error) {
+		return helpers.CacheOrGetTeacherMyGroups(ctx, rdb, queries, scope, ttl)
+	}, convertGroup)
+}
+
+func ReadStudentsInMyGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	return helpers.TeacherSummary(c, pool, rdb, "GROUP_STUDENTS_CACHE_TTL", "", func(req ReadStudentGroupRequest) bool { return req.GroupID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadStudentGroupRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadStudentsInMyGroupRow, error) {
+		return helpers.CacheOrGetStudentsInMyGroup(ctx, rdb, queries, req.GroupID, scope, ttl)
+	}, convertStudentsInMyGroup)
 }

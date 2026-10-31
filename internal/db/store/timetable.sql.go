@@ -843,6 +843,59 @@ func (q *Queries) ReadListOfStudents(ctx context.Context, arg ReadListOfStudents
 	return items, nil
 }
 
+const readMyGroups = `-- name: ReadMyGroups :many
+SELECT g.id, g.school_id, g.bell_id, g.group_name
+FROM groups g
+WHERE g.school_id = $1
+  AND (
+    EXISTS (
+      SELECT 1
+      FROM base_schedule b
+      WHERE b.group_id = g.id
+        AND b.school_id = g.school_id
+        AND b.teacher_id = $2
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM time_table t
+      WHERE t.group_id = g.id
+        AND t.school_id = g.school_id
+        AND (t.teacher_id = $2 OR t.substitution_teacher_id = $2)
+    )
+  )
+ORDER BY g.group_name
+`
+
+type ReadMyGroupsParams struct {
+	SchoolID  int32
+	TeacherID int32
+}
+
+func (q *Queries) ReadMyGroups(ctx context.Context, arg ReadMyGroupsParams) ([]Group, error) {
+	rows, err := q.db.Query(ctx, readMyGroups, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Group
+	for rows.Next() {
+		var i Group
+		if err := rows.Scan(
+			&i.ID,
+			&i.SchoolID,
+			&i.BellID,
+			&i.GroupName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const readMyRealTimeTable = `-- name: ReadMyRealTimeTable :many
 SELECT
     d.actual_date::date AS actual_date,
@@ -1156,6 +1209,69 @@ func (q *Queries) ReadRoom(ctx context.Context, schoolID int32) ([]ReadRoomRow, 
 	for rows.Next() {
 		var i ReadRoomRow
 		if err := rows.Scan(&i.ID, &i.Name, &i.Capacity); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const readStudentsInMyGroup = `-- name: ReadStudentsInMyGroup :many
+SELECT s.id, s.first_name, s.last_name
+FROM students s
+JOIN group_members gm ON gm.student_id = s.id
+WHERE gm.group_id = $1
+  AND gm.school_id = $2
+  AND EXISTS (
+    SELECT 1
+    FROM student_school ss
+    WHERE ss.student_id = s.id
+      AND ss.school_id = $2
+  )
+  AND (
+    EXISTS (
+      SELECT 1
+      FROM base_schedule b
+      WHERE b.group_id = gm.group_id
+        AND b.school_id = gm.school_id
+        AND b.teacher_id = $3
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM time_table t
+      WHERE t.group_id = gm.group_id
+        AND t.school_id = gm.school_id
+        AND (t.teacher_id = $3 OR t.substitution_teacher_id = $3)
+    )
+  )
+ORDER BY s.last_name, s.first_name
+`
+
+type ReadStudentsInMyGroupParams struct {
+	GroupID   int32
+	SchoolID  int32
+	TeacherID int32
+}
+
+type ReadStudentsInMyGroupRow struct {
+	ID        int32
+	FirstName string
+	LastName  string
+}
+
+func (q *Queries) ReadStudentsInMyGroup(ctx context.Context, arg ReadStudentsInMyGroupParams) ([]ReadStudentsInMyGroupRow, error) {
+	rows, err := q.db.Query(ctx, readStudentsInMyGroup, arg.GroupID, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReadStudentsInMyGroupRow
+	for rows.Next() {
+		var i ReadStudentsInMyGroupRow
+		if err := rows.Scan(&i.ID, &i.FirstName, &i.LastName); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
