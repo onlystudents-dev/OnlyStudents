@@ -13,14 +13,7 @@ import {faXmark} from "@fortawesome/free-solid-svg-icons";
 import {useLocation, useSearch} from "wouter";
 import SubjectAverageChart from "./charts.tsx";
 import type {FeatureProps, FetchMe} from "../../types/props.ts";
-
-export const colors: Record<number, string> = {
-    1: "wrong",
-    2: "warning",
-    3: "yellow",
-    4: "right",
-    5: "edit",
-}
+import {colors} from "../globals.tsx";
 
 export default function StudentGrades({ me, fetchMe }: FeatureProps) {
     const search = useSearch()

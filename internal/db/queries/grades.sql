@@ -119,6 +119,15 @@ WHERE csub.school_id = $1
   AND csub.teacher_id = $2
 ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name), fg.id;
 
+-- name: GetTeacherGradeTypes :many
+SELECT
+    id,
+    name,
+    weight
+FROM grade_types
+WHERE school_id = $1
+ORDER BY weight;
+
 -- name: TeacherAddGrade :execrows
 INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
 SELECT ss.student_id, cs.id, sqlc.arg(teacher_id), sqlc.arg(term_id), sqlc.arg(grade_type_id), sqlc.arg(value), sqlc.arg(date), sqlc.arg(note)

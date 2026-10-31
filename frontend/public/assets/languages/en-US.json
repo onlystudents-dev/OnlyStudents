@@ -179,9 +179,12 @@
         "TEACHER": "Teacher",
         "TIMETABLE_OVERVIEW": "Overview",
         "TIMETABLE_GRADE": "Grade",
+        "TIMETABLE_HOMEWORK": "Give homework",
         "PRESENT": "Present",
         "ABSENT": "Absent",
-        "NO_FILE_SELECTED": "No file selected"
+        "NO_FILE_SELECTED": "No file selected",
+        "TITLE": "Title",
+        "DESCRIPTION": "Description"
     },
     "errors": {
         "NOT_FOUND": "Oops! That doesn't exist. Please try again.",

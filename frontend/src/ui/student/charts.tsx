@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from "react"
 import {getKey, getLanguage} from "../../util/language.ts";
 import {formatUnixDate} from "../../util/time.ts";
 import type {Grade, Me} from "../../types/api.ts";
-import {colors} from "./grades.tsx";
+import {colors} from "../globals.tsx";
 import type {TargetedPointerEvent} from "preact";
 
 const WIDTH = 600
