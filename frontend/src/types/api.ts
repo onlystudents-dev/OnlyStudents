@@ -162,6 +162,22 @@ export type Grade = {
     note: string,
 }
 
+export type AddGrade = {
+    term_id: number,
+    grade_type_id: number,
+    value: number,
+    date: number,
+    has_note: boolean,
+    note: string,
+    student_id: number,
+    class_subjects_id: number,
+}
+
+export type GradeType = {
+    name: string,
+    weight: number,
+}
+
 export type Absence = {
     id: number,
     subject: string,

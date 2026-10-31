@@ -79,6 +79,11 @@ type FinalGradeSummary struct {
 	Value          int16  `json:"value"`
 }
 
+type GradeType struct {
+	Name   string `json:"name"`
+	Weight int32  `json:"weight"`
+}
+
 func convertGrade(row db_queries.GetTeacherGradesRow) GradeSummary {
 	return GradeSummary{
 		ID:             row.ID,
@@ -105,6 +110,13 @@ func convertFinalGrade(row db_queries.GetTeacherFinalGradesRow) FinalGradeSummar
 	}
 }
 
+func convertGradeTypes(row db_queries.GetTeacherGradeTypesRow) GradeType {
+	return GradeType{
+		Name:   row.Name,
+		Weight: row.Weight,
+	}
+}
+
 func ListGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherSummary(c, pool, rdb, "GRADES_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherGradesRow, error) {
 		return helpers.CacheOrGetTeacherGrades(ctx, rdb, queries, scope, ttl)
@@ -115,6 +127,12 @@ func ListFinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherSummary(c, pool, rdb, "FINAL_GRADES_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherFinalGradesRow, error) {
 		return helpers.CacheOrGetTeacherFinalGrades(ctx, rdb, queries, scope, ttl)
 	}, convertFinalGrade)
+}
+
+func GetGradeTypes(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	return helpers.TeacherSummary(c, pool, rdb, "GRADE_TYPES_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherGradeTypesRow, error) {
+		return helpers.CacheOrGetTeacherGradeTypes(ctx, rdb, queries, scope, ttl)
+	}, convertGradeTypes)
 }
 
 func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {

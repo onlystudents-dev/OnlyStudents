@@ -310,6 +310,42 @@ func (q *Queries) GetTeacherFinalGrades(ctx context.Context, arg GetTeacherFinal
 	return items, nil
 }
 
+const getTeacherGradeTypes = `-- name: GetTeacherGradeTypes :many
+SELECT
+    id,
+    name,
+    weight
+FROM grade_types
+WHERE school_id = $1
+ORDER BY weight
+`
+
+type GetTeacherGradeTypesRow struct {
+	ID     int32
+	Name   string
+	Weight int32
+}
+
+func (q *Queries) GetTeacherGradeTypes(ctx context.Context, schoolID int32) ([]GetTeacherGradeTypesRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherGradeTypes, schoolID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherGradeTypesRow
+	for rows.Next() {
+		var i GetTeacherGradeTypesRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Weight); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTeacherGrades = `-- name: GetTeacherGrades :many
 SELECT
     g.id,

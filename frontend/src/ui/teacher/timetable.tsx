@@ -1,4 +1,4 @@
-import type {Group, Lesson, LessonTime, Room, Student} from "../../types/api.ts";
+import type {GradeType, Group, Lesson, LessonTime, Room, Student} from "../../types/api.ts";
 import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
 import {useCallback, useEffect, useRef, useState} from "preact/compat";
 import {toast} from "react-toastify";
@@ -21,6 +21,9 @@ import Sidebar from "../../util/sidebar/sidebar.tsx";
 import Button from "../../util/sidebar/config.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {useLayoutEffect} from "preact/hooks";
+import {colors} from "../globals.tsx";
+import Select from "react-select";
+import {selectStyles} from "../../util/select.ts";
 
 export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
@@ -125,14 +128,39 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
 }
 
 function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: PopupProps) {
-    const [active, setActive] = useState<"overview" | "grade">("overview")
+    const [active, setActive] = useState<"overview" | "grade" | "homework">("overview")
     const [students, setStudents] = useState<Student[]>([])
+    const [gradeTypes, setGradeTypes] = useState<GradeType[]>([])
 
     const [wasHere, setWasHere] = useState<Record<number, boolean>>({})
     const presentRef = useRef<HTMLButtonElement>(null)
     const absentRef = useRef<HTMLButtonElement>(null)
     const [presentWidth, setPresentWidth] = useState<number>(0)
     const [absendWidth, setAbsendWidth] = useState<number>(0)
+
+    type EditingGrade = { title: string, description: string, type: string, grades: Record<number, number> }
+    const [editingGrade, setEditingGrade] = useState<number | null>(null)
+    const [grades, setGrades] = useState<Record<number, EditingGrade>>({})
+    const ref1 = useRef<HTMLButtonElement>(null)
+    const ref2 = useRef<HTMLButtonElement>(null)
+    const ref3 = useRef<HTMLButtonElement>(null)
+    const ref4 = useRef<HTMLButtonElement>(null)
+    const ref5 = useRef<HTMLButtonElement>(null)
+    const didntRef = useRef<HTMLButtonElement>(null)
+    const [width1, setWidth1] = useState<number>(0)
+    const [width2, setWidth2] = useState<number>(0)
+    const [width3, setWidth3] = useState<number>(0)
+    const [width4, setWidth4] = useState<number>(0)
+    const [width5, setWidth5] = useState<number>(0)
+    const [didntWidth, setDidntWidth] = useState<number>(0)
+    const widthByVal: Record<number, number> = {
+        0: didntWidth,
+        1: width1,
+        2: width2,
+        3: width3,
+        4: width4,
+        5: width5,
+    }
 
     const room = rooms.find(r => r.id === lesson.room_id)
     const group = groups?.find(g => g.id === lesson.group_id)
@@ -143,6 +171,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             setWasHere(Object.fromEntries(data.map(student => [student.id, true])))
             setStudents(data)
         })
+        void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
     }, [fetchMe, group])
 
     useLayoutEffect(() => {
@@ -151,6 +180,17 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
         setPresentWidth(presentRef.current?.offsetWidth || 0)
         setAbsendWidth(absentRef.current?.offsetWidth || 0)
     }, [students])
+
+    useLayoutEffect(() => {
+        if (active !== "grade" || !editingGrade) return
+
+        setWidth1(ref1.current?.offsetWidth || 0)
+        setWidth2(ref2.current?.offsetWidth || 0)
+        setWidth3(ref3.current?.offsetWidth || 0)
+        setWidth4(ref4.current?.offsetWidth || 0)
+        setWidth5(ref5.current?.offsetWidth || 0)
+        setDidntWidth(didntRef.current?.offsetWidth || 0)
+    }, [active, editingGrade])
 
     if (!group || !room) return
 
@@ -199,6 +239,108 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                         </div>
                                     </>
                                 )
+                            case "grade":
+                                if (editingGrade) {
+                                    const eGrade = grades[editingGrade]
+                                    if (!eGrade) return
+                                    const gradeTypesOptions = gradeTypes.map(type => ({ label: type.name, value: type.name }))
+
+                                    return (
+                                        <>
+                                            <div className="flex flex-row justify-between">
+                                                <div className="flex flex-col">
+                                                    <input type="text" className="text-3xl truncate outline-none rubik" defaultValue={eGrade.title} onChange={e => setGrades({ ...grades, [editingGrade]: { ...eGrade, title: e.currentTarget.value } })} placeholder={getKey("TITLE")} />
+                                                    <textarea rows={2} className="text-2xl opacity-70 truncate fredoka outline-none rubik" defaultValue={eGrade.description} onChange={e => setGrades({ ...grades, [editingGrade]: { ...eGrade, description: e.currentTarget.value } } )} placeholder={getKey("DESCRIPTION")} />
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <Select options={gradeTypesOptions} value={gradeTypesOptions.find(type => type.value === eGrade.type)} onChange={val => val && setGrades({ ...grades, [editingGrade]: { ...eGrade, type: val.value } })}
+                                                            styles={selectStyles("fit-content", "100%", "var(--bg-color)", "var(--card-color)", "var(--hover-color)")} />
+                                                </div>
+                                            </div>
+                                            <div className="border-(--txt-color) w-full h-fit min-h-80 flex flex-col items-center justify-start p-4 border-4 rounded-2xl gap-2">
+                                                {Object.entries(eGrade.grades).map(([s, grade]) => {
+                                                    const student = students.find(st => st.id === Number(s))
+                                                    if (!student) return
+
+                                                    return (
+                                                        <div key={student.id} className="flex flex-row justify-between items-center w-full hover:bg-(--hover-color) transition-[background-color_400ms_ease-in-out] hover:transition-[background-color_400ms_ease-in-out] p-2 rounded-lg">
+                                                            <p><FontAwesomeIcon icon={faUser} /> {student.first_name} {student.last_name}</p>
+                                                            <div className="flex flex-row items-center h-full justify-end rounded-lg border-2 border-(--border-color) relative">
+                                                                <button className="text-center p-1 cursor-pointer z-1 min-w-8" onClick={() => setGrades({ ...grades, [editingGrade]: { ...eGrade, grades: { ...eGrade.grades, [student.id]: 0 } } })} ref={didntRef}>
+                                                                    -
+                                                                </button>
+                                                                <button className="text-center p-1 cursor-pointer z-1 min-w-8" onClick={() => setGrades({ ...grades, [editingGrade]: { ...eGrade, grades: { ...eGrade.grades, [student.id]: 1 } } })} ref={ref1} style={{ color: `var(--${colors[1]}-color)` }}>
+                                                                    1
+                                                                </button>
+                                                                <button className="text-center p-1 cursor-pointer z-1 min-w-8" onClick={() => setGrades({ ...grades, [editingGrade]: { ...eGrade, grades: { ...eGrade.grades, [student.id]: 2 } } })} ref={ref2} style={{ color: `var(--${colors[2]}-color)` }}>
+                                                                    2
+                                                                </button>
+                                                                <button className="text-center p-1 cursor-pointer z-1 min-w-8" onClick={() => setGrades({ ...grades, [editingGrade]: { ...eGrade, grades: { ...eGrade.grades, [student.id]: 3 } } })} ref={ref3} style={{ color: `var(--${colors[3]}-color)` }}>
+                                                                    3
+                                                                </button>
+                                                                <button className="text-center p-1 cursor-pointer z-1 min-w-8" onClick={() => setGrades({ ...grades, [editingGrade]: { ...eGrade, grades: { ...eGrade.grades, [student.id]: 4 } } })} ref={ref4} style={{ color: `var(--${colors[4]}-color)` }}>
+                                                                    4
+                                                                </button>
+                                                                <button className="text-center p-1 cursor-pointer z-1 min-w-8" onClick={() => setGrades({ ...grades, [editingGrade]: { ...eGrade, grades: { ...eGrade.grades, [student.id]: 5 } } })} ref={ref5} style={{ color: `var(--${colors[5]}-color)` }}>
+                                                                    5
+                                                                </button>
+                                                                <div className="absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={{
+                                                                    left: `${Object.entries(widthByVal).slice(0, grade).reduce((sum, [, width]) => sum + width, 0)}px`,
+                                                                    width: `${widthByVal[grade]}px`,
+                                                                    borderTopLeftRadius: grade === 0 ? '6px' : '0px',
+                                                                    borderBottomLeftRadius: grade === 0 ? '6px' : '0px',
+                                                                    borderTopRightRadius: grade === 5 ? '6px' : '0px',
+                                                                    borderBottomRightRadius: grade === 5 ? '6px' : '0px',
+                                                                    backgroundColor: grade === 0 ? "var(--card-color)" : `var(--${colors[grade]}-base-color)`
+                                                                }} />
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </>
+                                    )
+                                }
+
+                                return (
+                                    <>
+                                        <div className="flex flex-wrap gap-4">
+                                            {Object.entries(grades).map(([id, grade]) => {
+                                                const gradeS = Object.values(grade.grades)
+                                                const weight = gradeTypes.find(type => type.name === grade.type)?.weight || 1
+                                                const average = gradeS.length
+                                                    ? gradeS.reduce((sum, grade) => sum + grade * weight, 0) / gradeS.reduce(sum => sum + weight, 0)
+                                                    : 0
+
+                                                const color = colors[Math.round(average)]
+                                                const rounded = average.toFixed(2)
+
+                                                return (
+                                                    <div className="border-(--txt-color) w-80 h-40 flex flex-row justify-between p-4 border-2 rounded-2xl cursor-pointer" onClick={() => setEditingGrade(Number(id))}>
+                                                        <div className="flex flex-col">
+                                                            <p className="text-3xl rubik">{grade.title}</p>
+                                                            <p className="opacity-70">{Object.values(grade.grades).filter(grade => grade !== 0).length}</p>
+                                                        </div>
+                                                        <div className="flex flex-col justify-end">
+                                                            <div className={`rounded-full h-8 w-fit pl-2 pr-2 inline-flex items-center justify-center poppins text-2xl`} style={{
+                                                                backgroundColor: `var(--${color}-base-color)`,
+                                                                color: `var(--${color}-color)`, fontWeight: "900"
+                                                            }}>{Number(rounded) ? rounded : "---"}</div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                            <div className="border-(--txt-color) w-80 h-40 flex justify-center items-center border-2 rounded-2xl cursor-pointer text-5xl" onClick={() => {
+                                                const id = Math.max(...(Object.keys(grades).map(grade => Number(grade)))) // stupid js forces it to be string
+                                                const grade: EditingGrade = { title: "", description: "", type: "", grades: Object.fromEntries(students.map(student => [student.id, 0])) }
+                                                setGrades({ ...grades, [id]: grade })
+                                                setEditingGrade(id)
+                                            }}>
+                                                +
+                                            </div>
+                                        </div>
+                                    </>
+                                )
                             default:
                                 return null
                         }
@@ -209,7 +351,8 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 </div>
                 <Sidebar className="border-(--txt-color)!">
                     <Button icon={faList} text={getKey("TIMETABLE_OVERVIEW")} onClick={() => setActive("overview")} />
-                    <Button icon={faStar} text={getKey("TIMETABLE_GRADE")} onClick={() => setActive("grade")} />
+                    <Button icon={faStar} text={getKey("TIMETABLE_GRADE")} onClick={() => { setActive("grade"); setEditingGrade(null) }} />
+                    <Button icon={faStar} text={getKey("TIMETABLE_HOMEWORK")} onClick={() => setActive("homework")} />
                 </Sidebar>
             </div>
         </>

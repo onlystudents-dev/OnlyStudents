@@ -297,6 +297,13 @@ func CacheOrGetTeacherFinalGrades(ctx context.Context, rdb *redis.Client, querie
 	})
 }
 
+func CacheOrGetTeacherGradeTypes(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherGradeTypesRow, error) {
+	key := fmt.Sprintf("teacher_grade_types:%d", scope.SchoolID)
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherGradeTypesRow, error) {
+		return queries.GetTeacherGradeTypes(ctx, scope.SchoolID)
+	})
+}
+
 func CacheOrGetTeacherExams(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.GetTeacherExamsRow, error) {
 	key := fmt.Sprintf("teacher_exams:%d:%d", scope.SchoolID, scope.TeacherID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherExamsRow, error) {

@@ -179,9 +179,12 @@
         "TEACHER": "Tanár",
         "TIMETABLE_OVERVIEW": "Áttekintés",
         "TIMETABLE_GRADE": "Osztályzás",
+        "TIMETABLE_HOMEWORK": "Házi feladat adás",
         "Present": "Jelen",
         "Absent": "Hiányoz",
-        "NO_FILE_SELECTED": "Nincs fájl kiválasztva"
+        "NO_FILE_SELECTED": "Nincs fájl kiválasztva",
+        "TITLE": "Title",
+        "DESCRIPTION": "Leírás"
     },
     "errors": {
         "NOT_FOUND": "Upsz! Ez nem létezik. Kérem, próbálja újra.",

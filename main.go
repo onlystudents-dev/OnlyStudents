@@ -209,6 +209,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddGrade(c, pool, rdb) },
 					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditGrade(c, pool, rdb) },
 					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveGrade(c, pool, rdb) },
+					"types":            helpers.Get(func(c fiber.Ctx) error { return teacherapi.GetGradeTypes(c, pool, rdb) }),
 				},
 
 				"subjects": helpers.Get(func(c fiber.Ctx) error { return teacherapi.Subjects(c, pool, rdb) }),
