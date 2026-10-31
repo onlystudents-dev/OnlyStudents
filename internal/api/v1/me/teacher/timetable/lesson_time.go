@@ -56,7 +56,7 @@ func convertBellSchedule(row db_queries.BellSchedule) BellScheduleSummary {
 }
 
 func CreateLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
 		func(req CreateLessonTimeRequest) bool {
 			return req.TypeID <= 0 || req.LessonNumber <= 0 || req.Start <= 0 || req.End == 0
 		},
@@ -74,7 +74,7 @@ func CreateLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 }
 
 func DeleteLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
 		func(req DeleteLessonTimeRequest) bool {
 			return req.Id <= 0
 		},
@@ -87,7 +87,7 @@ func DeleteLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 }
 
 func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
 		func(req EditLessonTimeRequest) bool {
 			return req.Id <= 0 || req.LessonNumber <= 0 || req.Start <= 0 || req.End == 0
 		},
@@ -103,8 +103,7 @@ func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ReadLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummaryByID(c, pool, rdb, "MANAGE_BELL_SCHEDULE", "LESSON_TIME_CACHE_TTL",
-		func(req ReadLessonTimeRequest) bool { return req.TypeID <= 0 },
-		func(req ReadLessonTimeRequest) int32 { return req.TypeID },
-		helpers.CacheOrGetTeacherLessonTime, convertBellSchedule)
+	return helpers.TeacherSummary(c, pool, rdb, "LESSON_TIME_CACHE_TTL", "MANAGE_BELL_SCHEDULE", func(req ReadLessonTimeRequest) bool { return req.TypeID <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadLessonTimeRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.BellSchedule, error) {
+		return helpers.CacheOrGetTeacherLessonTime(ctx, rdb, queries, req.TypeID, scope, ttl)
+	}, convertBellSchedule)
 }

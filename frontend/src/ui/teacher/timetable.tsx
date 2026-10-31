@@ -82,7 +82,7 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
         const lessons = await fetchWeekLessons(0)
 
         await Promise.all([
-            fetchInto(fetchMe, "/api/v1/me/teacher/timetable/my_rooms", setRooms),
+            fetchInto(fetchMe, "/api/v1/me/teacher/timetable/room", setRooms),
             fetchInto(fetchMe, "/api/v1/me/teacher/timetable/group", setGroups),
             fetchInto(fetchMe, "/api/v1/me/teacher/timetable/my_lesson_times", setLessonTime).then(time => {
                 if (!me.preferences.timetable_next) return

@@ -40,7 +40,7 @@ type SubstitutionsLessonRequest struct {
 }
 
 func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_SUBSTITUTIONS",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_SUBSTITUTIONS",
 		func(req CanceledLessonRequest) bool {
 			return req.Date <= 0 || req.LessonNumber <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0)
 		},
@@ -72,7 +72,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 }
 
 func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_SUBSTITUTIONS",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_SUBSTITUTIONS",
 		func(req CanceledLessonRequest) bool {
 			return req.Date <= 0 || req.LessonNumber <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0)
 		},
@@ -104,7 +104,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 }
 
 func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_SUBSTITUTIONS",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_SUBSTITUTIONS",
 		func(req SubstitutionsLessonRequest) bool {
 			return req.ID <= 0 || req.Date <= 0 || req.LessonNumber <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0 || !req.IsSubstitution || req.SubstitutionTeacherId <= 0)
 		},

@@ -51,13 +51,13 @@ func convertGroup(row db_queries.Group) GroupData {
 }
 
 func ReadClass(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "CLASS_CACHE_TTL", true, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.Class, error) {
+	return helpers.StudentSummary(c, pool, rdb, "CLASS_CACHE_TTL", true, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.Class, error) {
 		return helpers.CacheOrGetStudentClass(ctx, rdb, queries, scope, ttl)
 	}, convertClass)
 }
 
 func ReadGroups(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return StudentSummary(c, pool, rdb, "GROUPS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.Group, error) {
+	return helpers.StudentSummary(c, pool, rdb, "GROUPS_CACHE_TTL", false, nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.MeScope, ttl int32) ([]db_queries.Group, error) {
 		return helpers.CacheOrGetStudentGroups(ctx, rdb, queries, scope, ttl)
 	}, convertGroup)
 }

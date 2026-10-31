@@ -36,7 +36,7 @@ func convertBellScheduleType(row db_queries.ReadBellScheduleTypeRow) BellSchedul
 }
 
 func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
 		func(req CreateBellScheduleTypeRequest) bool {
 			return req.Name == ""
 		},
@@ -49,7 +49,7 @@ func CreateBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 }
 
 func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
 		func(req DeleteBellScheduleTypeRequest) bool {
 			return req.Id <= 0
 		},
@@ -62,7 +62,7 @@ func DeleteBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 }
 
 func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
+	return helpers.TeacherModify(c, pool, rdb, "MANAGE_BELL_SCHEDULE",
 		func(req EditBellScheduleTypeRequest) bool {
 			return req.Id <= 0 || req.Name == ""
 		},
@@ -76,5 +76,7 @@ func EditBellScheduleType(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 }
 
 func ReadBellScheduleTypes(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherTimeTableSummary(c, pool, rdb, "MANAGE_BELL_SCHEDULE", "BELL_SCHEDULE_TYPE_CACHE_TTL", helpers.CacheOrGetTeacherBellScheduleTypes, convertBellScheduleType)
+	return helpers.TeacherSummary(c, pool, rdb, "BELL_SCHEDULE_TYPE_CACHE_TTL", "MANAGE_BELL_SCHEDULE", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadBellScheduleTypeRow, error) {
+		return helpers.CacheOrGetTeacherBellScheduleTypes(ctx, rdb, queries, scope, ttl)
+	}, convertBellScheduleType)
 }

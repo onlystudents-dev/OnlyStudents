@@ -74,11 +74,14 @@ func convertExam(row db_queries.GetTeacherExamsRow) ExamSummary {
 }
 
 func ListExams(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherSummary(c, pool, rdb, "EXAMS_CACHE_TTL", helpers.CacheOrGetTeacherExams, convertExam)
+	return helpers.TeacherSummary(c, pool, rdb, "EXAMS_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherExamsRow, error) {
+		return helpers.CacheOrGetTeacherExams(ctx, rdb, queries, scope, ttl)
+	}, convertExam)
 }
 
 func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req AddExamRequest) bool {
 			return req.Title == "" || (req.HasDescription && req.Description == "") || req.Date <= 0 || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
 		},
@@ -98,7 +101,8 @@ func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func RemoveExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req RemoveExamRequest) bool { return req.ExamID <= 0 },
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveExamRequest) (int64, error) {
 			return queries.TeacherDeleteExam(ctx, db_queries.TeacherDeleteExamParams{
@@ -110,7 +114,8 @@ func RemoveExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func EditExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return TeacherModify(c, pool, rdb,
+	return helpers.TeacherModify(c, pool, rdb,
+		"",
 		func(req EditExamRequest) bool {
 			return req.ExamID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.Date <= 0 || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
 		},
