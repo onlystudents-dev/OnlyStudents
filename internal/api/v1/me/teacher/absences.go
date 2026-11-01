@@ -36,7 +36,7 @@ type RemoveAbsenceRequest struct {
 }
 
 type ListAbsencesByLessonRequest struct {
-	ClassSubjectsID int64 `json:"class_subjects_id"`
+	ClassSubjectsID int32 `json:"class_subjects_id"`
 	Date            int64 `json:"date"`
 }
 
@@ -106,7 +106,7 @@ func ListAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 
 func ListAbsencesForLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", func(req ListAbsencesByLessonRequest) bool { return req.ClassSubjectsID <= 0 || req.Date <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ListAbsencesByLessonRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesByLessonRow, error) {
-		return helpers.CacheOrGetTeacherAbsencesByLesson(ctx, rdb, queries, scope, ttl, int32(req.ClassSubjectsID), pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true})
+		return helpers.CacheOrGetTeacherAbsencesByLesson(ctx, rdb, queries, scope, ttl, req.ClassSubjectsID, pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true})
 	}, convertAbsenceByLesson)
 }
 
