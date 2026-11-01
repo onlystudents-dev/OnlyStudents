@@ -2,15 +2,15 @@ package meapi
 
 import (
 	"log/slog"
+	"math"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"os"
-	"path/filepath"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mojatter/s2"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -22,7 +22,7 @@ type GetFileRequest struct {
 	file_uuid string
 }
 
-func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2.Storage) error {
 	sessionData, ok := c.Locals("session").(helpers.SessionData)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
@@ -47,15 +47,17 @@ func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "FILE_TOO_BIG"})
 	}
 
-	if helpers.GetEnvFallback("FILE_UPLOAD_BACKEND", "directory") == "directory" {
-		err := c.SaveFile(file, filepath.Join(helpers.GetEnvFallback("FILE_UPLOADS_DIR", "./uploads"), fileUuid.String()))
-		if err != nil {
-			slog.Error(err.Error())
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-		}
-	} else {
-		// TODO: add S3-compatible file storage support
-		return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
+	file_reader, file_read_err := file.Open()
+
+	if file_read_err != nil {
+		slog.Debug("multipart file open failed", "file_read_err", file_read_err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	s2_put_err := s2_client.Put(c.Context(), s2.NewObjectReader(fileUuid.String(), file_reader, uint64(min(file.Size, math.MaxInt64)))) // #nosec G115 -- value clamped to <= max, which fits uint64
+	if s2_put_err != nil {
+		slog.Error("file provider put failed", "s2_put_err", s2_put_err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	accountUuid, err := uuid.Parse(sessionData.AccountUUID)
@@ -85,7 +87,7 @@ func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return c.JSON(fiber.Map{"file_uuid": fileUuid.String()})
 }
 
-func FileDelete(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func FileDelete(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2.Storage) error {
 	sessionData, ok := c.Locals("session").(helpers.SessionData)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
@@ -119,52 +121,35 @@ func FileDelete(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "FORBIDDEN"})
 	}
 
-	if helpers.GetEnvFallback("FILE_UPLOAD_BACKEND", "directory") == "directory" {
-		root, err := os.OpenRoot(helpers.GetEnvFallback("FILE_UPLOADS_DIR", "./uploads"))
-
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-		}
-
-		if err := root.Remove(file_uuid_str); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
-		}
-	} else {
-		// TODO: add S3-compatible file storage support
-		return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
+	s2_delete_err := s2_client.Delete(c.Context(), file_uuid_str)
+	if s2_delete_err != nil {
+		slog.Error("file provider delete failed", "s2_delete_err", s2_delete_err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func FetchFile(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	if helpers.GetEnvFallback("FILE_UPLOAD_BACKEND", "directory") != "directory" {
-		// TODO: add S3-compatible file storage support
-		return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{"error": "NOT_IMPLEMENTED"})
-	}
-
-	fs := os.DirFS(helpers.GetEnvFallback("FILE_UPLOADS_DIR", "./uploads"))
-
+func FetchFile(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2.Storage) error {
 	file_uuid := c.Params("file_uuid", "")
-
 	_, err := uuid.Parse(file_uuid)
 
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
-	file, err := fs.Open(file_uuid)
-	defer file.Close()
-
+	object, err := s2_client.Get(c.Context(), file_uuid)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "NOT_FOUND"})
 	}
 
-	return c.SendFile(file_uuid, fiber.SendFile{
-		FS:       fs,
-		Compress: true,
-		MaxAge:   999999, // you cannot modify a file, and reuploads generate a new UUID
-	})
+	object_reader, err := object.Open()
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	return c.SendStream(object_reader)
 }
 
 func GetFile(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
