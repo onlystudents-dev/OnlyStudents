@@ -182,38 +182,6 @@ CREATE TABLE rooms (
     CONSTRAINT chk_rooms_capacity CHECK (capacity >= 0)
 );
 
-CREATE TABLE grade_types (
-    id SERIAL PRIMARY KEY,
-    school_id INT NOT NULL REFERENCES schools (id) ON DELETE CASCADE,
-    name VARCHAR(64) NOT NULL,
-    weight INT NOT NULL DEFAULT 1,
-    CONSTRAINT chk_grade_types_weight CHECK (weight > 0)
-);
-
-CREATE TABLE grades (
-    id BIGSERIAL PRIMARY KEY,
-    student_id INT NOT NULL REFERENCES students (id) ON DELETE CASCADE,
-    class_subjects_id INT NOT NULL,
-    teacher_id INT NOT NULL REFERENCES teachers (id) ON DELETE RESTRICT,
-    term_id INT NOT NULL REFERENCES terms (id) ON DELETE RESTRICT,
-    grade_type_id INT NOT NULL REFERENCES grade_types (id) ON DELETE RESTRICT,
-    value SMALLINT NOT NULL,
-    date DATE NOT NULL,
-    note VARCHAR(512) DEFAULT NULL,
-    CONSTRAINT chk_grades_value CHECK (value BETWEEN 1 AND 5)
-);
-
-CREATE TABLE final_grades (
-    id BIGSERIAL PRIMARY KEY,
-    student_id INT NOT NULL REFERENCES students (id) ON DELETE CASCADE,
-    class_subjects_id INT NOT NULL,
-    term_id INT NOT NULL REFERENCES terms (id) ON DELETE RESTRICT,
-    teacher_id INT NOT NULL REFERENCES teachers (id) ON DELETE RESTRICT,
-    value SMALLINT NOT NULL,
-    CONSTRAINT chk_final_grades_value CHECK (value BETWEEN 1 AND 5),
-    CONSTRAINT uq_final_grades UNIQUE (student_id, class_subjects_id, term_id)
-);
-
 CREATE TABLE absences (
     id BIGSERIAL PRIMARY KEY,
     student_id INT NOT NULL REFERENCES students (id) ON DELETE CASCADE,
@@ -406,15 +374,6 @@ CREATE UNIQUE INDEX uq_terms_active ON terms (school_year_id) WHERE is_active;
 
 CREATE INDEX idx_rooms_school_id ON rooms (school_id);
 
-CREATE INDEX idx_grade_types_school_id ON grade_types (school_id);
-CREATE INDEX idx_grades_student_id ON grades (student_id);
-CREATE INDEX idx_grades_class_subjects_id ON grades (class_subjects_id);
-CREATE INDEX idx_grades_term_id ON grades (term_id);
-CREATE INDEX idx_grades_teacher_id ON grades (teacher_id);
-CREATE INDEX idx_final_grades_student_id ON final_grades (student_id);
-CREATE INDEX idx_final_grades_class_subjects_id ON final_grades (class_subjects_id);
-CREATE INDEX idx_final_grades_term_id ON final_grades (term_id);
-
 CREATE INDEX idx_absences_student_id ON absences (student_id);
 CREATE INDEX idx_absences_lesson_id ON absences (lesson_id);
 CREATE INDEX idx_absences_date ON absences (date);
@@ -490,9 +449,56 @@ CREATE TABLE class_subjects (
     CONSTRAINT uq_class_subjects UNIQUE (class_id, subject_id, custom_subject_id)
 );
 
-ALTER TABLE grades
-    ADD CONSTRAINT fk_grades_class_subjects
-    FOREIGN KEY (class_subjects_id) REFERENCES class_subjects (id) ON DELETE RESTRICT;
+CREATE TABLE grade_types (
+    id SERIAL PRIMARY KEY,
+    school_id INT NOT NULL REFERENCES schools (id) ON DELETE CASCADE,
+    name VARCHAR(64) NOT NULL,
+    weight INT NOT NULL DEFAULT 1,
+    CONSTRAINT chk_grade_types_weight CHECK (weight > 0)
+);
+
+CREATE TABLE lesson_grades (
+    id BIGSERIAL PRIMARY KEY,
+    actual_date BIGINT NOT NULL,
+    class_subjects_id INT NOT NULL REFERENCES class_subjects (id) ON DELETE CASCADE,
+    group_id INT NOT NULL REFERENCES groups (id) ON DELETE CASCADE,
+    title VARCHAR(32) NOT NULL,
+    description VARCHAR(512) NOT NULL,
+    type INT NOT NULL REFERENCES grade_types (id) ON DELETE RESTRICT,
+    UNIQUE (actual_date, class_subjects_id, group_id)
+);
+
+CREATE TABLE grades (
+    id BIGSERIAL PRIMARY KEY,
+    student_id INT NOT NULL REFERENCES students (id) ON DELETE CASCADE,
+    lesson_grade_id BIGINT NOT NULL REFERENCES lesson_grades (id) ON DELETE RESTRICT,
+    teacher_id INT NOT NULL REFERENCES teachers (id) ON DELETE RESTRICT,
+    term_id INT NOT NULL REFERENCES terms (id) ON DELETE RESTRICT,
+    value SMALLINT NOT NULL,
+    date DATE NOT NULL,
+    note VARCHAR(512) DEFAULT NULL,
+    CONSTRAINT chk_grades_value CHECK (value BETWEEN 1 AND 5)
+);
+
+CREATE TABLE final_grades (
+    id BIGSERIAL PRIMARY KEY,
+    student_id INT NOT NULL REFERENCES students (id) ON DELETE CASCADE,
+    class_subjects_id INT NOT NULL,
+    term_id INT NOT NULL REFERENCES terms (id) ON DELETE RESTRICT,
+    teacher_id INT NOT NULL REFERENCES teachers (id) ON DELETE RESTRICT,
+    value SMALLINT NOT NULL,
+    CONSTRAINT chk_final_grades_value CHECK (value BETWEEN 1 AND 5),
+    CONSTRAINT uq_final_grades UNIQUE (student_id, class_subjects_id, term_id)
+);
+
+CREATE INDEX idx_grade_types_school_id ON grade_types (school_id);
+CREATE INDEX idx_grades_student_id ON grades (student_id);
+CREATE INDEX idx_grades_lesson_grade_id ON grades (lesson_grade_id);
+CREATE INDEX idx_grades_term_id ON grades (term_id);
+CREATE INDEX idx_grades_teacher_id ON grades (teacher_id);
+CREATE INDEX idx_final_grades_student_id ON final_grades (student_id);
+CREATE INDEX idx_final_grades_class_subjects_id ON final_grades (class_subjects_id);
+CREATE INDEX idx_final_grades_term_id ON final_grades (term_id);
 
 ALTER TABLE final_grades
     ADD CONSTRAINT fk_final_grades_class_subjects
@@ -638,10 +644,9 @@ DROP TABLE IF EXISTS
     school_type, teachers, schools, bell_schedule_type, classes, students,
     guardians, guardians_access, teacher_school, student_citizenships,
     guardian_citizenships, teacher_citizenships, accounts, school_years, terms,
-    rooms, grade_types, grades, final_grades, absences, homework,
-    homework_submissions, announcements, lesson_logs, exams, bell_schedule,
-    subjects, custom_subjects, groups, group_members, base_schedule, time_table,
-    principal, permission_type, permissions, account_opaque, sessions,
-    class_subjects, student_school, themes, account_crypto,
-    schema_migrations
+    rooms, absences, homework, homework_submissions, announcements, lesson_logs,
+    exams, bell_schedule, subjects, custom_subjects, groups, group_members,
+    base_schedule, time_table, principal, permission_type, permissions,
+    account_opaque, sessions, class_subjects, grade_types, lesson_grades, grades, final_grades,
+    student_school, themes, account_crypto, schema_migrations
 CASCADE;

@@ -136,7 +136,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     const presentRef = useRef<HTMLButtonElement>(null)
     const absentRef = useRef<HTMLButtonElement>(null)
     const [presentWidth, setPresentWidth] = useState<number>(0)
-    const [absendWidth, setAbsendWidth] = useState<number>(0)
+    const [absentWidth, setAbsentWidth] = useState<number>(0)
 
     type EditingGrade = { title: string, description: string, type_id: number, grades: Record<number, number> }
     const [editingGrade, setEditingGrade] = useState<number | null>(null)
@@ -178,7 +178,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
         if (!students.length) return
 
         setPresentWidth(presentRef.current?.offsetWidth || 0)
-        setAbsendWidth(absentRef.current?.offsetWidth || 0)
+        setAbsentWidth(absentRef.current?.offsetWidth || 0)
     }, [students])
 
     useLayoutEffect(() => {
@@ -227,7 +227,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                         </button>
                                                         <div className="bg-(--card-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={{
                                                             left: wasHere[student.id] ? '0px' : `${presentWidth}px`,
-                                                            width: `${wasHere[student.id] ? presentWidth : absendWidth}px`,
+                                                            width: `${wasHere[student.id] ? presentWidth : absentWidth}px`,
                                                             borderTopLeftRadius: wasHere[student.id] ? '6px' : '0px',
                                                             borderBottomLeftRadius: wasHere[student.id] ? '6px' : '0px',
                                                             borderTopRightRadius: !wasHere[student.id] ? '6px' : '0px',
@@ -359,8 +359,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     )
 
     async function save() {
-      switch (active) {
-        case "overview":
+        // todo: this adds no matter what
         for (const [student, here] of Object.entries(wasHere)) {
             if (here) continue;
 
@@ -378,32 +377,44 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                     class_subjects_id: lesson.subject_id,
                 })
             })
-          }
-          break
-        case "grade":
-          for (const grade of Object.values(grades)) {
-            for (const [student_id, student_grade] of Object.entries(grade.grades)) {
-              await fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades", {
+        }
+        for (const grade of Object.values(grades)) {
+            await fetchWithSchool(fetchMe, "/api/v1/me/teacher/timetable/grades", {
                 method: "POST",
                 headers: {
-                  "Content-Type": "application/json",
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                  term_id: lesson.term_id,
-                  grade_type_id: grade.type_id,
-                  date: lesson.actual_date,
-                  value: student_grade,
-                  has_note: grade.description != "",
-                  note: grade.description,
-                  student_id: Number(student_id),
-                  class_subjects_id: lesson.subject_id,
+                    actual_date: lesson.actual_date,
+                    group_id: lesson.group_id,
+                    class_subjects_id: lesson.subject_id,
+                    title: grade.title,
+                    description: grade.description,
+                    type: grade.type_id,
                 })
-              })
+            })
+            const response = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/grades?actual_date=${lesson.actual_date}&subject_id=${lesson.subject_id}`)
+
+            const json = (await response.json() as {id: number}[])[0]
+            if (!json) return
+
+            for (const [student_id, student_grade] of Object.entries(grade.grades)) {
+                await fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        lesson_grade_id: json.id,
+                        term_id: lesson.term_id,
+                        date: lesson.actual_date,
+                        value: student_grade,
+                        has_note: grade.description != "",
+                        note: grade.description,
+                        student_id: Number(student_id),
+                    })
+                })
             }
-          }
-          break
-        default:
-          break
         }
     }
 }
