@@ -181,6 +181,7 @@ export type GradeType = {
 
 export type Absence = {
     id: number,
+    student_id: number,
     subject: string,
     subject_code: string,
     teacher_last_name: string,

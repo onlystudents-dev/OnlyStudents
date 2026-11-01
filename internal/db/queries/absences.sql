@@ -51,8 +51,6 @@ SET submitted_at = CURRENT_DATE,
 SELECT
     a.id,
     a.student_id,
-    st.first_name,
-    st.last_name,
     csub.id AS class_subjects_id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
@@ -75,6 +73,36 @@ LEFT JOIN absence_reason ar ON ar.absence_id = a.id
 LEFT JOIN files f ON f.uuid = ar.file_uuid
 WHERE csub.school_id = $1
   AND csub.teacher_id = $2
+ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id;
+
+-- name: GetTeacherAbsencesByLesson :many
+SELECT
+    a.id,
+    a.student_id,
+    csub.id AS class_subjects_id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    a.date,
+    a.type,
+    a.justified,
+    f.original_name AS file_name,
+    f.size AS file_size,
+    f.type AS file_type,
+    f.uuid AS file_uuid,
+    ar.note AS reason_note,
+    a.note,
+    a.verified_by
+FROM absences a
+JOIN class_subjects csub ON csub.id = a.class_subjects_id
+JOIN students st ON st.id = a.student_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+LEFT JOIN absence_reason ar ON ar.absence_id = a.id
+LEFT JOIN files f ON f.uuid = ar.file_uuid
+WHERE csub.school_id = sqlc.arg(school_id)
+  AND csub.teacher_id = sqlc.arg(teacher_id)
+  AND csub.id = sqlc.arg(class_subjects_id)
+  AND a.date = sqlc.arg(date)
 ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id;
 
 -- name: TeacherAddAbsence :execrows

@@ -180,8 +180,10 @@
         "TIMETABLE_OVERVIEW": "Áttekintés",
         "TIMETABLE_GRADE": "Osztályzás",
         "TIMETABLE_HOMEWORK": "Házi feladat adás",
-        "Present": "Jelen",
-        "Absent": "Hiányoz",
+        "PRESENT": "Jelen",
+        "ABSENT": "Hiányoz",
+        "TARDY": "Késés",
+        "SUCESSFULLY_SAVED": "Sikeresen elmentve!",
         "NO_FILE_SELECTED": "Nincs fájl kiválasztva",
         "TITLE": "Title",
         "DESCRIPTION": "Leírás"

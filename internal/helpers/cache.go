@@ -416,6 +416,18 @@ func CacheOrGetTeacherAbsences(ctx context.Context, rdb *redis.Client, queries d
 	})
 }
 
+func CacheOrGetTeacherAbsencesByLesson(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32, classSubjectsID int32, date pgtype.Date) ([]db_queries.GetTeacherAbsencesByLessonRow, error) {
+	key := fmt.Sprintf("teacher_absences:%d:%d:%d:%d", scope.SchoolID, scope.TeacherID, classSubjectsID, date.Time.Unix())
+	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherAbsencesByLessonRow, error) {
+		return queries.GetTeacherAbsencesByLesson(ctx, db_queries.GetTeacherAbsencesByLessonParams{
+			SchoolID:        scope.SchoolID,
+			TeacherID:       scope.TeacherID,
+			ClassSubjectsID: classSubjectsID,
+			Date:            date,
+		})
+	})
+}
+
 func CacheOrGetTeacherMyGroups(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) ([]db_queries.Group, error) {
 	key := fmt.Sprintf("teacher_groups:%d:%d", scope.SchoolID, scope.TeacherID)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.Group, error) {

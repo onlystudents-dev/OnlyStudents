@@ -35,8 +35,14 @@ type RemoveAbsenceRequest struct {
 	AbsenceID int64 `json:"absence_id"`
 }
 
+type ListAbsencesByLessonRequest struct {
+	ClassSubjectsID int64 `json:"class_subjects_id"`
+	Date            int64 `json:"date"`
+}
+
 type AbsenceSummary struct {
 	ID             int64       `json:"id"`
+	StudentID      int32       `json:"student_id"`
 	Subject        string      `json:"subject"`
 	HasSubjectCode bool        `json:"has_subject_code"`
 	SubjectCode    string      `json:"subject_code"`
@@ -55,6 +61,7 @@ type AbsenceSummary struct {
 func convertAbsence(row db_queries.GetTeacherAbsencesRow) AbsenceSummary {
 	return AbsenceSummary{
 		ID:             row.ID,
+		StudentID:      row.StudentID,
 		Subject:        row.Subject,
 		HasSubjectCode: row.SubjectCode.Valid,
 		SubjectCode:    row.SubjectCode.String,
@@ -62,6 +69,27 @@ func convertAbsence(row db_queries.GetTeacherAbsencesRow) AbsenceSummary {
 		Type:           row.Type,
 		Justified:      row.Justified,
 		FileName:       row.FileName.String,
+		FileType:       row.FileType.String,
+		FileSize:       row.FileSize.Int64,
+		FileUUID:       row.FileUuid.String(),
+		ReasonNote:     row.ReasonNote.String,
+		Note:           row.Note.String,
+		VerifiedBy:     row.VerifiedBy,
+	}
+}
+
+func convertAbsenceByLesson(row db_queries.GetTeacherAbsencesByLessonRow) AbsenceSummary {
+	return AbsenceSummary{
+		ID:             row.ID,
+		StudentID:      row.StudentID,
+		Subject:        row.Subject,
+		HasSubjectCode: row.SubjectCode.Valid,
+		SubjectCode:    row.SubjectCode.String,
+		Date:           row.Date.Time.Unix(),
+		Type:           row.Type,
+		Justified:      row.Justified,
+		FileName:       row.FileName.String,
+		FileType:       row.FileType.String,
 		FileSize:       row.FileSize.Int64,
 		FileUUID:       row.FileUuid.String(),
 		ReasonNote:     row.ReasonNote.String,
@@ -77,9 +105,9 @@ func ListAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ListAbsencesForLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesRow, error) {
-		return helpers.CacheOrGetTeacherAbsences(ctx, rdb, queries, scope, ttl)
-	}, convertAbsence)
+	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", func(req ListAbsencesByLessonRequest) bool { return req.ClassSubjectsID <= 0 || req.Date <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ListAbsencesByLessonRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesByLessonRow, error) {
+		return helpers.CacheOrGetTeacherAbsencesByLesson(ctx, rdb, queries, scope, ttl, int32(req.ClassSubjectsID), pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true})
+	}, convertAbsenceByLesson)
 }
 
 func AddAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
