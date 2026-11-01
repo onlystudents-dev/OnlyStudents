@@ -76,6 +76,12 @@ func ListAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	}, convertAbsence)
 }
 
+func ListAbsencesForLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesRow, error) {
+		return helpers.CacheOrGetTeacherAbsences(ctx, rdb, queries, scope, ttl)
+	}, convertAbsence)
+}
+
 func AddAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",

@@ -59,6 +59,7 @@ type RemoveFinalGradeRequest struct {
 
 type GradeSummary struct {
 	ID             int64  `json:"id"`
+	TermID         int32  `json:"term_id"`
 	Subject        string `json:"subject"`
 	HasSubjectCode bool   `json:"has_subject_code"`
 	SubjectCode    string `json:"subject_code"`
@@ -72,6 +73,7 @@ type GradeSummary struct {
 
 type FinalGradeSummary struct {
 	ID             int64  `json:"id"`
+	TermID         int32  `json:"term_id"`
 	Subject        string `json:"subject"`
 	HasSubjectCode bool   `json:"has_subject_code"`
 	SubjectCode    string `json:"subject_code"`
@@ -87,6 +89,7 @@ type GradeType struct {
 func convertGrade(row db_queries.GetTeacherGradesRow) GradeSummary {
 	return GradeSummary{
 		ID:             row.ID,
+		TermID:         row.TermID,
 		Subject:        row.Subject,
 		HasSubjectCode: row.SubjectCode.Valid,
 		SubjectCode:    row.SubjectCode.String,
@@ -102,6 +105,7 @@ func convertGrade(row db_queries.GetTeacherGradesRow) GradeSummary {
 func convertFinalGrade(row db_queries.GetTeacherFinalGradesRow) FinalGradeSummary {
 	return FinalGradeSummary{
 		ID:             row.ID,
+		TermID:         row.TermID,
 		Subject:        row.Subject,
 		HasSubjectCode: row.SubjectCode.Valid,
 		SubjectCode:    row.SubjectCode.String,

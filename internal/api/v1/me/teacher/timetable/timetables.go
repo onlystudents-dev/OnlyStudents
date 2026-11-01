@@ -85,6 +85,7 @@ type DeleteRealTimeLessonRequest struct {
 
 type BaseScheduleLessonResponse struct {
 	ID                  int32  `json:"id"`
+	TermID              int32  `json:"term_id"`
 	SchoolID            int32  `json:"school_id"`
 	TeacherID           int32  `json:"teacher_id"`
 	HasTeacherFirstName bool   `json:"has_teacher_first_name"`
@@ -105,6 +106,7 @@ type BaseScheduleLessonResponse struct {
 
 type RealTimeLessonResponse struct {
 	ActualDate          int64  `json:"actual_date"`
+	TermID              int32  `json:"term_id"`
 	RoomID              int32  `json:"room_id"`
 	LessonNum           int32  `json:"lesson_num"`
 	DayOfWeek           int32  `json:"day_of_week"`
@@ -132,6 +134,7 @@ type RealTimeLessonResponse struct {
 func convertBaseScheduleClass(row db_queries.ReadBaseScheduleClassRow) BaseScheduleLessonResponse {
 	return BaseScheduleLessonResponse{
 		ID:                  row.ID,
+		TermID:              row.TermID,
 		SchoolID:            row.SchoolID,
 		TeacherID:           row.TeacherID,
 		HasTeacherFirstName: row.TeacherFirstName.Valid,
@@ -154,6 +157,7 @@ func convertBaseScheduleClass(row db_queries.ReadBaseScheduleClassRow) BaseSched
 func convertBaseScheduleGroup(row db_queries.ReadBaseScheduleGroupRow) BaseScheduleLessonResponse {
 	return BaseScheduleLessonResponse{
 		ID:                  row.ID,
+		TermID:              row.TermID,
 		SchoolID:            row.SchoolID,
 		TeacherID:           row.TeacherID,
 		HasTeacherFirstName: row.TeacherFirstName.Valid,
@@ -176,6 +180,7 @@ func convertBaseScheduleGroup(row db_queries.ReadBaseScheduleGroupRow) BaseSched
 func convertRealTimeLesson(row db_queries.ReadRealTimeTableRow) RealTimeLessonResponse {
 	return RealTimeLessonResponse{
 		ActualDate:          row.ActualDate.Time.Unix(),
+		TermID:              row.TermID,
 		RoomID:              row.RoomID,
 		LessonNum:           row.LessonNum,
 		DayOfWeek:           row.DayOfWeek,

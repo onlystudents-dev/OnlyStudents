@@ -80,6 +80,7 @@ type BaseSchedule struct {
 	CustomSubject   bool
 	SubjectID       pgtype.Int4
 	CustomSubjectID pgtype.Int4
+	TermID          int32
 }
 
 type BellSchedule struct {
@@ -405,4 +406,5 @@ type TimeTable struct {
 	IsSubstitution        bool
 	SubstitutionTeacherID pgtype.Int4
 	Canceled              pgtype.Bool
+	TermID                int32
 }

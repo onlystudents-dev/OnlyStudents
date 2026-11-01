@@ -49,6 +49,7 @@ export type Theme = {
 
 export type Lesson = {
     actual_date: number,
+    term_id: number,
     room_id: number,
     lesson_num: number,
     day_of_week: number,
