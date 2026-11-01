@@ -4,6 +4,8 @@ services:
     user: "0"
     restart: "no"
     command: sh -c "mkdir -p /logs/postgres /logs/dragonfly && chown 1000:1000 /logs && chown 999:999 /logs/postgres /logs/dragonfly"
+    volumes:
+      - app-logs:/logs
 
   app:
     build: .
@@ -12,6 +14,8 @@ services:
       - ${PORT}:8080
     env_file:
       - .env
+    volumes:
+      - app-logs:/app/logs
     depends_on:
       logs-init:
         condition: service_completed_successfully
@@ -28,6 +32,8 @@ services:
       - dragonfly
       - --log_dir=/logs/dragonfly
       - --logtostderr=false
+    volumes:
+      - app-logs:/logs
     depends_on:
       logs-init:
         condition: service_completed_successfully
@@ -48,6 +54,8 @@ services:
       - log_rotation_age=1d
       - -c
       - log_rotation_size=0
+    volumes:
+      - app-logs:/logs
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USER}
@@ -60,3 +68,6 @@ services:
     depends_on:
       logs-init:
         condition: service_completed_successfully
+
+volumes:
+  app-logs:
