@@ -1,0 +1,64 @@
+services:
+  logs-init:
+    image: busybox
+    user: "0"
+    restart: "no"
+    command: sh -c "mkdir -p /logs/postgres /logs/dragonfly && chown 1000:1000 /logs && chown 999:999 /logs/postgres /logs/dragonfly"
+    volumes:
+      - app-logs:/logs
+
+  app:
+    build: .
+    image: onlystudents/onlystudents:latest
+    ports:
+      - ${PORT}:8080
+    env_file:
+      - .env
+    depends_on:
+      logs-init:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      dragonfly:
+        condition: service_started
+
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    ulimits:
+      memlock: -1
+    command:
+      - dragonfly
+      - --log_dir=/logs/dragonfly
+      - --logtostderr=false
+    depends_on:
+      logs-init:
+        condition: service_completed_successfully
+
+  db:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    command:
+      - postgres
+      - -c
+      - logging_collector=on
+      - -c
+      - log_directory=/logs/postgres
+      - -c
+      - log_filename=postgresql-%Y-%m-%d.log
+      - -c
+      - log_rotation_age=1d
+      - -c
+      - log_rotation_size=0
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      logs-init:
+        condition: service_completed_successfully
