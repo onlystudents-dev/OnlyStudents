@@ -4,8 +4,6 @@ services:
     user: "0"
     restart: "no"
     command: sh -c "mkdir -p /logs/postgres /logs/dragonfly && chown 1000:1000 /logs && chown 999:999 /logs/postgres /logs/dragonfly"
-    volumes:
-      - app-logs:/logs
 
   app:
     build: .
