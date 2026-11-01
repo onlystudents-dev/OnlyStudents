@@ -29,10 +29,12 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/helmet"
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mojatter/s2"
+
 	"github.com/redis/go-redis/v9"
 )
 
-func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server) fiber.Map {
+func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Server, s2_client s2.Storage) fiber.Map {
 	authRateMax := helpers.GetInt64EnvFallback("AUTH_RATE_MAX", 5, 1000000)
 	authRateWindow := helpers.GetInt64EnvFallback("AUTH_RATELIMIT_WINDOW", 60, 1000000)
 	apiRateMax := helpers.GetInt64EnvFallback("API_RATE_MAX", 60, 1000000)
@@ -81,11 +83,11 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			helpers.RoutesGroupMWKey: []fiber.Handler{authLimit, auth},
 			":file_uuid": fiber.Map{
 				fiber.MethodGet:    func(c fiber.Ctx) error { return meapi.GetFile(c, pool, rdb) },
-				fiber.MethodDelete: func(c fiber.Ctx) error { return meapi.FileDelete(c, pool, rdb) },
+				fiber.MethodDelete: func(c fiber.Ctx) error { return meapi.FileDelete(c, pool, rdb, s2_client) },
 			},
-			fiber.MethodPost: func(c fiber.Ctx) error { return meapi.FileUpload(c, pool, rdb) },
+			fiber.MethodPost: func(c fiber.Ctx) error { return meapi.FileUpload(c, pool, rdb, s2_client) },
 		},
-		"uploads/:file_uuid": helpers.Get(func(c fiber.Ctx) error { return meapi.FetchFile(c, pool, rdb) }),
+		"uploads/:file_uuid": helpers.Get(func(c fiber.Ctx) error { return meapi.FetchFile(c, pool, rdb, s2_client) }),
 		"admin_token_login": helpers.Post([]fiber.Handler{
 			authLimit,
 			func(c fiber.Ctx) error { return adminapi.AdminTokenLogin(c, pool, rdb) },
@@ -335,6 +337,12 @@ func main() {
 		}
 	}
 
+	s2Client, err := helpers.LoadFileUploadBackend()
+
+	if err != nil {
+		panic(err)
+	}
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", helpers.GetEnvFallback("REDIS_HOST", "localhost"), helpers.GetEnvFallback("REDIS_PORT", "6379")),
 		Password: "",
@@ -440,7 +448,7 @@ func main() {
 	// frontEND
 
 	api := app.Group("/api/v1")
-	helpers.RegisterRoutes(api, buildRoutes(pool, rdb, opaque_server))
+	helpers.RegisterRoutes(api, buildRoutes(pool, rdb, opaque_server, s2Client))
 
 	app.Use(func(c fiber.Ctx) error {
 		if c.Method() != "GET" {
