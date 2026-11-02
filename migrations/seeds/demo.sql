@@ -95,6 +95,10 @@ VALUES (1, 1, 1, 1, FALSE, NULL, 1),
        (9, 2, 2, 9, FALSE, NULL, 1),
        (10, 2, 2, 10, FALSE, NULL, 1);
 
+INSERT INTO groups (id, school_id, bell_id, group_name)
+VALUES (1, 1, 1, '9.A'),
+       (2, 2, 2, '9.A');
+
 INSERT INTO grade_types (school_id, name, weight)
 VALUES (1, 'Témazáró', 2),
        (1, 'Házi feladat', 1),
@@ -104,45 +108,6 @@ VALUES (1, 'Témazáró', 2),
        (2, 'Házi feladat', 1),
        (2, 'Felelés', 1),
        (2, 'Dolgozat', 3);
-
-INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
-VALUES
-    -- Matematika
-    (1, 1, 1, 1, 1, 5, '2026-09-08', 'Első témazáró'),
-    (1, 1, 1, 1, 2, 1, '2026-09-10', 'Házi feladat'),
-    (1, 1, 1, 1, 3, 2, '2026-09-14', 'Felelés'),
-    (1, 1, 1, 1, 4, 5, '2026-10-18', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-19', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-20', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-21', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-22', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-23', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-24', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-25', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-26', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-27', 'Grafikon'),
-    (1, 1, 1, 1, 4, 5, '2026-10-28', 'Grafikon'),
-
-    -- Magyar nyelv
-    (1, 2, 1, 1, 1, 3, '2026-09-11', 'Témazáró'),
-    (1, 2, 1, 1, 2, 2, '2026-09-09', 'Házi feladat'),
-    (1, 2, 1, 1, 3, 4, '2026-09-15', 'Felelés'),
-    (1, 2, 1, 1, 4, 3, '2026-09-18', 'Dolgozat'),
-
-    -- Történelem
-    (1, 3, 1, 1, 1, 1, '2026-09-14', 'Témazáró'),
-    (1, 3, 1, 1, 2, 2, '2026-09-10', 'Házi feladat'),
-    (1, 3, 1, 1, 3, 2, '2026-09-17', 'Felelés'),
-
-    -- Angol nyelv
-    (1, 4, 1, 1, 1, 2, '2026-09-15', 'Témazáró'),
-    (1, 4, 1, 1, 3, 3, '2026-09-16', 'Felelés'),
-    (1, 4, 1, 1, 4, 1, '2026-09-18', 'Dolgozat'),
-
-    -- Informatika
-    (1, 5, 1, 1, 2, 1, '2026-09-09', 'Házi feladat'),
-    (1, 5, 1, 1, 2, 2, '2026-09-16', 'Házi feladat'),
-    (1, 5, 1, 1, 4, 2, '2026-09-18', 'Projekt');
 
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
 VALUES (1, 1, 1, 1, 2),
@@ -183,10 +148,6 @@ VALUES (1, 1, 1, '08:00', '08:45'),
 INSERT INTO rooms (id, school_id, name, capacity)
 VALUES (1, 1, '101', 30),
        (2, 2, '101', 30);
-
-INSERT INTO groups (id, school_id, bell_id, group_name)
-VALUES (1, 1, 1, '9.A'),
-       (2, 2, 2, '9.A');
 
 INSERT INTO group_members (school_id, group_id, student_id)
 VALUES (1, 1, 1),
@@ -467,28 +428,103 @@ VALUES (1, '2026-09-16', 'Orvosi igazolást küldtem, másnap leadtam az iskolá
        (3, '2026-09-18', 'Reggel elaludtam, ezért késtem a tanóráról.');
 
 -- Student 2 demo data (school 2, class 2, group 2)
+WITH grade_data(student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note) AS (
+    VALUES
+        -- Student 1, Matematika
+        (1, 1, 1, 1, 1, 5, '2026-09-08'::DATE, 'Első témazáró'),
+        (1, 1, 1, 1, 2, 1, '2026-09-10'::DATE, 'Házi feladat'),
+        (1, 1, 1, 1, 3, 2, '2026-09-14'::DATE, 'Felelés'),
+        (1, 1, 1, 1, 4, 5, '2026-10-18'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-19'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-20'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-21'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-22'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-23'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-24'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-25'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-26'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-27'::DATE, 'Grafikon'),
+        (1, 1, 1, 1, 4, 5, '2026-10-28'::DATE, 'Grafikon'),
 
-INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
-VALUES
-    -- Fizika
-    (2, 6, 1, 2, 5, 3, '2026-09-15', 'Témazáró'),
-    (2, 6, 1, 2, 6, 2, '2026-09-10', 'Házi feladat'),
-    (2, 6, 1, 2, 8, 3, '2026-09-24', 'Dolgozat'),
-    -- Kémia
-    (2, 7, 1, 2, 5, 4, '2026-09-16', 'Témazáró'),
-    (2, 7, 1, 2, 6, 5, '2026-09-11', 'Házi feladat'),
-    (2, 7, 1, 2, 7, 4, '2026-09-18', 'Felelés'),
-    -- Biológia
-    (2, 8, 1, 2, 5, 2, '2026-09-17', 'Témazáró'),
-    (2, 8, 1, 2, 7, 3, '2026-09-19', 'Felelés'),
-    (2, 8, 1, 2, 8, 4, '2026-09-26', 'Dolgozat'),
-    -- Földrajz
-    (2, 9, 1, 2, 5, 5, '2026-09-18', 'Témazáró'),
-    (2, 9, 1, 2, 6, 4, '2026-09-13', 'Házi feladat'),
-    -- Testnevelés
-    (2, 10, 1, 2, 6, 5, '2026-09-14', 'Házi feladat'),
-    (2, 10, 1, 2, 7, 5, '2026-09-20', 'Felelés'),
-    (2, 10, 1, 2, 8, 5, '2026-09-27', 'Dolgozat');
+        -- Student 1, Magyar nyelv
+        (1, 2, 1, 1, 1, 3, '2026-09-11'::DATE, 'Témazáró'),
+        (1, 2, 1, 1, 2, 2, '2026-09-09'::DATE, 'Házi feladat'),
+        (1, 2, 1, 1, 3, 4, '2026-09-15'::DATE, 'Felelés'),
+        (1, 2, 1, 1, 4, 3, '2026-09-18'::DATE, 'Dolgozat'),
+
+        -- Student 1, Történelem
+        (1, 3, 1, 1, 1, 1, '2026-09-14'::DATE, 'Témazáró'),
+        (1, 3, 1, 1, 2, 2, '2026-09-10'::DATE, 'Házi feladat'),
+        (1, 3, 1, 1, 3, 2, '2026-09-17'::DATE, 'Felelés'),
+
+        -- Student 1, Angol nyelv
+        (1, 4, 1, 1, 1, 2, '2026-09-15'::DATE, 'Témazáró'),
+        (1, 4, 1, 1, 3, 3, '2026-09-16'::DATE, 'Felelés'),
+        (1, 4, 1, 1, 4, 1, '2026-09-18'::DATE, 'Dolgozat'),
+
+        -- Student 1, Informatika
+        (1, 5, 1, 1, 2, 1, '2026-09-09'::DATE, 'Házi feladat'),
+        (1, 5, 1, 1, 2, 2, '2026-09-16'::DATE, 'Házi feladat'),
+        (1, 5, 1, 1, 4, 2, '2026-09-18'::DATE, 'Projekt'),
+
+        -- Student 2, Fizika
+        (2, 6, 1, 2, 5, 3, '2026-09-15'::DATE, 'Témazáró'),
+        (2, 6, 1, 2, 6, 2, '2026-09-10'::DATE, 'Házi feladat'),
+        (2, 6, 1, 2, 8, 3, '2026-09-24'::DATE, 'Dolgozat'),
+
+        -- Student 2, Kémia
+        (2, 7, 1, 2, 5, 4, '2026-09-16'::DATE, 'Témazáró'),
+        (2, 7, 1, 2, 6, 5, '2026-09-11'::DATE, 'Házi feladat'),
+        (2, 7, 1, 2, 7, 4, '2026-09-18'::DATE, 'Felelés'),
+
+        -- Student 2, Biológia
+        (2, 8, 1, 2, 5, 2, '2026-09-17'::DATE, 'Témazáró'),
+        (2, 8, 1, 2, 7, 3, '2026-09-19'::DATE, 'Felelés'),
+        (2, 8, 1, 2, 8, 4, '2026-09-26'::DATE, 'Dolgozat'),
+
+        -- Student 2, Földrajz
+        (2, 9, 1, 2, 5, 5, '2026-09-18'::DATE, 'Témazáró'),
+        (2, 9, 1, 2, 6, 4, '2026-09-13'::DATE, 'Házi feladat'),
+
+        -- Student 2, Testnevelés
+        (2, 10, 1, 2, 6, 5, '2026-09-14'::DATE, 'Házi feladat'),
+        (2, 10, 1, 2, 7, 5, '2026-09-20'::DATE, 'Felelés'),
+        (2, 10, 1, 2, 8, 5, '2026-09-27'::DATE, 'Dolgozat')
+),
+     lesson_grade_data AS (
+         SELECT DISTINCT ON (gd.class_subjects_id, gd.date)
+    gd.class_subjects_id,
+    (EXTRACT(EPOCH FROM (gd.date::TIMESTAMP AT TIME ZONE 'UTC')) * 1000)::BIGINT AS actual_date,
+    CASE
+    WHEN gd.class_subjects_id <= 5 THEN 1
+    ELSE 2
+END AS group_id,
+        LEFT(COALESCE(gd.note, 'Grade'), 32) AS title,
+        COALESCE(gd.note, '') AS description,
+        gd.grade_type_id AS type
+    FROM grade_data gd
+    ORDER BY gd.class_subjects_id, gd.date
+),
+inserted_lesson_grades AS (
+    INSERT INTO lesson_grades (class_subjects_id, actual_date, group_id, title, description, type)
+    SELECT class_subjects_id, actual_date, group_id, title, description, type
+    FROM lesson_grade_data
+    RETURNING id, actual_date, class_subjects_id
+)
+INSERT INTO grades (student_id, teacher_id, term_id, lesson_grade_id, value, date, note)
+SELECT
+    gd.student_id,
+    gd.teacher_id,
+    gd.term_id,
+    ilg.id,
+    gd.value,
+    gd.date,
+    gd.note
+FROM grade_data gd
+         JOIN inserted_lesson_grades ilg
+              ON ilg.class_subjects_id = gd.class_subjects_id
+                  AND ilg.actual_date =
+                      (EXTRACT(EPOCH FROM (gd.date::TIMESTAMP AT TIME ZONE 'UTC')) * 1000)::BIGINT;
 
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
 VALUES (2, 6, 2, 1, 3),

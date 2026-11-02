@@ -80,6 +80,7 @@ type BaseSchedule struct {
 	CustomSubject   bool
 	SubjectID       pgtype.Int4
 	CustomSubjectID pgtype.Int4
+	TermID          int32
 }
 
 type BellSchedule struct {
@@ -154,15 +155,14 @@ type FinalGrade struct {
 }
 
 type Grade struct {
-	ID              int64
-	StudentID       int32
-	ClassSubjectsID int32
-	TeacherID       int32
-	TermID          int32
-	GradeTypeID     int32
-	Value           int16
-	Date            pgtype.Date
-	Note            pgtype.Text
+	ID            int64
+	StudentID     int32
+	LessonGradeID int64
+	TeacherID     int32
+	TermID        int32
+	Value         int16
+	Date          pgtype.Date
+	Note          pgtype.Text
 }
 
 type GradeType struct {
@@ -233,6 +233,16 @@ type HomeworkSubmission struct {
 	GradedValue pgtype.Int2
 	Note        pgtype.Text
 	FileUuid    pgtype.UUID
+}
+
+type LessonGrade struct {
+	ID              int64
+	ActualDate      int64
+	ClassSubjectsID int32
+	GroupID         int32
+	Title           string
+	Description     string
+	Type            int32
 }
 
 type LessonLog struct {
@@ -405,4 +415,5 @@ type TimeTable struct {
 	IsSubstitution        bool
 	SubstitutionTeacherID pgtype.Int4
 	Canceled              pgtype.Bool
+	TermID                int32
 }

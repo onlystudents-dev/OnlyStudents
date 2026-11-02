@@ -234,6 +234,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddAbsence(c, pool, rdb) },
 					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditAbsence(c, pool, rdb) },
 					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveAbsence(c, pool, rdb) },
+					"lesson":           helpers.Get(func(c fiber.Ctx) error { return teacherapi.ListAbsencesForLesson(c, pool, rdb) }),
 				},
 
 				"homework": fiber.Map{
@@ -308,6 +309,13 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					"my_lesson_times":      helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyLessonTimes(c, pool, rdb) }),
 					"my_groups":            helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadMyGroups(c, pool, rdb) }),
 					"students_in_my_group": helpers.Get(func(c fiber.Ctx) error { return timetableapi.ReadStudentsInMyGroup(c, pool, rdb) }),
+
+					"grades": fiber.Map{
+						fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListLessonGrades(c, pool, rdb) },
+						fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddLessonGrade(c, pool, rdb) },
+						fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditLessonGrade(c, pool, rdb) },
+						fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveLessonGrade(c, pool, rdb) },
+					},
 				},
 			},
 		},

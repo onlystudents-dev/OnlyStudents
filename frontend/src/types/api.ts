@@ -49,6 +49,7 @@ export type Theme = {
 
 export type Lesson = {
     actual_date: number,
+    term_id: number,
     room_id: number,
     lesson_num: number,
     day_of_week: number,
@@ -180,6 +181,7 @@ export type GradeType = {
 
 export type Absence = {
     id: number,
+    student_id: number,
     subject: string,
     subject_code: string,
     teacher_last_name: string,

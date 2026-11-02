@@ -88,12 +88,13 @@ SELECT
     g.date,
     g.note
 FROM grades g
-         JOIN class_subjects csub ON csub.id = g.class_subjects_id
+         JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
+         JOIN class_subjects csub ON csub.id = lg.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN teachers t ON t.id = g.teacher_id
          JOIN terms ter ON ter.id = g.term_id
-         JOIN grade_types gt ON gt.id = g.grade_type_id
+         JOIN grade_types gt ON gt.id = lg.type
 WHERE g.student_id = $1
   AND csub.school_id = $2
 ORDER BY g.term_id, COALESCE(cs.subject_name, s.subject_name), g.date
@@ -164,12 +165,13 @@ SELECT
     g.date,
     g.note
 FROM grades g
-         JOIN class_subjects csub ON csub.id = g.class_subjects_id
+         JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
+         JOIN class_subjects csub ON csub.id = lg.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN teachers t ON t.id = g.teacher_id
          JOIN terms ter ON ter.id = g.term_id
-         JOIN grade_types gt ON gt.id = g.grade_type_id
+         JOIN grade_types gt ON gt.id = lg.type
 WHERE g.student_id = $1
   AND csub.school_id = $2
   AND (
@@ -251,11 +253,11 @@ SELECT
     ter.name AS term,
     fg.value
 FROM final_grades fg
-JOIN class_subjects csub ON csub.id = fg.class_subjects_id
-JOIN students st ON st.id = fg.student_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN terms ter ON ter.id = fg.term_id
+         JOIN class_subjects csub ON csub.id = fg.class_subjects_id
+         JOIN students st ON st.id = fg.student_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN terms ter ON ter.id = fg.term_id
 WHERE csub.school_id = $1
   AND csub.teacher_id = $2
 ORDER BY fg.term_id, COALESCE(cs.subject_name, s.subject_name), fg.id
@@ -357,18 +359,20 @@ SELECT
     s.code AS subject_code,
     g.term_id,
     ter.name AS term,
-    g.grade_type_id,
+    g.lesson_grade_id,
+    gt.id AS grade_type_id,
     gt.name AS type,
     g.value,
     g.date,
     g.note
 FROM grades g
-JOIN class_subjects csub ON csub.id = g.class_subjects_id
-JOIN students st ON st.id = g.student_id
-LEFT JOIN subjects s ON s.id = csub.subject_id
-LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
-JOIN terms ter ON ter.id = g.term_id
-JOIN grade_types gt ON gt.id = g.grade_type_id
+         JOIN class_subjects csub ON csub.id = g.class_subjects_id
+         JOIN students st ON st.id = g.student_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN terms ter ON ter.id = g.term_id
+         JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
+         JOIN grade_types gt ON gt.id = lg.type
 WHERE csub.school_id = $1
   AND csub.teacher_id = $2
 ORDER BY g.date, COALESCE(cs.subject_name, s.subject_name), g.id
@@ -389,6 +393,7 @@ type GetTeacherGradesRow struct {
 	SubjectCode     pgtype.Text
 	TermID          int32
 	Term            string
+	LessonGradeID   int64
 	GradeTypeID     int32
 	Type            string
 	Value           int16
@@ -415,6 +420,7 @@ func (q *Queries) GetTeacherGrades(ctx context.Context, arg GetTeacherGradesPara
 			&i.SubjectCode,
 			&i.TermID,
 			&i.Term,
+			&i.LessonGradeID,
 			&i.GradeTypeID,
 			&i.Type,
 			&i.Value,
@@ -431,11 +437,243 @@ func (q *Queries) GetTeacherGrades(ctx context.Context, arg GetTeacherGradesPara
 	return items, nil
 }
 
+const getTeacherGradesByLesson = `-- name: GetTeacherGradesByLesson :many
+SELECT
+    g.id,
+    g.student_id,
+    st.first_name,
+    st.last_name,
+    csub.id AS class_subjects_id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    g.term_id,
+    ter.name AS term,
+    g.lesson_grade_id,
+    gt.id AS grade_type_id,
+    gt.name AS type,
+    g.value,
+    g.date,
+    g.note
+FROM grades g
+         JOIN class_subjects csub ON csub.id = g.class_subjects_id
+         JOIN students st ON st.id = g.student_id
+         LEFT JOIN subjects s ON s.id = csub.subject_id
+         LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+         JOIN terms ter ON ter.id = g.term_id
+         JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
+         JOIN grade_types gt ON gt.id = lg.type
+WHERE csub.school_id = $1
+  AND csub.teacher_id = $2
+  AND g.lesson_grade_id = $3
+ORDER BY g.date, COALESCE(cs.subject_name, s.subject_name), g.id
+`
+
+type GetTeacherGradesByLessonParams struct {
+	SchoolID      int32
+	TeacherID     int32
+	LessonGradeID int64
+}
+
+type GetTeacherGradesByLessonRow struct {
+	ID              int64
+	StudentID       int32
+	FirstName       string
+	LastName        string
+	ClassSubjectsID int32
+	Subject         string
+	SubjectCode     pgtype.Text
+	TermID          int32
+	Term            string
+	LessonGradeID   int64
+	GradeTypeID     int32
+	Type            string
+	Value           int16
+	Date            pgtype.Date
+	Note            pgtype.Text
+}
+
+func (q *Queries) GetTeacherGradesByLesson(ctx context.Context, arg GetTeacherGradesByLessonParams) ([]GetTeacherGradesByLessonRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherGradesByLesson, arg.SchoolID, arg.TeacherID, arg.LessonGradeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherGradesByLessonRow
+	for rows.Next() {
+		var i GetTeacherGradesByLessonRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.StudentID,
+			&i.FirstName,
+			&i.LastName,
+			&i.ClassSubjectsID,
+			&i.Subject,
+			&i.SubjectCode,
+			&i.TermID,
+			&i.Term,
+			&i.LessonGradeID,
+			&i.GradeTypeID,
+			&i.Type,
+			&i.Value,
+			&i.Date,
+			&i.Note,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTeacherLessonGrades = `-- name: GetTeacherLessonGrades :many
+SELECT
+    lg.id,
+    lg.class_subjects_id,
+    lg.actual_date,
+    lg.title,
+    lg.description,
+    lg.group_id,
+    lg.type AS grade_type_id,
+    gt.name AS type,
+    gt.weight
+FROM lesson_grades lg
+         JOIN class_subjects cs ON cs.id = lg.class_subjects_id
+         JOIN grade_types gt ON gt.id = lg.type
+WHERE cs.school_id = $1
+  AND cs.teacher_id = $2
+ORDER BY lg.actual_date, lg.id
+`
+
+type GetTeacherLessonGradesParams struct {
+	SchoolID  int32
+	TeacherID int32
+}
+
+type GetTeacherLessonGradesRow struct {
+	ID              int64
+	ClassSubjectsID int32
+	ActualDate      int64
+	Title           string
+	Description     string
+	GroupID         int32
+	GradeTypeID     int32
+	Type            string
+	Weight          int32
+}
+
+func (q *Queries) GetTeacherLessonGrades(ctx context.Context, arg GetTeacherLessonGradesParams) ([]GetTeacherLessonGradesRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherLessonGrades, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherLessonGradesRow
+	for rows.Next() {
+		var i GetTeacherLessonGradesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClassSubjectsID,
+			&i.ActualDate,
+			&i.Title,
+			&i.Description,
+			&i.GroupID,
+			&i.GradeTypeID,
+			&i.Type,
+			&i.Weight,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTeacherLessonGradesBySubject = `-- name: GetTeacherLessonGradesBySubject :many
+SELECT
+    lg.id,
+    lg.class_subjects_id,
+    lg.actual_date,
+    lg.title,
+    lg.description,
+    lg.group_id,
+    lg.type AS grade_type_id,
+    gt.name AS type,
+    gt.weight
+FROM lesson_grades lg
+         JOIN class_subjects cs ON cs.id = lg.class_subjects_id
+         JOIN grade_types gt ON gt.id = lg.type
+WHERE cs.school_id = $1
+  AND cs.teacher_id = $2
+  AND cs.id = $3
+  AND lg.actual_date = $4
+ORDER BY lg.actual_date, lg.id
+`
+
+type GetTeacherLessonGradesBySubjectParams struct {
+	SchoolID   int32
+	TeacherID  int32
+	ID         int32
+	ActualDate int64
+}
+
+type GetTeacherLessonGradesBySubjectRow struct {
+	ID              int64
+	ClassSubjectsID int32
+	ActualDate      int64
+	Title           string
+	Description     string
+	GroupID         int32
+	GradeTypeID     int32
+	Type            string
+	Weight          int32
+}
+
+func (q *Queries) GetTeacherLessonGradesBySubject(ctx context.Context, arg GetTeacherLessonGradesBySubjectParams) ([]GetTeacherLessonGradesBySubjectRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherLessonGradesBySubject,
+		arg.SchoolID,
+		arg.TeacherID,
+		arg.ID,
+		arg.ActualDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherLessonGradesBySubjectRow
+	for rows.Next() {
+		var i GetTeacherLessonGradesBySubjectRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClassSubjectsID,
+			&i.ActualDate,
+			&i.Title,
+			&i.Description,
+			&i.GroupID,
+			&i.GradeTypeID,
+			&i.Type,
+			&i.Weight,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const teacherAddFinalGrade = `-- name: TeacherAddFinalGrade :execrows
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
 SELECT ss.student_id, cs.id, $1, $2, $3
 FROM class_subjects cs
-JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
+         JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = $4
   AND cs.school_id = $5
   AND cs.teacher_id = $2
@@ -468,41 +706,87 @@ func (q *Queries) TeacherAddFinalGrade(ctx context.Context, arg TeacherAddFinalG
 }
 
 const teacherAddGrade = `-- name: TeacherAddGrade :execrows
-INSERT INTO grades (student_id, class_subjects_id, teacher_id, term_id, grade_type_id, value, date, note)
-SELECT ss.student_id, cs.id, $1, $2, $3, $4, $5, $6
+INSERT INTO grades (student_id, teacher_id, term_id, lesson_grade_id, value, date, note)
+SELECT ss.student_id, $1, $2, lg.id, $3, $4, $5
 FROM class_subjects cs
-JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
-WHERE cs.id = $7
-  AND cs.school_id = $8
+         JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
+         JOIN lesson_grades lg ON lg.id = $6 AND lg.class_subjects_id = cs.id
+WHERE cs.id = lg.class_subjects_id
+  AND cs.school_id = $7
   AND cs.teacher_id = $1
-  AND ss.student_id = $9
-  AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = $3 AND gt.school_id = $8)
-  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $2 AND sy.school_id = $8)
+  AND ss.student_id = $8
+  AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = lg.type AND gt.school_id = $7)
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $2 AND sy.school_id = $7)
 `
 
 type TeacherAddGradeParams struct {
-	TeacherID       int32
-	TermID          int32
-	GradeTypeID     int32
-	Value           int16
-	Date            pgtype.Date
-	Note            pgtype.Text
-	ClassSubjectsID int32
-	SchoolID        int32
-	StudentID       int32
+	TeacherID     int32
+	TermID        int32
+	Value         int16
+	Date          pgtype.Date
+	Note          pgtype.Text
+	LessonGradeID int64
+	SchoolID      int32
+	StudentID     int32
 }
 
 func (q *Queries) TeacherAddGrade(ctx context.Context, arg TeacherAddGradeParams) (int64, error) {
 	result, err := q.db.Exec(ctx, teacherAddGrade,
 		arg.TeacherID,
 		arg.TermID,
-		arg.GradeTypeID,
 		arg.Value,
 		arg.Date,
 		arg.Note,
-		arg.ClassSubjectsID,
+		arg.LessonGradeID,
 		arg.SchoolID,
 		arg.StudentID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherAddLessonGrade = `-- name: TeacherAddLessonGrade :execrows
+INSERT INTO lesson_grades (class_subjects_id, actual_date, title, description, type, group_id)
+SELECT cs.id, $1, $2, $3, gt.id, $4
+FROM class_subjects cs
+         JOIN grade_types gt ON gt.id = $5
+WHERE cs.id = $6
+  AND cs.school_id = $7
+  AND cs.teacher_id = $8
+  AND gt.school_id = $7
+  AND (
+    $4::int IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM groups gr
+            WHERE gr.id = $4::int
+        )
+    )
+`
+
+type TeacherAddLessonGradeParams struct {
+	ActualDate      int64
+	Title           string
+	Description     string
+	GroupID         pgtype.Int4
+	Type            int32
+	ClassSubjectsID int32
+	SchoolID        int32
+	TeacherID       int32
+}
+
+func (q *Queries) TeacherAddLessonGrade(ctx context.Context, arg TeacherAddLessonGradeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherAddLessonGrade,
+		arg.ActualDate,
+		arg.Title,
+		arg.Description,
+		arg.GroupID,
+		arg.Type,
+		arg.ClassSubjectsID,
+		arg.SchoolID,
+		arg.TeacherID,
 	)
 	if err != nil {
 		return 0, err
@@ -514,12 +798,12 @@ const teacherDeleteFinalGrade = `-- name: TeacherDeleteFinalGrade :execrows
 DELETE FROM final_grades fg
 WHERE fg.id = $1
   AND EXISTS (
-      SELECT 1
-      FROM class_subjects cs
-      WHERE cs.id = fg.class_subjects_id
-        AND cs.school_id = $2
-        AND cs.teacher_id = $3
-  )
+    SELECT 1
+    FROM class_subjects cs
+    WHERE cs.id = fg.class_subjects_id
+      AND cs.school_id = $2
+      AND cs.teacher_id = $3
+)
 `
 
 type TeacherDeleteFinalGradeParams struct {
@@ -540,12 +824,12 @@ const teacherDeleteGrade = `-- name: TeacherDeleteGrade :execrows
 DELETE FROM grades g
 WHERE g.id = $1
   AND EXISTS (
-      SELECT 1
-      FROM class_subjects cs
-      WHERE cs.id = g.class_subjects_id
-        AND cs.school_id = $2
-        AND cs.teacher_id = $3
-  )
+    SELECT 1
+    FROM class_subjects cs
+    WHERE cs.id = g.class_subjects_id
+      AND cs.school_id = $2
+      AND cs.teacher_id = $3
+)
 `
 
 type TeacherDeleteGradeParams struct {
@@ -562,6 +846,32 @@ func (q *Queries) TeacherDeleteGrade(ctx context.Context, arg TeacherDeleteGrade
 	return result.RowsAffected(), nil
 }
 
+const teacherDeleteLessonGrade = `-- name: TeacherDeleteLessonGrade :execrows
+DELETE FROM lesson_grades lg
+WHERE lg.id = $1
+  AND EXISTS (
+    SELECT 1
+    FROM class_subjects cs
+    WHERE cs.id = lg.class_subjects_id
+      AND cs.school_id = $2
+      AND cs.teacher_id = $3
+)
+`
+
+type TeacherDeleteLessonGradeParams struct {
+	ID        int64
+	SchoolID  int32
+	TeacherID int32
+}
+
+func (q *Queries) TeacherDeleteLessonGrade(ctx context.Context, arg TeacherDeleteLessonGradeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherDeleteLessonGrade, arg.ID, arg.SchoolID, arg.TeacherID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const teacherEditFinalGrade = `-- name: TeacherEditFinalGrade :execrows
 UPDATE final_grades fg
 SET class_subjects_id = $2,
@@ -569,19 +879,19 @@ SET class_subjects_id = $2,
     value = $4
 WHERE fg.id = $1
   AND EXISTS (
-      SELECT 1
-      FROM class_subjects cs
-      WHERE cs.id = fg.class_subjects_id
-        AND cs.school_id = $5
-        AND cs.teacher_id = $6
-  )
+    SELECT 1
+    FROM class_subjects cs
+    WHERE cs.id = fg.class_subjects_id
+      AND cs.school_id = $5
+      AND cs.teacher_id = $6
+)
   AND EXISTS (
-      SELECT 1
-      FROM class_subjects cs
-      WHERE cs.id = $2
-        AND cs.school_id = $5
-        AND cs.teacher_id = $6
-  )
+    SELECT 1
+    FROM class_subjects cs
+    WHERE cs.id = $2
+      AND cs.school_id = $5
+      AND cs.teacher_id = $6
+)
   AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $5)
 `
 
@@ -611,52 +921,99 @@ func (q *Queries) TeacherEditFinalGrade(ctx context.Context, arg TeacherEditFina
 
 const teacherEditGrade = `-- name: TeacherEditGrade :execrows
 UPDATE grades g
-SET class_subjects_id = $2,
-    term_id = $3,
-    grade_type_id = $4,
+SET term_id = $3,
+    lesson_grade_id = $4,
     value = $5,
     date = $6,
     note = $7
 WHERE g.id = $1
   AND EXISTS (
-      SELECT 1
-      FROM class_subjects cs
-      WHERE cs.id = g.class_subjects_id
-        AND cs.school_id = $8
-        AND cs.teacher_id = $9
-  )
+    SELECT 1
+    FROM class_subjects cs
+    WHERE cs.id = g.class_subjects_id
+      AND cs.school_id = $8
+      AND cs.teacher_id = $9
+)
   AND EXISTS (
-      SELECT 1
-      FROM class_subjects cs
-      WHERE cs.id = $2
-        AND cs.school_id = $8
-        AND cs.teacher_id = $9
-  )
-  AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = $4 AND gt.school_id = $8)
+    SELECT 1
+    FROM class_subjects cs
+             JOIN lesson_grades lg ON lg.class_subjects_id = cs.id
+             JOIN grade_types gt ON gt.id = lg.type
+    WHERE cs.id = $2
+      AND cs.school_id = $8
+      AND cs.teacher_id = $9
+      AND lg.id = $4
+      AND gt.school_id = $8
+)
   AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $8)
 `
 
 type TeacherEditGradeParams struct {
-	ID              int64
-	ClassSubjectsID int32
-	TermID          int32
-	GradeTypeID     int32
-	Value           int16
-	Date            pgtype.Date
-	Note            pgtype.Text
-	SchoolID        int32
-	TeacherID       int32
+	ID            int64
+	ID_2          int32
+	TermID        int32
+	LessonGradeID int64
+	Value         int16
+	Date          pgtype.Date
+	Note          pgtype.Text
+	SchoolID      int32
+	TeacherID     int32
 }
 
 func (q *Queries) TeacherEditGrade(ctx context.Context, arg TeacherEditGradeParams) (int64, error) {
 	result, err := q.db.Exec(ctx, teacherEditGrade,
 		arg.ID,
-		arg.ClassSubjectsID,
+		arg.ID_2,
 		arg.TermID,
-		arg.GradeTypeID,
+		arg.LessonGradeID,
 		arg.Value,
 		arg.Date,
 		arg.Note,
+		arg.SchoolID,
+		arg.TeacherID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const teacherEditLessonGrade = `-- name: TeacherEditLessonGrade :execrows
+UPDATE lesson_grades lg
+SET title = $2,
+    description = $3,
+    type = $4
+WHERE lg.id = $1
+  AND EXISTS (
+    SELECT 1
+    FROM class_subjects cs
+    WHERE cs.id = lg.class_subjects_id
+      AND cs.school_id = $5
+      AND cs.teacher_id = $6
+)
+  AND EXISTS (
+    SELECT 1
+    FROM grade_types gt
+    WHERE gt.id = $4
+      AND gt.school_id = $5
+)
+`
+
+type TeacherEditLessonGradeParams struct {
+	ID          int64
+	Title       string
+	Description string
+	Type        int32
+	SchoolID    int32
+	TeacherID   int32
+}
+
+func (q *Queries) TeacherEditLessonGrade(ctx context.Context, arg TeacherEditLessonGradeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, teacherEditLessonGrade,
+		arg.ID,
+		arg.Title,
+		arg.Description,
+		arg.Type,
 		arg.SchoolID,
 		arg.TeacherID,
 	)

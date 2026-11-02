@@ -108,8 +108,6 @@ const getTeacherAbsences = `-- name: GetTeacherAbsences :many
 SELECT
     a.id,
     a.student_id,
-    st.first_name,
-    st.last_name,
     csub.id AS class_subjects_id,
     COALESCE(cs.subject_name, s.subject_name) AS subject,
     s.code AS subject_code,
@@ -143,8 +141,6 @@ type GetTeacherAbsencesParams struct {
 type GetTeacherAbsencesRow struct {
 	ID              int64
 	StudentID       int32
-	FirstName       string
-	LastName        string
 	ClassSubjectsID int32
 	Subject         string
 	SubjectCode     pgtype.Text
@@ -172,8 +168,103 @@ func (q *Queries) GetTeacherAbsences(ctx context.Context, arg GetTeacherAbsences
 		if err := rows.Scan(
 			&i.ID,
 			&i.StudentID,
-			&i.FirstName,
-			&i.LastName,
+			&i.ClassSubjectsID,
+			&i.Subject,
+			&i.SubjectCode,
+			&i.Date,
+			&i.Type,
+			&i.Justified,
+			&i.FileName,
+			&i.FileSize,
+			&i.FileType,
+			&i.FileUuid,
+			&i.ReasonNote,
+			&i.Note,
+			&i.VerifiedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTeacherAbsencesByLesson = `-- name: GetTeacherAbsencesByLesson :many
+SELECT
+    a.id,
+    a.student_id,
+    csub.id AS class_subjects_id,
+    COALESCE(cs.subject_name, s.subject_name) AS subject,
+    s.code AS subject_code,
+    a.date,
+    a.type,
+    a.justified,
+    f.original_name AS file_name,
+    f.size AS file_size,
+    f.type AS file_type,
+    f.uuid AS file_uuid,
+    ar.note AS reason_note,
+    a.note,
+    a.verified_by
+FROM absences a
+JOIN class_subjects csub ON csub.id = a.class_subjects_id
+JOIN students st ON st.id = a.student_id
+LEFT JOIN subjects s ON s.id = csub.subject_id
+LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
+LEFT JOIN absence_reason ar ON ar.absence_id = a.id
+LEFT JOIN files f ON f.uuid = ar.file_uuid
+WHERE csub.school_id = $1
+  AND csub.teacher_id = $2
+  AND csub.id = $3
+  AND a.date = $4
+ORDER BY a.date, COALESCE(cs.subject_name, s.subject_name), a.id
+`
+
+type GetTeacherAbsencesByLessonParams struct {
+	SchoolID        int32
+	TeacherID       int32
+	ClassSubjectsID int32
+	Date            pgtype.Date
+}
+
+type GetTeacherAbsencesByLessonRow struct {
+	ID              int64
+	StudentID       int32
+	ClassSubjectsID int32
+	Subject         string
+	SubjectCode     pgtype.Text
+	Date            pgtype.Date
+	Type            string
+	Justified       bool
+	FileName        pgtype.Text
+	FileSize        pgtype.Int8
+	FileType        pgtype.Text
+	FileUuid        pgtype.UUID
+	ReasonNote      pgtype.Text
+	Note            pgtype.Text
+	VerifiedBy      pgtype.Int4
+}
+
+func (q *Queries) GetTeacherAbsencesByLesson(ctx context.Context, arg GetTeacherAbsencesByLessonParams) ([]GetTeacherAbsencesByLessonRow, error) {
+	rows, err := q.db.Query(ctx, getTeacherAbsencesByLesson,
+		arg.SchoolID,
+		arg.TeacherID,
+		arg.ClassSubjectsID,
+		arg.Date,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTeacherAbsencesByLessonRow
+	for rows.Next() {
+		var i GetTeacherAbsencesByLessonRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.StudentID,
 			&i.ClassSubjectsID,
 			&i.Subject,
 			&i.SubjectCode,

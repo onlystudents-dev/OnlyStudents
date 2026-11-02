@@ -25,6 +25,7 @@ type ReadRealTimetableRequest struct {
 
 type TimetableLesson struct {
 	ActualDate          int64  `json:"actual_date"`
+	TermID              int32  `json:"term_id"`
 	RoomID              int32  `json:"room_id"`
 	LessonNum           int32  `json:"lesson_num"`
 	DayOfWeek           int32  `json:"day_of_week"`
@@ -51,6 +52,7 @@ type TimetableLesson struct {
 
 type TimetableBaseLesson struct {
 	ID                  int32  `json:"id"`
+	TermID              int32  `json:"term_id"`
 	SchoolID            int32  `json:"school_id"`
 	TeacherID           int32  `json:"teacher_id"`
 	HasTeacherFirstName bool   `json:"has_teacher_first_name"`
@@ -126,6 +128,7 @@ func parseDateRange(c fiber.Ctx) (time.Time, time.Time, error) {
 func convertRealTimeTable(row db_queries.ReadRealTimeTableRow) TimetableLesson {
 	return TimetableLesson{
 		ActualDate:          row.ActualDate.Time.Unix(),
+		TermID:              row.TermID,
 		RoomID:              row.RoomID,
 		LessonNum:           row.LessonNum,
 		DayOfWeek:           row.DayOfWeek,
@@ -154,6 +157,7 @@ func convertRealTimeTable(row db_queries.ReadRealTimeTableRow) TimetableLesson {
 func convertBaseLesson(row db_queries.ReadBaseScheduleClassRow) TimetableBaseLesson {
 	return TimetableBaseLesson{
 		ID:                  row.ID,
+		TermID:              row.TermID,
 		SchoolID:            row.SchoolID,
 		TeacherID:           row.TeacherID,
 		HasTeacherFirstName: row.TeacherFirstName.Valid,

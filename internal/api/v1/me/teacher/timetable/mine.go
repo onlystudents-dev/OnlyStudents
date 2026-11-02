@@ -15,6 +15,7 @@ import (
 
 type TimetableLesson struct {
 	ActualDate          int64  `json:"actual_date"`
+	TermID              int32  `json:"term_id"`
 	RoomID              int32  `json:"room_id"`
 	LessonNum           int32  `json:"lesson_num"`
 	DayOfWeek           int32  `json:"day_of_week"`
@@ -48,6 +49,7 @@ type TimetableRoom struct {
 func convertTimeTableLesson(row db_queries.ReadMyRealTimeTableRow) TimetableLesson {
 	return TimetableLesson{
 		ActualDate:          row.ActualDate.Time.Unix(),
+		TermID:              row.TermID,
 		RoomID:              row.RoomID,
 		LessonNum:           row.LessonNum,
 		DayOfWeek:           row.DayOfWeek,
