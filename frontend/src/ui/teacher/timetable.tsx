@@ -171,72 +171,72 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     const group = groups?.find(g => g.id === lesson.group_id)
 
     const AbsenceChangeFor = (student_id: number, absence_type: "present" | "absent" | "tardy"): absenceChangeType | null => {
-      const absence = absences.find(a => a.student_id === student_id)
+        const absence = absences.find(a => a.student_id === student_id)
 
-      if (absence_type === "present") {
-          return absence
-              ? { type: "DELETE", id: absence.id, student_id: student_id }
-              : null
-      }
+        if (absence_type === "present") {
+            return absence
+                ? { type: "DELETE", id: absence.id, student_id: student_id }
+                : null
+        }
 
-      if (!absence) {
-          return { type: "ADD", absence_type: absence_type, student_id: student_id }
-      }
+        if (!absence) {
+            return { type: "ADD", absence_type: absence_type, student_id: student_id }
+        }
 
-      return absence.type === absence_type
-          ? null
-          : { type: "UPDATE", id: absence.id, absence_type: absence_type, student_id: student_id }
+        return absence.type === absence_type
+            ? null
+            : { type: "UPDATE", id: absence.id, absence_type: absence_type, student_id: student_id }
     }
 
     const SetAbsenceType = (student_id: number, absence_type: "present" | "absent" | "tardy") => {
-      setAbsencesChanges(prev => {
-        const withoutStudent = prev.filter((absence_change) => {return absence_change.student_id != student_id})
-        const change = AbsenceChangeFor(student_id, absence_type)
-        return change ? [...withoutStudent, change] : withoutStudent
-      })
-    };
+        setAbsencesChanges(prev => {
+            const withoutStudent = prev.filter((absence_change) => {return absence_change.student_id != student_id})
+            const change = AbsenceChangeFor(student_id, absence_type)
+            return change ? [...withoutStudent, change] : withoutStudent
+        })
+    }
 
     const AbsenceTypeFor = (student_id: number): "present" | "absent" | "tardy" => {
-      const change = absencesChanges.find((absence_change) => {return absence_change.student_id === student_id})
+        const change = absencesChanges.find((absence_change) => {return absence_change.student_id === student_id})
 
-      if (change) {
-        return change.type === "DELETE" ? "present" : change.absence_type
-      }
+        if (change) {
+            return change.type === "DELETE" ? "present" : change.absence_type
+        }
 
-      const absence = absences.find((absence) => {return absence.student_id === student_id})
+        const absence = absences.find((absence) => {return absence.student_id === student_id})
 
-      if (absence?.type === "absent") return "absent"
-      if (absence?.type === "tardy") return "tardy"
-      return "present"
+        if (absence?.type === "absent") return "absent"
+        if (absence?.type === "tardy") return "tardy"
+        return "present"
     }
 
     const AbsencePillStyle = (student_id: number) => {
-      const absence_type = AbsenceTypeFor(student_id)
-      const left = absence_type === "present"
-          ? 0
-          : absence_type === "absent"
-              ? presentWidth
-              : presentWidth + absentWidth
-      const width = absence_type === "present"
-          ? presentWidth
-          : absence_type === "absent"
-              ? absentWidth
-              : tardyWidth
+        const absence_type = AbsenceTypeFor(student_id)
+        const left = absence_type === "present"
+            ? 0
+            : absence_type === "absent"
+                ? presentWidth
+                : presentWidth + absentWidth
+        const width = absence_type === "present"
+            ? presentWidth
+            : absence_type === "absent"
+                ? absentWidth
+                : tardyWidth
 
-      return {
-        left: `${left}px`,
-        width: `${width}px`,
-        borderTopLeftRadius: absence_type === "present" ? '6px' : '0px',
-        borderBottomLeftRadius: absence_type === "present" ? '6px' : '0px',
-        borderTopRightRadius: absence_type === "tardy" ? '6px' : '0px',
-        borderBottomRightRadius: absence_type === "tardy" ? '6px' : '0px',
-      }
+        return {
+            left: `${left}px`,
+            width: `${width}px`,
+            borderTopLeftRadius: absence_type === "present" ? '6px' : '0px',
+            borderBottomLeftRadius: absence_type === "present" ? '6px' : '0px',
+            borderTopRightRadius: absence_type === "tardy" ? '6px' : '0px',
+            borderBottomRightRadius: absence_type === "tardy" ? '6px' : '0px',
+        }
     }
 
     useEffect(() => {
-      void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/students_in_my_group?group_id=${group?.id}`).then(async students_response => { setStudents(await students_response.json() as Student[])})
-      void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => { setAbsences(await absences_response.json() as Absence[])})
-      void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/students_in_my_group?group_id=${group?.id}`).then(async students_response => { setStudents(await students_response.json() as Student[])})
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => { setAbsences(await absences_response.json() as Absence[])})
+        void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
     }, [fetchMe, group, lesson.actual_date, lesson.subject_id])
 
     useLayoutEffect(() => {
