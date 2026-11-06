@@ -2,6 +2,7 @@ package teacherapi
 
 import (
 	"context"
+	"errors"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"time"
@@ -12,32 +13,37 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type AddAbsenceRequest struct {
-	Date            int64  `json:"date"`
-	Type            string `json:"type"`
-	HasNote         bool   `json:"has_note"`
-	Note            string `json:"note"`
-	StudentID       int32  `json:"student_id"`
-	ClassSubjectsID int32  `json:"class_subjects_id"`
-}
-
-type EditAbsenceRequest struct {
-	AbsenceID       int64  `json:"absence_id"`
-	Date            int64  `json:"date"`
-	Type            string `json:"type"`
-	HasNote         bool   `json:"has_note"`
-	Note            string `json:"note"`
-	StudentID       int32  `json:"student_id"`
-	ClassSubjectsID int32  `json:"class_subjects_id"`
-}
-
-type RemoveAbsenceRequest struct {
-	AbsenceID int64 `json:"absence_id"`
-}
-
 type ListAbsencesByLessonRequest struct {
 	ClassSubjectsID int32 `json:"class_subjects_id"`
 	Date            int64 `json:"date"`
+}
+
+type ChangeType string
+
+const (
+	ChangeDelete ChangeType = "DELETE"
+	ChangeAdd    ChangeType = "ADD"
+	ChangeUpdate ChangeType = "UPDATE"
+)
+
+type AbsenceKind string
+
+const (
+	KindAbsent AbsenceKind = "absent"
+	KindTardy  AbsenceKind = "tardy"
+)
+
+type AbsenceChange struct {
+	Type        ChangeType   `json:"type"`
+	StudentID   int32        `json:"student_id"`
+	ID          *int64       `json:"id,omitempty"`
+	AbsenceType *AbsenceKind `json:"absence_type,omitempty"`
+}
+
+type ChangeAbsencesRequest struct {
+	AbsenceChanges  []AbsenceChange `json:"absence_changes"`
+	ClassSubjectsID int32           `json:"class_subjects_id"`
+	Date            int64           `json:"date"`
 }
 
 type AbsenceSummary struct {
@@ -49,6 +55,7 @@ type AbsenceSummary struct {
 	Date           int64       `json:"date"`
 	Type           string      `json:"type"`
 	Justified      bool        `json:"justified"`
+	TardyMinutes   int32       `json:"tardy_minutes"`
 	FileName       string      `json:"file_name"`
 	FileType       string      `json:"file_type"`
 	FileSize       int64       `json:"file_size"`
@@ -68,6 +75,7 @@ func convertAbsence(row db_queries.GetTeacherAbsencesRow) AbsenceSummary {
 		Date:           row.Date.Time.Unix(),
 		Type:           row.Type,
 		Justified:      row.Justified,
+		TardyMinutes:   row.TardyMinutes.Int32,
 		FileName:       row.FileName.String,
 		FileType:       row.FileType.String,
 		FileSize:       row.FileSize.Int64,
@@ -88,6 +96,7 @@ func convertAbsenceByLesson(row db_queries.GetTeacherAbsencesByLessonRow) Absenc
 		Date:           row.Date.Time.Unix(),
 		Type:           row.Type,
 		Justified:      row.Justified,
+		TardyMinutes:   row.TardyMinutes.Int32,
 		FileName:       row.FileName.String,
 		FileType:       row.FileType.String,
 		FileSize:       row.FileSize.Int64,
@@ -110,53 +119,85 @@ func ListAbsencesForLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) e
 	}, convertAbsenceByLesson)
 }
 
-func AddAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return helpers.TeacherModify(c, pool, rdb,
-		"",
-		func(req AddAbsenceRequest) bool {
-			return req.Date <= 0 || req.Type == "" || req.StudentID <= 0 || req.ClassSubjectsID <= 0 || (req.HasNote && req.Note == "")
-		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddAbsenceRequest) (int64, error) {
-			return queries.TeacherAddAbsence(ctx, db_queries.TeacherAddAbsenceParams{
-				Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
-				Type:            req.Type,
-				Note:            pgtype.Text{String: req.Note, Valid: req.HasNote},
-				TeacherID:       teacher_scope.TeacherID,
-				SchoolID:        teacher_scope.SchoolID,
-				StudentID:       req.StudentID,
-				ClassSubjectsID: req.ClassSubjectsID,
-			})
-		})
+func ChangeAbsencesValidate(req ChangeAbsencesRequest) bool {
+	if req.Date <= 0 || req.ClassSubjectsID <= 0 || len(req.AbsenceChanges) == 0 {
+		return true
+	}
+
+	for _, absence_change := range req.AbsenceChanges {
+		switch absence_change.Type {
+		case ChangeDelete:
+			if absence_change.ID == nil {
+				return true
+			}
+		case ChangeAdd:
+			if absence_change.AbsenceType == nil {
+				return true
+			}
+		case ChangeUpdate:
+			if absence_change.AbsenceType == nil || absence_change.ID == nil {
+				return true
+			}
+		default:
+			return true
+		}
+	}
+
+	return false
 }
 
-func RemoveAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+func ChangeAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
-		func(req RemoveAbsenceRequest) bool { return req.AbsenceID <= 0 },
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveAbsenceRequest) (int64, error) {
-			return queries.TeacherDeleteAbsence(ctx, db_queries.TeacherDeleteAbsenceParams{
-				ID:        req.AbsenceID,
-				TeacherID: teacher_scope.TeacherID,
-				SchoolID:  teacher_scope.SchoolID,
-			})
-		})
-}
-
-func EditAbsence(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return helpers.TeacherModify(c, pool, rdb,
-		"",
-		func(req EditAbsenceRequest) bool {
-			return req.AbsenceID <= 0 || req.Date <= 0 || req.Type == "" || req.StudentID <= 0 || req.ClassSubjectsID <= 0 || (req.HasNote && req.Note == "")
+		func(req ChangeAbsencesRequest) bool {
+			return ChangeAbsencesValidate(req)
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditAbsenceRequest) (int64, error) {
-			return queries.TeacherEditAbsence(ctx, db_queries.TeacherEditAbsenceParams{
-				ID:              req.AbsenceID,
-				Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
-				Type:            req.Type,
-				Note:            pgtype.Text{String: req.Note, Valid: req.HasNote},
-				TeacherID:       teacher_scope.TeacherID,
-				SchoolID:        teacher_scope.SchoolID,
-				ClassSubjectsID: pgtype.Int4{Int32: req.ClassSubjectsID, Valid: true},
-			})
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req ChangeAbsencesRequest) (int64, error) {
+			for _, absence_change := range req.AbsenceChanges {
+				switch absence_change.Type {
+				case ChangeDelete:
+					row_count, err := queries.TeacherDeleteAbsence(ctx, db_queries.TeacherDeleteAbsenceParams{
+						ID:        *absence_change.ID,
+						TeacherID: teacher_scope.TeacherID,
+						SchoolID:  teacher_scope.SchoolID,
+					})
+
+					if err != nil || row_count != 1 {
+						return row_count, err
+					}
+				case ChangeAdd:
+					row_count, err := queries.TeacherAddAbsence(ctx, db_queries.TeacherAddAbsenceParams{
+						Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
+						Type:            string(*absence_change.AbsenceType),
+						Note:            pgtype.Text{String: "", Valid: false},
+						TeacherID:       teacher_scope.TeacherID,
+						SchoolID:        teacher_scope.SchoolID,
+						StudentID:       absence_change.StudentID,
+						ClassSubjectsID: req.ClassSubjectsID,
+					})
+
+					if err != nil || row_count != 1 {
+						return row_count, err
+					}
+				case ChangeUpdate:
+					row_count, err := queries.TeacherEditAbsence(ctx, db_queries.TeacherEditAbsenceParams{
+						ID:              *absence_change.ID,
+						Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
+						Type:            string(*absence_change.AbsenceType),
+						Note:            pgtype.Text{String: "", Valid: false},
+						TeacherID:       teacher_scope.TeacherID,
+						SchoolID:        teacher_scope.SchoolID,
+						ClassSubjectsID: pgtype.Int4{Int32: req.ClassSubjectsID, Valid: true},
+					})
+
+					if err != nil || row_count != 1 {
+						return row_count, err
+					}
+				default:
+					return 0, errors.New("How is this possible?")
+				}
+			}
+
+			return 1, nil
 		})
 }

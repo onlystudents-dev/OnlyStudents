@@ -49,6 +49,7 @@ type AbsenceSummary struct {
 	ReasonNote       string      `json:"reason_note"`
 	Note             string      `json:"note"`
 	Justified        bool        `json:"justified"`
+	TardyMinutes     int32       `json:"tardy_minutes"`
 	VerifiedBy       interface{} `json:"verified_by"`
 }
 
@@ -160,6 +161,7 @@ func convertAbsence(row db_queries.GetStudentAbsencesRow) AbsenceSummary {
 		ReasonNote:       row.ReasonNote.String,
 		Note:             row.Note.String,
 		Justified:        row.Justified,
+		TardyMinutes:     row.TardyMinutes.Int32,
 		VerifiedBy:       row.VerifiedBy,
 	}
 }
