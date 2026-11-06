@@ -68,6 +68,8 @@ type GradeSummary struct {
 	Date           int64  `json:"date"`
 	HasNote        bool   `json:"has_note"`
 	Note           string `json:"note"`
+	StudentID      int32  `json:"student_id"`
+	LessonID       int64  `json:"lesson_id"`
 }
 
 type FinalGradeSummary struct {
@@ -127,6 +129,8 @@ func convertGrade(row db_queries.GetTeacherGradesRow) GradeSummary {
 		Date:           row.Date.Time.Unix(),
 		HasNote:        row.Note.Valid,
 		Note:           row.Note.String,
+		StudentID:      row.StudentID,
+		LessonID:       row.LessonGradeID,
 	}
 }
 
@@ -143,6 +147,7 @@ func convertGradeByLesson(row db_queries.GetTeacherGradesByLessonRow) GradeSumma
 		Date:           row.Date.Time.Unix(),
 		HasNote:        row.Note.Valid,
 		Note:           row.Note.String,
+		LessonID:       row.LessonGradeID,
 	}
 }
 

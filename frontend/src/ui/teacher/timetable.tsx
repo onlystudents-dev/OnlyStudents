@@ -127,7 +127,7 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     )
 }
 
-type absenceChangeType = {"type": "DELETE", "id": number, "student_id": number} | {"type": "ADD", "absence_type": "absent" | "tardy", "student_id": number, "tardy_minutes": number} | {"type": "UPDATE", "absence_type": "absent" | "tardy", "id": number, "student_id": number, "tardy_minutes": number}
+type absenceChangeType = {"type": "DELETE", "id": number, "student_id": number} | {"type": "ADD", "absence_type": "absent" | "tardy", "student_id": number} | {"type": "UPDATE", "absence_type": "absent" | "tardy", "id": number, "student_id": number}
 
 function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: PopupProps) {
     const [active, setActive] = useState<"overview" | "grade" | "homework">("overview")
@@ -143,7 +143,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     const [absentWidth, setAbsentWidth] = useState<number>(0)
     const [tardyWidth, setTardyWidth] = useState<number>(0)
 
-    type EditingGrade = { title: string, description: string, type_id: number, grades: Record<number, number> }
+    type EditingGrade = { id:number, title: string, description: string, type: number, class_subjects_id: number, actual_date: number, grades: Record<number, number>, new: boolean }
     const [editingGrade, setEditingGrade] = useState<number | null>(null)
     const [grades, setGrades] = useState<Record<number, EditingGrade>>({})
     const ref1 = useRef<HTMLButtonElement>(null)
@@ -170,8 +170,8 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     const room = rooms.find(r => r.id === lesson.room_id)
     const group = groups?.find(g => g.id === lesson.group_id)
 
-    const AbsenceChangeFor = (student_id: number, absence_type: "present" | "absent" | "tardy", tardy_minutes: number): absenceChangeType | null => {
-      const absence = absences.find(a => a.student_id === student_id)
+    const AbsenceChangeFor = (student_id: number, absence_type: "present" | "absent" | "tardy"): absenceChangeType | null => {
+        const absence = absences.find(a => a.student_id === student_id)
 
         if (absence_type === "present") {
             return absence
@@ -179,44 +179,21 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 : null
         }
 
-      if (!absence) {
-          return { type: "ADD", absence_type: absence_type, student_id: student_id, tardy_minutes: tardy_minutes }
-      }
+        if (!absence) {
+            return { type: "ADD", absence_type: absence_type, student_id: student_id }
+        }
 
-      return absence.type === absence_type
-          ? null
-          : { type: "UPDATE", id: absence.id, absence_type: absence_type, student_id: student_id, tardy_minutes: tardy_minutes }
+        return absence.type === absence_type
+            ? null
+            : { type: "UPDATE", id: absence.id, absence_type: absence_type, student_id: student_id }
     }
 
-    const ChangeAbsence = (student_id: number, absence_type: "present" | "absent" | "tardy", tardy_minutes: number) => {
-      setAbsencesChanges(prev => {
-        const withoutStudent = prev.filter((absence_change) => {return absence_change.student_id != student_id})
-        const change = AbsenceChangeFor(student_id, absence_type, tardy_minutes)
-        return change ? [...withoutStudent, change] : withoutStudent
-      })
-    };
-
-    const getTardyValue = (student_id: number): number => {
-      const change = absencesChanges.find((absence_change) => {return absence_change.student_id === student_id})
-
-      if (change) {
-        switch (change.type) {
-          case "ADD":
-            return change.tardy_minutes
-          case "DELETE":
-            return 1
-          case "UPDATE":
-            return change.tardy_minutes
-        }
-      }
-
-      const absence = absences.find((absence) => {return absence.student_id === student_id})
-
-      if (absence) {
-        return absence.tardy_minutes
-      }
-
-      return 1
+    const SetAbsenceType = (student_id: number, absence_type: "present" | "absent" | "tardy") => {
+        setAbsencesChanges(prev => {
+            const withoutStudent = prev.filter((absence_change) => {return absence_change.student_id != student_id})
+            const change = AbsenceChangeFor(student_id, absence_type)
+            return change ? [...withoutStudent, change] : withoutStudent
+        })
     }
 
     const AbsenceTypeFor = (student_id: number): "present" | "absent" | "tardy" => {
@@ -260,6 +237,20 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
         void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/students_in_my_group?group_id=${group?.id}`).then(async students_response => { setStudents(await students_response.json() as Student[])})
         void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => { setAbsences(await absences_response.json() as Absence[])})
         void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/grades?actual_date=${lesson.actual_date}&subject_id=${lesson.subject_id}`).then(async response => {
+            const grades = await response.json() as EditingGrade[]
+            let gradeS: Record<number, EditingGrade> = []
+
+            for (let grade of grades) {
+                const res = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/grades?lesson_id=${grade.id}`)
+                const json = await res.json() as { student_id: number, value: number }[]
+                grade = { ...grade, grades: Object.fromEntries(json.map(obj => [obj.student_id, obj.value])), new: false }
+
+                gradeS = { ...gradeS, [grade.id]: grade }
+            }
+
+            setGrades(gradeS)
+        })
     }, [fetchMe, group, lesson.actual_date, lesson.subject_id])
 
     useLayoutEffect(() => {
@@ -308,21 +299,16 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                 <div key={student.id} className="flex flex-row justify-between items-center w-full hover:bg-(--hover-color) transition-[background-color_400ms_ease-in-out] hover:transition-[background-color_400ms_ease-in-out] p-2 rounded-lg">
                                                     <p><FontAwesomeIcon icon={faUser} /> {student.first_name} {student.last_name}</p>
                                                     <div className="flex flex-row items-center h-full justify-end rounded-lg border-2 border-(--border-color) relative">
-                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "present", 0)} ref={presentRef}>
+                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => SetAbsenceType(student.id, "present")} ref={presentRef}>
                                                         {getKey("PRESENT")}
                                                       </button>
-                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "absent", 0)} ref={absentRef}>
+                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => SetAbsenceType(student.id, "absent")} ref={absentRef}>
                                                         {getKey("ABSENT")}
                                                       </button>
-                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "tardy", getTardyValue(student.id))} ref={tardyRef}>
+                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => SetAbsenceType(student.id, "tardy")} ref={tardyRef}>
                                                         {getKey("TARDY")}
                                                       </button>
-
-                                                      {AbsenceTypeFor(student.id) == "tardy" &&
-                                                        <input className="text-center p-1 cursor-pointer z-1 w-16 rounded-md border border-(--border-color) bg-(--card-color) outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" min={1} max={60} type="number" placeholder={String(getTardyValue(student.id))} onChange={(e) => ChangeAbsence(student.id, "tardy", Number(e.currentTarget.value))} />
-                                                      }
-
-                                                      <div className="bg-(--border-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={{ ...AbsencePillStyle(student.id), boxShadow: "0 0 0 2px var(--border-color)" }} />
+                                                      <div className="bg-(--card-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={AbsencePillStyle(student.id)} />
                                                     </div>
                                                 </div>
                                             ))}
@@ -343,7 +329,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                     <textarea rows={2} className="text-2xl opacity-70 truncate fredoka outline-none rubik" defaultValue={eGrade.description} onChange={e => setGrades({ ...grades, [editingGrade]: { ...eGrade, description: e.currentTarget.value } } )} placeholder={getKey("DESCRIPTION")} />
                                                 </div>
                                                 <div className="flex flex-col items-end">
-                                                    <Select options={gradeTypesOptions} value={gradeTypesOptions[eGrade.type_id]} onChange={val => val && setGrades({ ...grades, [editingGrade]: { ...eGrade, type_id: val.value } })}
+                                                    <Select options={gradeTypesOptions} value={gradeTypesOptions[eGrade.type]} onChange={val => val && setGrades({ ...grades, [editingGrade]: { ...eGrade, type: val.value } })}
                                                             styles={selectStyles("fit-content", "100%", "var(--bg-color)", "var(--card-color)", "var(--hover-color)")} />
                                                 </div>
                                             </div>
@@ -397,7 +383,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                         <div className="flex flex-wrap gap-4">
                                             {Object.entries(grades).map(([id, grade]) => {
                                                 const gradeS = Object.values(grade.grades)
-                                                const weight = gradeTypes[grade.type_id]?.weight || 1
+                                                const weight = gradeTypes[grade.type]?.weight || 1
                                                 const average = gradeS.length
                                                     ? gradeS.reduce((sum, grade) => sum + grade * weight, 0) / gradeS.reduce(sum => sum + weight, 0)
                                                     : 0
@@ -422,7 +408,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                             })}
                                             <div className="border-(--txt-color) w-80 h-40 flex justify-center items-center border-2 rounded-2xl cursor-pointer text-5xl" onClick={() => {
                                                 const id = Math.max(0, ...Object.keys(grades).map(grade => Number(grade))) + 1 // stupid js forces it to be string
-                                                const grade: EditingGrade = { title: "", description: "", type_id: 0, grades: Object.fromEntries(students.map(student => [student.id, 0])) }
+                                                const grade: EditingGrade = { id: 0, title: "", description: "", type: 0, class_subjects_id: 0, actual_date: 0, grades: Object.fromEntries(students.map(student => [student.id, 0])), new: true }
                                                 setGrades({ ...grades, [id]: grade })
                                                 setEditingGrade(id)
                                             }}>
@@ -454,7 +440,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             headers: {
                 "Content-Type": "application/json",
             },
-          body: JSON.stringify({ "absence_changes": absencesChanges, class_subjects_id: lesson.subject_id, date: lesson.actual_date }),
+            body: JSON.stringify({ "absence_changes": absencesChanges, class_subjects_id: lesson.subject_id, date: lesson.actual_date }),
         })
 
         if (!response.ok) {
@@ -474,7 +460,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                     class_subjects_id: lesson.subject_id,
                     title: grade.title,
                     description: grade.description,
-                    type: grade.type_id,
+                    type: grade.type,
                 })
             })
 
@@ -515,6 +501,6 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             }
         }
 
-      toast.success("Successfully Saved!")
+        toast.success("Successfully Saved!")
     }
 }

@@ -366,12 +366,12 @@ SELECT
     g.date,
     g.note
 FROM grades g
-         JOIN class_subjects csub ON csub.id = g.class_subjects_id
+         JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
+         JOIN class_subjects csub ON csub.id = lg.class_subjects_id
          JOIN students st ON st.id = g.student_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN terms ter ON ter.id = g.term_id
-         JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
          JOIN grade_types gt ON gt.id = lg.type
 WHERE csub.school_id = $1
   AND csub.teacher_id = $2
@@ -455,12 +455,12 @@ SELECT
     g.date,
     g.note
 FROM grades g
-         JOIN class_subjects csub ON csub.id = g.class_subjects_id
+         JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
+         JOIN class_subjects csub ON csub.id = lg.class_subjects_id
          JOIN students st ON st.id = g.student_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
          LEFT JOIN custom_subjects cs ON cs.id = csub.custom_subject_id
          JOIN terms ter ON ter.id = g.term_id
-         JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
          JOIN grade_types gt ON gt.id = lg.type
 WHERE csub.school_id = $1
   AND csub.teacher_id = $2

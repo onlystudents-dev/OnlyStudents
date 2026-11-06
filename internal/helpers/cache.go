@@ -288,7 +288,7 @@ func CacheOrGetTeacherGrades(ctx context.Context, rdb *redis.Client, queries db_
 }
 
 func CacheOrGetTeacherGradesByLesson(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32, id int64) ([]db_queries.GetTeacherGradesByLessonRow, error) {
-	key := fmt.Sprintf("teacher_grades:%d:%d", scope.SchoolID, scope.TeacherID)
+	key := fmt.Sprintf("teacher_grades:%d:%d:%d", scope.SchoolID, scope.TeacherID, id)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherGradesByLessonRow, error) {
 		return queries.GetTeacherGradesByLesson(ctx, db_queries.GetTeacherGradesByLessonParams{
 			TeacherID:     scope.TeacherID,

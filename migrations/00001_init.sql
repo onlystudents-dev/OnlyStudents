@@ -464,8 +464,7 @@ CREATE TABLE lesson_grades (
     group_id INT NOT NULL REFERENCES groups (id) ON DELETE CASCADE,
     title VARCHAR(32) NOT NULL,
     description VARCHAR(512) NOT NULL,
-    type INT NOT NULL REFERENCES grade_types (id) ON DELETE RESTRICT,
-    UNIQUE (actual_date, class_subjects_id, group_id)
+    type INT NOT NULL REFERENCES grade_types (id) ON DELETE RESTRICT
 );
 
 CREATE TABLE grades (
