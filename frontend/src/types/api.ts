@@ -189,6 +189,7 @@ export type Absence = {
     date: number,
     type: string,
     justified: boolean,
+    tardy_minutes: number,
     file_name: string,
     file_size: number,
     file_type: string,

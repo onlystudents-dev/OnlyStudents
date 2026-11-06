@@ -230,11 +230,9 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 				},
 
 				"absences": fiber.Map{
-					fiber.MethodGet:    func(c fiber.Ctx) error { return teacherapi.ListAbsences(c, pool, rdb) },
-					fiber.MethodPost:   func(c fiber.Ctx) error { return teacherapi.AddAbsence(c, pool, rdb) },
-					fiber.MethodPatch:  func(c fiber.Ctx) error { return teacherapi.EditAbsence(c, pool, rdb) },
-					fiber.MethodDelete: func(c fiber.Ctx) error { return teacherapi.RemoveAbsence(c, pool, rdb) },
-					"lesson":           helpers.Get(func(c fiber.Ctx) error { return teacherapi.ListAbsencesForLesson(c, pool, rdb) }),
+					fiber.MethodGet:  func(c fiber.Ctx) error { return teacherapi.ListAbsences(c, pool, rdb) },
+					fiber.MethodPost: func(c fiber.Ctx) error { return teacherapi.ChangeAbsences(c, pool, rdb) },
+					"lesson":         helpers.Get(func(c fiber.Ctx) error { return teacherapi.ListAbsencesForLesson(c, pool, rdb) }),
 				},
 
 				"homework": fiber.Map{

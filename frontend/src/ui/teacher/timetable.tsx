@@ -127,7 +127,7 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     )
 }
 
-type absenceChangeType = {"type": "DELETE", "id": number, "student_id": number} | {"type": "ADD", "absence_type": "absent" | "tardy", "student_id": number} | {"type": "UPDATE", "absence_type": "absent" | "tardy", "id": number, "student_id": number}
+type absenceChangeType = {"type": "DELETE", "id": number, "student_id": number} | {"type": "ADD", "absence_type": "absent" | "tardy", "student_id": number, "tardy_minutes": number} | {"type": "UPDATE", "absence_type": "absent" | "tardy", "id": number, "student_id": number, "tardy_minutes": number}
 
 function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: PopupProps) {
     const [active, setActive] = useState<"overview" | "grade" | "homework">("overview")
@@ -170,8 +170,8 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     const room = rooms.find(r => r.id === lesson.room_id)
     const group = groups?.find(g => g.id === lesson.group_id)
 
-    const AbsenceChangeFor = (student_id: number, absence_type: "present" | "absent" | "tardy"): absenceChangeType | null => {
-        const absence = absences.find(a => a.student_id === student_id)
+    const AbsenceChangeFor = (student_id: number, absence_type: "present" | "absent" | "tardy", tardy_minutes: number): absenceChangeType | null => {
+      const absence = absences.find(a => a.student_id === student_id)
 
         if (absence_type === "present") {
             return absence
@@ -179,21 +179,44 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 : null
         }
 
-        if (!absence) {
-            return { type: "ADD", absence_type: absence_type, student_id: student_id }
-        }
+      if (!absence) {
+          return { type: "ADD", absence_type: absence_type, student_id: student_id, tardy_minutes: tardy_minutes }
+      }
 
-        return absence.type === absence_type
-            ? null
-            : { type: "UPDATE", id: absence.id, absence_type: absence_type, student_id: student_id }
+      return absence.type === absence_type
+          ? null
+          : { type: "UPDATE", id: absence.id, absence_type: absence_type, student_id: student_id, tardy_minutes: tardy_minutes }
     }
 
-    const SetAbsenceType = (student_id: number, absence_type: "present" | "absent" | "tardy") => {
-        setAbsencesChanges(prev => {
-            const withoutStudent = prev.filter((absence_change) => {return absence_change.student_id != student_id})
-            const change = AbsenceChangeFor(student_id, absence_type)
-            return change ? [...withoutStudent, change] : withoutStudent
-        })
+    const ChangeAbsence = (student_id: number, absence_type: "present" | "absent" | "tardy", tardy_minutes: number) => {
+      setAbsencesChanges(prev => {
+        const withoutStudent = prev.filter((absence_change) => {return absence_change.student_id != student_id})
+        const change = AbsenceChangeFor(student_id, absence_type, tardy_minutes)
+        return change ? [...withoutStudent, change] : withoutStudent
+      })
+    };
+
+    const getTardyValue = (student_id: number): number => {
+      const change = absencesChanges.find((absence_change) => {return absence_change.student_id === student_id})
+
+      if (change) {
+        switch (change.type) {
+          case "ADD":
+            return change.tardy_minutes
+          case "DELETE":
+            return 1
+          case "UPDATE":
+            return change.tardy_minutes
+        }
+      }
+
+      const absence = absences.find((absence) => {return absence.student_id === student_id})
+
+      if (absence) {
+        return absence.tardy_minutes
+      }
+
+      return 1
     }
 
     const AbsenceTypeFor = (student_id: number): "present" | "absent" | "tardy" => {
@@ -285,16 +308,21 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                 <div key={student.id} className="flex flex-row justify-between items-center w-full hover:bg-(--hover-color) transition-[background-color_400ms_ease-in-out] hover:transition-[background-color_400ms_ease-in-out] p-2 rounded-lg">
                                                     <p><FontAwesomeIcon icon={faUser} /> {student.first_name} {student.last_name}</p>
                                                     <div className="flex flex-row items-center h-full justify-end rounded-lg border-2 border-(--border-color) relative">
-                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => SetAbsenceType(student.id, "present")} ref={presentRef}>
+                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "present", 0)} ref={presentRef}>
                                                         {getKey("PRESENT")}
                                                       </button>
-                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => SetAbsenceType(student.id, "absent")} ref={absentRef}>
+                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "absent", 0)} ref={absentRef}>
                                                         {getKey("ABSENT")}
                                                       </button>
-                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => SetAbsenceType(student.id, "tardy")} ref={tardyRef}>
+                                                      <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "tardy", getTardyValue(student.id))} ref={tardyRef}>
                                                         {getKey("TARDY")}
                                                       </button>
-                                                      <div className="bg-(--card-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={AbsencePillStyle(student.id)} />
+
+                                                      {AbsenceTypeFor(student.id) == "tardy" &&
+                                                        <input className="text-center p-1 cursor-pointer z-1 w-16 rounded-md border border-(--border-color) bg-(--card-color) outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" min={1} max={60} type="number" placeholder={String(getTardyValue(student.id))} onChange={(e) => ChangeAbsence(student.id, "tardy", Number(e.currentTarget.value))} />
+                                                      }
+
+                                                      <div className="bg-(--border-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={{ ...AbsencePillStyle(student.id), boxShadow: "0 0 0 2px var(--border-color)" }} />
                                                     </div>
                                                 </div>
                                             ))}
@@ -421,54 +449,19 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     )
 
     async function save() {
-        for (const absence_change of absencesChanges) {
-            let body = ""
-            let method = ""
-            switch (absence_change.type) {
-                case "ADD":
-                    method = "POST"
-                    body = JSON.stringify({
-                        date: lesson.actual_date,
-                        type: absence_change.absence_type,
-                        has_note: false,
-                        note: "",
-                        student_id: absence_change.student_id,
-                        class_subjects_id: lesson.subject_id,
-                    })
-                    break
-                case "DELETE":
-                    method = "DELETE"
-                    body = JSON.stringify({
-                        absence_id: absence_change.id,
-                    })
-                    break
-                case "UPDATE":
-                    method = "PATCH"
-                    body = JSON.stringify({
-                        absence_id: absence_change.id,
-                        date: lesson.actual_date,
-                        type: absence_change.absence_type,
-                        has_note: false,
-                        note: "",
-                        student_id: absence_change.student_id,
-                        class_subjects_id: lesson.subject_id,
-                    })
-                    break
-            }
+        const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/absences", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+          body: JSON.stringify({ "absence_changes": absencesChanges, class_subjects_id: lesson.subject_id, date: lesson.actual_date }),
+        })
 
-            const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/absences", {
-                method: method,
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: body,
-            })
-
-            if (!response.ok) {
-                void toast.error(await fromResponse(response))
-                return
-            }
+        if (!response.ok) {
+            void toast.error(await fromResponse(response))
+            return
         }
+
         for (const grade of Object.values(grades)) {
             const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/timetable/grades", {
                 method: "POST",

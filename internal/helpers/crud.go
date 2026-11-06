@@ -39,7 +39,13 @@ func StudentSummary[Row, T, request_type any](
 		}
 	}
 
-	queries := db_queries.New(pool)
+	tx, err := pool.Begin(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+	defer tx.Rollback(c.Context())
+
+	queries := db_queries.New(pool).WithTx(tx)
 
 	summaries := []T{}
 
@@ -96,7 +102,13 @@ func StudentModify[request_type any](
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
-	queries := db_queries.New(pool)
+	tx, tx_err := pool.Begin(c.Context())
+	if tx_err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+	defer tx.Rollback(c.Context())
+
+	queries := db_queries.New(pool).WithTx(tx)
 
 	me_scope, scope_err := ResolveMeScope(c, pool, rdb)
 
@@ -142,7 +154,13 @@ func TeacherSummary[Row, T, request_type any](
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
 	}
 
-	queries := db_queries.New(pool)
+	tx, err := pool.Begin(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+	defer tx.Rollback(c.Context())
+
+	queries := db_queries.New(pool).WithTx(tx)
 
 	summaries := []T{}
 
@@ -229,7 +247,13 @@ func TeacherModify[request_type any](
 		return ErrorByStatusCode(c, status_code)
 	}
 
-	queries := db_queries.New(pool)
+	tx, err := pool.Begin(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+	defer tx.Rollback(c.Context())
+
+	queries := db_queries.New(pool).WithTx(tx)
 
 	rows_affected, err := query_func(c.Context(), teacher_scope, queries, req)
 

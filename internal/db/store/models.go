@@ -18,6 +18,7 @@ type Absence struct {
 	VerifiedBy      pgtype.Int4
 	Note            pgtype.Text
 	ClassSubjectsID pgtype.Int4
+	TardyMinutes    pgtype.Int4
 }
 
 type AbsenceReason struct {

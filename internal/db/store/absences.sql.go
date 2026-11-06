@@ -21,6 +21,7 @@ SELECT
     a.date,
     a.type,
     a.justified,
+    a.tardy_minutes,
     f.original_name AS file_name,
     f.size AS file_size,
     f.type AS file_type,
@@ -59,6 +60,7 @@ type GetStudentAbsencesRow struct {
 	Date             pgtype.Date
 	Type             string
 	Justified        bool
+	TardyMinutes     pgtype.Int4
 	FileName         pgtype.Text
 	FileSize         pgtype.Int8
 	FileType         pgtype.Text
@@ -86,6 +88,7 @@ func (q *Queries) GetStudentAbsences(ctx context.Context, arg GetStudentAbsences
 			&i.Date,
 			&i.Type,
 			&i.Justified,
+			&i.TardyMinutes,
 			&i.FileName,
 			&i.FileSize,
 			&i.FileType,
@@ -114,6 +117,7 @@ SELECT
     a.date,
     a.type,
     a.justified,
+    a.tardy_minutes,
     f.original_name AS file_name,
     f.size AS file_size,
     f.type AS file_type,
@@ -147,6 +151,7 @@ type GetTeacherAbsencesRow struct {
 	Date            pgtype.Date
 	Type            string
 	Justified       bool
+	TardyMinutes    pgtype.Int4
 	FileName        pgtype.Text
 	FileSize        pgtype.Int8
 	FileType        pgtype.Text
@@ -174,6 +179,7 @@ func (q *Queries) GetTeacherAbsences(ctx context.Context, arg GetTeacherAbsences
 			&i.Date,
 			&i.Type,
 			&i.Justified,
+			&i.TardyMinutes,
 			&i.FileName,
 			&i.FileSize,
 			&i.FileType,
@@ -202,6 +208,7 @@ SELECT
     a.date,
     a.type,
     a.justified,
+    a.tardy_minutes,
     f.original_name AS file_name,
     f.size AS file_size,
     f.type AS file_type,
@@ -239,6 +246,7 @@ type GetTeacherAbsencesByLessonRow struct {
 	Date            pgtype.Date
 	Type            string
 	Justified       bool
+	TardyMinutes    pgtype.Int4
 	FileName        pgtype.Text
 	FileSize        pgtype.Int8
 	FileType        pgtype.Text
@@ -271,6 +279,7 @@ func (q *Queries) GetTeacherAbsencesByLesson(ctx context.Context, arg GetTeacher
 			&i.Date,
 			&i.Type,
 			&i.Justified,
+			&i.TardyMinutes,
 			&i.FileName,
 			&i.FileSize,
 			&i.FileType,

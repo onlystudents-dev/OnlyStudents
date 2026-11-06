@@ -406,7 +406,7 @@ WHERE bs.school_id = 1
   AND bs.day_of_week = 3
   AND bs.lesson_num = 1;
 
-INSERT INTO absences (student_id, class_subjects_id, lesson_id, date, type, justified, verified_by, note)
+INSERT INTO absences (student_id, class_subjects_id, lesson_id, date, type, justified, verified_by, note, tardy_minutes)
 SELECT 1,
        5,
        bs.id,
@@ -414,7 +414,8 @@ SELECT 1,
        'tardy',
        FALSE,
        NULL,
-       'Késett a tanórára.'
+       'Késett a tanórára.',
+       10
 FROM base_schedule bs
 WHERE bs.school_id = 1
   AND bs.group_id = 1
@@ -562,7 +563,7 @@ WHERE bs.school_id = 2
   AND bs.day_of_week = 4
   AND bs.lesson_num = 1;
 
-INSERT INTO absences (student_id, class_subjects_id, lesson_id, date, type, justified, verified_by, note)
+INSERT INTO absences (student_id, class_subjects_id, lesson_id, date, type, justified, verified_by, note, tardy_minutes)
 SELECT 2,
        6,
        bs.id,
@@ -570,7 +571,8 @@ SELECT 2,
        'tardy',
        FALSE,
        NULL,
-       'Késett a tanórára.'
+       'Késett a tanórára.',
+       15
 FROM base_schedule bs
 WHERE bs.school_id = 2
   AND bs.group_id = 2
