@@ -331,6 +331,10 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                         <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "tardy", getTardyValue(student.id))} ref={tardyRef}>
                                                             {getKey("TARDY")}
                                                         </button>
+                                                        {AbsenceTypeFor(student.id) == "tardy" &&
+                                                            <input className="text-center p-1 cursor-pointer z-1 w-16 rounded-md border border-(--border-color) bg-(--card-color) outline-none [appearance:textfield]"
+                                                                   min={1} max={60} type="number" placeholder={String(getTardyValue(student.id))} onChange={(e) => ChangeAbsence(student.id, "tardy", Number(e.currentTarget.value))} />
+                                                        }
                                                         <div className="bg-(--card-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={AbsencePillStyle(student.id)} />
                                                     </div>
                                                 </div>
