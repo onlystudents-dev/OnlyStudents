@@ -71,6 +71,10 @@ func StudentSummary[Row, T, request_type any](
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
+	if err := tx.Commit(c.Context()); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
 	if !single {
 		return c.JSON(summaries)
 	} else {
@@ -133,6 +137,10 @@ func StudentModify[request_type any](
 
 	if rows_affected == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	if err := tx.Commit(c.Context()); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -206,6 +214,10 @@ func TeacherSummary[Row, T, request_type any](
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
 
+	if err := tx.Commit(c.Context()); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
 	return c.JSON(summaries)
 }
 
@@ -264,6 +276,10 @@ func TeacherModify[request_type any](
 
 	if rows_affected == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
+	}
+
+	if err := tx.Commit(c.Context()); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
