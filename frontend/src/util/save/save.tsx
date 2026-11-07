@@ -4,26 +4,31 @@ import Button from "../button/button.tsx";
 import {getKey} from "../language.ts";
 
 function isObject(v: unknown): v is Record<string, unknown> {
-    return v !== null && typeof v === "object" && !Array.isArray(v);
+    return v !== null && typeof v === "object" && !Array.isArray(v)
 }
 
 function isEqual(a: unknown, b: unknown): boolean {
-    if (Object.is(a, b)) return true;
-    if (!isObject(a) || !isObject(b)) return false;
+    if (Object.is(a, b)) return true
+    if (!isObject(a) || !isObject(b)) return false
 
-    const keysA = Object.keys(a);
-    const keysB = Object.keys(b);
-    if (keysA.length !== keysB.length) return false;
+    const keysA = Object.keys(a)
+    const keysB = Object.keys(b)
+    if (keysA.length !== keysB.length) return false
 
     return keysA.every(
         (k) => Object.hasOwn(b, k) && isEqual(a[k], b[k])
-    );
+    )
 }
 
-function getDifferences<T extends Record<string, unknown>>(options: T, defaults: T): Partial<T> {
+export function getDifferences<T extends object>(options: T, defaults: T): Partial<T> {
+    const defaultValues = defaults as Record<string, unknown>
+    const optionValues = options as Record<string, unknown>
+
     return Object.fromEntries(
-        Object.entries(options).filter(([key, value]) => !isEqual(value, defaults[key]))
-    ) as Partial<T>;
+        [...new Set([...Object.keys(options), ...Object.keys(defaults)])]
+            .filter(key => !isEqual(optionValues[key], defaultValues[key]))
+            .map(key => [key, optionValues[key]])
+    ) as Partial<T>
 }
 
 export default function Save<T extends Record<string, unknown>>({ options, setOptions, save }: {options: T, setOptions: (value: T) => void, save: (diff: Partial<T>, defaults: Partial<T>) => (boolean | Promise<boolean>)}) {

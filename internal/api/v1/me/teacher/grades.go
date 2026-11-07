@@ -102,6 +102,7 @@ type AddLessonGradeRequest struct {
 }
 
 type EditLessonGradeRequest struct {
+	ID          int64  `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Type        int32  `json:"type"`
@@ -147,6 +148,7 @@ func convertGradeByLesson(row db_queries.GetTeacherGradesByLessonRow) GradeSumma
 		Date:           row.Date.Time.Unix(),
 		HasNote:        row.Note.Valid,
 		Note:           row.Note.String,
+		StudentID:      row.StudentID,
 		LessonID:       row.LessonGradeID,
 	}
 }
@@ -293,12 +295,12 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditGradeRequest) (int64, error) {
 			return queries.TeacherEditGrade(ctx, db_queries.TeacherEditGradeParams{
 				ID:            req.GradeID,
-				TeacherID:     teacher_scope.TeacherID,
 				TermID:        req.TermID,
 				LessonGradeID: req.LessonGradeID,
 				Value:         req.Value,
 				Date:          pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
 				Note:          pgtype.Text{String: req.Note, Valid: req.HasNote},
+				TeacherID:     teacher_scope.TeacherID,
 				SchoolID:      teacher_scope.SchoolID,
 			})
 		})
@@ -351,6 +353,7 @@ func EditLessonGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditLessonGradeRequest) (int64, error) {
 			return queries.TeacherEditLessonGrade(ctx, db_queries.TeacherEditLessonGradeParams{
+				ID:          req.ID,
 				Title:       req.Title,
 				Description: req.Description,
 				Type:        req.Type,

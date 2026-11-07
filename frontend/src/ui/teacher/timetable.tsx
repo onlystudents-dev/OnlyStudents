@@ -16,7 +16,7 @@ import { formatUnixDate, getWeekRange } from "../../util/time.ts";
 import Loading from "../../util/loading.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
-import {faFloppyDisk, faList, faStar, faUser} from "@fortawesome/free-solid-svg-icons";
+import {faFloppyDisk, faList, faStar, faTrash, faUser} from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import Button from "../../util/sidebar/config.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -24,6 +24,7 @@ import {useLayoutEffect} from "preact/hooks";
 import {colors} from "../globals.tsx";
 import Select from "react-select";
 import {selectStyles} from "../../util/select.ts";
+import {getDifferences} from "../../util/save/save.tsx";
 
 export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
@@ -143,9 +144,10 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     const [absentWidth, setAbsentWidth] = useState<number>(0)
     const [tardyWidth, setTardyWidth] = useState<number>(0)
 
-    type EditingGrade = { id:number, title: string, description: string, type: number, class_subjects_id: number, actual_date: number, grades: Record<number, number>, new: boolean }
+    type EditingGrade = { id:number, title: string, description: string, type: number, class_subjects_id: number, actual_date: number, grades: Record<number, number>, defGrades: Record<number, number>, gradeIDs: Record<number, number>, new: boolean }
     const [editingGrade, setEditingGrade] = useState<number | null>(null)
     const [grades, setGrades] = useState<Record<number, EditingGrade>>({})
+    const [defaultGrades, setDefaultGrades] = useState<Record<number, EditingGrade>>({})
     const ref1 = useRef<HTMLButtonElement>(null)
     const ref2 = useRef<HTMLButtonElement>(null)
     const ref3 = useRef<HTMLButtonElement>(null)
@@ -265,26 +267,30 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 let i = 0
                 for (let grade of grades) {
                     const res = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/grades?lesson_id=${grade.id}`)
-                    const json = await res.json() as { student_id: number, value: number }[]
-                    let gradES = Object.fromEntries(json.map(obj => [obj.student_id, obj.value]))
-                    const keys = Object.keys(gradES)
+                    const json = await res.json() as { student_id: number, value: number, id: number }[]
+                    const gradeIDs = Object.fromEntries(json.map(obj => [obj.student_id, obj.id]))
+                    const gradES = Object.fromEntries(json.map(obj => [obj.student_id, obj.value]))
+                    const graDES = Object.fromEntries(json.map(obj => [obj.student_id, obj.value]))
                     students.forEach(student => {
-                        if (!keys.includes(String(student.id))) {
-                            gradES = { ...gradES, [student.id]: 0 }
+                        if (!(student.id in gradES)) {
+                            gradES[student.id] = 0
+                        }
+                        if (!(student.id in graDES)) {
+                            graDES[student.id] = -1
                         }
                     })
-                    grade = { ...grade, grades: gradES, new: false }
+                    grade = { ...grade, grades: gradES, defGrades: graDES, gradeIDs, new: false }
 
                     gradeS = { ...gradeS, [i]: grade }
                     i++
                 }
 
                 setGrades(gradeS)
+                setDefaultGrades(gradeS)
             })
         })
         void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => setAbsences(await absences_response.json() as Absence[]))
         void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
-
     }, [fetchMe, group, lesson.actual_date, lesson.subject_id])
 
     useLayoutEffect(() => {
@@ -296,7 +302,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     }, [students])
 
     useLayoutEffect(() => {
-        if (active !== "grade" || !editingGrade) return
+        if (active !== "grade" || typeof editingGrade != "number") return
 
         setWidth1(ref1.current?.offsetWidth || 0)
         setWidth2(ref2.current?.offsetWidth || 0)
@@ -437,7 +443,8 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                             <p className="text-3xl rubik">{grade.title}</p>
                                                             <p className="opacity-70">{Object.values(grade.grades).filter(grade => grade !== 0).length}</p>
                                                         </div>
-                                                        <div className="flex flex-col justify-end">
+                                                        <div className="flex flex-col justify-between items-end">
+                                                            <FontAwesomeIcon icon={faTrash} className="action-button hover:text-(--wrong-color)" onClick={e => { e.stopPropagation(); setGrades(Object.fromEntries(Object.entries(grades).filter(([key]) => key !== i))) }} /> {/* ofc js doesnt have remove why would it */}
                                                             <div className={`rounded-full h-8 w-fit pl-2 pr-2 inline-flex items-center justify-center poppins text-2xl`} style={{
                                                                 backgroundColor: `var(--${color}-base-color)`,
                                                                 color: `var(--${color}-color)`, fontWeight: "900"
@@ -448,7 +455,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                             })}
                                             <div className="border-(--txt-color) w-80 h-40 flex justify-center items-center border-2 rounded-2xl cursor-pointer text-5xl" onClick={() => {
                                                 const id = Math.max(-1, ...Object.keys(grades).map(grade => Number(grade))) + 1 // stupid js forces it to be string
-                                                const grade: EditingGrade = { id: 0, title: "", description: "", type: 0, class_subjects_id: 0, actual_date: 0, grades: Object.fromEntries(students.map(student => [student.id, 0])), new: true }
+                                                const grade: EditingGrade = { id: -1, title: "", description: "", type: 0, class_subjects_id: 0, actual_date: 0, grades: Object.fromEntries(students.map(student => [student.id, 0])), defGrades: Object.fromEntries(students.map(student => [student.id, -1])), gradeIDs: {}, new: true }
                                                 setGrades({ ...grades, [id]: grade })
                                                 setEditingGrade(id)
                                             }}>
@@ -475,26 +482,55 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     )
 
     async function save() {
-        const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/absences", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ "absence_changes": absencesChanges, class_subjects_id: lesson.subject_id, date: lesson.actual_date }),
-        })
-
-        if (!response.ok) {
-            toast.error(await fromResponse(response))
-            return
-        }
-
-        for (const grade of Object.values(grades)) {
-            const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/timetable/grades", {
+        if (absencesChanges.length > 0) {
+            const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/absences", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
+                    absence_changes: absencesChanges,
+                    class_subjects_id: lesson.subject_id,
+                    date: lesson.actual_date
+                }),
+            })
+
+            if (!response.ok) {
+                toast.error(await fromResponse(response))
+                return
+            }
+        }
+
+        const diff = getDifferences(grades, defaultGrades)
+        let j = -1
+        for (const grade of Object.values(diff)) {
+            j++
+            if (!grade) {
+                const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/timetable/grades", {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        lesson_grade_id: defaultGrades[j]?.id
+                    })
+                })
+
+                if (!response.ok) {
+                    toast.error(await fromResponse(response))
+                    return
+                }
+
+                continue
+            }
+
+            const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/timetable/grades", {
+                method: grade.id === -1 ? "POST" : "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    id: grade.id,
                     actual_date: lesson.actual_date,
                     group_id: lesson.group_id,
                     class_subjects_id: lesson.subject_id,
@@ -516,19 +552,20 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             return
         }
 
-        const json = (await response.json() as { id: number }[])
+        const json = (await lesson_grade_response.json() as { id: number }[])
         let i = 0
         for (const grade of Object.values(grades)) {
             const id = json[i]?.id
             if (id === undefined) continue
 
-            for (const [student_id, student_grade] of Object.entries(grade.grades)) {
+            for (const [student_id, student_grade] of Object.entries(getDifferences(grade.grades, grade.defGrades))) {
                 const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades", {
-                    method: "POST",
+                    method: student_grade === 0 ? "DELETE" : grade.defGrades[Number(student_id)] !== -1 ? "PATCH" : "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
+                        grade_id: grade.gradeIDs[Number(student_id)],
                         lesson_grade_id: id,
                         term_id: lesson.term_id,
                         date: lesson.actual_date,
@@ -547,5 +584,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
         }
 
         toast.success("Successfully Saved!")
+        clear()
     }
 }
+// so long

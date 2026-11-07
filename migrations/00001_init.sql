@@ -470,7 +470,7 @@ CREATE TABLE lesson_grades (
 CREATE TABLE grades (
     id BIGSERIAL PRIMARY KEY,
     student_id INT NOT NULL REFERENCES students (id) ON DELETE CASCADE,
-    lesson_grade_id BIGINT NOT NULL REFERENCES lesson_grades (id) ON DELETE RESTRICT,
+    lesson_grade_id BIGINT NOT NULL REFERENCES lesson_grades (id) ON DELETE CASCADE,
     teacher_id INT NOT NULL REFERENCES teachers (id) ON DELETE RESTRICT,
     term_id INT NOT NULL REFERENCES terms (id) ON DELETE RESTRICT,
     value SMALLINT NOT NULL,

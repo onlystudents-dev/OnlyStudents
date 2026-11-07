@@ -188,31 +188,37 @@ WHERE cs.id = sqlc.arg(class_subjects_id)
 
 -- name: TeacherEditGrade :execrows
 UPDATE grades g
-SET term_id = $3,
-    lesson_grade_id = $4,
-    value = $5,
-    date = $6,
-    note = $7
+SET term_id = $2,
+    lesson_grade_id = $3,
+    value = $4,
+    date = $5,
+    note = $6
 WHERE g.id = $1
   AND EXISTS (
     SELECT 1
-    FROM class_subjects cs
-    WHERE cs.id = g.class_subjects_id
-      AND cs.school_id = $8
-      AND cs.teacher_id = $9
+    FROM lesson_grades lg
+             JOIN class_subjects cs ON cs.id = lg.class_subjects_id
+    WHERE lg.id = g.lesson_grade_id
+      AND cs.school_id = $7
+      AND cs.teacher_id = $8
 )
   AND EXISTS (
     SELECT 1
-    FROM class_subjects cs
-             JOIN lesson_grades lg ON lg.class_subjects_id = cs.id
+    FROM lesson_grades lg
+             JOIN class_subjects cs ON cs.id = lg.class_subjects_id
              JOIN grade_types gt ON gt.id = lg.type
-    WHERE cs.id = $2
-      AND cs.school_id = $8
-      AND cs.teacher_id = $9
-      AND lg.id = $4
-      AND gt.school_id = $8
+    WHERE lg.id = $3
+      AND cs.school_id = $7
+      AND cs.teacher_id = $8
+      AND gt.school_id = $7
 )
-  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $8);
+  AND EXISTS (
+    SELECT 1
+    FROM terms t
+             JOIN school_years sy ON sy.id = t.school_year_id
+    WHERE t.id = $2
+      AND sy.school_id = $7
+);
 
 -- name: TeacherEditFinalGrade :execrows
 UPDATE final_grades fg
@@ -241,8 +247,9 @@ DELETE FROM grades g
 WHERE g.id = $1
   AND EXISTS (
     SELECT 1
-    FROM class_subjects cs
-    WHERE cs.id = g.class_subjects_id
+    FROM lesson_grades lg
+             JOIN class_subjects cs ON cs.id = lg.class_subjects_id
+    WHERE lg.id = g.lesson_grade_id
       AND cs.school_id = $2
       AND cs.teacher_id = $3
 );
