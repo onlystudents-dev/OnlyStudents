@@ -76,14 +76,14 @@ WHERE csub.school_id = $1
   AND csub.teacher_id = $2
 ORDER BY e.date, e.start_time;
 
--- name: TeacherAddExam :execrows
+-- name: TeacherAddExam :many
 INSERT INTO exams (class_subjects_id, teacher_id, title, description, date, start_time, end_time, room_id)
-SELECT cs.id, sqlc.arg(teacher_id), sqlc.arg(title), sqlc.arg(description), sqlc.arg(date), sqlc.arg(start_time), sqlc.arg(end_time), sqlc.arg(room_id)
+SELECT cs.id AS class_subjects_id, sqlc.arg(teacher_id), sqlc.arg(title), sqlc.arg(description), sqlc.arg(date), sqlc.arg(start_time), sqlc.arg(end_time), sqlc.arg(room_id)
 FROM class_subjects cs
 WHERE cs.id = sqlc.arg(class_subjects_id)
   AND cs.school_id = sqlc.arg(school_id)
   AND cs.teacher_id = sqlc.arg(teacher_id)
-  AND (sqlc.arg(room_id) IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = sqlc.arg(room_id) AND r.school_id = sqlc.arg(school_id)));
+  AND (sqlc.arg(room_id) IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = sqlc.arg(room_id) AND r.school_id = sqlc.arg(school_id))) RETURNING class_subjects_id;
 
 -- name: TeacherEditExam :execrows
 UPDATE exams e

@@ -8,14 +8,15 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/hashicorp/go-set"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
 
 type ListAbsencesByLessonRequest struct {
-	ClassSubjectsID int32 `json:"class_subjects_id"`
-	Date            int64 `json:"date"`
+	ClassSubjectsID int32 `json:"class_subjects_id" query:"class_subjects_id"`
+	Date            int64 `json:"date" query:"date"`
 }
 
 type ChangeType string
@@ -107,12 +108,6 @@ func convertAbsenceByLesson(row db_queries.GetTeacherAbsencesByLessonRow) Absenc
 	}
 }
 
-func ListAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesRow, error) {
-		return helpers.CacheOrGetTeacherAbsences(ctx, rdb, queries, scope, ttl)
-	}, convertAbsence)
-}
-
 func ListAbsencesForLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", func(req ListAbsencesByLessonRequest) bool { return req.ClassSubjectsID <= 0 || req.Date <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ListAbsencesByLessonRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesByLessonRow, error) {
 		return helpers.CacheOrGetTeacherAbsencesByLesson(ctx, rdb, queries, scope, ttl, req.ClassSubjectsID, pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true})
@@ -152,19 +147,22 @@ func ChangeAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req ChangeAbsencesRequest) bool {
 			return ChangeAbsencesValidate(req)
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req ChangeAbsencesRequest) (int64, error) {
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req ChangeAbsencesRequest) (int64, error, func()) {
+			changed_student_ids := set.New[int32](len(req.AbsenceChanges)) // worst case scenario is that all absence changes are for a different student
 			for _, absence_change := range req.AbsenceChanges {
 				switch absence_change.Type {
 				case ChangeDelete:
-					row_count, err := queries.TeacherDeleteAbsence(ctx, db_queries.TeacherDeleteAbsenceParams{
+					rows, err := queries.TeacherDeleteAbsence(ctx, db_queries.TeacherDeleteAbsenceParams{
 						ID:        *absence_change.ID,
 						TeacherID: teacher_scope.TeacherID,
 						SchoolID:  teacher_scope.SchoolID,
 					})
 
-					if err != nil || row_count != 1 {
-						return row_count, err
+					if len(rows) != 1 || err != nil {
+						return 1, err, func() {}
 					}
+
+					changed_student_ids.Insert(rows[0])
 				case ChangeAdd:
 					row_count, err := queries.TeacherAddAbsence(ctx, db_queries.TeacherAddAbsenceParams{
 						Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
@@ -177,10 +175,12 @@ func ChangeAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 					})
 
 					if err != nil || row_count != 1 {
-						return row_count, err
+						return row_count, err, func() {}
 					}
+
+					changed_student_ids.Insert(absence_change.StudentID)
 				case ChangeUpdate:
-					row_count, err := queries.TeacherEditAbsence(ctx, db_queries.TeacherEditAbsenceParams{
+					rows, err := queries.TeacherEditAbsence(ctx, db_queries.TeacherEditAbsenceParams{
 						ID:              *absence_change.ID,
 						Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
 						Type:            string(*absence_change.AbsenceType),
@@ -190,14 +190,21 @@ func ChangeAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 						ClassSubjectsID: pgtype.Int4{Int32: req.ClassSubjectsID, Valid: true},
 					})
 
-					if err != nil || row_count != 1 {
-						return row_count, err
+					if err != nil || len(rows) != 1 {
+						return 1, err, func() {}
 					}
+
+					changed_student_ids.Insert(rows[0])
 				default:
-					return 0, errors.New("How is this possible?")
+					return 0, errors.New("How is this possible?"), func() {}
 				}
 			}
 
-			return 1, nil
+			return 1, nil, func() {
+				for _, student_id := range changed_student_ids.Slice() {
+					helpers.InvalidateCachedStudentAbsences(ctx, rdb, teacher_scope.SchoolID, student_id)
+				}
+				helpers.InvalidateCachedTeacherAbsencesByLesson(ctx, rdb, teacher_scope.SchoolID)
+			}
 		})
 }

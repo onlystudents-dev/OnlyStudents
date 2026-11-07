@@ -196,25 +196,6 @@ func convertLessonGradeBySubject(row db_queries.GetTeacherLessonGradesBySubjectR
 	}
 }
 
-func ListGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	id, err := strconv.ParseInt(c.Query("lesson_id"), 10, 64)
-	if err == nil {
-		return helpers.TeacherSummary(c, pool, rdb, "GRADES_BY_LESSON_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherGradesByLessonRow, error) {
-			return helpers.CacheOrGetTeacherGradesByLesson(ctx, rdb, queries, scope, ttl, id)
-		}, convertGradeByLesson)
-	}
-
-	return helpers.TeacherSummary(c, pool, rdb, "GRADES_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherGradesRow, error) {
-		return helpers.CacheOrGetTeacherGrades(ctx, rdb, queries, scope, ttl)
-	}, convertGrade)
-}
-
-func ListFinalGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return helpers.TeacherSummary(c, pool, rdb, "FINAL_GRADES_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherFinalGradesRow, error) {
-		return helpers.CacheOrGetTeacherFinalGrades(ctx, rdb, queries, scope, ttl)
-	}, convertFinalGrade)
-}
-
 func GetGradeTypes(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherSummary(c, pool, rdb, "GRADE_TYPES_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherGradeTypesRow, error) {
 		return helpers.CacheOrGetTeacherGradeTypes(ctx, rdb, queries, scope, ttl)
@@ -241,8 +222,8 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req AddGradeRequest) bool {
 			return req.StudentID <= 0 || req.TermID <= 0 || req.LessonGradeID <= 0 || req.Value <= 0 || req.Date <= 0 || (req.HasNote && req.Note == "")
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddGradeRequest) (int64, error) {
-			return queries.TeacherAddGrade(ctx, db_queries.TeacherAddGradeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddGradeRequest) (int64, error, func()) {
+			rows, err := queries.TeacherAddGrade(ctx, db_queries.TeacherAddGradeParams{
 				TeacherID:     teacher_scope.TeacherID,
 				TermID:        req.TermID,
 				LessonGradeID: req.LessonGradeID,
@@ -252,6 +233,12 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				SchoolID:      teacher_scope.SchoolID,
 				StudentID:     req.StudentID,
 			})
+
+			if len(rows) != 1 {
+				return int64(len(rows)), err, func() {}
+			}
+
+			return int64(len(rows)), err, func() { helpers.InvalidateCachedGrades(ctx, rdb, teacher_scope.SchoolID, rows[0]) }
 		})
 }
 
@@ -261,8 +248,8 @@ func AddFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req AddFinalGradeRequest) bool {
 			return req.TermID <= 0 || req.Value <= 0 || req.ClassSubjectsID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddFinalGradeRequest) (int64, error) {
-			return queries.TeacherAddFinalGrade(ctx, db_queries.TeacherAddFinalGradeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddFinalGradeRequest) (int64, error, func()) {
+			rows, err := queries.TeacherAddFinalGrade(ctx, db_queries.TeacherAddFinalGradeParams{
 				TermID:          req.TermID,
 				TeacherID:       teacher_scope.TeacherID,
 				Value:           req.Value,
@@ -270,6 +257,12 @@ func AddFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				SchoolID:        teacher_scope.SchoolID,
 				StudentID:       req.StudentID,
 			})
+
+			if len(rows) != 1 {
+				return int64(len(rows)), err, func() {}
+			}
+
+			return int64(len(rows)), err, func() { helpers.InvalidateCachedFinalGrades(ctx, rdb, teacher_scope.SchoolID, rows[0]) }
 		})
 }
 
@@ -277,12 +270,18 @@ func RemoveGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req RemoveGradeRequest) bool { return req.GradeID <= 0 },
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveGradeRequest) (int64, error) {
-			return queries.TeacherDeleteGrade(ctx, db_queries.TeacherDeleteGradeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveGradeRequest) (int64, error, func()) {
+			rows, err := queries.TeacherDeleteGrade(ctx, db_queries.TeacherDeleteGradeParams{
 				ID:        req.GradeID,
 				TeacherID: teacher_scope.TeacherID,
 				SchoolID:  teacher_scope.SchoolID,
 			})
+
+			if len(rows) != 1 {
+				return int64(len(rows)), err, func() {}
+			}
+
+			return int64(len(rows)), err, func() { helpers.InvalidateCachedGrades(ctx, rdb, teacher_scope.SchoolID, rows[0]) }
 		})
 }
 
@@ -292,8 +291,8 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req EditGradeRequest) bool {
 			return req.GradeID <= 0 || req.TermID <= 0 || req.LessonGradeID <= 0 || req.Value <= 0 || req.Date <= 0 || (req.HasNote && req.Note == "")
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditGradeRequest) (int64, error) {
-			return queries.TeacherEditGrade(ctx, db_queries.TeacherEditGradeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditGradeRequest) (int64, error, func()) {
+			rows, err := queries.TeacherEditGrade(ctx, db_queries.TeacherEditGradeParams{
 				ID:            req.GradeID,
 				TermID:        req.TermID,
 				LessonGradeID: req.LessonGradeID,
@@ -303,6 +302,12 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				TeacherID:     teacher_scope.TeacherID,
 				SchoolID:      teacher_scope.SchoolID,
 			})
+
+			if len(rows) != 1 {
+				return int64(len(rows)), err, func() {}
+			}
+
+			return int64(len(rows)), err, func() { helpers.InvalidateCachedGrades(ctx, rdb, teacher_scope.SchoolID, rows[0]) }
 		})
 }
 
@@ -312,8 +317,8 @@ func EditFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req EditFinalGradeRequest) bool {
 			return req.FinalGradeID <= 0 || req.TermID <= 0 || req.Value <= 0 || req.ClassSubjectsID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditFinalGradeRequest) (int64, error) {
-			return queries.TeacherEditFinalGrade(ctx, db_queries.TeacherEditFinalGradeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditFinalGradeRequest) (int64, error, func()) {
+			rows, err := queries.TeacherEditFinalGrade(ctx, db_queries.TeacherEditFinalGradeParams{
 				ID:              req.FinalGradeID,
 				ClassSubjectsID: req.ClassSubjectsID,
 				TermID:          req.TermID,
@@ -321,6 +326,12 @@ func EditFinalGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       teacher_scope.TeacherID,
 			})
+
+			if len(rows) != 1 {
+				return int64(len(rows)), err, func() {}
+			}
+
+			return int64(len(rows)), err, func() { helpers.InvalidateCachedFinalGrades(ctx, rdb, teacher_scope.SchoolID, rows[0]) }
 		})
 }
 
@@ -330,8 +341,8 @@ func AddLessonGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req AddLessonGradeRequest) bool {
 			return req.ActualDate <= 0 || req.Title == "" || req.Type <= 0 || req.ClassSubjectsID <= 0 || req.GroupID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddLessonGradeRequest) (int64, error) {
-			return queries.TeacherAddLessonGrade(ctx, db_queries.TeacherAddLessonGradeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddLessonGradeRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherAddLessonGrade(ctx, db_queries.TeacherAddLessonGradeParams{
 				ActualDate:      req.ActualDate,
 				Title:           req.Title,
 				Description:     req.Description,
@@ -341,6 +352,8 @@ func AddLessonGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       teacher_scope.TeacherID,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedTeacherLessonGrades(ctx, rdb, teacher_scope) }
 		},
 	)
 }
@@ -351,8 +364,8 @@ func EditLessonGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req EditLessonGradeRequest) bool {
 			return req.Title == "" || req.Type <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditLessonGradeRequest) (int64, error) {
-			return queries.TeacherEditLessonGrade(ctx, db_queries.TeacherEditLessonGradeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditLessonGradeRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherEditLessonGrade(ctx, db_queries.TeacherEditLessonGradeParams{
 				ID:          req.ID,
 				Title:       req.Title,
 				Description: req.Description,
@@ -360,6 +373,8 @@ func EditLessonGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				SchoolID:    teacher_scope.SchoolID,
 				TeacherID:   teacher_scope.TeacherID,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedTeacherLessonGrades(ctx, rdb, teacher_scope) }
 		},
 	)
 }
@@ -370,12 +385,14 @@ func RemoveLessonGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		func(req RemoveLessonGradeRequest) bool {
 			return req.ID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveLessonGradeRequest) (int64, error) {
-			return queries.TeacherDeleteLessonGrade(ctx, db_queries.TeacherDeleteLessonGradeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveLessonGradeRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherDeleteLessonGrade(ctx, db_queries.TeacherDeleteLessonGradeParams{
 				ID:        req.ID,
 				SchoolID:  teacher_scope.SchoolID,
 				TeacherID: teacher_scope.TeacherID,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedTeacherLessonGrades(ctx, rdb, teacher_scope) }
 		},
 	)
 }

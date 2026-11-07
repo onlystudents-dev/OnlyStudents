@@ -211,7 +211,7 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		func(req CreateBaseScheduleLessonRequest) bool {
 			return req.TeacherId <= 0 || req.DayOfWeek <= 0 || req.LessonNumber <= 0 || req.RoomId <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || (req.IsCustomSubject == false && req.SubjectId <= 0)
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateBaseScheduleLessonRequest) (int64, error) {
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateBaseScheduleLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
 			var subject_id pgtype.Int4
 
@@ -223,7 +223,7 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
 			}
 
-			return queries.CreateBaseSchedule(c.Context(), db_queries.CreateBaseScheduleParams{
+			row_count, err := queries.CreateBaseSchedule(c.Context(), db_queries.CreateBaseScheduleParams{
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       req.TeacherId,
 				RoomID:          req.RoomId,
@@ -233,6 +233,8 @@ func CreateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 				CustomSubjectID: custom_subject_id,
 				SubjectID:       subject_id,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedBaseScheduleGroup(ctx, rdb, teacher_scope.SchoolID, req.GroupId) }
 		})
 }
 
@@ -241,11 +243,17 @@ func DeleteBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		func(req DeleteBaseScheduleLessonRequest) bool {
 			return req.Id <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteBaseScheduleLessonRequest) (int64, error) {
-			return queries.DeleteBaseSchedule(c.Context(), db_queries.DeleteBaseScheduleParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteBaseScheduleLessonRequest) (int64, error, func()) {
+			rows, err := queries.DeleteBaseSchedule(c.Context(), db_queries.DeleteBaseScheduleParams{
 				ID:       req.Id,
 				SchoolID: teacher_scope.SchoolID,
 			})
+
+			if len(rows) != 1 {
+				return int64(len(rows)), err, func() {}
+			}
+
+			return int64(len(rows)), err, func() { helpers.InvalidateCachedBaseScheduleGroup(ctx, rdb, teacher_scope.SchoolID, rows[0]) }
 		})
 }
 
@@ -254,7 +262,7 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		func(req EditBaseScheduleLessonRequest) bool {
 			return req.Id <= 0 || req.TeacherId <= 0 || req.DayOfWeek <= 0 || req.LessonNumber <= 0 || req.RoomId <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || (req.IsCustomSubject == false && req.SubjectId <= 0)
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditBaseScheduleLessonRequest) (int64, error) {
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditBaseScheduleLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
 			var subject_id pgtype.Int4
 
@@ -266,7 +274,7 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
 			}
 
-			return queries.UpdateBaseSchedule(c.Context(), db_queries.UpdateBaseScheduleParams{
+			row_count, err := queries.UpdateBaseSchedule(c.Context(), db_queries.UpdateBaseScheduleParams{
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       req.TeacherId,
 				RoomID:          req.RoomId,
@@ -277,6 +285,8 @@ func UpdateBaseSchedule(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 				ID:              req.Id,
 				SubjectID:       subject_id,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedBaseScheduleGroup(ctx, rdb, teacher_scope.SchoolID, req.GroupId) }
 		})
 }
 
@@ -332,7 +342,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		func(req CreateRealTimeLessonRequest) bool {
 			return req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || req.ActualDate <= 0 || req.LessonNumber <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateRealTimeLessonRequest) (int64, error) {
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateRealTimeLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
 			var subject_id pgtype.Int4
 
@@ -344,7 +354,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
 			}
 
-			return queries.CreateRealTimeLesson(c.Context(), db_queries.CreateRealTimeLessonParams{
+			row_count, err := queries.CreateRealTimeLesson(c.Context(), db_queries.CreateRealTimeLessonParams{
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       req.TeacherId,
 				RoomID:          req.RoomId,
@@ -356,6 +366,8 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 				ActualDate:      pgtype.Date{Time: time.Unix(req.ActualDate, 0), Valid: true},
 				LessonNum:       req.LessonNumber,
 			})
+
+			return row_count, err, func() {}
 		})
 }
 
@@ -364,7 +376,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		func(req UpdateRealTimeLessonRequest) bool {
 			return req.Id <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || req.ActualDate <= 0 || req.LessonNumber <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req UpdateRealTimeLessonRequest) (int64, error) {
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req UpdateRealTimeLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
 			var subject_id pgtype.Int4
 
@@ -376,7 +388,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
 			}
 
-			return queries.UpdateRealTimeLesson(c.Context(), db_queries.UpdateRealTimeLessonParams{
+			row_count, err := queries.UpdateRealTimeLesson(c.Context(), db_queries.UpdateRealTimeLessonParams{
 				ID:              req.Id,
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       req.TeacherId,
@@ -389,6 +401,8 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 				ActualDate:      pgtype.Date{Time: time.Unix(req.ActualDate, 0), Valid: true},
 				LessonNum:       req.LessonNumber,
 			})
+
+			return row_count, err, func() {}
 		})
 }
 
@@ -397,10 +411,12 @@ func DeleteRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		func(req DeleteRealTimeLessonRequest) bool {
 			return req.Id <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteRealTimeLessonRequest) (int64, error) {
-			return queries.DeleteRealTimeLesson(c.Context(), db_queries.DeleteRealTimeLessonParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteRealTimeLessonRequest) (int64, error, func()) {
+			row_count, err := queries.DeleteRealTimeLesson(c.Context(), db_queries.DeleteRealTimeLessonParams{
 				SchoolID: teacher_scope.SchoolID,
 				ID:       req.Id,
 			})
+
+			return row_count, err, func() {}
 		})
 }

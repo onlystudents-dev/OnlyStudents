@@ -669,16 +669,16 @@ func (q *Queries) GetTeacherLessonGradesBySubject(ctx context.Context, arg GetTe
 	return items, nil
 }
 
-const teacherAddFinalGrade = `-- name: TeacherAddFinalGrade :execrows
+const teacherAddFinalGrade = `-- name: TeacherAddFinalGrade :many
 INSERT INTO final_grades (student_id, class_subjects_id, term_id, teacher_id, value)
-SELECT ss.student_id, cs.id, $1, $2, $3
+SELECT ss.student_id AS student_id, cs.id, $1, $2, $3
 FROM class_subjects cs
          JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
 WHERE cs.id = $4
   AND cs.school_id = $5
   AND cs.teacher_id = $2
   AND ss.student_id = $6
-  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $1 AND sy.school_id = $5)
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $1 AND sy.school_id = $5) RETURNING student_id
 `
 
 type TeacherAddFinalGradeParams struct {
@@ -690,8 +690,8 @@ type TeacherAddFinalGradeParams struct {
 	StudentID       int32
 }
 
-func (q *Queries) TeacherAddFinalGrade(ctx context.Context, arg TeacherAddFinalGradeParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherAddFinalGrade,
+func (q *Queries) TeacherAddFinalGrade(ctx context.Context, arg TeacherAddFinalGradeParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherAddFinalGrade,
 		arg.TermID,
 		arg.TeacherID,
 		arg.Value,
@@ -700,14 +700,26 @@ func (q *Queries) TeacherAddFinalGrade(ctx context.Context, arg TeacherAddFinalG
 		arg.StudentID,
 	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var student_id int32
+		if err := rows.Scan(&student_id); err != nil {
+			return nil, err
+		}
+		items = append(items, student_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-const teacherAddGrade = `-- name: TeacherAddGrade :execrows
+const teacherAddGrade = `-- name: TeacherAddGrade :many
 INSERT INTO grades (student_id, teacher_id, term_id, lesson_grade_id, value, date, note)
-SELECT ss.student_id, $1, $2, lg.id, $3, $4, $5
+SELECT ss.student_id AS student_id, $1, $2, lg.id, $3, $4, $5
 FROM class_subjects cs
          JOIN student_school ss ON ss.class_id = cs.class_id AND ss.school_id = cs.school_id
          JOIN lesson_grades lg ON lg.id = $6 AND lg.class_subjects_id = cs.id
@@ -716,7 +728,7 @@ WHERE cs.id = lg.class_subjects_id
   AND cs.teacher_id = $1
   AND ss.student_id = $8
   AND EXISTS (SELECT 1 FROM grade_types gt WHERE gt.id = lg.type AND gt.school_id = $7)
-  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $2 AND sy.school_id = $7)
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $2 AND sy.school_id = $7) RETURNING student_id
 `
 
 type TeacherAddGradeParams struct {
@@ -730,8 +742,8 @@ type TeacherAddGradeParams struct {
 	StudentID     int32
 }
 
-func (q *Queries) TeacherAddGrade(ctx context.Context, arg TeacherAddGradeParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherAddGrade,
+func (q *Queries) TeacherAddGrade(ctx context.Context, arg TeacherAddGradeParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherAddGrade,
 		arg.TeacherID,
 		arg.TermID,
 		arg.Value,
@@ -742,9 +754,21 @@ func (q *Queries) TeacherAddGrade(ctx context.Context, arg TeacherAddGradeParams
 		arg.StudentID,
 	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var student_id int32
+		if err := rows.Scan(&student_id); err != nil {
+			return nil, err
+		}
+		items = append(items, student_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const teacherAddLessonGrade = `-- name: TeacherAddLessonGrade :execrows
@@ -794,7 +818,7 @@ func (q *Queries) TeacherAddLessonGrade(ctx context.Context, arg TeacherAddLesso
 	return result.RowsAffected(), nil
 }
 
-const teacherDeleteFinalGrade = `-- name: TeacherDeleteFinalGrade :execrows
+const teacherDeleteFinalGrade = `-- name: TeacherDeleteFinalGrade :many
 DELETE FROM final_grades fg
 WHERE fg.id = $1
   AND EXISTS (
@@ -803,7 +827,7 @@ WHERE fg.id = $1
     WHERE cs.id = fg.class_subjects_id
       AND cs.school_id = $2
       AND cs.teacher_id = $3
-)
+)  RETURNING student_id
 `
 
 type TeacherDeleteFinalGradeParams struct {
@@ -812,15 +836,27 @@ type TeacherDeleteFinalGradeParams struct {
 	TeacherID int32
 }
 
-func (q *Queries) TeacherDeleteFinalGrade(ctx context.Context, arg TeacherDeleteFinalGradeParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherDeleteFinalGrade, arg.ID, arg.SchoolID, arg.TeacherID)
+func (q *Queries) TeacherDeleteFinalGrade(ctx context.Context, arg TeacherDeleteFinalGradeParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherDeleteFinalGrade, arg.ID, arg.SchoolID, arg.TeacherID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var student_id int32
+		if err := rows.Scan(&student_id); err != nil {
+			return nil, err
+		}
+		items = append(items, student_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-const teacherDeleteGrade = `-- name: TeacherDeleteGrade :execrows
+const teacherDeleteGrade = `-- name: TeacherDeleteGrade :many
 DELETE FROM grades g
 WHERE g.id = $1
   AND EXISTS (
@@ -830,7 +866,7 @@ WHERE g.id = $1
     WHERE lg.id = g.lesson_grade_id
       AND cs.school_id = $2
       AND cs.teacher_id = $3
-)
+) RETURNING student_id
 `
 
 type TeacherDeleteGradeParams struct {
@@ -839,12 +875,24 @@ type TeacherDeleteGradeParams struct {
 	TeacherID int32
 }
 
-func (q *Queries) TeacherDeleteGrade(ctx context.Context, arg TeacherDeleteGradeParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherDeleteGrade, arg.ID, arg.SchoolID, arg.TeacherID)
+func (q *Queries) TeacherDeleteGrade(ctx context.Context, arg TeacherDeleteGradeParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherDeleteGrade, arg.ID, arg.SchoolID, arg.TeacherID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var student_id int32
+		if err := rows.Scan(&student_id); err != nil {
+			return nil, err
+		}
+		items = append(items, student_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const teacherDeleteLessonGrade = `-- name: TeacherDeleteLessonGrade :execrows
@@ -873,7 +921,7 @@ func (q *Queries) TeacherDeleteLessonGrade(ctx context.Context, arg TeacherDelet
 	return result.RowsAffected(), nil
 }
 
-const teacherEditFinalGrade = `-- name: TeacherEditFinalGrade :execrows
+const teacherEditFinalGrade = `-- name: TeacherEditFinalGrade :many
 UPDATE final_grades fg
 SET class_subjects_id = $2,
     term_id = $3,
@@ -893,7 +941,7 @@ WHERE fg.id = $1
       AND cs.school_id = $5
       AND cs.teacher_id = $6
 )
-  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $5)
+  AND EXISTS (SELECT 1 FROM terms t JOIN school_years sy ON sy.id = t.school_year_id WHERE t.id = $3 AND sy.school_id = $5) RETURNING student_id
 `
 
 type TeacherEditFinalGradeParams struct {
@@ -905,8 +953,8 @@ type TeacherEditFinalGradeParams struct {
 	TeacherID       int32
 }
 
-func (q *Queries) TeacherEditFinalGrade(ctx context.Context, arg TeacherEditFinalGradeParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherEditFinalGrade,
+func (q *Queries) TeacherEditFinalGrade(ctx context.Context, arg TeacherEditFinalGradeParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherEditFinalGrade,
 		arg.ID,
 		arg.ClassSubjectsID,
 		arg.TermID,
@@ -915,12 +963,24 @@ func (q *Queries) TeacherEditFinalGrade(ctx context.Context, arg TeacherEditFina
 		arg.TeacherID,
 	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var student_id int32
+		if err := rows.Scan(&student_id); err != nil {
+			return nil, err
+		}
+		items = append(items, student_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-const teacherEditGrade = `-- name: TeacherEditGrade :execrows
+const teacherEditGrade = `-- name: TeacherEditGrade :many
 UPDATE grades g
 SET term_id = $2,
     lesson_grade_id = $3,
@@ -953,6 +1013,7 @@ WHERE g.id = $1
     WHERE t.id = $2
       AND sy.school_id = $7
 )
+RETURNING student_id
 `
 
 type TeacherEditGradeParams struct {
@@ -966,8 +1027,8 @@ type TeacherEditGradeParams struct {
 	TeacherID     int32
 }
 
-func (q *Queries) TeacherEditGrade(ctx context.Context, arg TeacherEditGradeParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherEditGrade,
+func (q *Queries) TeacherEditGrade(ctx context.Context, arg TeacherEditGradeParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherEditGrade,
 		arg.ID,
 		arg.TermID,
 		arg.LessonGradeID,
@@ -978,9 +1039,21 @@ func (q *Queries) TeacherEditGrade(ctx context.Context, arg TeacherEditGradePara
 		arg.TeacherID,
 	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var student_id int32
+		if err := rows.Scan(&student_id); err != nil {
+			return nil, err
+		}
+		items = append(items, student_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const teacherEditLessonGrade = `-- name: TeacherEditLessonGrade :execrows

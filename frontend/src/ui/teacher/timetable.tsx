@@ -293,7 +293,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 setDefaultGrades(gradeS)
             })
         })
-        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => setAbsences(await absences_response.json() as Absence[]))
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}&date=${lesson.actual_date}`).then(async absences_response => setAbsences(await absences_response.json() as Absence[]))
         void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
         if (lesson.has_homework_id) void fetchWithSchool(fetchMe, `/api/v1/me/teacher/homework/get?homework_id=${lesson.homework_id}`).then(async response => setHomework(await response.json() as Homework))
     }, [fetchMe, group, lesson.actual_date, lesson.has_homework_id, lesson.homework_id, lesson.subject_id])
