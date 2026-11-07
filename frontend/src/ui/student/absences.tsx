@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 import type {FeatureProps, FetchMe} from "../../types/props.ts";
 
 async function submitAbsenceReason(note: string, fileUUID: string, absence: Absence, fetchMe: FetchMe): Promise<void> {
-    await fetchWithSchool(fetchMe, "/api/v1/me/student/absence/submit_reason", {
+    await fetchWithSchool(fetchMe, "/api/v1/me/student/absences/submit_reason", {
         method: "POST", body: JSON.stringify({
           "file_uuid": fileUUID,
           "absence_id": absence.id,
