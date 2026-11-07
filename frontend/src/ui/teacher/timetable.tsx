@@ -190,14 +190,14 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
 
     const ChangeAbsence = (student_id: number, absence_type: "present" | "absent" | "tardy", tardy_minutes: number) => {
         setAbsencesChanges(prev => {
-            const withoutStudent = prev.filter((absence_change) => {return absence_change.student_id != student_id})
+            const withoutStudent = prev.filter(absence_change => absence_change.student_id != student_id)
             const change = AbsenceChangeFor(student_id, absence_type, tardy_minutes)
             return change ? [...withoutStudent, change] : withoutStudent
         })
     };
 
     const getTardyValue = (student_id: number): number => {
-        const change = absencesChanges.find((absence_change) => {return absence_change.student_id === student_id})
+        const change = absencesChanges.find(absence_change => absence_change.student_id === student_id)
 
         if (change) {
             switch (change.type) {
@@ -210,7 +210,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             }
         }
 
-        const absence = absences.find((absence) => {return absence.student_id === student_id})
+        const absence = absences.find(absence => absence.student_id === student_id)
 
         if (absence) {
             return absence.tardy_minutes
@@ -226,7 +226,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             return change.type === "DELETE" ? "present" : change.absence_type
         }
 
-        const absence = absences.find((absence) => {return absence.student_id === student_id})
+        const absence = absences.find(absence => absence.student_id === student_id)
 
         if (absence?.type === "absent") return "absent"
         if (absence?.type === "tardy") return "tardy"
@@ -321,21 +321,23 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                             {students.map(student => (
                                                 <div key={student.id} className="flex flex-row justify-between items-center w-full hover:bg-(--hover-color) transition-[background-color_400ms_ease-in-out] hover:transition-[background-color_400ms_ease-in-out] p-2 rounded-lg">
                                                     <p><FontAwesomeIcon icon={faUser} /> {student.first_name} {student.last_name}</p>
-                                                    <div className="flex flex-row items-center h-full justify-end rounded-lg border-2 border-(--border-color) relative">
-                                                        <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "present", 0)} ref={presentRef}>
-                                                            {getKey("PRESENT")}
-                                                        </button>
-                                                        <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "absent", 0)} ref={absentRef}>
-                                                            {getKey("ABSENT")}
-                                                        </button>
-                                                        <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "tardy", getTardyValue(student.id))} ref={tardyRef}>
-                                                            {getKey("TARDY")}
-                                                        </button>
+                                                    <div className="flex flex-row gap-2">
                                                         {AbsenceTypeFor(student.id) == "tardy" &&
-                                                            <input className="text-center p-1 cursor-pointer z-1 w-16 rounded-md border border-(--border-color) bg-(--card-color) outline-none [appearance:textfield]"
+                                                            <input className="text-center p-1 cursor-text z-1 w-16 rounded-md border border-(--border-color) bg-(--card-color) outline-none [appearance:textfield]"
                                                                    min={1} max={60} type="number" placeholder={String(getTardyValue(student.id))} onChange={(e) => ChangeAbsence(student.id, "tardy", Number(e.currentTarget.value))} />
                                                         }
-                                                        <div className="bg-(--card-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={AbsencePillStyle(student.id)} />
+                                                        <div className="flex flex-row items-center h-full justify-end rounded-lg border-2 border-(--border-color) relative">
+                                                            <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "present", 0)} ref={presentRef}>
+                                                                {getKey("PRESENT")}
+                                                            </button>
+                                                            <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "absent", 0)} ref={absentRef}>
+                                                                {getKey("ABSENT")}
+                                                            </button>
+                                                            <button className="text-center p-1 cursor-pointer z-1" onClick={() => ChangeAbsence(student.id, "tardy", getTardyValue(student.id))} ref={tardyRef}>
+                                                                {getKey("TARDY")}
+                                                            </button>
+                                                            <div className="bg-(--card-color) absolute top-0 bottom-0 transition-[left_200ms_ease-in-out]" style={AbsencePillStyle(student.id)} />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
