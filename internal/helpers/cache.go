@@ -235,7 +235,7 @@ func CacheOrGetStudentExams(ctx context.Context, rdb *redis.Client, queries db_q
 	}, fmt.Sprintf("tag:exams:%d", scope.SchoolID))
 }
 
-func InvalidateCachedStudentExam(ctx context.Context, rdb *redis.Client, examID int32) {
+func InvalidateCachedStudentExam(ctx context.Context, rdb *redis.Client, examID int64) {
 	key := fmt.Sprintf("exams:%d", examID)
 	rdb.Del(ctx, key)
 }

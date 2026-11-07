@@ -114,7 +114,7 @@ func RemoveExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			})
 
 			return row_count, err, func() {
-				helpers.InvalidateCachedStudentExam(ctx, rdb, int32(req.ExamID))
+				helpers.InvalidateCachedStudentExam(ctx, rdb, req.ExamID)
 				helpers.InvalidateCachedExams(ctx, rdb, teacher_scope.SchoolID)
 			}
 		})
@@ -141,7 +141,7 @@ func EditExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 			})
 
 			return row_count, err, func() {
-				helpers.InvalidateCachedStudentExam(ctx, rdb, int32(req.ExamID))
+				helpers.InvalidateCachedStudentExam(ctx, rdb, req.ExamID)
 				helpers.InvalidateCachedExams(ctx, rdb, teacher_scope.SchoolID)
 			}
 		})
