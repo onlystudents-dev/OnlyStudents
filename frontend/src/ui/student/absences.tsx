@@ -16,27 +16,27 @@ import { toast } from "react-toastify";
 import type {FeatureProps, FetchMe} from "../../types/props.ts";
 
 async function submitAbsenceReason(note: string, fileUUID: string, absence: Absence, fetchMe: FetchMe): Promise<void> {
-  await fetchWithSchool(fetchMe, "/api/v1/me/student/absence/submit_reason", {
-    method: "POST", body: JSON.stringify({
-      "file_uuid": fileUUID,
-      "absence_id": absence.id,
-      "note": note,
-    }),
-    headers: {
-        "Content-Type": "application/json",
-    },
-  }).then(async response => {
-      switch (response.status) {
-          case 200: {
-              location.reload()
-              break
-          }
+    await fetchWithSchool(fetchMe, "/api/v1/me/student/absence/submit_reason", {
+        method: "POST", body: JSON.stringify({
+          "file_uuid": fileUUID,
+          "absence_id": absence.id,
+          "note": note,
+        }),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }).then(async response => {
+        switch (response.status) {
+            case 200: {
+                location.reload()
+                break
+            }
 
-          case 401: break
-          default:
-              toast.error(await fromResponse(response))
-      }
-  })
+            case 401: break
+            default:
+                toast.error(await fromResponse(response))
+        }
+    })
 }
 
 export default function StudentAbsences({ me, fetchMe }: FeatureProps) {
@@ -76,7 +76,7 @@ export default function StudentAbsences({ me, fetchMe }: FeatureProps) {
                                 <Attachment label={getKey("GIVEN_REASON")} missingLabel={getKey("NO_GIVEN_REASON")} attachment={{ ...current, note: current.reason_note }} />
                             </div>
                             <div className="shrink-0 px-6 pb-6 pr-14">
-                              <SubmissionAttachmentInput notePlaceholder={getKey("ABSENCE_REASON_NOTE_EXAMPLE")} label={getKey("ABSENCE_JUSTIFICATION_SUBMIT")} onSubmit={(note: string, fileUUID: string) => void submitAbsenceReason(note, fileUUID, current, fetchMe)} />
+                                <SubmissionAttachmentInput notePlaceholder={getKey("ABSENCE_REASON_NOTE_EXAMPLE")} label={getKey("ABSENCE_JUSTIFICATION_SUBMIT")} onSubmit={(note: string, fileUUID: string) => void submitAbsenceReason(note, fileUUID, current, fetchMe)} />
                             </div>
                         </div>
                     </div>

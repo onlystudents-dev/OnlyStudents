@@ -110,7 +110,7 @@ export default function StudentTimetable({ me, fetchMe }: FeatureProps) {
     return (
         <>
             {loading && <Loading />}
-            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} fetchMe={fetchMe} />
+            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} fetchMe={fetchMe} refresh={() => fetchWeekLessons(weekOffsetRef.current)} />
         </>
     )
 }

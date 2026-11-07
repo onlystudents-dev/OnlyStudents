@@ -4,11 +4,11 @@ import { fromResponse, getKey } from "../util/language";
 import { getFilesConfig, type FilesConfig } from "../auth/config";
 import { fileCategory, KiB } from "../util/files";
 
-type attachmentFile = {
-  file_name: string,
-  file_type: string,
-  file_uuid: string,
-  file_size: number,
+export type attachmentFile = {
+    file_name: string,
+    file_type: string,
+    file_uuid: string,
+    file_size: number,
 }
 
 type FileUploadResponse = {
@@ -37,10 +37,10 @@ async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFi
                 const json = await response.json() as FileUploadResponse
 
                 setFile({
-                  file_name: file.name,
-                  file_type: fileCategory(file),
-                  file_uuid: json.file_uuid,
-                  file_size: file.size,
+                    file_name: file.name,
+                    file_type: fileCategory(file),
+                    file_uuid: json.file_uuid,
+                    file_size: file.size,
                 })
                 setFileUploaded(true)
                 break
@@ -52,7 +52,7 @@ async function FileUpload(setFile: Dispatch<StateUpdater<attachmentFile>>, setFi
         }
     })
 }
-export default function SubmissionAttachmentInput({ notePlaceholder, label, onSubmit }: { notePlaceholder: string, label?: string, onSubmit: (note: string, fileUUID: string) => void } ) {
+export default function SubmissionAttachmentInput({ notePlaceholder, label, onSubmit, onFile, noLine }: { notePlaceholder?: string, label?: string, onSubmit?: (note: string, fileUUID: string) => void, onFile?: (file: attachmentFile) => void, noLine?: boolean } ) {
     const [file, setFile] = useState<attachmentFile>({file_name: "", file_type: "", file_uuid: "", file_size: 0})
     const [fileUploaded, setFileUploaded] = useState(false)
     const [note, setNote] = useState("")
@@ -65,32 +65,30 @@ export default function SubmissionAttachmentInput({ notePlaceholder, label, onSu
 
     return (
         <>
-            <div className="flex flex-col gap-3 border-t border-(--border-color) pt-3">
+            <div className={`flex flex-col gap-3 ${!noLine && "border-t border-(--border-color)"} pt-3`}>
                 <div className="text-xs font-medium tracking-wider opacity-50">{label}</div>
-                <input className="bg-(--hover-color) rounded-lg p-[4px_8px] outline-none" type="text" placeholder={notePlaceholder} onChange={(e) => setNote(e.currentTarget.value)} />
+                {notePlaceholder !== undefined && <input className="bg-(--hover-color) rounded-lg p-[4px_8px] outline-none" type="text" placeholder={notePlaceholder} onChange={(e) => setNote(e.currentTarget.value)} />}
                 <div className="flex flex-row gap-2 relative h-8 p-[4px_8px] rounded-lg bg-(--hover-color)">
                     <input className="p-4 bg-(--hover-color) hover:bg-(--card-color) cursor-pointer rounded-lg absolute inset-0 opacity-0" type="file" accept={config?.allowed_exts.join(",")} onChange={(e) => {
-                        if (e.currentTarget.files) {
-                            const file = e.currentTarget.files[0];
-                            if (file) {
-                                if (previewUrl) URL.revokeObjectURL(previewUrl)
-                                setPreviewUrl(URL.createObjectURL(file))
+                        const filE = e.currentTarget.files?.[0]
+                        if (filE) {
+                            if (previewUrl) URL.revokeObjectURL(previewUrl)
+                            setPreviewUrl(URL.createObjectURL(filE))
 
-                                if (!config) return
+                            if (!config) return
 
-                                void FileUpload(setFile, setFileUploaded, file, config)
-                            }
+                            void FileUpload(setFile, setFileUploaded, filE, config).then(() => onFile && onFile(file))
                         }
                     }} />
                     <p className="absolute inset-0 pointer-events-none p-[4px_8px]">{file.file_name || getKey("NO_FILE_SELECTED")}</p>
                 </div>
 
-                <button type="button" className="rounded-lg bg-(--hover-color) px-4 py-2 text-sm font-medium hover:bg-(--card-color) cursor-pointer" onClick={() => {
+                {onSubmit !== undefined && <button type="button" className="rounded-lg bg-(--hover-color) px-4 py-2 text-sm font-medium hover:bg-(--card-color) cursor-pointer" onClick={() => {
                     if (!fileUploaded && note == "") return
                     onSubmit(note, file.file_uuid)
                 }}>
                     {getKey("SUBMIT")}
-                </button>
+                </button>}
             </div>
         </>
     )

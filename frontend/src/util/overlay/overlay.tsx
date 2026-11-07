@@ -15,7 +15,7 @@ export default function Overlay({ onClick, time = 0, z = 150 }: { onClick?: () =
 
     return (
         <>
-            <div className={`overlay`} style={{ zIndex: z, animation: `fadeIn ${time} ease-in-out` }} onClick={onClick}></div>
+            <div className={`overlay`} style={{ zIndex: z, animation: `fadeIn ${time} ease-in-out` }} onClick={onClick} />
         </>
     )
 }
