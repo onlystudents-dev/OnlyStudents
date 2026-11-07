@@ -220,7 +220,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     }
 
     const AbsenceTypeFor = (student_id: number): "present" | "absent" | "tardy" => {
-        const change = absencesChanges.find((absence_change) => {return absence_change.student_id === student_id})
+        const change = absencesChanges.find(absence_change => absence_change.student_id === student_id)
 
         if (change) {
             return change.type === "DELETE" ? "present" : change.absence_type
@@ -257,23 +257,34 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
     }
 
     useEffect(() => {
-        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/students_in_my_group?group_id=${group?.id}`).then(async students_response => { setStudents(await students_response.json() as Student[])})
-        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => { setAbsences(await absences_response.json() as Absence[])})
-        void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
-        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/grades?actual_date=${lesson.actual_date}&subject_id=${lesson.subject_id}`).then(async response => {
-            const grades = await response.json() as EditingGrade[]
-            let gradeS: Record<number, EditingGrade> = []
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/students_in_my_group?group_id=${group?.id}`).then(async students_response => { const json = await students_response.json() as Student[]; setStudents(json); return json }).then(students => {
+            void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/grades?actual_date=${lesson.actual_date}&subject_id=${lesson.subject_id}`).then(async response => {
+                const grades = await response.json() as EditingGrade[]
+                let gradeS: Record<number, EditingGrade> = []
 
-            for (let grade of grades) {
-                const res = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/grades?lesson_id=${grade.id}`)
-                const json = await res.json() as { student_id: number, value: number }[]
-                grade = { ...grade, grades: Object.fromEntries(json.map(obj => [obj.student_id, obj.value])), new: false }
+                let i = 0
+                for (let grade of grades) {
+                    const res = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/grades?lesson_id=${grade.id}`)
+                    const json = await res.json() as { student_id: number, value: number }[]
+                    let gradES = Object.fromEntries(json.map(obj => [obj.student_id, obj.value]))
+                    const keys = Object.keys(gradES)
+                    students.forEach(student => {
+                        if (!keys.includes(String(student.id))) {
+                            gradES = { ...gradES, [student.id]: 0 }
+                        }
+                    })
+                    grade = { ...grade, grades: gradES, new: false }
 
-                gradeS = { ...gradeS, [grade.id]: grade }
-            }
+                    gradeS = { ...gradeS, [i]: grade }
+                    i++
+                }
 
-            setGrades(gradeS)
+                setGrades(gradeS)
+            })
         })
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => setAbsences(await absences_response.json() as Absence[]))
+        void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
+
     }, [fetchMe, group, lesson.actual_date, lesson.subject_id])
 
     useLayoutEffect(() => {
@@ -322,7 +333,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                 <div key={student.id} className="flex flex-row justify-between items-center w-full hover:bg-(--hover-color) transition-[background-color_400ms_ease-in-out] hover:transition-[background-color_400ms_ease-in-out] p-2 rounded-lg">
                                                     <p><FontAwesomeIcon icon={faUser} /> {student.first_name} {student.last_name}</p>
                                                     <div className="flex flex-row gap-2">
-                                                        {AbsenceTypeFor(student.id) == "tardy" &&
+                                                        {AbsenceTypeFor(student.id) === "tardy" &&
                                                             <input className="text-center p-1 cursor-text z-1 w-16 rounded-md border border-(--border-color) bg-(--card-color) outline-none [appearance:textfield]"
                                                                    min={1} max={60} type="number" placeholder={String(getTardyValue(student.id))} onChange={(e) => ChangeAbsence(student.id, "tardy", Number(e.currentTarget.value))} />
                                                         }
@@ -345,7 +356,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                     </>
                                 )
                             case "grade":
-                                if (editingGrade) {
+                                if (typeof editingGrade === "number") {
                                     const eGrade = grades[editingGrade]
                                     if (!eGrade) return
                                     const gradeTypesOptions = gradeTypes.map((type, index) => ({ label: type.name, value: index }))
@@ -410,7 +421,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                 return (
                                     <>
                                         <div className="flex flex-wrap gap-4">
-                                            {Object.entries(grades).map(([id, grade]) => {
+                                            {Object.entries(grades).map(([i, grade]) => {
                                                 const gradeS = Object.values(grade.grades)
                                                 const weight = gradeTypes[grade.type]?.weight || 1
                                                 const average = gradeS.length
@@ -421,7 +432,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                 const rounded = average.toFixed(2)
 
                                                 return (
-                                                    <div className="border-(--txt-color) w-80 h-40 flex flex-row justify-between p-4 border-2 rounded-2xl cursor-pointer" onClick={() => setEditingGrade(Number(id))}>
+                                                    <div className="border-(--txt-color) w-80 h-40 flex flex-row justify-between p-4 border-2 rounded-2xl cursor-pointer" onClick={() => setEditingGrade(Number(i))}>
                                                         <div className="flex flex-col">
                                                             <p className="text-3xl rubik">{grade.title}</p>
                                                             <p className="opacity-70">{Object.values(grade.grades).filter(grade => grade !== 0).length}</p>
@@ -436,7 +447,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                                 )
                                             })}
                                             <div className="border-(--txt-color) w-80 h-40 flex justify-center items-center border-2 rounded-2xl cursor-pointer text-5xl" onClick={() => {
-                                                const id = Math.max(0, ...Object.keys(grades).map(grade => Number(grade))) + 1 // stupid js forces it to be string
+                                                const id = Math.max(-1, ...Object.keys(grades).map(grade => Number(grade))) + 1 // stupid js forces it to be string
                                                 const grade: EditingGrade = { id: 0, title: "", description: "", type: 0, class_subjects_id: 0, actual_date: 0, grades: Object.fromEntries(students.map(student => [student.id, 0])), new: true }
                                                 setGrades({ ...grades, [id]: grade })
                                                 setEditingGrade(id)
@@ -473,7 +484,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
         })
 
         if (!response.ok) {
-            void toast.error(await fromResponse(response))
+            toast.error(await fromResponse(response))
             return
         }
 
@@ -494,18 +505,22 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             })
 
             if (!response.ok) {
-                void toast.error(await fromResponse(response))
+                toast.error(await fromResponse(response))
                 return
             }
+        }
 
-            const lesson_grade_response = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/grades?actual_date=${lesson.actual_date}&subject_id=${lesson.subject_id}`)
-            if (!lesson_grade_response.ok) {
-                void toast.error(await fromResponse(lesson_grade_response))
-                return
-            }
+        const lesson_grade_response = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/grades?actual_date=${lesson.actual_date}&subject_id=${lesson.subject_id}`)
+        if (!lesson_grade_response.ok) {
+            toast.error(await fromResponse(lesson_grade_response))
+            return
+        }
 
-            const json = (await response.json() as {id: number}[])[0]
-            if (!json) return
+        const json = (await response.json() as { id: number }[])
+        let i = 0
+        for (const grade of Object.values(grades)) {
+            const id = json[i]?.id
+            if (id === undefined) continue
 
             for (const [student_id, student_grade] of Object.entries(grade.grades)) {
                 const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades", {
@@ -514,7 +529,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        lesson_grade_id: json.id,
+                        lesson_grade_id: id,
                         term_id: lesson.term_id,
                         date: lesson.actual_date,
                         value: student_grade,
@@ -524,10 +539,11 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                     })
                 })
                 if (!response.ok) {
-                    void toast.error(await fromResponse(response))
+                    toast.error(await fromResponse(response))
                     return
                 }
             }
+            i++
         }
 
         toast.success("Successfully Saved!")
