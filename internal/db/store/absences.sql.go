@@ -375,7 +375,7 @@ func (q *Queries) TeacherAddAbsence(ctx context.Context, arg TeacherAddAbsencePa
 	return result.RowsAffected(), nil
 }
 
-const teacherDeleteAbsence = `-- name: TeacherDeleteAbsence :execrows
+const teacherDeleteAbsence = `-- name: TeacherDeleteAbsence :many
 DELETE FROM absences a
 WHERE a.id = $1
   AND EXISTS (
@@ -384,7 +384,7 @@ WHERE a.id = $1
       WHERE cs.id = a.class_subjects_id
         AND cs.school_id = $2
         AND cs.teacher_id = $3
-  )
+  ) RETURNING student_id
 `
 
 type TeacherDeleteAbsenceParams struct {
@@ -393,15 +393,27 @@ type TeacherDeleteAbsenceParams struct {
 	TeacherID int32
 }
 
-func (q *Queries) TeacherDeleteAbsence(ctx context.Context, arg TeacherDeleteAbsenceParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherDeleteAbsence, arg.ID, arg.SchoolID, arg.TeacherID)
+func (q *Queries) TeacherDeleteAbsence(ctx context.Context, arg TeacherDeleteAbsenceParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherDeleteAbsence, arg.ID, arg.SchoolID, arg.TeacherID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var student_id int32
+		if err := rows.Scan(&student_id); err != nil {
+			return nil, err
+		}
+		items = append(items, student_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-const teacherEditAbsence = `-- name: TeacherEditAbsence :execrows
+const teacherEditAbsence = `-- name: TeacherEditAbsence :many
 UPDATE absences a
 SET class_subjects_id = $2,
     date = $3,
@@ -422,7 +434,7 @@ WHERE a.id = $1
       WHERE cs.id = $2
         AND cs.school_id = $6
         AND cs.teacher_id = $7
-  )
+  ) RETURNING student_id
 `
 
 type TeacherEditAbsenceParams struct {
@@ -435,8 +447,8 @@ type TeacherEditAbsenceParams struct {
 	TeacherID       int32
 }
 
-func (q *Queries) TeacherEditAbsence(ctx context.Context, arg TeacherEditAbsenceParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherEditAbsence,
+func (q *Queries) TeacherEditAbsence(ctx context.Context, arg TeacherEditAbsenceParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherEditAbsence,
 		arg.ID,
 		arg.ClassSubjectsID,
 		arg.Date,
@@ -446,9 +458,21 @@ func (q *Queries) TeacherEditAbsence(ctx context.Context, arg TeacherEditAbsence
 		arg.TeacherID,
 	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var student_id int32
+		if err := rows.Scan(&student_id); err != nil {
+			return nil, err
+		}
+		items = append(items, student_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const teacherVerifyAbsence = `-- name: TeacherVerifyAbsence :execrows

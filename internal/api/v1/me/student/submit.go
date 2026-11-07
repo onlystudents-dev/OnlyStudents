@@ -38,15 +38,21 @@ func SubmitHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				return false
 			}
 		},
-		func(ctx context.Context, school_id int32, account_id int32, queries *db_queries.Queries, req SubmitHomeworkRequest) (int64, error) {
+		func(ctx context.Context, school_id int32, account_id int32, queries *db_queries.Queries, req SubmitHomeworkRequest) (int64, error, func()) {
 			file_uuid, err := uuid.Parse(req.FileUUID)
-			return queries.StudentUpsertHomeworkSubmission(c.Context(), db_queries.StudentUpsertHomeworkSubmissionParams{
+			row_count, err := queries.StudentUpsertHomeworkSubmission(c.Context(), db_queries.StudentUpsertHomeworkSubmissionParams{
 				HomeworkID: req.HomeworkID,
 				StudentID:  account_id,
 				SchoolID:   school_id,
 				Note:       pgtype.Text{String: req.Note, Valid: req.Note != ""},
 				FileUuid:   pgtype.UUID{Bytes: file_uuid, Valid: err == nil},
 			})
+
+			return row_count, err, func() {
+				helpers.InvalidateCachedTeacherHomeworkSubmissions(ctx, rdb, req.HomeworkID, school_id)
+				helpers.InvalidateCachedTeacherUngradedHomeworkSubmissionsForSchool(ctx, rdb, school_id)
+				helpers.InvalidateCachedStudentHomework(ctx, rdb, school_id, account_id, int64(req.HomeworkID))
+			}
 		})
 }
 
@@ -64,14 +70,19 @@ func SubmitAbsenceReason(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 				return false
 			}
 		},
-		func(ctx context.Context, school_id int32, account_id int32, queries *db_queries.Queries, req SubmitAbsenceReasonRequest) (int64, error) {
+		func(ctx context.Context, school_id int32, account_id int32, queries *db_queries.Queries, req SubmitAbsenceReasonRequest) (int64, error, func()) {
 			file_uuid, err := uuid.Parse(req.FileUUID)
-			return queries.StudentUpsertAbsenceReason(c.Context(), db_queries.StudentUpsertAbsenceReasonParams{
+			row_count, err := queries.StudentUpsertAbsenceReason(c.Context(), db_queries.StudentUpsertAbsenceReasonParams{
 				AbsenceID: req.AbsenceID,
 				StudentID: account_id,
 				SchoolID:  school_id,
 				Note:      pgtype.Text{String: req.Note, Valid: req.Note != ""},
 				FileUuid:  pgtype.UUID{Bytes: file_uuid, Valid: err == nil},
 			})
+
+			return row_count, err, func() {
+				helpers.InvalidateCachedStudentAbsences(ctx, rdb, school_id, account_id)
+				helpers.InvalidateCachedTeacherAbsencesByLesson(ctx, rdb, school_id)
+			}
 		})
 }

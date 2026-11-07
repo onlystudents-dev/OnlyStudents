@@ -60,16 +60,16 @@ func CreateLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 		func(req CreateLessonTimeRequest) bool {
 			return req.TypeID <= 0 || req.LessonNumber <= 0 || req.Start <= 0 || req.End == 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateLessonTimeRequest) (int64, error) {
-			params := db_queries.CreateLessonTimeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateLessonTimeRequest) (int64, error, func()) {
+			row_count, err := queries.CreateLessonTime(c.Context(), db_queries.CreateLessonTimeParams{
 				SchoolID:     int32(teacher_scope.SchoolID),
 				TypeID:       req.TypeID,
 				LessonNumber: pgtype.Int4{Int32: req.LessonNumber, Valid: true},
 				AtStart:      pgtype.Time{Microseconds: req.Start * 1000000, Valid: true},
 				AtEnd:        pgtype.Time{Microseconds: req.End * 1000000, Valid: true},
-			}
+			})
 
-			return queries.CreateLessonTime(c.Context(), params)
+			return row_count, err, func() { helpers.InvalidateCachedLessonTime(ctx, rdb, req.TypeID, teacher_scope.SchoolID) }
 		})
 }
 
@@ -78,11 +78,13 @@ func DeleteLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error 
 		func(req DeleteLessonTimeRequest) bool {
 			return req.Id <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteLessonTimeRequest) (int64, error) {
-			return queries.DeleteLessonTime(c.Context(), db_queries.DeleteLessonTimeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteLessonTimeRequest) (int64, error, func()) {
+			row_count, err := queries.DeleteLessonTime(c.Context(), db_queries.DeleteLessonTimeParams{
 				SchoolID: teacher_scope.SchoolID,
 				ID:       req.Id,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedLessonTime(ctx, rdb, req.Id, teacher_scope.SchoolID) }
 		})
 }
 
@@ -91,14 +93,16 @@ func EditLessonTime(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req EditLessonTimeRequest) bool {
 			return req.Id <= 0 || req.LessonNumber <= 0 || req.Start <= 0 || req.End == 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditLessonTimeRequest) (int64, error) {
-			return queries.EditLessonTime(c.Context(), db_queries.EditLessonTimeParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditLessonTimeRequest) (int64, error, func()) {
+			row_count, err := queries.EditLessonTime(c.Context(), db_queries.EditLessonTimeParams{
 				SchoolID:     int32(teacher_scope.SchoolID),
 				ID:           req.Id,
 				LessonNumber: pgtype.Int4{Int32: req.LessonNumber, Valid: true},
 				AtStart:      pgtype.Time{Microseconds: req.Start * 1000000, Valid: true},
 				AtEnd:        pgtype.Time{Microseconds: req.End * 1000000, Valid: true},
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedLessonTime(ctx, rdb, req.Id, teacher_scope.SchoolID) }
 		})
 }
 

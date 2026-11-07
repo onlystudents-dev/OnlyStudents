@@ -87,7 +87,7 @@ func StudentModify[request_type any](
 	pool *pgxpool.Pool,
 	rdb *redis.Client,
 	request_check_func func(request_type) bool,
-	query_func func(context.Context, int32, int32, *db_queries.Queries, request_type) (int64, error),
+	query_func func(context.Context, int32, int32, *db_queries.Queries, request_type) (int64, error, func()),
 ) error {
 	var req request_type
 
@@ -122,10 +122,11 @@ func StudentModify[request_type any](
 
 	var rows_affected int64
 	var err error
+	var invalidation_func func()
 
 	switch session_data.Role {
 	case "student", "guardian":
-		rows_affected, err = query_func(c.Context(), me_scope.SchoolID, me_scope.StudentID, queries, req)
+		rows_affected, err, invalidation_func = query_func(c.Context(), me_scope.SchoolID, me_scope.StudentID, queries, req)
 	default:
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "BAD_REQUEST"})
 	}
@@ -142,6 +143,8 @@ func StudentModify[request_type any](
 	if err := tx.Commit(c.Context()); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
+
+	invalidation_func()
 
 	return c.SendStatus(fiber.StatusOK)
 }
@@ -227,7 +230,7 @@ func TeacherModify[request_type any](
 	rdb *redis.Client,
 	required_permission string,
 	request_check_func func(request_type) bool,
-	query_func func(context.Context, TeacherScope, *db_queries.Queries, request_type) (int64, error),
+	query_func func(context.Context, TeacherScope, *db_queries.Queries, request_type) (int64, error, func()),
 ) error {
 	var req request_type
 
@@ -267,7 +270,7 @@ func TeacherModify[request_type any](
 
 	queries := db_queries.New(pool).WithTx(tx)
 
-	rows_affected, err := query_func(c.Context(), teacher_scope, queries, req)
+	rows_affected, err, invalidation_func := query_func(c.Context(), teacher_scope, queries, req)
 
 	if err != nil {
 		error_code, status_code := MapDBError(err)
@@ -281,6 +284,8 @@ func TeacherModify[request_type any](
 	if err := tx.Commit(c.Context()); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
+
+	invalidation_func()
 
 	return c.SendStatus(fiber.StatusOK)
 }

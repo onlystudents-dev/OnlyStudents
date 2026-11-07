@@ -233,14 +233,14 @@ func (q *Queries) GetTeacherExams(ctx context.Context, arg GetTeacherExamsParams
 	return items, nil
 }
 
-const teacherAddExam = `-- name: TeacherAddExam :execrows
+const teacherAddExam = `-- name: TeacherAddExam :many
 INSERT INTO exams (class_subjects_id, teacher_id, title, description, date, start_time, end_time, room_id)
-SELECT cs.id, $1, $2, $3, $4, $5, $6, $7
+SELECT cs.id AS class_subjects_id, $1, $2, $3, $4, $5, $6, $7
 FROM class_subjects cs
 WHERE cs.id = $8
   AND cs.school_id = $9
   AND cs.teacher_id = $1
-  AND ($7 IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = $7 AND r.school_id = $9))
+  AND ($7 IS NULL OR EXISTS (SELECT 1 FROM rooms r WHERE r.id = $7 AND r.school_id = $9)) RETURNING class_subjects_id
 `
 
 type TeacherAddExamParams struct {
@@ -255,8 +255,8 @@ type TeacherAddExamParams struct {
 	SchoolID        int32
 }
 
-func (q *Queries) TeacherAddExam(ctx context.Context, arg TeacherAddExamParams) (int64, error) {
-	result, err := q.db.Exec(ctx, teacherAddExam,
+func (q *Queries) TeacherAddExam(ctx context.Context, arg TeacherAddExamParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, teacherAddExam,
 		arg.TeacherID,
 		arg.Title,
 		arg.Description,
@@ -268,9 +268,21 @@ func (q *Queries) TeacherAddExam(ctx context.Context, arg TeacherAddExamParams) 
 		arg.SchoolID,
 	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var class_subjects_id int32
+		if err := rows.Scan(&class_subjects_id); err != nil {
+			return nil, err
+		}
+		items = append(items, class_subjects_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const teacherDeleteExam = `-- name: TeacherDeleteExam :execrows

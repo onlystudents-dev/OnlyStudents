@@ -85,8 +85,8 @@ func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req AddExamRequest) bool {
 			return req.Title == "" || (req.HasDescription && req.Description == "") || req.Date <= 0 || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddExamRequest) (int64, error) {
-			return queries.TeacherAddExam(ctx, db_queries.TeacherAddExamParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddExamRequest) (int64, error, func()) {
+			rows, err := queries.TeacherAddExam(ctx, db_queries.TeacherAddExamParams{
 				TeacherID:       teacher_scope.TeacherID,
 				SchoolID:        teacher_scope.SchoolID,
 				Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
@@ -97,6 +97,8 @@ func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				RoomID:          pgtype.Int4{Int32: req.RoomID, Valid: req.HasRoomID},
 				ClassSubjectsID: req.ClassSubjectsID,
 			})
+
+			return int64(len(rows)), err, func() { helpers.InvalidateCachedExams(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -104,12 +106,17 @@ func RemoveExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req RemoveExamRequest) bool { return req.ExamID <= 0 },
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveExamRequest) (int64, error) {
-			return queries.TeacherDeleteExam(ctx, db_queries.TeacherDeleteExamParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveExamRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherDeleteExam(ctx, db_queries.TeacherDeleteExamParams{
 				ID:        req.ExamID,
 				TeacherID: teacher_scope.TeacherID,
 				SchoolID:  teacher_scope.SchoolID,
 			})
+
+			return row_count, err, func() {
+				helpers.InvalidateCachedStudentExam(ctx, rdb, req.ExamID)
+				helpers.InvalidateCachedExams(ctx, rdb, teacher_scope.SchoolID)
+			}
 		})
 }
 
@@ -119,8 +126,8 @@ func EditExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req EditExamRequest) bool {
 			return req.ExamID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.Date <= 0 || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditExamRequest) (int64, error) {
-			return queries.TeacherEditExam(ctx, db_queries.TeacherEditExamParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditExamRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherEditExam(ctx, db_queries.TeacherEditExamParams{
 				ID:              req.ExamID,
 				TeacherID:       teacher_scope.TeacherID,
 				SchoolID:        teacher_scope.SchoolID,
@@ -132,5 +139,10 @@ func EditExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				RoomID:          pgtype.Int4{Int32: req.RoomID, Valid: req.HasRoomID},
 				ClassSubjectsID: req.ClassSubjectsID,
 			})
+
+			return row_count, err, func() {
+				helpers.InvalidateCachedStudentExam(ctx, rdb, req.ExamID)
+				helpers.InvalidateCachedExams(ctx, rdb, teacher_scope.SchoolID)
+			}
 		})
 }

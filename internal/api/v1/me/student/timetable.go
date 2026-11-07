@@ -232,7 +232,7 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 				return []db_queries.ReadRealTimeTableRow{}, err
 			}
 
-			key := fmt.Sprintf("real_timetable:v2:%d:%d:%d:%d", scope.SchoolID, scope.StudentID, start.Unix(), end.Unix())
+			key := fmt.Sprintf("real_timetable:%d:%d:%d:%d", scope.SchoolID, scope.StudentID, start.Unix(), end.Unix())
 			return helpers.CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRealTimeTableRow, error) {
 				return queries.ReadRealTimeTable(ctx, db_queries.ReadRealTimeTableParams{
 					SchoolID:  scope.SchoolID,

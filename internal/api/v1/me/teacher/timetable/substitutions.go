@@ -44,7 +44,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		func(req CanceledLessonRequest) bool {
 			return req.Date <= 0 || req.LessonNumber <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0)
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CanceledLessonRequest) (int64, error) {
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CanceledLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
 			var subject_id pgtype.Int4
 
@@ -56,7 +56,7 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
 			}
 
-			return queries.AddCanceledLesson(c.Context(), db_queries.AddCanceledLessonParams{
+			row_count, err := queries.AddCanceledLesson(c.Context(), db_queries.AddCanceledLessonParams{
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       req.TeacherId,
 				RoomID:          req.RoomId,
@@ -68,6 +68,8 @@ func AddCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 				ActualDate:      pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
 				LessonNum:       req.LessonNumber,
 			})
+
+			return row_count, err, func() {}
 		})
 }
 
@@ -76,7 +78,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		func(req CanceledLessonRequest) bool {
 			return req.Date <= 0 || req.LessonNumber <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0)
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CanceledLessonRequest) (int64, error) {
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CanceledLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
 			var subject_id pgtype.Int4
 
@@ -88,7 +90,7 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 				subject_id = pgtype.Int4{Int32: req.SubjectId, Valid: true}
 			}
 
-			return queries.RemoveCanceledLesson(c.Context(), db_queries.RemoveCanceledLessonParams{
+			row_count, err := queries.RemoveCanceledLesson(c.Context(), db_queries.RemoveCanceledLessonParams{
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       req.TeacherId,
 				RoomID:          req.RoomId,
@@ -100,6 +102,8 @@ func RemoveCanceledLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 				ActualDate:      pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
 				LessonNum:       req.LessonNumber,
 			})
+
+			return row_count, err, func() {}
 		})
 }
 
@@ -108,7 +112,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 		func(req SubstitutionsLessonRequest) bool {
 			return req.ID <= 0 || req.Date <= 0 || req.LessonNumber <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0 || !req.IsSubstitution || req.SubstitutionTeacherId <= 0)
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req SubstitutionsLessonRequest) (int64, error) {
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req SubstitutionsLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
 			var subject_id pgtype.Int4
 
@@ -128,7 +132,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 				substitution_teacher_id = pgtype.Int4{Valid: false}
 			}
 
-			return queries.ManageSubsitutionLesson(c.Context(), db_queries.ManageSubsitutionLessonParams{
+			row_count, err := queries.ManageSubsitutionLesson(c.Context(), db_queries.ManageSubsitutionLessonParams{
 				SchoolID:              teacher_scope.SchoolID,
 				TeacherID:             req.TeacherId,
 				RoomID:                req.RoomId,
@@ -143,5 +147,7 @@ func UpdateSubstitution(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) erro
 				SubstitutionTeacherID: substitution_teacher_id,
 				ID:                    req.ID,
 			})
+
+			return row_count, err, func() {}
 		})
 }

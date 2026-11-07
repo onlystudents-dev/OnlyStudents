@@ -175,8 +175,8 @@ func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req AddHomeworkRequest) bool {
 			return req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddHomeworkRequest) (int64, error) {
-			return queries.TeacherAddHomework(ctx, db_queries.TeacherAddHomeworkParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddHomeworkRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherAddHomework(ctx, db_queries.TeacherAddHomeworkParams{
 				TeacherID:       teacher_scope.TeacherID,
 				Title:           req.Title,
 				Description:     pgtype.Text{String: req.Description, Valid: req.HasDescription},
@@ -185,6 +185,8 @@ func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				ClassSubjectsID: req.ClassSubjectsID,
 				SchoolID:        teacher_scope.SchoolID,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedHomework(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -192,12 +194,14 @@ func RemoveHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req RemoveHomeworkRequest) bool { return req.HomeworkID <= 0 },
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveHomeworkRequest) (int64, error) {
-			return queries.TeacherDeleteHomework(ctx, db_queries.TeacherDeleteHomeworkParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req RemoveHomeworkRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherDeleteHomework(ctx, db_queries.TeacherDeleteHomeworkParams{
 				ID:        req.HomeworkID,
 				TeacherID: teacher_scope.TeacherID,
 				SchoolID:  teacher_scope.SchoolID,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedHomework(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -207,8 +211,8 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req EditHomeworkRequest) bool {
 			return req.HomeworkID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditHomeworkRequest) (int64, error) {
-			return queries.TeacherEditHomework(ctx, db_queries.TeacherEditHomeworkParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditHomeworkRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherEditHomework(ctx, db_queries.TeacherEditHomeworkParams{
 				ID:              req.HomeworkID,
 				ClassSubjectsID: req.ClassSubjectsID,
 				Title:           req.Title,
@@ -218,6 +222,8 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       teacher_scope.TeacherID,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedHomework(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -227,13 +233,19 @@ func GradeHomeworkSubmission(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client)
 		func(req GradeHomeworkSubmissionRequest) bool {
 			return req.HomeworkID <= 0 || req.StudentID <= 0 || req.GradedValue == 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req GradeHomeworkSubmissionRequest) (int64, error) {
-			return queries.TeacherGradeHomeworkSubmission(ctx, db_queries.TeacherGradeHomeworkSubmissionParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req GradeHomeworkSubmissionRequest) (int64, error, func()) {
+			row_count, err := queries.TeacherGradeHomeworkSubmission(ctx, db_queries.TeacherGradeHomeworkSubmissionParams{
 				GradedValue: pgtype.Int2{Int16: req.GradedValue, Valid: true},
 				HomeworkID:  req.HomeworkID,
 				StudentID:   req.StudentID,
 				SchoolID:    teacher_scope.SchoolID,
 				TeacherID:   teacher_scope.TeacherID,
 			})
+
+			return row_count, err, func() {
+				helpers.InvalidateCachedStudentHomework(ctx, rdb, teacher_scope.SchoolID, req.StudentID, int64(req.HomeworkID))
+				helpers.InvalidateCachedTeacherHomeworkSubmissions(ctx, rdb, req.HomeworkID, teacher_scope.SchoolID)
+				helpers.InvalidateCachedTeacherUngradedHomeworkSubmissions(ctx, rdb, teacher_scope)
+			}
 		})
 }

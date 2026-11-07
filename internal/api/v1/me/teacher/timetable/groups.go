@@ -68,12 +68,14 @@ func CreateGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req CreateGroupRequest) bool {
 			return req.Name == "" || req.BellId <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateGroupRequest) (int64, error) {
-			return queries.CreateGroup(ctx, db_queries.CreateGroupParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateGroupRequest) (int64, error, func()) {
+			row_count, err := queries.CreateGroup(ctx, db_queries.CreateGroupParams{
 				SchoolID:  teacher_scope.SchoolID,
 				BellID:    req.BellId,
 				GroupName: req.Name,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedGroups(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -82,11 +84,13 @@ func DeleteGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req DeleteGroupRequest) bool {
 			return req.Id <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteGroupRequest) (int64, error) {
-			return queries.DeleteGroup(ctx, db_queries.DeleteGroupParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteGroupRequest) (int64, error, func()) {
+			row_count, err := queries.DeleteGroup(ctx, db_queries.DeleteGroupParams{
 				SchoolID: teacher_scope.SchoolID,
 				ID:       req.Id,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedGroups(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -95,12 +99,14 @@ func EditGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 		func(req EditGroupRequest) bool {
 			return req.Id <= 0 || req.Name == ""
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditGroupRequest) (int64, error) {
-			return queries.EditGroup(ctx, db_queries.EditGroupParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditGroupRequest) (int64, error, func()) {
+			row_count, err := queries.EditGroup(ctx, db_queries.EditGroupParams{
 				SchoolID:  teacher_scope.SchoolID,
 				ID:        req.Id,
 				GroupName: req.Name,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedGroups(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -115,12 +121,22 @@ func InsertStudentToGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 		func(req ActionStudentGroupRequest) bool {
 			return req.GroupID <= 0 || req.StudentID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req ActionStudentGroupRequest) (int64, error) {
-			return queries.InsertStudentToGroup(ctx, db_queries.InsertStudentToGroupParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req ActionStudentGroupRequest) (int64, error, func()) {
+			row_count, err := queries.InsertStudentToGroup(ctx, db_queries.InsertStudentToGroupParams{
 				SchoolID:  teacher_scope.SchoolID,
 				GroupID:   req.GroupID,
 				StudentID: req.StudentID,
 			})
+
+			if row_count == 1 && err == nil {
+				helpers.InvalidateCachedStudentGroups(ctx, rdb, helpers.MeScope{
+					SchoolID:  teacher_scope.SchoolID,
+					StudentID: req.StudentID,
+				})
+				helpers.InvalidateCachedStudentsInGroup(ctx, rdb, req.GroupID, teacher_scope.SchoolID)
+			}
+
+			return row_count, err, func() { helpers.InvalidateCachedGroups(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -129,12 +145,22 @@ func DeleteStudentFromGroup(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) 
 		func(req ActionStudentGroupRequest) bool {
 			return req.GroupID <= 0 || req.StudentID <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req ActionStudentGroupRequest) (int64, error) {
-			return queries.DeleteStudentFromGroup(ctx, db_queries.DeleteStudentFromGroupParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req ActionStudentGroupRequest) (int64, error, func()) {
+			row_count, err := queries.DeleteStudentFromGroup(ctx, db_queries.DeleteStudentFromGroupParams{
 				GroupID:   req.GroupID,
 				SchoolID:  teacher_scope.SchoolID,
 				StudentID: req.StudentID,
 			})
+
+			if row_count == 1 && err == nil {
+				helpers.InvalidateCachedStudentGroups(ctx, rdb, helpers.MeScope{
+					SchoolID:  teacher_scope.SchoolID,
+					StudentID: req.StudentID,
+				})
+				helpers.InvalidateCachedStudentsInGroup(ctx, rdb, req.GroupID, teacher_scope.SchoolID)
+			}
+
+			return row_count, err, func() { helpers.InvalidateCachedGroups(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
