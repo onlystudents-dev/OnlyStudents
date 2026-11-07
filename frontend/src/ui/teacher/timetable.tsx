@@ -1,4 +1,4 @@
-import type {Absence, GradeType, Group, Lesson, LessonTime, Room, Student} from "../../types/api.ts";
+import type {Absence, GradeType, Group, Homework, Lesson, LessonTime, Room, Student} from "../../types/api.ts";
 import {fromResponse, getKey, getLanguage} from "../../util/language.ts";
 import {useCallback, useEffect, useRef, useState} from "preact/compat";
 import {toast} from "react-toastify";
@@ -16,7 +16,7 @@ import { formatUnixDate, getWeekRange } from "../../util/time.ts";
 import Loading from "../../util/loading.tsx";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import Overlay from "../../util/overlay/overlay.tsx";
-import {faFloppyDisk, faList, faStar, faTrash, faUser} from "@fortawesome/free-solid-svg-icons";
+import {faFloppyDisk, faHouseChimney, faList, faStar, faTrash, faUser} from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import Button from "../../util/sidebar/config.tsx";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -25,6 +25,7 @@ import {colors} from "../globals.tsx";
 import Select from "react-select";
 import {selectStyles} from "../../util/select.ts";
 import {getDifferences} from "../../util/save/save.tsx";
+import SubmissionAttachmentInput, {type attachmentFile} from "../submission.tsx";
 
 export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     const [rooms, setRooms] = useState<Room[]>([])
@@ -123,7 +124,7 @@ export default function TeacherTimetable({ me, fetchMe }: FeatureProps) {
     return (
         <>
             {loading && <Loading />}
-            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} groups={groups} fetchMe={fetchMe} />
+            <Timetable me={me} year={year} days={days} rooms={rooms} lessonTimes={lessonTime} onPrevWeek={() => fetchWeekLessons(weekOffsetRef.current - 1)} onNextWeek={() => fetchWeekLessons(weekOffsetRef.current + 1)} reloadSchoolStuff={Fetch} Popup={Popup} groups={groups} fetchMe={fetchMe} refresh={() => fetchWeekLessons} />
         </>
     )
 }
@@ -168,6 +169,9 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
         4: width4,
         5: width5,
     }
+
+    const [homework, setHomework] = useState<Homework>()
+    const [file, setFile] = useState<attachmentFile>()
 
     const room = rooms.find(r => r.id === lesson.room_id)
     const group = groups?.find(g => g.id === lesson.group_id)
@@ -291,7 +295,8 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
         })
         void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => setAbsences(await absences_response.json() as Absence[]))
         void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
-    }, [fetchMe, group, lesson.actual_date, lesson.subject_id])
+        if (lesson.has_homework_id) void fetchWithSchool(fetchMe, `/api/v1/me/teacher/homework/get?homework_id=${lesson.homework_id}`).then(async response => setHomework(await response.json() as Homework))
+    }, [fetchMe, group, lesson.actual_date, lesson.has_homework_id, lesson.homework_id, lesson.subject_id])
 
     useLayoutEffect(() => {
         if (!students.length) return
@@ -464,6 +469,35 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                         </div>
                                     </>
                                 )
+                            case "homework":
+                                if (!homework) return (
+                                    <>
+                                        <div className="border-(--txt-color) w-80 h-40 flex justify-center items-center border-2 rounded-2xl cursor-pointer text-5xl"
+                                             onClick={() => setHomework({ id: 0, due_date: new Date().getTime(), has_description: false, description: "", class_subjects_id: lesson.subject_id, subject: lesson.subject_name, title: "", created_at: new Date().getTime() })}>
+                                            +
+                                        </div>
+                                    </>
+                                )
+
+                                return (
+                                    <>
+                                        <div className="flex flex-col justify-between gap-4">
+                                            <div className="flex flex-row justify-between">
+                                                <div className="flex flex-col">
+                                                    <input type="text" className="text-3xl truncate outline-none rubik" defaultValue={homework.title} onChange={e => setHomework({ ...homework, title: e.currentTarget.value })} placeholder={getKey("TITLE")} />
+                                                    <textarea rows={2} className="text-2xl opacity-70 truncate fredoka outline-none rubik" defaultValue={homework.description} onChange={e => setHomework({ ...homework, description: e.currentTarget.value, has_description: !!e.currentTarget.value })} placeholder={getKey("DESCRIPTION")} />
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <input type="date" defaultValue={new Date().toISOString().split("T")[0]} className="text-2xl outline-none rubik" onChange={e => setHomework({ ...homework, due_date: Math.floor(new Date(e.currentTarget.value).getTime() / 1000) })} />
+                                                </div>
+                                            </div>
+                                            <SubmissionAttachmentInput onFile={file => setFile(file)} noLine />
+                                        </div>
+                                        <button className="absolute bottom-4 left-4 bg-(--card-color) p-2 rounded-lg cursor-pointer action-button hover:text-(--wrong-color)" onClick={() => setHomework(undefined)}>
+                                            <FontAwesomeIcon icon={faTrash} /> {getKey("DELETE")}
+                                        </button>
+                                    </>
+                                )
                             default:
                                 return null
                         }
@@ -475,7 +509,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 <Sidebar className="border-(--txt-color)!">
                     <Button icon={faList} text={getKey("TIMETABLE_OVERVIEW")} onClick={() => setActive("overview")} />
                     <Button icon={faStar} text={getKey("TIMETABLE_GRADE")} onClick={() => { setActive("grade"); setEditingGrade(null) }} />
-                    <Button icon={faStar} text={getKey("TIMETABLE_HOMEWORK")} onClick={() => setActive("homework")} />
+                    <Button icon={faHouseChimney} text={getKey("TIMETABLE_HOMEWORK")} onClick={() => setActive("homework")} />
                 </Sidebar>
             </div>
         </>
@@ -552,7 +586,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             return
         }
 
-        const json = (await lesson_grade_response.json() as { id: number }[])
+        const json = await lesson_grade_response.json() as { id: number }[]
         let i = 0
         for (const grade of Object.values(grades)) {
             const id = json[i]?.id
@@ -581,6 +615,28 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 }
             }
             i++
+        }
+
+        const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/homework", {
+            method: homework ? homework.id === 0 ? "POST" : "PATCH" : "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                homework_id: homework?.id,
+                title: homework?.title,
+                has_description: !!homework?.description,
+                description: homework?.description,
+                due_date: homework?.due_date,
+                has_assigned_date: !!homework?.created_at,
+                assigned_date: homework?.created_at,
+                class_subjects_id: lesson.subject_id,
+                file_uuid: file?.file_uuid,
+            })
+        })
+        if (!response.ok) {
+            toast.error(await fromResponse(response))
+            return
         }
 
         toast.success("Successfully Saved!")

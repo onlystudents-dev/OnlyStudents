@@ -186,7 +186,8 @@
         "SUCESSFULLY_SAVED": "Successfully saved!",
         "NO_FILE_SELECTED": "No file selected",
         "TITLE": "Title",
-        "DESCRIPTION": "Description"
+        "DESCRIPTION": "Description",
+        "DELETE": "Delete"
     },
     "errors": {
         "NOT_FOUND": "Oops! That doesn't exist. Please try again.",

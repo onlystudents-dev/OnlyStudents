@@ -43,6 +43,7 @@ type TimetableProps = {
     groups?: Group[],
     Popup:  React.ComponentType<PopupProps>,
     fetchMe: FetchMe,
+    refresh: () => void,
 }
 
 export function Timetable(props: TimetableProps) {
@@ -72,7 +73,7 @@ export function Timetable(props: TimetableProps) {
                         <FontAwesomeIcon icon={faAngleLeft} />
                     </span>
                 </div>
-                {current && <props.Popup lesson={current} clear={() => setCurrent(null)} rooms={props.rooms} groups={props.groups} fetchMe={props.fetchMe} lessonTimes={props.lessonTimes} me={props.me} />}
+                {current && <props.Popup lesson={current} clear={() => { setCurrent(null); props.refresh() }} rooms={props.rooms} groups={props.groups} fetchMe={props.fetchMe} lessonTimes={props.lessonTimes} me={props.me} />}
                 {d.map((day) => (
                     <div className="day" key={day.name}>
                         <div className={`date ${day.today && "rounded-2xl bg-(--border-color)"}`}>

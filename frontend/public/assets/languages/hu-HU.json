@@ -186,7 +186,8 @@
         "SUCESSFULLY_SAVED": "Sikeresen elmentve!",
         "NO_FILE_SELECTED": "Nincs fájl kiválasztva",
         "TITLE": "Title",
-        "DESCRIPTION": "Leírás"
+        "DESCRIPTION": "Leírás",
+        "DELETE": "Törlés"
     },
     "errors": {
         "NOT_FOUND": "Upsz! Ez nem létezik. Kérem, próbálja újra.",
