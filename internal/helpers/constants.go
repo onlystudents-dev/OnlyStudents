@@ -56,3 +56,25 @@ var sniffedMIMEs = map[FileCategory][]string{
 		"application/zip", // pptx, odp sniff as zip
 	},
 }
+
+const SLIDING_WINDOW_LUA = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local max = tonumber(ARGV[3])
+
+redis.call('ZREMRANGEBYSCORE', key, '-inf', now - window)
+local count = redis.call('ZCARD', key)
+
+if count >= max then
+  local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')
+  if #oldest > 0 then
+    return {0, tonumber(oldest[2]) + window - now}
+  end
+  return {0, 0}
+end
+
+redis.call('ZADD', key, now, now .. ':' .. ARGV[4])
+redis.call('PEXPIRE', key, window + 5000)
+return {1, 0}
+`
