@@ -1,3 +1,6 @@
+-- name: GetClassSubject :one
+SELECT * FROM class_subjects WHERE id = $1;
+
 -- name: CreateBellScheduleType :execrows
 INSERT INTO bell_schedule_type (school_id, name) VALUES ($1, $2);
 
@@ -142,8 +145,8 @@ WHERE s.id = sqlc.arg(school_id)
   AND EXISTS (SELECT 1 FROM groups g WHERE g.id = sqlc.arg(group_id) AND g.school_id = sqlc.arg(school_id))
   AND (NOT sqlc.arg(custom_subject) OR EXISTS (SELECT 1 FROM custom_subjects cs WHERE cs.id = sqlc.arg(custom_subject_id) AND cs.school_id = sqlc.arg(school_id)));
 
--- name: DeleteBaseSchedule :execrows
-DELETE FROM base_schedule WHERE id = $1 AND school_id = $2;
+-- name: DeleteBaseSchedule :many
+DELETE FROM base_schedule WHERE id = $1 AND school_id = $2 RETURNING group_id;
 
 -- name: UpdateBaseSchedule :execrows
 UPDATE base_schedule bs

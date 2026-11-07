@@ -119,7 +119,7 @@ WHERE cs.id = sqlc.arg(class_subjects_id)
   AND ss.student_id = sqlc.arg(student_id)
   AND sqlc.arg(type)::varchar IN ('absent', 'tardy');
 
--- name: TeacherEditAbsence :execrows
+-- name: TeacherEditAbsence :many
 UPDATE absences a
 SET class_subjects_id = $2,
     date = $3,
@@ -140,7 +140,7 @@ WHERE a.id = $1
       WHERE cs.id = $2
         AND cs.school_id = $6
         AND cs.teacher_id = $7
-  );
+  ) RETURNING student_id;
 
 -- name: TeacherVerifyAbsence :execrows
 UPDATE absences a
@@ -155,7 +155,7 @@ WHERE a.id = sqlc.arg(id)
         AND cs.teacher_id = sqlc.arg(teacher_id)
   );
 
--- name: TeacherDeleteAbsence :execrows
+-- name: TeacherDeleteAbsence :many
 DELETE FROM absences a
 WHERE a.id = $1
   AND EXISTS (
@@ -164,4 +164,4 @@ WHERE a.id = $1
       WHERE cs.id = a.class_subjects_id
         AND cs.school_id = $2
         AND cs.teacher_id = $3
-  );
+  ) RETURNING student_id;

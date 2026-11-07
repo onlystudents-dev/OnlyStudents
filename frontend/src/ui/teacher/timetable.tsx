@@ -258,7 +258,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
 
     useEffect(() => {
         void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/students_in_my_group?group_id=${group?.id}`).then(async students_response => { setStudents(await students_response.json() as Student[])})
-        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}?date=${lesson.actual_date}`).then(async absences_response => { setAbsences(await absences_response.json() as Absence[])})
+        void fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/absences/lesson?class_subjects_id=${lesson.subject_id}&date=${lesson.actual_date}`).then(async absences_response => { setAbsences(await absences_response.json() as Absence[])})
         void fetchWithSchool(fetchMe, "/api/v1/me/teacher/grades/types").then(async response => setGradeTypes(await response.json() as GradeType[]))
     }, [fetchMe, group, lesson.actual_date, lesson.subject_id])
 

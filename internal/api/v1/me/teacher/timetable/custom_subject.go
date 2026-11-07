@@ -40,11 +40,13 @@ func CreateCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 		func(req CreateCustomSubjectRequest) bool {
 			return req.SubjectName == ""
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateCustomSubjectRequest) (int64, error) {
-			return queries.CreateCustomSubject(ctx, db_queries.CreateCustomSubjectParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateCustomSubjectRequest) (int64, error, func()) {
+			row_count, err := queries.CreateCustomSubject(ctx, db_queries.CreateCustomSubjectParams{
 				SchoolID:    teacher_scope.SchoolID,
 				SubjectName: req.SubjectName,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedCustomSubjects(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -53,11 +55,13 @@ func DeleteCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 		func(req DeleteCustomSubjectRequest) bool {
 			return req.Id <= 0
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteCustomSubjectRequest) (int64, error) {
-			return queries.DeleteCustomSubject(ctx, db_queries.DeleteCustomSubjectParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req DeleteCustomSubjectRequest) (int64, error, func()) {
+			row_count, err := queries.DeleteCustomSubject(ctx, db_queries.DeleteCustomSubjectParams{
 				SchoolID: teacher_scope.SchoolID,
 				ID:       req.Id,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedCustomSubjects(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 
@@ -66,12 +70,14 @@ func EditCustomSubject(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 		func(req EditCustomSubjectRequest) bool {
 			return req.Id <= 0 || req.SubjectName == ""
 		},
-		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditCustomSubjectRequest) (int64, error) {
-			return queries.EditCustomSubject(ctx, db_queries.EditCustomSubjectParams{
+		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditCustomSubjectRequest) (int64, error, func()) {
+			row_count, err := queries.EditCustomSubject(ctx, db_queries.EditCustomSubjectParams{
 				SubjectName: req.SubjectName,
 				ID:          req.Id,
 				SchoolID:    teacher_scope.SchoolID,
 			})
+
+			return row_count, err, func() { helpers.InvalidateCachedCustomSubjects(ctx, rdb, teacher_scope.SchoolID) }
 		})
 }
 

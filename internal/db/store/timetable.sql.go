@@ -243,8 +243,8 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (int64, 
 	return result.RowsAffected(), nil
 }
 
-const deleteBaseSchedule = `-- name: DeleteBaseSchedule :execrows
-DELETE FROM base_schedule WHERE id = $1 AND school_id = $2
+const deleteBaseSchedule = `-- name: DeleteBaseSchedule :many
+DELETE FROM base_schedule WHERE id = $1 AND school_id = $2 RETURNING group_id
 `
 
 type DeleteBaseScheduleParams struct {
@@ -252,12 +252,24 @@ type DeleteBaseScheduleParams struct {
 	SchoolID int32
 }
 
-func (q *Queries) DeleteBaseSchedule(ctx context.Context, arg DeleteBaseScheduleParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteBaseSchedule, arg.ID, arg.SchoolID)
+func (q *Queries) DeleteBaseSchedule(ctx context.Context, arg DeleteBaseScheduleParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, deleteBaseSchedule, arg.ID, arg.SchoolID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var group_id int32
+		if err := rows.Scan(&group_id); err != nil {
+			return nil, err
+		}
+		items = append(items, group_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const deleteBellScheduleType = `-- name: DeleteBellScheduleType :execrows
@@ -482,6 +494,25 @@ func (q *Queries) EditRoom(ctx context.Context, arg EditRoomParams) (int64, erro
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const getClassSubject = `-- name: GetClassSubject :one
+SELECT id, school_id, class_id, subject_id, custom_subject, custom_subject_id, teacher_id FROM class_subjects WHERE id = $1
+`
+
+func (q *Queries) GetClassSubject(ctx context.Context, id int32) (ClassSubject, error) {
+	row := q.db.QueryRow(ctx, getClassSubject, id)
+	var i ClassSubject
+	err := row.Scan(
+		&i.ID,
+		&i.SchoolID,
+		&i.ClassID,
+		&i.SubjectID,
+		&i.CustomSubject,
+		&i.CustomSubjectID,
+		&i.TeacherID,
+	)
+	return i, err
 }
 
 const insertStudentToGroup = `-- name: InsertStudentToGroup :execrows
