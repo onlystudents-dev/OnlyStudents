@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"strconv"
 	"time"
@@ -22,22 +23,26 @@ func UserRateLimit(c fiber.Ctx, rdb *redis.Client, scope string, max int64, wind
 	ctx := context.Background()
 	key := fmt.Sprintf("user_ratelimit:%s:%s:%d", scope, role, user_id)
 
-	count, err := rdb.Incr(ctx, key).Result()
+	cmd := rdb.Eval(ctx, SLIDING_WINDOW_LUA, []string{key}, []string{strconv.FormatInt(time.Now().UnixMilli(), 10), strconv.FormatInt(window*1000, 10), strconv.FormatInt(max, 10), rand.Text()})
+
+	if cmd.Err() != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "SERVER_ERROR",
+		}), true
+	}
+
+	out, err := cmd.Int64Slice()
+
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"}), true
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "SERVER_ERROR",
+		}), true
 	}
 
-	if count == 1 {
-		if err := rdb.Expire(ctx, key, time.Duration(window)*time.Second).Err(); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"}), true
-		}
-	}
+	ratelimited, retry_after := out[0], out[1]
 
-	if count > max {
-		ttl, err := rdb.TTL(ctx, key).Result()
-		if err == nil && ttl > 0 {
-			c.Set("Retry-After", strconv.Itoa(int(ttl.Seconds())))
-		}
+	if ratelimited == 0 {
+		c.Set("Retry-After", strconv.FormatInt(retry_after/1000, 10))
 		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 			"error": "TOO_MANY_REQUESTS",
 		}), true
