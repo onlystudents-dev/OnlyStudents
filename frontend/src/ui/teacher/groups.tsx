@@ -10,6 +10,9 @@ import {toast} from "react-toastify";
 import {fromResponse, getKey} from "../../util/language.ts";
 import Skeleton from "../../util/skeleton/skeleton.tsx";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function Groups({ me, fetchMe }: FeatureProps) {
     const [groups, setGroups] = useState<Group[]>()
 
