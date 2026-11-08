@@ -9,7 +9,7 @@ function minifyPublicJSON(): Plugin {
     return {
         name: "minify-public-json",
         closeBundle() {
-            const dir = path.resolve("dist/assets/languages");
+            const dir = path.resolve("dist/assets");
 
             if (!fs.existsSync(dir)) return;
 
