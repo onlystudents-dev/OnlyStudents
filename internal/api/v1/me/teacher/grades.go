@@ -5,7 +5,6 @@ import (
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
 	"strconv"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -220,7 +219,7 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req AddGradeRequest) bool {
-			return req.StudentID <= 0 || req.TermID <= 0 || req.LessonGradeID <= 0 || req.Value <= 0 || req.Date <= 0 || (req.HasNote && req.Note == "")
+			return req.StudentID <= 0 || req.TermID <= 0 || req.LessonGradeID <= 0 || req.Value <= 0 || !helpers.ValidateUnix(req.Date) || (req.HasNote && req.Note == "")
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddGradeRequest) (int64, error, func()) {
 			rows, err := queries.TeacherAddGrade(ctx, db_queries.TeacherAddGradeParams{
@@ -228,7 +227,7 @@ func AddGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				TermID:        req.TermID,
 				LessonGradeID: req.LessonGradeID,
 				Value:         req.Value,
-				Date:          pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
+				Date:          helpers.UnixToDate(req.Date),
 				Note:          pgtype.Text{String: req.Note, Valid: req.HasNote},
 				SchoolID:      teacher_scope.SchoolID,
 				StudentID:     req.StudentID,
@@ -289,7 +288,7 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req EditGradeRequest) bool {
-			return req.GradeID <= 0 || req.TermID <= 0 || req.LessonGradeID <= 0 || req.Value <= 0 || req.Date <= 0 || (req.HasNote && req.Note == "")
+			return req.GradeID <= 0 || req.TermID <= 0 || req.LessonGradeID <= 0 || req.Value <= 0 || !helpers.ValidateUnix(req.Date) || (req.HasNote && req.Note == "")
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditGradeRequest) (int64, error, func()) {
 			rows, err := queries.TeacherEditGrade(ctx, db_queries.TeacherEditGradeParams{
@@ -297,7 +296,7 @@ func EditGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				TermID:        req.TermID,
 				LessonGradeID: req.LessonGradeID,
 				Value:         req.Value,
-				Date:          pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
+				Date:          helpers.UnixToDate(req.Date),
 				Note:          pgtype.Text{String: req.Note, Valid: req.HasNote},
 				TeacherID:     teacher_scope.TeacherID,
 				SchoolID:      teacher_scope.SchoolID,
@@ -339,7 +338,7 @@ func AddLessonGrade(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req AddLessonGradeRequest) bool {
-			return req.ActualDate <= 0 || req.Title == "" || req.Type <= 0 || req.ClassSubjectsID <= 0 || req.GroupID <= 0
+			return helpers.ValidateUnix(req.ActualDate) || req.Title == "" || req.Type <= 0 || req.ClassSubjectsID <= 0 || req.GroupID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddLessonGradeRequest) (int64, error, func()) {
 			row_count, err := queries.TeacherAddLessonGrade(ctx, db_queries.TeacherAddLessonGradeParams{

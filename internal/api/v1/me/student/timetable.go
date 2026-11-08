@@ -2,14 +2,11 @@ package studentapi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -95,34 +92,6 @@ type TimetableCustomSubject struct {
 type TimetableBellScheduleType struct {
 	ID   int32  `json:"id"`
 	Name string `json:"name"`
-}
-
-func parseDateRange(c fiber.Ctx) (time.Time, time.Time, error) {
-	start_date := c.Query("start_date", "none")
-
-	if start_date == "none" {
-		return time.Time{}, time.Time{}, errors.New("start date not found")
-	}
-
-	start_parsed, err := time.Parse(time.DateOnly, start_date)
-
-	if err != nil {
-		return time.Time{}, time.Time{}, err
-	}
-
-	end_date := c.Query("end_date", "none")
-
-	if end_date == "none" {
-		return time.Time{}, time.Time{}, errors.New("end date not found")
-	}
-
-	end_parsed, err := time.Parse(time.DateOnly, end_date)
-
-	if err != nil {
-		return time.Time{}, time.Time{}, err
-	}
-
-	return start_parsed, end_parsed, nil
 }
 
 func convertRealTimeTable(row db_queries.ReadRealTimeTableRow) TimetableLesson {
@@ -214,31 +183,18 @@ func convertBellScheduleType(row db_queries.ReadBellScheduleTypeRow) TimetableBe
 func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.StudentSummary(c, pool, rdb, "REAL_TIMETABLE_CACHE_TTL", false,
 		func(req ReadRealTimetableRequest) bool {
-			_, start_date_err := time.Parse(time.DateOnly, req.StartDate)
-			if start_date_err != nil {
-				return true
-			}
-
-			_, end_date_err := time.Parse(time.DateOnly, req.EndDate)
-			if end_date_err != nil {
-				return true
-			}
-
-			return false
+			return !helpers.ValidateDateStringRange(req.StartDate, req.EndDate)
 		},
 		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadRealTimetableRequest, scope helpers.MeScope, ttl int32) ([]db_queries.ReadRealTimeTableRow, error) {
-			start, end, err := parseDateRange(c)
-			if err != nil {
-				return []db_queries.ReadRealTimeTableRow{}, err
-			}
+			start, end := helpers.DateStringToTime(req.StartDate), helpers.DateStringToTime(req.EndDate)
 
 			key := fmt.Sprintf("real_timetable:%d:%d:%d:%d", scope.SchoolID, scope.StudentID, start.Unix(), end.Unix())
 			return helpers.CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRealTimeTableRow, error) {
 				return queries.ReadRealTimeTable(ctx, db_queries.ReadRealTimeTableParams{
 					SchoolID:  scope.SchoolID,
 					ClassID:   scope.ClassID,
-					StartDate: pgtype.Date{Time: start, Valid: true},
-					EndDate:   pgtype.Date{Time: end, Valid: true},
+					StartDate: helpers.TimeToDate(start),
+					EndDate:   helpers.TimeToDate(end),
 				})
 			})
 		}, convertRealTimeTable)

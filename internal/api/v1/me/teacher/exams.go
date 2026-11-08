@@ -4,7 +4,6 @@ import (
 	"context"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -83,13 +82,13 @@ func AddExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req AddExamRequest) bool {
-			return req.Title == "" || (req.HasDescription && req.Description == "") || req.Date <= 0 || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
+			return req.Title == "" || (req.HasDescription && req.Description == "") || !helpers.ValidateUnix(req.Date) || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddExamRequest) (int64, error, func()) {
 			rows, err := queries.TeacherAddExam(ctx, db_queries.TeacherAddExamParams{
 				TeacherID:       teacher_scope.TeacherID,
 				SchoolID:        teacher_scope.SchoolID,
-				Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
+				Date:            helpers.UnixToDate(req.Date),
 				Title:           req.Title,
 				Description:     pgtype.Text{String: req.Description, Valid: req.HasDescription},
 				StartTime:       pgtype.Time{Microseconds: req.StartTime * 1000000, Valid: true},
@@ -124,14 +123,14 @@ func EditExam(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req EditExamRequest) bool {
-			return req.ExamID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.Date <= 0 || req.StartTime <= 0 || req.EndTime <= 0 || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
+			return req.ExamID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || !helpers.ValidateUnix(req.Date) || !helpers.ValidateUnix(req.StartTime) || !helpers.ValidateUnix(req.EndTime) || (req.HasRoomID && req.RoomID <= 0) || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditExamRequest) (int64, error, func()) {
 			row_count, err := queries.TeacherEditExam(ctx, db_queries.TeacherEditExamParams{
 				ID:              req.ExamID,
 				TeacherID:       teacher_scope.TeacherID,
 				SchoolID:        teacher_scope.SchoolID,
-				Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
+				Date:            helpers.UnixToDate(req.Date),
 				Title:           req.Title,
 				Description:     pgtype.Text{String: req.Description, Valid: req.HasDescription},
 				StartTime:       pgtype.Time{Microseconds: req.StartTime * 1000000, Valid: true},

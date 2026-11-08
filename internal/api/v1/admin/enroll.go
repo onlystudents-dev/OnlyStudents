@@ -206,6 +206,9 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 		"birth_country": func(req EnrollStudentRequest) bool {
 			return countries.GetByAlpha2(req.BirthCountry) == nil
 		},
+		"birth_date": func(req EnrollStudentRequest) bool {
+			return !helpers.ValidateUnix(req.BirthDate)
+		},
 	}
 
 	bad_parameters := runBadRequestChecks(req, checks)
@@ -251,7 +254,7 @@ func enroll_student(c fiber.Ctx, req EnrollStudentRequest, pool *pgxpool.Pool, r
 		LastName:             req.LastName,
 		BirthFirstName:       req.BirthFirstName,
 		BirthLastName:        req.BirthLastName,
-		BirthDate:            pgtype.Date{Time: time.Unix(req.BirthDate, 0), Valid: true},
+		BirthDate:            helpers.UnixToDate(req.BirthDate),
 		BirthCity:            req.BirthCity,
 		BirthCountry:         req.BirthCountry,
 		MotherBirthFirstName: req.MotherBirthFirstName,
@@ -366,6 +369,9 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 		"birth_country": func(req EnrollTeacherRequest) bool {
 			return countries.GetByAlpha2(req.BirthCountry) == nil
 		},
+		"birth_date": func(req EnrollTeacherRequest) bool {
+			return !helpers.ValidateUnix(req.BirthDate)
+		},
 	}
 
 	bad_parameters := runBadRequestChecks(req, checks)
@@ -386,7 +392,7 @@ func enroll_teacher(c fiber.Ctx, req EnrollTeacherRequest, pool *pgxpool.Pool, r
 		PhoneNumber:      req.PhoneNumber,
 		BirthFirstName:   req.BirthFirstName,
 		BirthLastName:    req.BirthLastName,
-		BirthDate:        pgtype.Date{Time: time.Unix(req.BirthDate, 0), Valid: true},
+		BirthDate:        helpers.UnixToDate(req.BirthDate),
 		BirthCity:        req.BirthCity,
 		BirthCountry:     req.BirthCountry,
 		PermamentAddress: req.PermamentAddress,
@@ -505,7 +511,7 @@ func enroll_guardian(c fiber.Ctx, req EnrollGuardianRequest, pool *pgxpool.Pool,
 		LastName:         req.LastName,
 		BirthFirstName:   req.BirthFirstName,
 		BirthLastName:    req.BirthLastName,
-		BirthDate:        pgtype.Date{Time: time.Unix(req.BirthDate, 0), Valid: true},
+		BirthDate:        helpers.UnixToDate(req.BirthDate),
 		BirthCity:        req.BirthCity,
 		BirthCountry:     req.BirthCountry,
 		PermamentAddress: req.PermamentAddress,

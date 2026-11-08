@@ -2,13 +2,10 @@ package timetable
 
 import (
 	"context"
-	"errors"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -44,6 +41,11 @@ type TimetableRoom struct {
 	ID       int32  `json:"id"`
 	Name     string `json:"name"`
 	Capacity int32  `json:"capacity"`
+}
+
+type ReadMyRealTimetableRequest struct {
+	StartDate string `query:"start_date"`
+	EndDate   string `query:"end_date"`
 }
 
 func convertTimeTableLesson(row db_queries.ReadMyRealTimeTableRow) TimetableLesson {
@@ -83,48 +85,18 @@ func convertStudentsInMyGroup(row db_queries.ReadStudentsInMyGroupRow) StudentIn
 	}
 }
 
-func parseDateRange(c fiber.Ctx) (time.Time, time.Time, error) {
-	start_date := c.Query("start_date", "none")
-
-	if start_date == "none" {
-		return time.Time{}, time.Time{}, errors.New("start date not found")
-	}
-
-	start_parsed, err := time.Parse(time.DateOnly, start_date)
-
-	if err != nil {
-		return time.Time{}, time.Time{}, err
-	}
-
-	end_date := c.Query("end_date", "none")
-
-	if end_date == "none" {
-		return time.Time{}, time.Time{}, errors.New("end date not found")
-	}
-
-	end_parsed, err := time.Parse(time.DateOnly, end_date)
-
-	if err != nil {
-		return time.Time{}, time.Time{}, err
-	}
-
-	return start_parsed, end_parsed, nil
-}
-
 // uncached because changes a lot
 func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return helpers.TeacherSummary(c, pool, rdb, "REAL_TIMETABLE_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadMyRealTimeTableRow, error) {
-		start, end, err := parseDateRange(c)
-
-		if err != nil {
-			return []db_queries.ReadMyRealTimeTableRow{}, err
-		}
+	return helpers.TeacherSummary(c, pool, rdb, "REAL_TIMETABLE_CACHE_TTL", "", func(req ReadMyRealTimetableRequest) bool {
+		return !helpers.ValidateDateStringRange(req.StartDate, req.EndDate)
+	}, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadMyRealTimetableRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.ReadMyRealTimeTableRow, error) {
+		start, end := helpers.DateStringToTime(req.StartDate), helpers.DateStringToTime(req.EndDate)
 
 		return queries.ReadMyRealTimeTable(c.Context(), db_queries.ReadMyRealTimeTableParams{
 			SchoolID:  scope.SchoolID,
 			TeacherID: scope.TeacherID,
-			StartDate: pgtype.Date{Time: start, Valid: true},
-			EndDate:   pgtype.Date{Time: end, Valid: true},
+			StartDate: helpers.TimeToDate(start),
+			EndDate:   helpers.TimeToDate(end),
 		})
 	}, convertTimeTableLesson)
 }
