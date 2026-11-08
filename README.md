@@ -21,6 +21,7 @@ This is pre-alpha software, untested, and does have a ton of breaking API and ot
 - Custom subjects, grades, permissions
 - Moderation panel for moderators
 - Custom Themes
+- A mobile app (web won't support mobile-sized clients, they need to use the mobile app)
 
 # Demo Mode Credentials ( https://onlystudents.hu )
 - Student/Teacher/Guardian ID 1, Password: test
