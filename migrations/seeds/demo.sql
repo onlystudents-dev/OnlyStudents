@@ -71,17 +71,17 @@ INSERT INTO terms (school_year_id, name, start_date, end_date, grade_deadline, i
 VALUES (1, '1. félév', '2026-09-01', '2027-01-31', '2027-01-31', TRUE),
        (2, '1. félév', '2026-09-01', '2027-01-31', '2027-01-31', TRUE);
 
-INSERT INTO subjects (subject_name)
-VALUES ('Matematika'),
-       ('Magyar nyelv'),
-       ('Történelem'),
-       ('Angol nyelv'),
-       ('Informatika'),
-       ('Fizika'),
-       ('Kémia'),
-       ('Biológia'),
-       ('Földrajz'),
-       ('Testnevelés');
+INSERT INTO subjects (subject_name, icon)
+VALUES ('Matematika', 'calculate'),
+       ('Magyar nyelv', 'menu_book'),
+       ('Történelem', 'history_edu'),
+       ('Angol nyelv', 'translate'),
+       ('Informatika', 'computer'),
+       ('Fizika', 'science'),
+       ('Kémia', 'experiment'),
+       ('Biológia', 'biotech'),
+       ('Földrajz', 'public'),
+       ('Testnevelés', 'sports_basketball');
 
 INSERT INTO class_subjects (id, school_id, class_id, subject_id, custom_subject, custom_subject_id, teacher_id)
 VALUES (1, 1, 1, 1, FALSE, NULL, 1),

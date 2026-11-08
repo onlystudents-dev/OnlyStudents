@@ -191,7 +191,9 @@
         "DESCRIPTION": "Description",
         "DELETE": "Delete",
         "DELETED": "Successfully deleted",
-        "SURE?": "You sure you wanna delete that?"
+        "SURE?": "You sure you wanna delete that?",
+        "NAME": "Name",
+        "ICON": "Icon"
     },
     "errors": {
         "NOT_FOUND": "Oops! That doesn't exist. Please try again.",

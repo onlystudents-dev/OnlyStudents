@@ -10,7 +10,8 @@ SELECT
     e.date,
     e.start_time,
     e.end_time,
-    r.name AS room
+    r.name AS room,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM exams e
          JOIN class_subjects csub ON csub.id = e.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
@@ -38,7 +39,8 @@ SELECT
     e.date,
     e.start_time,
     e.end_time,
-    r.name AS room
+    r.name AS room,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM exams e
          JOIN class_subjects csub ON csub.id = e.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id

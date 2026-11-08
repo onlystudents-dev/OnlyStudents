@@ -15,7 +15,8 @@ SELECT
     f.uuid AS submission_file_uuid,
     f.original_name AS submission_file_name,
     f.size AS submission_file_size,
-    f.type AS submission_file_type
+    f.type AS submission_file_type,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM homework h
          JOIN class_subjects csub ON csub.id = h.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
@@ -49,7 +50,8 @@ SELECT
     f.uuid AS submission_file_uuid,
     f.original_name AS submission_file_name,
     f.size AS submission_file_size,
-    f.type AS submission_file_type
+    f.type AS submission_file_type,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM homework h
          JOIN class_subjects csub ON csub.id = h.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
@@ -205,7 +207,8 @@ SELECT
     f.type AS file_type,
     f.uuid AS file_uuid,
     hs.note,
-    hs.submitted_at
+    hs.submitted_at,
+    COALESCE(s.icon, cs.icon) AS subject_icon
 FROM homework_submissions hs
          JOIN homework h ON h.id = hs.homework_id
          JOIN class_subjects csub ON csub.id = h.class_subjects_id

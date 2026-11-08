@@ -15,7 +15,8 @@ SELECT
     f.uuid AS file_uuid,
     ar.note AS reason_note,
     a.note,
-    CONCAT(v.first_name, ' ', v.last_name) AS verified_by
+    CONCAT(v.first_name, ' ', v.last_name) AS verified_by,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM absences a
 LEFT JOIN class_subjects csub ON csub.id = a.class_subjects_id
 LEFT JOIN subjects s ON s.id = csub.subject_id

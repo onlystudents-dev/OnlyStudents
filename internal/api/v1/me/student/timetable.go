@@ -39,6 +39,7 @@ type TimetableLesson struct {
 	HasCustomSubjectID  bool   `json:"has_custom_subject_id"`
 	CustomSubjectID     int32  `json:"custom_subject_id"`
 	SubjectName         string `json:"subject_name"`
+	SubjectIcon         string `json:"subject_icon"`
 	HasExamID           bool   `json:"has_exam_id"`
 	ExamID              int64  `json:"exam_id"`
 	HasHomeworkID       bool   `json:"has_homework_id"`
@@ -114,6 +115,7 @@ func convertRealTimeTable(row db_queries.ReadRealTimeTableRow) TimetableLesson {
 		HasCustomSubjectID:  row.CustomSubjectID.Valid,
 		CustomSubjectID:     row.CustomSubjectID.Int32,
 		SubjectName:         row.SubjectName,
+		SubjectIcon:         row.SubjectIcon,
 		HasExamID:           row.ExamID > 0,
 		ExamID:              row.ExamID,
 		HasHomeworkID:       row.HomeworkID > 0,

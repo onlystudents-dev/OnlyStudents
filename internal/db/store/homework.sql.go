@@ -28,7 +28,8 @@ SELECT
     f.uuid AS submission_file_uuid,
     f.original_name AS submission_file_name,
     f.size AS submission_file_size,
-    f.type AS submission_file_type
+    f.type AS submission_file_type,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM homework h
          JOIN class_subjects csub ON csub.id = h.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
@@ -68,6 +69,7 @@ type GetStudentHomeworkRow struct {
 	SubmissionFileName pgtype.Text
 	SubmissionFileSize pgtype.Int8
 	SubmissionFileType pgtype.Text
+	SubjectIcon        string
 }
 
 func (q *Queries) GetStudentHomework(ctx context.Context, arg GetStudentHomeworkParams) ([]GetStudentHomeworkRow, error) {
@@ -96,6 +98,7 @@ func (q *Queries) GetStudentHomework(ctx context.Context, arg GetStudentHomework
 			&i.SubmissionFileName,
 			&i.SubmissionFileSize,
 			&i.SubmissionFileType,
+			&i.SubjectIcon,
 		); err != nil {
 			return nil, err
 		}
@@ -124,7 +127,8 @@ SELECT
     f.uuid AS submission_file_uuid,
     f.original_name AS submission_file_name,
     f.size AS submission_file_size,
-    f.type AS submission_file_type
+    f.type AS submission_file_type,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM homework h
          JOIN class_subjects csub ON csub.id = h.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
@@ -165,6 +169,7 @@ type GetStudentHomeworkByIDRow struct {
 	SubmissionFileName pgtype.Text
 	SubmissionFileSize pgtype.Int8
 	SubmissionFileType pgtype.Text
+	SubjectIcon        string
 }
 
 func (q *Queries) GetStudentHomeworkByID(ctx context.Context, arg GetStudentHomeworkByIDParams) (GetStudentHomeworkByIDRow, error) {
@@ -187,6 +192,7 @@ func (q *Queries) GetStudentHomeworkByID(ctx context.Context, arg GetStudentHome
 		&i.SubmissionFileName,
 		&i.SubmissionFileSize,
 		&i.SubmissionFileType,
+		&i.SubjectIcon,
 	)
 	return i, err
 }
@@ -340,7 +346,8 @@ SELECT
     f.type AS file_type,
     f.uuid AS file_uuid,
     hs.note,
-    hs.submitted_at
+    hs.submitted_at,
+    COALESCE(s.icon, cs.icon) AS subject_icon
 FROM homework_submissions hs
          JOIN homework h ON h.id = hs.homework_id
          JOIN class_subjects csub ON csub.id = h.class_subjects_id
@@ -375,6 +382,7 @@ type GetTeacherUngradedHomeworkSubmissionsRow struct {
 	FileUuid        pgtype.UUID
 	Note            pgtype.Text
 	SubmittedAt     pgtype.Timestamptz
+	SubjectIcon     string
 }
 
 func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg GetTeacherUngradedHomeworkSubmissionsParams) ([]GetTeacherUngradedHomeworkSubmissionsRow, error) {
@@ -402,6 +410,7 @@ func (q *Queries) GetTeacherUngradedHomeworkSubmissions(ctx context.Context, arg
 			&i.FileUuid,
 			&i.Note,
 			&i.SubmittedAt,
+			&i.SubjectIcon,
 		); err != nil {
 			return nil, err
 		}

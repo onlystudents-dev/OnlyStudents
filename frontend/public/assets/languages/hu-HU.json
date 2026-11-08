@@ -191,7 +191,9 @@
         "DESCRIPTION": "Leírás",
         "DELETE": "Törlés",
         "DELETED": "Sikeresen kitörölve",
-        "SURE?": "Biztos ki akarod azt törölni?"
+        "SURE?": "Biztos ki akarod azt törölni?",
+        "NAME": "Név",
+        "ICON": "Ikon"
     },
     "errors": {
         "NOT_FOUND": "Upsz! Ez nem létezik. Kérem, próbálja újra.",

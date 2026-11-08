@@ -30,16 +30,16 @@ UPDATE bell_schedule set lesson_number = $1, at_start = $2, at_end = $3 WHERE id
 SELECT * FROM bell_schedule WHERE school_id = $1 AND type_id = $2;
 
 -- name: CreateCustomSubject :execrows
-INSERT INTO custom_subjects (school_id, subject_name) VALUES ($1, $2);
+INSERT INTO custom_subjects (school_id, subject_name, icon) VALUES ($1, $2, $3);
 
 -- name: EditCustomSubject :execrows
-UPDATE custom_subjects SET subject_name = $1 WHERE school_id = $2 AND id = $3;
+UPDATE custom_subjects SET subject_name = $1, icon = $2 WHERE school_id = $3 AND id = $4;
 
 -- name: DeleteCustomSubject :execrows
 DELETE FROM custom_subjects WHERE school_id = $1 AND id = $2;
 
 -- name: ReadCustomSubject :many
-SELECT id, subject_name FROM custom_subjects WHERE school_id = $1 ORDER BY id;
+SELECT id, subject_name, icon FROM custom_subjects WHERE school_id = $1 ORDER BY id;
 
 -- name: CreateRoom :execrows
 INSERT INTO rooms (school_id, name, capacity) VALUES ($1, $2, $3);
@@ -191,7 +191,8 @@ SELECT
     teach.last_name AS teacher_last_name,
     COALESCE(lcs.id, 0) AS class_subjects_id,
     COALESCE(hw.id, 0) AS homework_id,
-    COALESCE(ex.id, 0) AS exam_id
+    COALESCE(ex.id, 0) AS exam_id,
+    COALESCE(sub.icon, cs.icon) AS subject_icon
 FROM base_schedule b
 JOIN generate_series(CAST(sqlc.arg(start_date) AS date), CAST(sqlc.arg(end_date) AS date), interval '1 day') AS d(actual_date)
     ON EXTRACT(ISODOW FROM d.actual_date) = b.day_of_week
@@ -290,7 +291,8 @@ SELECT
     teach.last_name AS teacher_last_name,
     COALESCE(lcs.id, 0) AS class_subjects_id,
     COALESCE(hw.id, 0) AS homework_id,
-    COALESCE(ex.id, 0) AS exam_id
+    COALESCE(ex.id, 0) AS exam_id,
+    COALESCE(sub.icon, cs.icon) AS subject_icon
 FROM base_schedule b
 JOIN generate_series(CAST(sqlc.arg(start_date) AS date), CAST(sqlc.arg(end_date) AS date), interval '1 day') AS d(actual_date)
     ON EXTRACT(ISODOW FROM d.actual_date) = b.day_of_week

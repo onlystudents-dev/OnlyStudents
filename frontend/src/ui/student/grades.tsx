@@ -14,6 +14,7 @@ import {useLocation, useSearch} from "wouter";
 import SubjectAverageChart from "./charts.tsx";
 import type {FeatureProps, FetchMe} from "../../types/props.ts";
 import {colors} from "../globals.tsx";
+import SubjectIcon from "../../util/subject_icon.tsx";
 
 export default function StudentGrades({ me, fetchMe }: FeatureProps) {
     const search = useSearch()
@@ -56,9 +57,12 @@ export function StudentSubjects({ me, fetchMe }: FeatureProps) {
 
                         return (
                             <div className="grade" key={subject.id} onClick={() => navigate(`/grades?subject=${subject.is_custom ? "t" : "f"}${subject.id}`)}>
-                                <div className="flex flex-col">
-                                    <h1 className="rubik truncate">{subject.name}</h1>
-                                    <p className="poppins opacity-70 truncate">{subject.teacher_first_name} {subject.teacher_last_name}</p>
+                                <div className="flex flex-row">
+                                    <SubjectIcon icon={subject.icon} />
+                                    <div className="flex flex-col">
+                                        <h1 className="rubik truncate">{subject.name}</h1>
+                                        <p className="poppins opacity-70 truncate">{subject.teacher_first_name} {subject.teacher_last_name}</p>
+                                    </div>
                                 </div>
                                 <div className="flex flex-col">
                                     <div className={`rounded-full h-8 w-fit pl-2 pr-2 inline-flex items-center justify-center poppins text-2xl`} style={{
@@ -121,8 +125,7 @@ export function StudentGradesList({ me, fetchMe, subject }: { me: Me, fetchMe: F
                                         {getKey("TYPE")}: {current.type}
                                     </p>
                                     <p>
-                                        {getKey("TEACHER")}: {current.teacher_first_name}{' '}
-                                        {current.teacher_last_name}
+                                        {getKey("TEACHER")}: {current.teacher_first_name} {current.teacher_last_name}
                                     </p>
                                 </div>
                             </div>
@@ -134,9 +137,12 @@ export function StudentGradesList({ me, fetchMe, subject }: { me: Me, fetchMe: F
 
                 {grades?.map((grade, idx) => (
                         <div key={idx} className="grade" onClick={() => setCurrent(grade)}>
-                            <div className="flex flex-col items-start justify-between">
-                                <p className="max-w-100 truncate">{grade.note}</p>
-                                <p className="max-w-100 truncate opacity-70">{grade.subject}</p>
+                            <div className="flex flex-row">
+                                <SubjectIcon icon={grade.subject_icon} />
+                                <div className="flex flex-col items-start justify-between">
+                                    <p className="max-w-100 truncate">{grade.note}</p>
+                                    <p className="max-w-100 truncate opacity-70">{grade.subject}</p>
+                                </div>
                             </div>
                             <div className="flex flex-col items-start justify-between">
                                 <div className="rounded-full size-8 inline-flex items-center justify-center poppins text-2xl" style={{ backgroundColor: `var(--${colors[grade.value]}-base-color)`, color: `var(--${colors[grade.value]}-color)`, fontWeight: "900" }}>

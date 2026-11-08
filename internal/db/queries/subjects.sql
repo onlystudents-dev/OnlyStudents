@@ -28,7 +28,8 @@ SELECT DISTINCT
     COALESCE(NULLIF(t.first_name, ''), t.birth_first_name)::text AS teacher_first_name,
     COALESCE(NULLIF(t.last_name, ''), t.birth_last_name)::text AS teacher_last_name,
     g.id AS group_id,
-    g.group_name
+    g.group_name,
+    COALESCE(s.icon, cs.icon) AS icon
 FROM base_schedule bs
 JOIN group_members gm ON gm.group_id = bs.group_id AND gm.school_id = bs.school_id
 JOIN teachers t ON t.id = bs.teacher_id

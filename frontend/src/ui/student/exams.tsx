@@ -11,6 +11,7 @@ import {useReloadSchoolStuff} from "../../util/school.ts";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faXmark} from "@fortawesome/free-solid-svg-icons";
 import type {FeatureProps} from "../../types/props.ts";
+import SubjectIcon from "../../util/subject_icon.tsx";
 
 export default function StudentExams({ me, fetchMe }: FeatureProps) {
     const [exams, setExams] = useState<Exam[] | null>(null)
@@ -52,9 +53,12 @@ export default function StudentExams({ me, fetchMe }: FeatureProps) {
                 {exams?.map((exam) => (
                     <>
                         <div className="exam" onClick={() => setCurrent(exam)}>
-                            <div className="flex flex-col items-start justify-between">
-                                <p className="max-w-100 truncate">{exam.title}</p>
-                                <p className="max-w-100 truncate opacity-70">{exam.subject}</p>
+                            <div className="flex flex-row">
+                                <SubjectIcon icon={exam.subject_icon} />
+                                <div className="flex flex-col items-start justify-between">
+                                    <p className="max-w-100 truncate">{exam.title}</p>
+                                    <p className="max-w-100 truncate opacity-70">{exam.subject}</p>
+                                </div>
                             </div>
                             <div className="flex flex-col items-start justify-between">
                                 <p>{formatUnixDate(exam.date, getLanguage(me)?.key || "en-US")}</p>

@@ -68,6 +68,7 @@ type UngradedHomeworkSubmissionSummary struct {
 	HomeworkID      int32  `json:"homework_id"`
 	HomeworkTitle   string `json:"title"`
 	Subject         string `json:"subject"`
+	SubjectIcon     string `json:"subject_icon"`
 	StudentID       int32  `json:"student_id"`
 	FirstName       string `json:"first_name"`
 	LastName        string `json:"last_name"`
@@ -119,6 +120,7 @@ func convertUngradedHomeworkSubmission(row db_queries.GetTeacherUngradedHomework
 		HomeworkID:      row.HomeworkID,
 		HomeworkTitle:   row.HomeworkTitle,
 		Subject:         row.Subject,
+		SubjectIcon:     row.SubjectIcon,
 		StudentID:       row.StudentID,
 		FirstName:       row.FirstName,
 		LastName:        row.LastName,

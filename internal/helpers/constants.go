@@ -59,6 +59,8 @@ var sniffedMIMEs = map[FileCategory][]string{
 	},
 }
 
+var Icons []string
+
 const SLIDING_WINDOW_LUA = `
 local key = KEYS[1]
 local now = tonumber(ARGV[1])

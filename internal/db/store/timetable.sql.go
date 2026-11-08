@@ -114,16 +114,17 @@ func (q *Queries) CreateBellScheduleType(ctx context.Context, arg CreateBellSche
 }
 
 const createCustomSubject = `-- name: CreateCustomSubject :execrows
-INSERT INTO custom_subjects (school_id, subject_name) VALUES ($1, $2)
+INSERT INTO custom_subjects (school_id, subject_name, icon) VALUES ($1, $2, $3)
 `
 
 type CreateCustomSubjectParams struct {
 	SchoolID    int32
 	SubjectName string
+	Icon        string
 }
 
 func (q *Queries) CreateCustomSubject(ctx context.Context, arg CreateCustomSubjectParams) (int64, error) {
-	result, err := q.db.Exec(ctx, createCustomSubject, arg.SchoolID, arg.SubjectName)
+	result, err := q.db.Exec(ctx, createCustomSubject, arg.SchoolID, arg.SubjectName, arg.Icon)
 	if err != nil {
 		return 0, err
 	}
@@ -411,17 +412,23 @@ func (q *Queries) EditBellScheduleType(ctx context.Context, arg EditBellSchedule
 }
 
 const editCustomSubject = `-- name: EditCustomSubject :execrows
-UPDATE custom_subjects SET subject_name = $1 WHERE school_id = $2 AND id = $3
+UPDATE custom_subjects SET subject_name = $1, icon = $2 WHERE school_id = $3 AND id = $4
 `
 
 type EditCustomSubjectParams struct {
 	SubjectName string
+	Icon        string
 	SchoolID    int32
 	ID          int32
 }
 
 func (q *Queries) EditCustomSubject(ctx context.Context, arg EditCustomSubjectParams) (int64, error) {
-	result, err := q.db.Exec(ctx, editCustomSubject, arg.SubjectName, arg.SchoolID, arg.ID)
+	result, err := q.db.Exec(ctx, editCustomSubject,
+		arg.SubjectName,
+		arg.Icon,
+		arg.SchoolID,
+		arg.ID,
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -750,12 +757,13 @@ func (q *Queries) ReadBellScheduleType(ctx context.Context, schoolID int32) ([]R
 }
 
 const readCustomSubject = `-- name: ReadCustomSubject :many
-SELECT id, subject_name FROM custom_subjects WHERE school_id = $1 ORDER BY id
+SELECT id, subject_name, icon FROM custom_subjects WHERE school_id = $1 ORDER BY id
 `
 
 type ReadCustomSubjectRow struct {
 	ID          int32
 	SubjectName string
+	Icon        string
 }
 
 func (q *Queries) ReadCustomSubject(ctx context.Context, schoolID int32) ([]ReadCustomSubjectRow, error) {
@@ -767,7 +775,7 @@ func (q *Queries) ReadCustomSubject(ctx context.Context, schoolID int32) ([]Read
 	var items []ReadCustomSubjectRow
 	for rows.Next() {
 		var i ReadCustomSubjectRow
-		if err := rows.Scan(&i.ID, &i.SubjectName); err != nil {
+		if err := rows.Scan(&i.ID, &i.SubjectName, &i.Icon); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -951,7 +959,8 @@ SELECT
     teach.last_name AS teacher_last_name,
     COALESCE(lcs.id, 0) AS class_subjects_id,
     COALESCE(hw.id, 0) AS homework_id,
-    COALESCE(ex.id, 0) AS exam_id
+    COALESCE(ex.id, 0) AS exam_id,
+    COALESCE(sub.icon, cs.icon) AS subject_icon
 FROM base_schedule b
 JOIN generate_series(CAST($1 AS date), CAST($2 AS date), interval '1 day') AS d(actual_date)
     ON EXTRACT(ISODOW FROM d.actual_date) = b.day_of_week
@@ -1051,6 +1060,7 @@ type ReadMyRealTimeTableRow struct {
 	ClassSubjectsID    int32
 	HomeworkID         int64
 	ExamID             int64
+	SubjectIcon        string
 }
 
 func (q *Queries) ReadMyRealTimeTable(ctx context.Context, arg ReadMyRealTimeTableParams) ([]ReadMyRealTimeTableRow, error) {
@@ -1087,6 +1097,7 @@ func (q *Queries) ReadMyRealTimeTable(ctx context.Context, arg ReadMyRealTimeTab
 			&i.ClassSubjectsID,
 			&i.HomeworkID,
 			&i.ExamID,
+			&i.SubjectIcon,
 		); err != nil {
 			return nil, err
 		}
@@ -1118,7 +1129,8 @@ SELECT
     teach.last_name AS teacher_last_name,
     COALESCE(lcs.id, 0) AS class_subjects_id,
     COALESCE(hw.id, 0) AS homework_id,
-    COALESCE(ex.id, 0) AS exam_id
+    COALESCE(ex.id, 0) AS exam_id,
+    COALESCE(sub.icon, cs.icon) AS subject_icon
 FROM base_schedule b
 JOIN generate_series(CAST($1 AS date), CAST($2 AS date), interval '1 day') AS d(actual_date)
     ON EXTRACT(ISODOW FROM d.actual_date) = b.day_of_week
@@ -1225,6 +1237,7 @@ type ReadRealTimeTableRow struct {
 	ClassSubjectsID    int32
 	HomeworkID         int64
 	ExamID             int64
+	SubjectIcon        string
 }
 
 func (q *Queries) ReadRealTimeTable(ctx context.Context, arg ReadRealTimeTableParams) ([]ReadRealTimeTableRow, error) {
@@ -1261,6 +1274,7 @@ func (q *Queries) ReadRealTimeTable(ctx context.Context, arg ReadRealTimeTablePa
 			&i.ClassSubjectsID,
 			&i.HomeworkID,
 			&i.ExamID,
+			&i.SubjectIcon,
 		); err != nil {
 			return nil, err
 		}

@@ -264,13 +264,15 @@ CREATE TABLE bell_schedule (
 CREATE TABLE subjects (
     id SERIAL PRIMARY KEY,
     subject_name TEXT NOT NULL,
+    icon VARCHAR(43) NOT NULL,
     code TEXT
 );
 
 CREATE TABLE custom_subjects (
     id SERIAL PRIMARY KEY,
     school_id INT NOT NULL REFERENCES schools (id),
-    subject_name TEXT NOT NULL
+    subject_name TEXT NOT NULL,
+    icon VARCHAR(43) NOT NULL
 );
 
 CREATE TABLE groups (

@@ -19,6 +19,7 @@ type RequestWithID struct {
 type HomeworkSummary struct {
 	ID                 int64  `json:"id"`
 	Subject            string `json:"subject"`
+	SubjectIcon        string `json:"subject_icon"`
 	SubjectCode        string `json:"subject_code"`
 	TeacherLastName    string `json:"teacher_last_name"`
 	TeacherFirstName   string `json:"teacher_first_name"`
@@ -38,6 +39,7 @@ type HomeworkSummary struct {
 type AbsenceSummary struct {
 	ID               int64       `json:"id"`
 	Subject          string      `json:"subject"`
+	SubjectIcon      string      `json:"subject_icon"`
 	SubjectCode      string      `json:"subject_code"`
 	TeacherLastName  string      `json:"teacher_last_name"`
 	TeacherFirstName string      `json:"teacher_first_name"`
@@ -56,6 +58,7 @@ type AbsenceSummary struct {
 type ExamSummary struct {
 	ID               int64  `json:"id"`
 	Subject          string `json:"subject"`
+	SubjectIcon      string `json:"subject_icon"`
 	SubjectCode      string `json:"subject_code"`
 	TeacherLastName  string `json:"teacher_last_name"`
 	TeacherFirstName string `json:"teacher_first_name"`
@@ -70,6 +73,7 @@ type ExamSummary struct {
 type GradeSummary struct {
 	ID               int64  `json:"id"`
 	Subject          string `json:"subject"`
+	SubjectIcon      string `json:"subject_icon"`
 	SubjectCode      string `json:"subject_code"`
 	TeacherLastName  string `json:"teacher_last_name"`
 	TeacherFirstName string `json:"teacher_first_name"`
@@ -84,6 +88,7 @@ type GradeSummary struct {
 type FinalGradeSummary struct {
 	ID               int64  `json:"id"`
 	Subject          string `json:"subject"`
+	SubjectIcon      string `json:"subject_icon"`
 	SubjectCode      string `json:"subject_code"`
 	TeacherLastName  string `json:"teacher_last_name"`
 	TeacherFirstName string `json:"teacher_first_name"`
@@ -100,12 +105,14 @@ type SubjectSummary struct {
 	TeacherLastName  string `json:"teacher_last_name"`
 	GroupID          int32  `json:"group_id"`
 	GroupName        string `json:"group_name"`
+	Icon             string `json:"icon"`
 }
 
 func convertGrade(row db_queries.GetStudentGradesRow) GradeSummary {
 	return GradeSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
+		SubjectIcon:      row.SubjectIcon,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -122,6 +129,7 @@ func convertGradeBySubject(row db_queries.GetStudentGradesBySubjectRow) GradeSum
 	return GradeSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
+		SubjectIcon:      row.SubjectIcon,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -138,6 +146,7 @@ func convertFinalGrade(row db_queries.GetStudentFinalGradesRow) FinalGradeSummar
 	return FinalGradeSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
+		SubjectIcon:      row.SubjectIcon,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -150,6 +159,7 @@ func convertAbsence(row db_queries.GetStudentAbsencesRow) AbsenceSummary {
 	return AbsenceSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
+		SubjectIcon:      row.SubjectIcon,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherFirstName: row.TeacherFirstName.String,
 		TeacherLastName:  row.TeacherLastName.String,
@@ -170,6 +180,7 @@ func convertHomework(row db_queries.GetStudentHomeworkRow) HomeworkSummary {
 	return HomeworkSummary{
 		ID:                 row.ID,
 		Subject:            row.Subject,
+		SubjectIcon:        row.SubjectIcon,
 		SubjectCode:        row.SubjectCode.String,
 		TeacherLastName:    row.TeacherLastName,
 		TeacherFirstName:   row.TeacherFirstName,
@@ -191,6 +202,7 @@ func convertHomeworkByID(row db_queries.GetStudentHomeworkByIDRow) HomeworkSumma
 	return HomeworkSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
+		SubjectIcon:      row.SubjectIcon,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -207,6 +219,7 @@ func convertExams(row db_queries.GetStudentExamsRow) ExamSummary {
 	return ExamSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
+		SubjectIcon:      row.SubjectIcon,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -223,6 +236,7 @@ func convertExam(row db_queries.GetStudentExamRow) ExamSummary {
 	return ExamSummary{
 		ID:               row.ID,
 		Subject:          row.Subject,
+		SubjectIcon:      row.SubjectIcon,
 		SubjectCode:      row.SubjectCode.String,
 		TeacherLastName:  row.TeacherLastName,
 		TeacherFirstName: row.TeacherFirstName,
@@ -245,6 +259,7 @@ func convertSubject(row db_queries.GetStudentSubjectsRow) SubjectSummary {
 		TeacherFirstName: row.TeacherFirstName,
 		GroupID:          row.GroupID,
 		GroupName:        row.GroupName,
+		Icon:             row.Icon,
 	}
 }
 
