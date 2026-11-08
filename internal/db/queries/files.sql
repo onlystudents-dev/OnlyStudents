@@ -1,3 +1,9 @@
+-- name: GetMyFiles :many
+SELECT type, size, original_name, uuid, created_at FROM files WHERE account_uuid = $1;
+
+-- name: GetTotalFileSize :one
+SELECT COALESCE(SUM(size), 0)::BIGINT FROM files WHERE account_uuid = $1;
+
 -- name: UploadFile :execrows
 INSERT INTO files (account_uuid, type, size, original_name, uuid, created_at) VALUES($1, $2, $3, $4, $5, now());
 

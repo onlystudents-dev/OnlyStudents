@@ -53,6 +53,55 @@ func (q *Queries) GetFile(ctx context.Context, uuid pgtype.UUID) (GetFileRow, er
 	return i, err
 }
 
+const getMyFiles = `-- name: GetMyFiles :many
+SELECT type, size, original_name, uuid, created_at FROM files WHERE account_uuid = $1
+`
+
+type GetMyFilesRow struct {
+	Type         string
+	Size         int64
+	OriginalName pgtype.Text
+	Uuid         pgtype.UUID
+	CreatedAt    pgtype.Date
+}
+
+func (q *Queries) GetMyFiles(ctx context.Context, accountUuid pgtype.UUID) ([]GetMyFilesRow, error) {
+	rows, err := q.db.Query(ctx, getMyFiles, accountUuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetMyFilesRow
+	for rows.Next() {
+		var i GetMyFilesRow
+		if err := rows.Scan(
+			&i.Type,
+			&i.Size,
+			&i.OriginalName,
+			&i.Uuid,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTotalFileSize = `-- name: GetTotalFileSize :one
+SELECT COALESCE(SUM(size), 0)::BIGINT FROM files WHERE account_uuid = $1
+`
+
+func (q *Queries) GetTotalFileSize(ctx context.Context, accountUuid pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, getTotalFileSize, accountUuid)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const uploadFile = `-- name: UploadFile :execrows
 INSERT INTO files (account_uuid, type, size, original_name, uuid, created_at) VALUES($1, $2, $3, $4, $5, now())
 `

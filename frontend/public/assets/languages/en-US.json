@@ -190,12 +190,15 @@
         "TITLE": "Title",
         "DESCRIPTION": "Description",
         "DELETE": "Delete",
+        "FILES": "Files",
+        "FILE_DELETED": "File deleted successfully!",
         "DELETED": "Successfully deleted",
         "SURE?": "You sure you wanna delete that?",
         "NAME": "Name",
         "ICON": "Icon"
     },
     "errors": {
+        "INSUFFICIENT_ACCOUNT_STORAGE": "You are out of storage for this account. Go to the files tab, and delete some uploaded files, or contact the administrator to increase the limit.",
         "NOT_FOUND": "Oops! That doesn't exist. Please try again.",
         "FILE_TOO_BIG": "The file you tried to upload is too large. Please try again.",
         "MISSING_FILE": "Oops! You forgot to upload a file!",
