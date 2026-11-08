@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
+	"strconv"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
@@ -32,7 +33,7 @@ type StatusData struct {
 	LastName          string             `json:"last_name"`
 	EmailAddress      string             `json:"email_address"`
 	EmailVerified     bool               `json:"email_verified"`
-	Permissions       []string           `json:"permissions"`
+	Permissions       map[int32][]string `json:"permissions"`
 	Preferences       Preferences        `json:"preferences"`
 	Children          []ChildrenData     `json:"children"`
 	SchoolMemberships []SchoolMembership `json:"school_memberships"`
@@ -187,6 +188,22 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			})
 		}
 
+		permissions := make(map[int32][]string)
+
+		raw, ok := teacher.Permissions.(map[string]any)
+		if ok {
+			for schoolID, perms := range raw {
+				id, err := strconv.ParseInt(schoolID, 10, 32)
+				if err != nil {
+					continue
+				}
+
+				for _, perm := range perms.([]any) {
+					permissions[int32(id)] = append(permissions[int32(id)], perm.(string))
+				}
+			}
+		}
+
 		status_data = StatusData{
 			Role:              session_data.Role,
 			AccountID:         session_data.AccountID,
@@ -196,7 +213,7 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			EmailVerified:     account.EmailVerified,
 			Preferences:       preferences,
 			SchoolMemberships: school_memberships_data,
-			Permissions:       teacher.Permissions,
+			Permissions:       permissions,
 			Children:          []ChildrenData{},
 		}
 

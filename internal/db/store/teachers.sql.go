@@ -50,14 +50,22 @@ const getTeacher = `-- name: GetTeacher :one
 SELECT
     t.id, t.phone_number, t.birth_first_name, t.birth_last_name, t.birth_date, t.birth_city, t.birth_country, t.permament_address, t.temporary_address, t.first_name, t.last_name,
     COALESCE(
-            array_agg(pt.name) FILTER (WHERE pt.id IS NOT NULL),
-            ARRAY[]::text[]
-    )::text[] AS permissions
+            (
+                SELECT jsonb_object_agg(school_id, permissions)
+                FROM (
+                         SELECT
+                             p.school_id,
+                             array_agg(pt.name) AS permissions
+                         FROM permissions p
+                                  JOIN permission_type pt ON pt.id = p.permission_id
+                         WHERE p.teacher_id = t.id
+                         GROUP BY p.school_id
+                     ) sp
+            ),
+            '{}'::jsonb
+    ) AS permissions
 FROM teachers t
-         LEFT JOIN permissions p ON p.teacher_id = t.id
-         LEFT JOIN permission_type pt ON pt.id = p.permission_id
 WHERE t.id = $1
-GROUP BY t.id
 `
 
 type GetTeacherRow struct {
@@ -72,7 +80,7 @@ type GetTeacherRow struct {
 	TemporaryAddress string
 	FirstName        string
 	LastName         string
-	Permissions      []string
+	Permissions      interface{}
 }
 
 func (q *Queries) GetTeacher(ctx context.Context, id int32) (GetTeacherRow, error) {
