@@ -28,6 +28,7 @@
         "GRADES": "Grades",
         "EXAMS": "Exams",
         "HOMEWORK": "Homework",
+        "GROUPS": "Groups",
         "SUBMISSION": "Submission",
         "NO_SUBMISSION": "Not submitted yet.",
         "GIVEN_REASON": "Given Reason",

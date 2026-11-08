@@ -116,10 +116,10 @@ VALUES (1, 1, 1, 1, 2),
        (1, 4, 1, 1, 2),
        (1, 5, 1, 1, 1);
 
--- permission_type ids: 1 = PRINCIPAL, 2 = MANAGE_TIMETABLES
 INSERT INTO permissions (school_id, teacher_id, permission_id)
 VALUES (1, 1, 1),
-       (2, 1, 2);
+       (2, 1, 2),
+       (1, 1, 4);
 
 INSERT INTO teacher_school (teacher_id, school_id)
 VALUES (1, 1),

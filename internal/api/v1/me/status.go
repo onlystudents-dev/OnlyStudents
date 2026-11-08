@@ -32,6 +32,7 @@ type StatusData struct {
 	LastName          string             `json:"last_name"`
 	EmailAddress      string             `json:"email_address"`
 	EmailVerified     bool               `json:"email_verified"`
+	Permissions       []string           `json:"permissions"`
 	Preferences       Preferences        `json:"preferences"`
 	Children          []ChildrenData     `json:"children"`
 	SchoolMemberships []SchoolMembership `json:"school_memberships"`
@@ -195,6 +196,7 @@ func GetStatusData(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) (*StatusD
 			EmailVerified:     account.EmailVerified,
 			Preferences:       preferences,
 			SchoolMemberships: school_memberships_data,
+			Permissions:       teacher.Permissions,
 			Children:          []ChildrenData{},
 		}
 

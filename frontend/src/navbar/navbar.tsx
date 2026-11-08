@@ -1,6 +1,14 @@
 import "./navbar.css";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faHouse, faHouseChimney, faPenToSquare, faStar, faStopwatch, faTable} from "@fortawesome/free-solid-svg-icons";
+import {
+    faHouse,
+    faHouseChimney,
+    faPenToSquare,
+    faPeopleGroup,
+    faStar,
+    faStopwatch,
+    faTable
+} from "@fortawesome/free-solid-svg-icons";
 import Button from "../util/button/button.tsx";
 import type {Me} from "../types/api.ts";
 import {getKey} from "../util/language.ts";
@@ -19,6 +27,7 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
         timetable: faTable,
         grades: faStar,
         exams: faPenToSquare,
+        groups: faPeopleGroup,
     }
 
     const links = [

@@ -23,4 +23,7 @@ export const features = {
         student: lazy(() => import("./ui/student/absences.tsx")),
         guardian: lazy(() => import("./ui/guardian/absences.tsx"))
     },
+    groups: {
+        teacher: lazy(() => import("./ui/teacher/groups.tsx"))
+    }
 }

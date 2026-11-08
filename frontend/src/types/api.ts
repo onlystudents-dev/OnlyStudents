@@ -9,6 +9,7 @@ export type Me = {
     email_verified: boolean,
     preferences: Preferences,
     school_memberships: SchoolMembership[],
+    permissions?: string[],
     children?: GuardianChildren[],
 }
 

@@ -41,6 +41,7 @@ export default function Layout({ me, fetchMe, setMe, reload }: LayoutProps) {
             case "/absences": return byFeature("absences")
             case "/grades": return byFeature("grades")
             case "/exams": return byFeature("exams")
+            case "/groups": return me.permissions?.includes("MANAGE_GROUPS") && byFeature("groups")
             default: return null
         }
     }
