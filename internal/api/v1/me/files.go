@@ -16,16 +16,62 @@ import (
 
 const (
 	KiB = 1 << 10
+	MiB = 1 << 20
 )
 
-type GetFileRequest struct {
-	file_uuid string
+type DeleteFileRequest struct {
+	FileUUID string `json:"file_uuid"`
+}
+
+type File struct {
+	Type            string `json:"type"`
+	Size            int64  `json:"size"`
+	HasOriginalName bool   `json:"has_original_name"`
+	OriginalName    string `json:"original_name"`
+	Uuid            string `json:"uuid"`
+	CreatedAt       int64  `json:"created_at"`
+}
+
+func GetMyFiles(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
+	sessionData, ok := c.Locals("session").(helpers.SessionData)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
+	}
+
+	accountUuid, err := uuid.Parse(sessionData.AccountUUID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	queries := db_queries.New(pool)
+
+	my_files, err := queries.GetMyFiles(c.Context(), pgtype.UUID{Bytes: accountUuid, Valid: true})
+
+	summaries := []File{}
+
+	for _, file := range my_files {
+		summaries = append(summaries, File{
+			Type:            file.Type,
+			Size:            file.Size,
+			HasOriginalName: file.OriginalName.Valid,
+			OriginalName:    file.OriginalName.String,
+			Uuid:            file.Uuid.String(),
+			CreatedAt:       file.CreatedAt.Time.Unix(),
+		})
+	}
+
+	return c.JSON(summaries)
 }
 
 func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2.Storage) error {
 	sessionData, ok := c.Locals("session").(helpers.SessionData)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "INVALID_SESSION"})
+	}
+
+	accountUuid, err := uuid.Parse(sessionData.AccountUUID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
 	file, err := c.FormFile("file")
@@ -54,18 +100,28 @@ func FileUpload(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
+	queries := db_queries.New(pool)
+
+	total_file_size, err := queries.GetTotalFileSize(c.Context(), pgtype.UUID{Bytes: accountUuid, Valid: true})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+	}
+
+	if (total_file_size+file.Size)/MiB >= helpers.GetInt64EnvFallback("USER_STORAGE_LIMIT", 500, 100000) {
+		return c.Status(fiber.StatusInsufficientStorage).JSON(fiber.Map{"error": "INSUFFICIENT_ACCOUNT_STORAGE"})
+	}
+
 	s2_put_err := s2_client.Put(c.Context(), s2.NewObjectReader(fileUuid.String(), file_reader, uint64(min(file.Size, math.MaxInt64)))) // #nosec G115 -- value clamped to <= max, which fits uint64
 	if s2_put_err != nil {
 		slog.Error("file provider put failed", "s2_put_err", s2_put_err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
-	accountUuid, err := uuid.Parse(sessionData.AccountUUID)
-	if err != nil {
+	accountUuid, uuid_err := uuid.Parse(sessionData.AccountUUID)
+	if uuid_err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
 	}
 
-	queries := db_queries.New(pool)
 	rows_changed, err := queries.UploadFile(c.Context(), db_queries.UploadFileParams{
 		AccountUuid:  pgtype.UUID{Bytes: accountUuid, Valid: true},
 		Type:         string(cat),
@@ -113,7 +169,8 @@ func FileDelete(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2
 	})
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "SERVER_ERROR"})
+		error_code, status_code := helpers.MapDBError(err)
+		return c.Status(status_code).JSON(fiber.Map{"error": error_code})
 	}
 
 	// forbidden because deletefile matches based on account uuid, and if its the wrong one, changed rows will be 0
@@ -131,7 +188,7 @@ func FileDelete(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2
 }
 
 func FetchFile(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2.Storage) error {
-	file_uuid := c.Params("file_uuid", "")
+	file_uuid := c.Params("file_uuid", "") // NOTE: in the URL param its :file_uuid, do not use body
 	_, err := uuid.Parse(file_uuid)
 
 	if err != nil {
@@ -153,7 +210,7 @@ func FetchFile(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client, s2_client s2.
 }
 
 func GetFile(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	file_uuid_str := c.Params("file_uuid", "")
+	file_uuid_str := c.Params("file_uuid", "") // NOTE: in the URL param its :file_uuid, do not use body
 
 	file_uuid, err := uuid.Parse(file_uuid_str)
 

@@ -48,6 +48,15 @@ export type Theme = {
     colors: Record<string, string>,
 }
 
+export type File = {
+    type: string,
+    size: number,
+    has_original_name: boolean,
+    original_name: string,
+    uuid: string,
+    created_at: number
+}
+
 export type Lesson = {
     actual_date: number,
     term_id: number,

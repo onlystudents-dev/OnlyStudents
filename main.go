@@ -81,11 +81,7 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 		}),
 		"files": fiber.Map{
 			helpers.RoutesGroupMWKey: []fiber.Handler{authLimit, auth},
-			":file_uuid": fiber.Map{
-				fiber.MethodGet:    func(c fiber.Ctx) error { return meapi.GetFile(c, pool, rdb) },
-				fiber.MethodDelete: func(c fiber.Ctx) error { return meapi.FileDelete(c, pool, rdb, s2_client) },
-			},
-			fiber.MethodPost: func(c fiber.Ctx) error { return meapi.FileUpload(c, pool, rdb, s2_client) },
+			fiber.MethodPost:         func(c fiber.Ctx) error { return meapi.FileUpload(c, pool, rdb, s2_client) },
 		},
 		"uploads/:file_uuid": helpers.Get(func(c fiber.Ctx) error { return meapi.FetchFile(c, pool, rdb, s2_client) }),
 		"admin_token_login": helpers.Post([]fiber.Handler{
@@ -149,6 +145,13 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 			"verify_email_confirm": helpers.Post([]fiber.Handler{forgetLimit,
 				func(c fiber.Ctx) error { return meapi.VerifyEmailConfirm(c, pool, rdb) }}),
 			"status": helpers.Get(func(c fiber.Ctx) error { return meapi.Status(c, pool, rdb) }),
+			"files": fiber.Map{
+				fiber.MethodGet: func(c fiber.Ctx) error { return meapi.GetMyFiles(c, pool, rdb) },
+				":file_uuid": fiber.Map{
+					fiber.MethodGet:    func(c fiber.Ctx) error { return meapi.GetFile(c, pool, rdb) },
+					fiber.MethodDelete: func(c fiber.Ctx) error { return meapi.FileDelete(c, pool, rdb, s2_client) },
+				},
+			},
 
 			"change_password": fiber.Map{
 				helpers.RoutesGroupMWKey: []fiber.Handler{authLimit},

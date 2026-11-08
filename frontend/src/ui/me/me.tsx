@@ -1,11 +1,12 @@
 import "./me.css";
-import {isTimeFormat, type Me, type Preferences, type Theme} from "../../types/api.ts";
+import {isTimeFormat, type File, type Me, type Preferences, type Theme} from "../../types/api.ts";
 import Button, {DropdownConfig} from "../../util/sidebar/config.tsx";
 import {
     faAddressCard, faCalendarDays, faClock,
-    faEnvelope, faFloppyDisk, faLanguage,
+    faEnvelope, faFile, faFloppyDisk, faLanguage,
     faLock, faPaintRoller, faPaperPlane,
     faRightFromBracket, faRotateLeft, faTable,
+    faTrash,
     faUser,
     faUserLock
 } from "@fortawesome/free-solid-svg-icons";
@@ -20,11 +21,12 @@ import Save from "../../util/save/save.tsx";
 import {applyTheme, getAutoTheme} from "../../util/theme.ts";
 import Sidebar from "../../util/sidebar/sidebar.tsx";
 import type {Dispatch, StateUpdater} from "preact/hooks";
-import {getTimeFormat} from "../../util/time.ts";
+import {formatUnixDate, getTimeFormat} from "../../util/time.ts";
 import {postJSON} from "../../util/api.tsx";
 import { opaqueReauth, opaqueRekey, type OpaqueReauthResult} from "../../auth/opaque.ts";
 import type { Bytes } from "../../util/crypto/keys.ts";
 import type {FetchMe} from "../../types/props.ts";
+import { formatFileSize } from "../../util/files.ts";
 
 type Options = Pick<Preferences, "lang" | "time_format" | "theme" | "timetable_display" | "timetable_next">
 
@@ -33,8 +35,9 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
     const [loading, setLoading] = useState(false)
 
     const [themes, setThemes] = useState<Theme[] | null>(null)
+    const [myFiles, setMyFiles] = useState<File[] | null>(null)
 
-    const [active, setActive] = useState<"appearance" | "user" | "security">("appearance")
+    const [active, setActive] = useState<"appearance" | "user" | "security" | "files">("appearance")
 
     const [cancelled, setCancelled] = useState(false)
     const [email, setEmail] = useState(me.email_address)
@@ -69,6 +72,11 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
         void fetch("/api/v1/themes").then(async (response) => {
             const json = await response.json() as Theme[]
             setThemes(json)
+        })
+
+        void fetch("/api/v1/me/files").then(async (response) => {
+            const json = await response.json() as File[]
+            setMyFiles(json)
         })
     }, [])
 
@@ -182,6 +190,22 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
                                         </Config>
                                     </>
                                 )
+                            case "files":
+                                return (
+                                    <>
+                                        {myFiles?.map((myFile) => (
+                                            <div className="config">
+                                                <a href={`/uploads/${myFile.uuid}`} target="_blank" rel="noopener" className="grow">
+                                                    <p>
+                                                        <FontAwesomeIcon icon={faFile} /> {myFile.has_original_name ? myFile.original_name : myFile.uuid} ({formatFileSize(myFile.size)}) | Uploaded at: {formatUnixDate(myFile.created_at, getLanguage(me)?.key || "en-US") }
+                                                    </p>
+                                                </a>
+                                                <Button className="action-button hover:text-(--wrong-color)" icon={faTrash}
+                                                        text={getKey("DELETE")} onClick={() => deleteFile(myFile.uuid)} />
+                                            </div>
+                                        ))}
+                                    </>
+                                )
                             default:
                                 return null
                         }
@@ -193,6 +217,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
                 <Button onClick={() => setActive("appearance")} icon={faUser} text={getKey("APPEARANCE_SETTINGS")} />
                 <Button onClick={() => setActive("user")} icon={faUser} text={getKey("USER_SETTINGS")} />
                 <Button onClick={() => setActive("security")} icon={faLock} text={getKey("SECURITY")} />
+                <Button onClick={() => setActive("files")} icon={faFile} text={getKey("FILES")} />
                 <Button onClick={logout} className="text-(--wrong-color)" icon={faRightFromBracket} text={getKey("LOGOUT")} />
             </Sidebar>
         </>
@@ -226,6 +251,24 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
         if (diff.lang !== undefined) reload()
         if (diff.theme !== undefined) applyTheme(diff.theme)
         return true
+    }
+
+    async function deleteFile(file_uuid: string) {
+        await busy(async () => {
+            const response = await fetch(`/api/v1/me/files/${file_uuid}`, {
+                method: "DELETE"
+            })
+
+            if (response.status !== 200) {
+                toast.error(await fromResponse(response))
+            } else {
+                await fetch("/api/v1/me/files").then(async (response) => {
+                    const json = await response.json() as File[]
+                    setMyFiles(json)
+                })
+                toast.success(getKey("FILE_DELETED"))
+            }
+        })
     }
 
     async function sendEmail() {
