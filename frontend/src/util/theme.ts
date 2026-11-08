@@ -9,6 +9,6 @@ export function getTheme(me: Me): string {
 }
 
 export function applyTheme(arg: Me | string) {
-    const theme = typeof arg === "string" ? arg ? arg : getAutoTheme() : getTheme(arg); // spaghetti
-    document.documentElement.setAttribute('data-theme', theme);
+    const theme = typeof arg === "string" ? arg ? arg : getAutoTheme() : getTheme(arg) // spaghetti
+    document.documentElement.setAttribute('data-theme', theme)
 }

@@ -29,36 +29,36 @@ export default function Login({ finished, z = 148 }: {finished?: () => void, z?:
     const [remaining, updateRemaining] = useCountdown()
 
     const login = useCallback(async () => {
-      if (red || wrong || remaining || !id || !password) return
-      setWaiting(true)
-      try {
-          const res = await opaqueLogin({ userId: Number(id), role, password });
-          switch (res.status) {
-              case "ok":
-                  localStorage.removeItem("child_id")
-                  localStorage.removeItem("school_id")
-                  localStorage.removeItem("user")
-                  if (finished !== undefined) {
-                      finished()
-                  } else {
-                      location.reload()
-                  }
-                  break
-              case "wrong":
-                  toast.error(getKey("WRONG_CREDENTIALS"))
-                  setWrong(true)
-                  break
-              case "ratelimited":
-                  toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)))
-                  updateRemaining(res.retryAfter)
-                  break
-              case "error":
-                  toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED"))
-                  break
-          }
-      } finally {
-          setWaiting(false)
-      }
+        if (red || wrong || remaining || !id || !password) return
+        setWaiting(true)
+        try {
+            const res = await opaqueLogin({ userId: Number(id), role, password });
+            switch (res.status) {
+                case "ok":
+                    localStorage.removeItem("child_id")
+                    localStorage.removeItem("school_id")
+                    localStorage.removeItem("user")
+                    if (finished !== undefined) {
+                        finished()
+                    } else {
+                        location.reload()
+                    }
+                    break
+                case "wrong":
+                    toast.error(getKey("WRONG_CREDENTIALS"))
+                    setWrong(true)
+                    break
+                case "ratelimited":
+                    toast.error(getKey("TOO_MANY_REQUESTS", String(res.retryAfter)))
+                    updateRemaining(res.retryAfter)
+                    break
+                case "error":
+                    toast.error(res.error ? getKey(res.error) : getKey("LOGIN_FAILED"))
+                    break
+            }
+        } finally {
+            setWaiting(false)
+        }
     }, [red, wrong, remaining, id, password, role, finished, updateRemaining])
 
     useEffect(() => {

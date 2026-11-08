@@ -25,23 +25,23 @@ export type Config = {
 }
 
 export const DEFAULT_CONFIG: Config = {
-  password: {
-    min_length: 12,
-    max_length: 256,
-    hibp_check_enabled: false,
-  },
-  e2ee: {
-    argon2_salt_len: 16,
-    argon2_time: 2,
-    argon2_memory: 65536,
-    argon2_threads: 1,
-    argon2_key_len: 32,
-    recovery_key_word_count: 24,
-  },
-  files: {
-    max_file_size: 10240,
-    allowed_exts: [".png", ".docx", ".odt", ".7z", ".odp", ".mp4", ".m4a", ".txt", ".epub", ".gz", ".webm", ".gif", ".ogg", ".opus", ".csv", ".mp3", ".zip", ".tgz", ".xls", ".ppt", ".jpg", ".webp", ".wav", ".flac", ".aac", ".pdf", ".doc", ".md", ".tar", ".tar.xz", ".bz2", ".xlsx", ".bmp", ".rtf", ".rar", ".pptx", ".avi", ".mkv", ".tar.gz", ".xz", ".ods", ".jpeg"]
-  }
+    password: {
+        min_length: 12,
+        max_length: 256,
+        hibp_check_enabled: false,
+    },
+    e2ee: {
+        argon2_salt_len: 16,
+        argon2_time: 2,
+        argon2_memory: 65536,
+        argon2_threads: 1,
+        argon2_key_len: 32,
+        recovery_key_word_count: 24,
+    },
+    files: {
+        max_file_size: 10240,
+        allowed_exts: [".png", ".docx", ".odt", ".7z", ".odp", ".mp4", ".m4a", ".txt", ".epub", ".gz", ".webm", ".gif", ".ogg", ".opus", ".csv", ".mp3", ".zip", ".tgz", ".xls", ".ppt", ".jpg", ".webp", ".wav", ".flac", ".aac", ".pdf", ".doc", ".md", ".tar", ".tar.xz", ".bz2", ".xlsx", ".bmp", ".rtf", ".rar", ".pptx", ".avi", ".mkv", ".tar.gz", ".xz", ".ods", ".jpeg"]
+    }
 }
 
 export async function getPasswordConfig(): Promise<PasswordConfig> {

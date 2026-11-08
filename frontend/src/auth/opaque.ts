@@ -101,8 +101,8 @@ export async function opaqueLogin(params: OpaqueParams): Promise<OpaqueLoginResu
         }
 
         return {
-          "status": "ok",
-          "exportKey": result.exportKey
+            "status": "ok",
+            "exportKey": result.exportKey
         }
     } catch {
         return failure()
@@ -193,7 +193,7 @@ export async function opaqueReauth(params: ChangePasswordParams): Promise<Opaque
             "crypto_grant_handle": crypto_grant_handle,
         }
     } catch {
-        return failure();
+        return failure()
     }
 }
 
@@ -235,6 +235,6 @@ export async function opaqueRekey(params: RekeyParams): Promise<OpaqueRekeyResul
             "status": "ok",
         }
     } catch {
-        return failure();
+        return failure()
     }
 }

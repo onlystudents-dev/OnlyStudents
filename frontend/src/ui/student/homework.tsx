@@ -26,27 +26,27 @@ export default function StudentHomework({ me, fetchMe }: FeatureProps) {
 }
 
 async function submitHomework(note: string, fileUUID: string, homework: HomeworkSummary, fetchMe: FetchMe) {
-  await fetchWithSchool(fetchMe, "/api/v1/me/student/homework/submit", {
-      method: "POST", body: JSON.stringify({
-          "file_uuid": fileUUID,
-          "homework_id": homework.id,
-          "note": note,
-      }),
-      headers: {
-          "Content-Type": "application/json",
-      },
-  }).then(async response => {
-      switch (response.status) {
-          case 200: {
-              location.reload()
-              break
-          }
+    await fetchWithSchool(fetchMe, "/api/v1/me/student/homework/submit", {
+        method: "POST", body: JSON.stringify({
+            "file_uuid": fileUUID,
+            "homework_id": homework.id,
+            "note": note,
+        }),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }).then(async response => {
+        switch (response.status) {
+            case 200: {
+                location.reload()
+                break
+            }
 
-          case 401: break
-          default:
-              toast.error(await fromResponse(response))
-      }
-  })
+            case 401: break
+            default:
+                toast.error(await fromResponse(response))
+        }
+    })
 }
 
 function Popup({ homework: hw, clear, fetchMe }: PopupProps) {

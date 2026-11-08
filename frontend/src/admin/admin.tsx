@@ -12,7 +12,7 @@ export default function Admin() {
 
     const [status, setStatus] = useState<AdminStatusData | null>(null)
 
-    function fetchStatus() {
+    async function fetchStatus() {
         return fetch("/api/v1/admin/status").then(async response => {
             if (response.status === 200) {
                 const json = await response.json() as AdminStatusData
