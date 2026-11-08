@@ -198,6 +198,7 @@ SELECT
     h.title,
     h.description,
     h.due_date,
+    h.assigned_date,
     h.created_at,
     COALESCE(cs.subject_name, s.subject_name) AS subject
 FROM homework h
@@ -221,6 +222,7 @@ type GetTeacherHomeworkRow struct {
 	Title           string
 	Description     pgtype.Text
 	DueDate         pgtype.Date
+	AssignedDate    pgtype.Date
 	CreatedAt       pgtype.Timestamptz
 	Subject         string
 }
@@ -234,6 +236,7 @@ func (q *Queries) GetTeacherHomework(ctx context.Context, arg GetTeacherHomework
 		&i.Title,
 		&i.Description,
 		&i.DueDate,
+		&i.AssignedDate,
 		&i.CreatedAt,
 		&i.Subject,
 	)

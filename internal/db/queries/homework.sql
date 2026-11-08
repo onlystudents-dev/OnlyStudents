@@ -81,6 +81,7 @@ SELECT
     h.title,
     h.description,
     h.due_date,
+    h.assigned_date,
     h.created_at,
     COALESCE(cs.subject_name, s.subject_name) AS subject
 FROM homework h

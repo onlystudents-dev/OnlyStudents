@@ -189,6 +189,7 @@ SELECT
     COALESCE(t.canceled, FALSE) AS canceled,
     teach.first_name AS teacher_first_name,
     teach.last_name AS teacher_last_name,
+    COALESCE(lcs.id, 0) AS class_subjects_id,
     COALESCE(hw.id, 0) AS homework_id,
     COALESCE(ex.id, 0) AS exam_id
 FROM base_schedule b
@@ -203,6 +204,24 @@ LEFT JOIN time_table t
 LEFT JOIN subjects sub ON sub.id = COALESCE(t.subject_id, b.subject_id)
 LEFT JOIN custom_subjects cs ON cs.id = COALESCE(t.custom_subject_id, b.custom_subject_id)
 LEFT JOIN teachers teach ON teach.id = COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id)
+LEFT JOIN LATERAL (
+    SELECT csub.id
+    FROM class_subjects csub
+    WHERE csub.school_id = COALESCE(t.school_id, b.school_id)
+      AND csub.class_id IN (
+          SELECT ss.class_id
+          FROM group_members gm
+          JOIN student_school ss ON ss.student_id = gm.student_id
+                                 AND ss.school_id = sqlc.arg(school_id)
+          WHERE gm.group_id = COALESCE(t.group_id, b.group_id)
+      )
+      AND CASE WHEN COALESCE(t.custom_subject, b.custom_subject)
+               THEN csub.custom_subject_id IS NOT DISTINCT FROM COALESCE(t.custom_subject_id, b.custom_subject_id)
+               ELSE csub.subject_id IS NOT DISTINCT FROM COALESCE(t.subject_id, b.subject_id)
+          END
+    ORDER BY csub.id
+    LIMIT 1
+) lcs ON TRUE
 LEFT JOIN LATERAL (
     SELECT h.id
     FROM homework h
@@ -269,6 +288,7 @@ SELECT
     COALESCE(t.canceled, FALSE) AS canceled,
     teach.first_name AS teacher_first_name,
     teach.last_name AS teacher_last_name,
+    COALESCE(lcs.id, 0) AS class_subjects_id,
     COALESCE(hw.id, 0) AS homework_id,
     COALESCE(ex.id, 0) AS exam_id
 FROM base_schedule b
@@ -283,6 +303,24 @@ LEFT JOIN time_table t
 LEFT JOIN subjects sub ON sub.id = COALESCE(t.subject_id, b.subject_id)
 LEFT JOIN custom_subjects cs ON cs.id = COALESCE(t.custom_subject_id, b.custom_subject_id)
 LEFT JOIN teachers teach ON teach.id = COALESCE(t.substitution_teacher_id, t.teacher_id, b.teacher_id)
+LEFT JOIN LATERAL (
+    SELECT csub.id
+    FROM class_subjects csub
+    WHERE csub.school_id = COALESCE(t.school_id, b.school_id)
+      AND csub.class_id IN (
+          SELECT ss.class_id
+          FROM group_members gm
+          JOIN student_school ss ON ss.student_id = gm.student_id
+                                 AND ss.school_id = sqlc.arg(school_id)
+          WHERE gm.group_id = COALESCE(t.group_id, b.group_id)
+      )
+      AND CASE WHEN COALESCE(t.custom_subject, b.custom_subject)
+               THEN csub.custom_subject_id IS NOT DISTINCT FROM COALESCE(t.custom_subject_id, b.custom_subject_id)
+               ELSE csub.subject_id IS NOT DISTINCT FROM COALESCE(t.subject_id, b.subject_id)
+          END
+    ORDER BY csub.id
+    LIMIT 1
+) lcs ON TRUE
 LEFT JOIN LATERAL (
     SELECT h.id
     FROM homework h

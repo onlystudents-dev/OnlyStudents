@@ -202,11 +202,11 @@ func GetGradeTypes(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 }
 
 func ListLessonGrades(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	id, err := strconv.ParseInt(c.Query("subject_id"), 10, 32)
+	id, err := strconv.ParseInt(c.Query("class_subjects_id"), 10, 32)
 	date, err2 := strconv.ParseInt(c.Query("actual_date"), 10, 64)
 	if err == nil && err2 == nil {
 		return helpers.TeacherSummary(c, pool, rdb, "LESSON_GRADES_BY_SUBJECT_CACHE_TTL", "", nil, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req bool, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherLessonGradesBySubjectRow, error) {
-			return helpers.CacheOrGetTeacherLessonGradesBySubject(ctx, rdb, queries, scope, ttl, int32(id), date) // #nosec G115 -- subject_id parsed with bitSize 32, fits int32
+			return helpers.CacheOrGetTeacherLessonGradesBySubject(ctx, rdb, queries, scope, ttl, int32(id), date) // #nosec G115 -- class_subjects_id parsed with bitSize 32, fits int32
 		}, convertLessonGradeBySubject)
 	}
 
