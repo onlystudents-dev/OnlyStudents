@@ -10,7 +10,8 @@ SELECT
     gt.weight AS weight,
     g.value,
     g.date,
-    g.note
+    g.note,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM grades g
          JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
          JOIN class_subjects csub ON csub.id = lg.class_subjects_id
@@ -35,7 +36,8 @@ SELECT
     gt.weight AS weight,
     g.value,
     g.date,
-    g.note
+    g.note,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM grades g
          JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
          JOIN class_subjects csub ON csub.id = lg.class_subjects_id
@@ -61,7 +63,8 @@ SELECT
     t.first_name AS teacher_first_name,
     t.last_name AS teacher_last_name,
     ter.name AS term,
-    fg.value
+    fg.value,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM final_grades fg
          JOIN class_subjects csub ON csub.id = fg.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id

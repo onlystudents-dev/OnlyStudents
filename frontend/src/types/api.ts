@@ -9,6 +9,7 @@ export type Me = {
     email_verified: boolean,
     preferences: Preferences,
     school_memberships: SchoolMembership[],
+    permissions?: Record<number, string[]>,
     children?: GuardianChildren[],
 }
 
@@ -67,6 +68,7 @@ export type Lesson = {
     has_custom_subject_id: boolean,
     custom_subject_id: number,
     subject_name: string,
+    subject_icon: string,
     has_exam_id: boolean,
     exam_id: number,
     has_homework_id: boolean,
@@ -115,6 +117,7 @@ export type Homework = {
 export type HomeworkSummary = {
     id: number,
     subject: string,
+    subject_icon: string,
     subject_code: string,
     teacher_last_name: string,
     teacher_first_name: string,
@@ -137,6 +140,7 @@ export type HomeworkSubmission = {
     homework_id: number,
     title: string,
     subject: string,
+    subject_icon: string,
     student_id: number,
     first_name: string,
     last_name: string,
@@ -152,6 +156,7 @@ export type HomeworkSubmission = {
 export type Exam = {
     id: number,
     subject: string,
+    subject_icon: string,
     subject_code: string,
     teacher_last_name: string,
     teacher_first_name: string,
@@ -166,6 +171,7 @@ export type Exam = {
 export type Grade = {
     id:	number,
     subject: string,
+    subject_icon: string,
     subject_code: string,
     teacher_last_name: string,
     teacher_first_name: string,
@@ -177,17 +183,6 @@ export type Grade = {
     note: string,
 }
 
-export type AddGrade = {
-    term_id: number,
-    grade_type_id: number,
-    value: number,
-    date: number,
-    has_note: boolean,
-    note: string,
-    student_id: number,
-    class_subjects_id: number,
-}
-
 export type GradeType = {
     name: string,
     weight: number,
@@ -197,6 +192,7 @@ export type Absence = {
     id: number,
     student_id: number,
     subject: string,
+    subject_icon: string,
     subject_code: string,
     teacher_last_name: string,
     teacher_first_name: string,
@@ -222,6 +218,7 @@ export type Subject = {
     teacher_last_name: string,
     group_id: number,
     group_name: string,
+    icon: string,
 }
 
 export type ForgetPasswordCheckResponse = {
@@ -247,4 +244,10 @@ export type Student = {
     id: number,
     first_name: string,
     last_name: string,
+}
+
+export type CustomSubject = {
+    id: number,
+    subject_name: string,
+    subject_icon: string,
 }

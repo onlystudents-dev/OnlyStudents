@@ -19,7 +19,8 @@ SELECT
     t.first_name AS teacher_first_name,
     t.last_name AS teacher_last_name,
     ter.name AS term,
-    fg.value
+    fg.value,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM final_grades fg
          JOIN class_subjects csub ON csub.id = fg.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
@@ -44,6 +45,7 @@ type GetStudentFinalGradesRow struct {
 	TeacherLastName  string
 	Term             string
 	Value            int16
+	SubjectIcon      string
 }
 
 func (q *Queries) GetStudentFinalGrades(ctx context.Context, arg GetStudentFinalGradesParams) ([]GetStudentFinalGradesRow, error) {
@@ -63,6 +65,7 @@ func (q *Queries) GetStudentFinalGrades(ctx context.Context, arg GetStudentFinal
 			&i.TeacherLastName,
 			&i.Term,
 			&i.Value,
+			&i.SubjectIcon,
 		); err != nil {
 			return nil, err
 		}
@@ -86,7 +89,8 @@ SELECT
     gt.weight AS weight,
     g.value,
     g.date,
-    g.note
+    g.note,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM grades g
          JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
          JOIN class_subjects csub ON csub.id = lg.class_subjects_id
@@ -117,6 +121,7 @@ type GetStudentGradesRow struct {
 	Value            int16
 	Date             pgtype.Date
 	Note             pgtype.Text
+	SubjectIcon      string
 }
 
 func (q *Queries) GetStudentGrades(ctx context.Context, arg GetStudentGradesParams) ([]GetStudentGradesRow, error) {
@@ -140,6 +145,7 @@ func (q *Queries) GetStudentGrades(ctx context.Context, arg GetStudentGradesPara
 			&i.Value,
 			&i.Date,
 			&i.Note,
+			&i.SubjectIcon,
 		); err != nil {
 			return nil, err
 		}
@@ -163,7 +169,8 @@ SELECT
     gt.weight AS weight,
     g.value,
     g.date,
-    g.note
+    g.note,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM grades g
          JOIN lesson_grades lg ON lg.id = g.lesson_grade_id
          JOIN class_subjects csub ON csub.id = lg.class_subjects_id
@@ -201,6 +208,7 @@ type GetStudentGradesBySubjectRow struct {
 	Value            int16
 	Date             pgtype.Date
 	Note             pgtype.Text
+	SubjectIcon      string
 }
 
 func (q *Queries) GetStudentGradesBySubject(ctx context.Context, arg GetStudentGradesBySubjectParams) ([]GetStudentGradesBySubjectRow, error) {
@@ -229,6 +237,7 @@ func (q *Queries) GetStudentGradesBySubject(ctx context.Context, arg GetStudentG
 			&i.Value,
 			&i.Date,
 			&i.Note,
+			&i.SubjectIcon,
 		); err != nil {
 			return nil, err
 		}

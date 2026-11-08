@@ -450,6 +450,15 @@ func main() {
 	}
 	// frontEND
 
+	// init icons
+	icons, err := os.ReadFile("frontend/dist/assets/fonts/material.json")
+	if err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(icons, &helpers.Icons); err != nil {
+		panic(err)
+	}
+
 	api := app.Group("/api/v1")
 	helpers.RegisterRoutes(api, buildRoutes(pool, rdb, opaque_server, s2Client))
 

@@ -370,9 +370,9 @@ func InvalidateCachedTeacher(ctx context.Context, rdb *redis.Client, scope Teach
 	rdb.Del(ctx, key)
 }
 
-func CacheOrGetTeacher(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) (db_queries.Teacher, error) {
+func CacheOrGetTeacher(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32) (db_queries.GetTeacherRow, error) {
 	key := fmt.Sprintf("teacher:%d", scope.TeacherID)
-	return CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.Teacher, error) {
+	return CacheOrGet(ctx, rdb, key, ttl, func() (db_queries.GetTeacherRow, error) {
 		return queries.GetTeacher(ctx, scope.TeacherID)
 	})
 }

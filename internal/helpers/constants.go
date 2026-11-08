@@ -19,6 +19,8 @@ var FrontendPaths = []string{
 	"/exams",
 	"/homework",
 	"/absences",
+	"/groups",
+	"/custom_subjects",
 }
 
 var sniffedMIMEs = map[FileCategory][]string{
@@ -56,6 +58,8 @@ var sniffedMIMEs = map[FileCategory][]string{
 		"application/zip", // pptx, odp sniff as zip
 	},
 }
+
+var Icons []string
 
 const SLIDING_WINDOW_LUA = `
 local key = KEYS[1]

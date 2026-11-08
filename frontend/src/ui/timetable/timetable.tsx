@@ -9,6 +9,7 @@ import { faAngleLeft } from "@fortawesome/free-solid-svg-icons/faAngleLeft";
 import React from "preact/compat";
 import {Badge} from "../../util/button/button.tsx";
 import type {FetchMe} from "../../types/props.ts";
+import SubjectIcon from "../../util/subject_icon.tsx";
 
 export const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
 
@@ -84,7 +85,10 @@ export function Timetable(props: TimetableProps) {
                             <div className="lesson" key={lesson.actual_date + lesson.lesson_num} onClick={() => setCurrent(lesson)}>
                                 <div className="flex flex-row justify-between items-start w-full gap-2">
                                     <div className="flex flex-col min-w-0">
-                                        <h1 className="rubik truncate">{lesson.subject_name}</h1>
+                                        <div className="flex flex-row">
+                                            <SubjectIcon icon={lesson.subject_icon} />
+                                            <h1 className="rubik truncate">{lesson.subject_name}</h1>
+                                        </div>
                                         <h2 className="poppins truncate">{[
                                             lesson.teacher_first_name != "" && lesson.teacher_first_name,
                                             lesson.teacher_last_name != "" && lesson.teacher_last_name,

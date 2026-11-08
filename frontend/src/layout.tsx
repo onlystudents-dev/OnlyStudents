@@ -41,8 +41,14 @@ export default function Layout({ me, fetchMe, setMe, reload }: LayoutProps) {
             case "/absences": return byFeature("absences")
             case "/grades": return byFeature("grades")
             case "/exams": return byFeature("exams")
+            case "/groups": return needsPerm("MANAGE_GROUPS") && byFeature("groups")
+            case "/custom_subjects": return needsPerm("MANAGE_CUSTOM_SUBJECT") && byFeature("custom_subjects")
             default: return null
         }
+    }
+
+    function needsPerm(perm: string) {
+        return !!me.permissions?.[Number(localStorage.getItem("school_id"))]?.includes(perm)
     }
 
     return (

@@ -15,7 +15,6 @@ const Login = lazy(() => import("./auth/login/login.tsx"))
 const RateLimit = lazy(() => import("./util/ratelimit.tsx"))
 
 export default function App({ reload }: {reload: () => void}) {
-
     const [ratelimit, setRatelimit] = useState<number>(-1)
     const [loading, setLoading] = useState(true)
     const [me, setMe] = useState<Me | null>(null)

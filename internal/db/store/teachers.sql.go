@@ -47,12 +47,45 @@ func (q *Queries) CreateTeacher(ctx context.Context, arg CreateTeacherParams) (i
 }
 
 const getTeacher = `-- name: GetTeacher :one
-SELECT id, phone_number, birth_first_name, birth_last_name, birth_date, birth_city, birth_country, permament_address, temporary_address, first_name, last_name FROM teachers WHERE id = $1
+SELECT
+    t.id, t.phone_number, t.birth_first_name, t.birth_last_name, t.birth_date, t.birth_city, t.birth_country, t.permament_address, t.temporary_address, t.first_name, t.last_name,
+    COALESCE(
+            (
+                SELECT jsonb_object_agg(school_id, permissions)
+                FROM (
+                         SELECT
+                             p.school_id,
+                             array_agg(pt.name) AS permissions
+                         FROM permissions p
+                                  JOIN permission_type pt ON pt.id = p.permission_id
+                         WHERE p.teacher_id = t.id
+                         GROUP BY p.school_id
+                     ) sp
+            ),
+            '{}'::jsonb
+    ) AS permissions
+FROM teachers t
+WHERE t.id = $1
 `
 
-func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
+type GetTeacherRow struct {
+	ID               int32
+	PhoneNumber      string
+	BirthFirstName   string
+	BirthLastName    string
+	BirthDate        pgtype.Date
+	BirthCity        string
+	BirthCountry     string
+	PermamentAddress string
+	TemporaryAddress string
+	FirstName        string
+	LastName         string
+	Permissions      interface{}
+}
+
+func (q *Queries) GetTeacher(ctx context.Context, id int32) (GetTeacherRow, error) {
 	row := q.db.QueryRow(ctx, getTeacher, id)
-	var i Teacher
+	var i GetTeacherRow
 	err := row.Scan(
 		&i.ID,
 		&i.PhoneNumber,
@@ -65,6 +98,7 @@ func (q *Queries) GetTeacher(ctx context.Context, id int32) (Teacher, error) {
 		&i.TemporaryAddress,
 		&i.FirstName,
 		&i.LastName,
+		&i.Permissions,
 	)
 	return i, err
 }

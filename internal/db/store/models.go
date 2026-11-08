@@ -122,6 +122,7 @@ type CustomSubject struct {
 	ID          int32
 	SchoolID    int32
 	SubjectName string
+	Icon        string
 }
 
 type Exam struct {
@@ -356,6 +357,7 @@ type StudentSchool struct {
 type Subject struct {
 	ID          int32
 	SubjectName string
+	Icon        string
 	Code        pgtype.Text
 }
 

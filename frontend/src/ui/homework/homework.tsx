@@ -6,6 +6,7 @@ import Skeleton from "../../util/skeleton/skeleton.tsx";
 import {useState} from "preact/hooks";
 import {useReloadSchoolStuff} from "../../util/school.ts";
 import type {FetchMe} from "../../types/props.ts";
+import SubjectIcon from "../../util/subject_icon.tsx";
 
 export type PopupProps = {
     homework: HomeworkSummary | HomeworkSubmission,
@@ -27,9 +28,12 @@ export default function Homework({ me, fetchMe, homework, Popup, reloadSchoolStu
                 {homework?.length === 0 ? <p className="text-4xl">{getKey(`NO_HOMEWORK.${me.role}`)}</p> : homework?.map((homework) => (
                     <>
                         <div className={`homework ${homework.due_date < now && "wrong"}`} onClick={() => setCurrent(homework)}>
-                            <div className="flex flex-col items-start justify-between">
-                                <p className="max-w-100 truncate">{homework.title}</p>
-                                <p className="max-w-100 truncate opacity-70">{homework.subject}</p>
+                            <div className="flex flex-row">
+                                <SubjectIcon icon={homework.subject_icon} />
+                                <div className="flex flex-col items-start justify-between">
+                                    <p className="max-w-100 truncate">{homework.title}</p>
+                                    <p className="max-w-100 truncate opacity-70">{homework.subject}</p>
+                                </div>
                             </div>
                             <div className="flex flex-col items-start justify-between">
                                 <p>{formatUnixDate(me.role === "teacher" ? homework.created_at : homework.due_date, getLanguage(me)?.key || "en-US")}</p>

@@ -23,7 +23,8 @@ SELECT
     e.date,
     e.start_time,
     e.end_time,
-    r.name AS room
+    r.name AS room,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM exams e
          JOIN class_subjects csub ON csub.id = e.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
@@ -58,6 +59,7 @@ type GetStudentExamRow struct {
 	StartTime        pgtype.Time
 	EndTime          pgtype.Time
 	Room             pgtype.Text
+	SubjectIcon      string
 }
 
 func (q *Queries) GetStudentExam(ctx context.Context, arg GetStudentExamParams) (GetStudentExamRow, error) {
@@ -75,6 +77,7 @@ func (q *Queries) GetStudentExam(ctx context.Context, arg GetStudentExamParams) 
 		&i.StartTime,
 		&i.EndTime,
 		&i.Room,
+		&i.SubjectIcon,
 	)
 	return i, err
 }
@@ -91,7 +94,8 @@ SELECT
     e.date,
     e.start_time,
     e.end_time,
-    r.name AS room
+    r.name AS room,
+    COALESCE(cs.icon, s.icon) AS subject_icon
 FROM exams e
          JOIN class_subjects csub ON csub.id = e.class_subjects_id
          LEFT JOIN subjects s ON s.id = csub.subject_id
@@ -125,6 +129,7 @@ type GetStudentExamsRow struct {
 	StartTime        pgtype.Time
 	EndTime          pgtype.Time
 	Room             pgtype.Text
+	SubjectIcon      string
 }
 
 func (q *Queries) GetStudentExams(ctx context.Context, arg GetStudentExamsParams) ([]GetStudentExamsRow, error) {
@@ -148,6 +153,7 @@ func (q *Queries) GetStudentExams(ctx context.Context, arg GetStudentExamsParams
 			&i.StartTime,
 			&i.EndTime,
 			&i.Room,
+			&i.SubjectIcon,
 		); err != nil {
 			return nil, err
 		}

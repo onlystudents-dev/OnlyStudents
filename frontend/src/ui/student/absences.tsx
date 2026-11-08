@@ -14,6 +14,7 @@ import Attachment from "../attachment.tsx";
 import SubmissionAttachmentInput from "../submission.tsx";
 import { toast } from "react-toastify";
 import type {FeatureProps, FetchMe} from "../../types/props.ts";
+import SubjectIcon from "../../util/subject_icon.tsx";
 
 async function submitAbsenceReason(note: string, fileUUID: string, absence: Absence, fetchMe: FetchMe): Promise<void> {
     await fetchWithSchool(fetchMe, "/api/v1/me/student/absences/submit_reason", {
@@ -83,16 +84,19 @@ export default function StudentAbsences({ me, fetchMe }: FeatureProps) {
                 </>}
                 {absences?.map((absence) => (
                     <div key={absence.id} className={`absence ${!absence.justified && "wrong"}`} onClick={() => setCurrent(absence)}>
-                        <div className="flex flex-col items-start justify-between">
-                          <p className="max-w-100 truncate">
-                              {absence.subject}
-                          </p>
-                          <p className="max-w-100 truncate opacity-70">
-                              {absence.reason_note != "" ? absence.reason_note :
-                               absence.file_name != "" ? absence.file_name :
-                               `${absence.teacher_first_name} ${absence.teacher_last_name} (${formatUnixDate(absence.date, getLanguage(me)?.key || "en-US")})`}
-                          </p>
+                        <div className="flex flex-row">
+                            <SubjectIcon icon={absence.subject_icon} />
+                            <div className="flex flex-col items-start justify-between">
+                              <p className="max-w-100 truncate">
+                                  {absence.subject}
+                              </p>
+                              <p className="max-w-100 truncate opacity-70">
+                                  {absence.reason_note != "" ? absence.reason_note :
+                                   absence.file_name != "" ? absence.file_name :
+                                   `${absence.teacher_first_name} ${absence.teacher_last_name} (${formatUnixDate(absence.date, getLanguage(me)?.key || "en-US")})`}
+                              </p>
 
+                            </div>
                         </div>
                         <div className="flex flex-col items-start justify-between">
 
