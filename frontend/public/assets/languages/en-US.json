@@ -188,7 +188,8 @@
         "NO_FILE_SELECTED": "No file selected",
         "TITLE": "Title",
         "DESCRIPTION": "Description",
-        "DELETE": "Delete"
+        "DELETE": "Delete",
+        "DELETED": "Successfully deleted"
     },
     "errors": {
         "NOT_FOUND": "Oops! That doesn't exist. Please try again.",
