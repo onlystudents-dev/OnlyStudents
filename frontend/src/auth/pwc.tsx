@@ -9,7 +9,7 @@ export default function PasswordCheck({ password, confirmPassword, setPassed }: 
     const [exposed, setExposed] = useState<boolean | null>(null)
 
     useEffect(() => {
-        void getPasswordConfig().then(setConfig);
+        void getPasswordConfig().then(setConfig)
     }, [])
 
     useEffect(() => {

@@ -106,6 +106,6 @@ export function selectStyles2(height: string = "100%", items: string = "end") {
 /* eslint-enable */
 
 export type Option = {
-    value: string;
-    label: string;
+    value: string,
+    label: string,
 }

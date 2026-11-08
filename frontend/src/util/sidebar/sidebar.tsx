@@ -79,5 +79,5 @@ export default function Sidebar({ children, me, className }: { children: Compone
                 })}
             </div>
         </div>
-    );
+    )
 }

@@ -35,7 +35,7 @@ export default function PasswordReset({ resetActive, onClose, role, setRole, id,
 
     useEffect(() => {
         void getPasswordConfig().then(setConfig)
-    }, []);
+    }, [])
 
     const submit = useCallback(async (url: string, body: unknown, onOk: (response: Response) => void) => {
         setWaiting(true)
@@ -72,77 +72,76 @@ export default function PasswordReset({ resetActive, onClose, role, setRole, id,
       setRecoveryKeyWrong(false)
 
       await submit("/api/v1/forget_password_check", { reset_code: code }, (checkResponse) => {
-        void (async () => {
-          let unwrappedMk: Bytes
-          try {
-            const json = await checkResponse.json() as ForgetPasswordCheckResponse
-
-            const params = parseParams(json.recovery_key_params)
-            const digest = recoveryDigest(recoveryKeyNormalized, b64decode(json.recovery_key_salt), {
-              ...DEFAULT_CONFIG.e2ee,
-              argon2_time: params.t,
-              argon2_memory: params.m,
-              argon2_threads: params.p,
-              argon2_key_len: params.dkLen,
-            })
-
-            if (!constantTimeEqual(digest, b64decode(json.recovery_key_hash))) {
-              setRecoveryKeyWrong(true)
-              return
-            }
-
-            unwrappedMk = await unwrapMK(
-              b64decode(json.wrapped_mk_recovery),
-              await deriveWrapKey(MnemonicSecrettoSeed(recoveryKeyNormalized), "recovery"),
-            )
-          } catch {
-            setRecoveryKeyWrong(true)
-            return
-          }
-
-          await submit("/api/v1/forget_password_confirm", { reset_code: code }, (confirmResponse) => {
-            void (async () => {
-              let json: ForgetPasswordConfirmResponse
-              let res: Awaited<ReturnType<typeof opaqueRegister>>
+          void (async () => {
+              let unwrappedMk: Bytes
               try {
-                json = await confirmResponse.json() as ForgetPasswordConfirmResponse
-                res = await opaqueRegister({ enrollToken: json.enroll_token, password })
+                  const json = await checkResponse.json() as ForgetPasswordCheckResponse
+
+                  const params = parseParams(json.recovery_key_params)
+                  const digest = recoveryDigest(recoveryKeyNormalized, b64decode(json.recovery_key_salt), {
+                      ...DEFAULT_CONFIG.e2ee,
+                      argon2_time: params.t,
+                      argon2_memory: params.m,
+                      argon2_threads: params.p,
+                      argon2_key_len: params.dkLen,
+                  })
+
+                  if (!constantTimeEqual(digest, b64decode(json.recovery_key_hash))) {
+                      setRecoveryKeyWrong(true)
+                      return
+                  }
+
+                  unwrappedMk = await unwrapMK(
+                      b64decode(json.wrapped_mk_recovery),
+                      await deriveWrapKey(MnemonicSecrettoSeed(recoveryKeyNormalized), "recovery"),
+                  )
               } catch {
-                toast.error(getKey("RECOVERY_FAILED"))
-                return
+                  setRecoveryKeyWrong(true)
+                  return
               }
 
-              if (res.status === "ok") {
-                try {
-                  const wrapped = await wrapMK(
-                    unwrappedMk,
-                    await deriveWrapKey(decodeOpaqueExportKey(res.exportKey), "password"),
-                  )
-                  await submit(
-                    "/api/v1/me/e2ee/rewrap",
-                    { crypto_grant_handle: json.crypto_grant_handle, wrapped_mk_password: b64encode(wrapped) },
-                    () => onClose(),
-                  )
-                } catch {
-                  toast.error(getKey("RECOVERY_FAILED"))
-                }
-                return
-              }
+              await submit("/api/v1/forget_password_confirm", { reset_code: code }, (confirmResponse) => {
+                  void (async () => {
+                      let json: ForgetPasswordConfirmResponse
+                      let res: Awaited<ReturnType<typeof opaqueRegister>>
+                      try {
+                          json = await confirmResponse.json() as ForgetPasswordConfirmResponse
+                          res = await opaqueRegister({ enrollToken: json.enroll_token, password })
+                      } catch {
+                          toast.error(getKey("RECOVERY_FAILED"))
+                          return
+                      }
 
-              if (res.status === "ratelimited") {
-                const retryAfter = getRetryAfter(confirmResponse)
-                toast.error(getKey("TOO_MANY_REQUESTS", String(retryAfter)))
-                updateRemaining(retryAfter)
-                return
-              }
+                      if (res.status === "ok") {
+                          try {
+                              const wrapped = await wrapMK(
+                                unwrappedMk,
+                                await deriveWrapKey(decodeOpaqueExportKey(res.exportKey), "password"),
+                              )
+                              await submit(
+                                "/api/v1/me/e2ee/rewrap",
+                                { crypto_grant_handle: json.crypto_grant_handle, wrapped_mk_password: b64encode(wrapped) },
+                                () => onClose(),
+                              )
+                          } catch {
+                              toast.error(getKey("RECOVERY_FAILED"))
+                          }
+                          return
+                      }
 
-              toast.error(res.error ? getKey(res.error) : getKey("RECOVERY_FAILED"))
-            })()
-          })
-        })()
+                      if (res.status === "ratelimited") {
+                          const retryAfter = getRetryAfter(confirmResponse)
+                          toast.error(getKey("TOO_MANY_REQUESTS", String(retryAfter)))
+                          updateRemaining(retryAfter)
+                          return
+                      }
+
+                      toast.error(res.error ? getKey(res.error) : getKey("RECOVERY_FAILED"))
+                  })()
+              })
+          })()
       })
-    }, [remaining, code, password, passed, confirmPassword, recoveryKey,
-        setRecoveryKeyWrong, updateRemaining, onClose, submit])
+    }, [remaining, code, password, passed, confirmPassword, recoveryKey, setRecoveryKeyWrong, updateRemaining, onClose, submit])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
