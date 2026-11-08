@@ -24,6 +24,7 @@ export default defineConfig([
             '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
             '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
             '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+            '@typescript-eslint/no-unused-vars': 'off',
         },
     },
 ])

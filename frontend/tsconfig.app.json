@@ -29,8 +29,6 @@
         "noFallthroughCasesInSwitch": true,
 
         /* Linting */
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
         "erasableSyntaxOnly": true,
         "allowSyntheticDefaultImports": true
     },
