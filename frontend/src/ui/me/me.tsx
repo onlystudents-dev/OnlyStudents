@@ -2,8 +2,8 @@ import "./me.css";
 import {isTimeFormat, type File, type Me, type Preferences, type Theme} from "../../types/api.ts";
 import Button, {DropdownConfig} from "../../util/sidebar/config.tsx";
 import {
-    faAddressCard, faCalendarDays, faClock,
-    faEnvelope, faFile, faFloppyDisk, faLanguage,
+    faAddressCard, faArrowRight, faCalendarDays, faClock,
+    faEnvelope, faFile, faFloppyDisk, faKey, faLanguage,
     faLock, faPaintRoller, faPaperPlane,
     faRightFromBracket, faRotateLeft, faTable,
     faTrash,
@@ -24,9 +24,11 @@ import type {Dispatch, StateUpdater} from "preact/hooks";
 import {formatUnixDate, getTimeFormat} from "../../util/time.ts";
 import {postJSON} from "../../util/api.tsx";
 import { opaqueReauth, opaqueRekey, type OpaqueReauthResult} from "../../auth/opaque.ts";
-import type { Bytes } from "../../util/crypto/keys.ts";
+import { b64encode, decodeOpaqueExportKey, deriveWrapKey, paramsToString, randomBytes, recoveryDigest, unwrapMK, wrapMK, type Bytes } from "../../util/crypto/keys.ts";
 import type {FetchMe} from "../../types/props.ts";
 import { formatFileSize } from "../../util/files.ts";
+import { generateMnemonicSecret, MnemonicSecrettoSeed } from "../../util/crypto/mnemonic.ts";
+import { getE2EEConfig } from "../../auth/config.ts";
 
 type Options = Pick<Preferences, "lang" | "time_format" | "theme" | "timetable_display" | "timetable_next">
 
@@ -53,6 +55,11 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [passed, setPassed] = useState(false)
+
+    const [recovery, setRecovery] = useState(false)
+    const [recoveryMnemonic, setRecoveryMnemonic] = useState("")
+    const [accepted, setAccepted] = useState(false)
+    const [revealed, setRevealed] = useState(false)
 
     const [options, setOptions] = useState<Options>({
         lang: me.preferences.lang,
@@ -172,7 +179,7 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
                             case "security":
                                 return (
                                     <>
-                                        <Config text={getKey("PASSWORD")} icon={faUserLock} value={""} key={"password"}>
+                                      <Config text={getKey("PASSWORD")} icon={faUserLock} value="" key={"password"}>
                                             {(close) => (<>
                                             <h1 className="text-center text-5xl font-bold mb-8 rubik w-140">{getKey("CHANGE_PASSWORD")}</h1>
 
@@ -187,7 +194,48 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
                                                 <FontAwesomeIcon icon={faFloppyDisk} /> {getKey("SAVE")}
                                             </button>
                                             </>)}
-                                        </Config>
+                                      </Config>
+                                      <Config text={getKey("RECOVERY_KEY_CHANGE")} icon={faKey} value="">
+                                          {(close) => {
+                                              const closeAndReset = () => {
+                                                  setRecovery(false)
+                                                  setRecoveryMnemonic("")
+                                                  setRevealed(false)
+                                                  setAccepted(false)
+                                                  setCurrentPassword("")
+                                                  close()
+                                              }
+
+                                              return (<>
+                                              <h1 className="text-center text-5xl font-bold mb-8 rubik w-140">{getKey("RECOVERY_KEY")}</h1>
+
+                                              {!recovery && <div className="flex flex-col gap-4 w-full">
+                                                <input type="password" placeholder={getKey("CURRENT_PASSWORD")} onChange={(e) => setCurrentPassword(e.currentTarget.value)} />
+                                              </div>}
+
+                                              {recovery && <div className="loginput fredoka">
+                                                  <div>{getKey("RECOVERY_KEY_SHOW")}</div>
+
+                                                  <div className={`recovery-key ${!revealed && "spoiler"}`} onClick={() => { if (revealed) void copyMnemonic(); else setRevealed(true); }} role="button" tabIndex={0} title={!revealed && getKey("RECOVERY_KEY_SHOW") || undefined}>
+                                                      {recoveryMnemonic}
+                                                  </div>
+
+                                                  <div>{getKey("RECOVERY_KEY_STORAGE")}</div>
+
+                                                  {revealed && <label className="recovery-accept">
+                                                      <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.currentTarget.checked)} />
+                                                      {getKey("RECOVERY_KEY_ACCEPT")}
+                                                  </label>}
+                                              </div>}
+
+                                              {recovery ? <button className={`absolute bottom-7 right-7 ${accepted ? "hover-shadow" : "opacity-50 cursor-not-allowed!"}`} onClick={() => { if (accepted) closeAndReset() }}>
+                                                  {getKey("CONTINUE")} <FontAwesomeIcon icon={faArrowRight} />
+                                              </button> : <button className="absolute bottom-7 right-7 hover-shadow" onClick={() => changeRecoveryKey()}>
+                                                  {getKey("RECOVERY_KEY_CHANGE")} <FontAwesomeIcon icon={faArrowRight} />
+                                              </button>}
+                                              </>)
+                                          }}
+                                      </Config>
                                     </>
                                 )
                             case "files":
@@ -204,6 +252,9 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
                                                         text={getKey("DELETE")} onClick={() => deleteFile(myFile.uuid)} />
                                             </div>
                                         ))}
+                                        {!myFiles && (
+                                          <p className="text-4xl">You have no files!</p>
+                                        )}
                                     </>
                                 )
                             default:
@@ -222,6 +273,11 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
             </Sidebar>
         </>
     )
+
+    async function copyMnemonic() {
+        await navigator.clipboard.writeText(recoveryMnemonic)
+        toast.success(getKey("COPIED"))
+    }
 
     async function busy(task: () => Promise<void>) {
         setWaiting(true)
@@ -269,6 +325,68 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
                 toast.success(getKey("FILE_DELETED"))
             }
         })
+    }
+
+    async function RecoveryKeyChange(reauth_res: OpaqueReauthResult, wrapped_mk_password: Bytes) {
+      if (reauth_res.status != "ok") {
+          return
+      }
+
+      const e2ee_config = await getE2EEConfig()
+      const mnemonic = generateMnemonicSecret(e2ee_config.recovery_key_word_count)
+
+      const unwrapped_mk = await unwrapMK(wrapped_mk_password, await deriveWrapKey(decodeOpaqueExportKey(reauth_res.exportKey), "password"))
+      const wrapped_mk_recovery = await wrapMK(unwrapped_mk, await deriveWrapKey(MnemonicSecrettoSeed(mnemonic), "recovery"))
+      const RecoveryKeySalt = randomBytes(e2ee_config.argon2_salt_len)
+
+      const recovery_key_change_res = await postJSON("/api/v1/me/e2ee/recovery_key_change", {
+          crypto_grant_handle: reauth_res.crypto_grant_handle,
+          wrapped_mk_recovery: b64encode(wrapped_mk_recovery),
+          recovery_key_hash: b64encode(recoveryDigest(mnemonic, RecoveryKeySalt, e2ee_config)),
+          recovery_key_salt: b64encode(RecoveryKeySalt),
+          recovery_key_params: paramsToString(e2ee_config)
+      })
+
+      if (!recovery_key_change_res.ok) {
+          toast.error(await fromResponse(recovery_key_change_res))
+          return
+      }
+
+      setRecoveryMnemonic(mnemonic)
+      setRecovery(true)
+    }
+
+    async function changeRecoveryKey() {
+      if (!currentPassword) return
+
+      await busy(async () => {
+        const cryptoRes = await fetch("/api/v1/me/e2ee/crypto")
+
+        if (!cryptoRes.ok) {
+          toast.error(await fromResponse(cryptoRes))
+          return
+        }
+
+        const { wrapped_mk_password: wrapped_mk_password_b64 } = await cryptoRes.json() as { wrapped_mk_password: string }
+        const bin = atob(wrapped_mk_password_b64)
+        const wrapped_mk_password = Uint8Array.from(bin, c => c.charCodeAt(0))
+        const reauth_res = await opaqueReauth({ password: currentPassword })
+
+        switch (reauth_res.status) {
+          case "ok":
+            await RecoveryKeyChange(reauth_res, wrapped_mk_password)
+            break
+          case "wrong":
+            toast.error(getKey("WRONG_CREDENTIALS"))
+            break
+          case "ratelimited":
+            toast.error(getKey("TOO_MANY_REQUESTS", String(reauth_res.retryAfter)))
+            break
+          case "error":
+            toast.error(reauth_res.error ? getKey(reauth_res.error) : getKey("LOGIN_FAILED"))
+            break
+        }
+      })
     }
 
     async function sendEmail() {
