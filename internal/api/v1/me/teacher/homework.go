@@ -4,7 +4,6 @@ import (
 	"context"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -173,15 +172,15 @@ func AddHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req AddHomeworkRequest) bool {
-			return req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
+			return req.Title == "" || (req.HasDescription && req.Description == "") || !helpers.ValidateUnix(req.DueDate) || (req.HasAssignedDate && !helpers.ValidateUnix(req.AssignedDate)) || (req.HasAssignedDate && (req.AssignedDate > req.DueDate)) || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req AddHomeworkRequest) (int64, error, func()) {
 			row_count, err := queries.TeacherAddHomework(ctx, db_queries.TeacherAddHomeworkParams{
 				TeacherID:       teacher_scope.TeacherID,
 				Title:           req.Title,
 				Description:     pgtype.Text{String: req.Description, Valid: req.HasDescription},
-				DueDate:         pgtype.Date{Time: time.Unix(req.DueDate, 0), Valid: true},
-				AssignedDate:    pgtype.Date{Time: time.Unix(req.AssignedDate, 0), Valid: req.HasAssignedDate},
+				DueDate:         helpers.UnixToDate(req.DueDate),
+				AssignedDate:    pgtype.Date{Time: helpers.NormalizeUnix(req.AssignedDate), Valid: req.HasAssignedDate},
 				ClassSubjectsID: req.ClassSubjectsID,
 				SchoolID:        teacher_scope.SchoolID,
 			})
@@ -209,7 +208,7 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb,
 		"",
 		func(req EditHomeworkRequest) bool {
-			return req.HomeworkID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || req.DueDate <= 0 || req.ClassSubjectsID <= 0
+			return req.HomeworkID <= 0 || req.Title == "" || (req.HasDescription && req.Description == "") || !helpers.ValidateUnix(req.DueDate) || req.ClassSubjectsID <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req EditHomeworkRequest) (int64, error, func()) {
 			row_count, err := queries.TeacherEditHomework(ctx, db_queries.TeacherEditHomeworkParams{
@@ -217,8 +216,8 @@ func EditHomework(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				ClassSubjectsID: req.ClassSubjectsID,
 				Title:           req.Title,
 				Description:     pgtype.Text{String: req.Description, Valid: req.HasDescription},
-				DueDate:         pgtype.Date{Time: time.Unix(req.DueDate, 0), Valid: true},
-				AssignedDate:    pgtype.Date{Time: time.Unix(req.AssignedDate, 0), Valid: req.HasAssignedDate},
+				DueDate:         helpers.UnixToDate(req.DueDate),
+				AssignedDate:    helpers.UnixToDate(req.AssignedDate),
 				SchoolID:        teacher_scope.SchoolID,
 				TeacherID:       teacher_scope.TeacherID,
 			})

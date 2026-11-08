@@ -329,8 +329,8 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 			params := db_queries.ReadRealTimeTableParams{
 				SchoolID:  int32(scope.SchoolID),
 				ClassID:   req.ClassId,
-				StartDate: pgtype.Date{Time: start, Valid: true},
-				EndDate:   pgtype.Date{Time: end, Valid: true},
+				StartDate: helpers.TimeToDate(start),
+				EndDate:   helpers.TimeToDate(end),
 			}
 
 			return queries.ReadRealTimeTable(c.Context(), params)
@@ -340,7 +340,7 @@ func ReadRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error
 func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb, "MANAGE_TIMETABLES",
 		func(req CreateRealTimeLessonRequest) bool {
-			return req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || req.ActualDate <= 0 || req.LessonNumber <= 0
+			return req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || !helpers.ValidateUnix(req.ActualDate) || req.LessonNumber <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req CreateRealTimeLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
@@ -363,7 +363,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 				CustomSubject:   req.IsCustomSubject,
 				CustomSubjectID: custom_subject_id,
 				SubjectID:       subject_id,
-				ActualDate:      pgtype.Date{Time: time.Unix(req.ActualDate, 0), Valid: true},
+				ActualDate:      helpers.UnixToDate(req.ActualDate),
 				LessonNum:       req.LessonNumber,
 			})
 
@@ -374,7 +374,7 @@ func CreateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 	return helpers.TeacherModify(c, pool, rdb, "MANAGE_TIMETABLES",
 		func(req UpdateRealTimeLessonRequest) bool {
-			return req.Id <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || req.ActualDate <= 0 || req.LessonNumber <= 0
+			return req.Id <= 0 || req.TeacherId <= 0 || req.RoomId <= 0 || req.DayOfWeek <= 0 || req.GroupId <= 0 || (req.IsCustomSubject == false && req.SubjectId <= 0) || (req.IsCustomSubject == true && req.CustomSubjectId <= 0) || !helpers.ValidateUnix(req.ActualDate) || req.LessonNumber <= 0
 		},
 		func(ctx context.Context, teacher_scope helpers.TeacherScope, queries *db_queries.Queries, req UpdateRealTimeLessonRequest) (int64, error, func()) {
 			var custom_subject_id pgtype.Int4
@@ -398,7 +398,7 @@ func UpdateRealTimeLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) er
 				CustomSubject:   req.IsCustomSubject,
 				CustomSubjectID: custom_subject_id,
 				SubjectID:       subject_id,
-				ActualDate:      pgtype.Date{Time: time.Unix(req.ActualDate, 0), Valid: true},
+				ActualDate:      helpers.UnixToDate(req.ActualDate),
 				LessonNum:       req.LessonNumber,
 			})
 

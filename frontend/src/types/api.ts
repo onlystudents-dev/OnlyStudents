@@ -63,6 +63,7 @@ export type Lesson = {
     custom_subject: boolean,
     has_subject_id: boolean,
     subject_id: number,
+    class_subjects_id: number,
     has_custom_subject_id: boolean,
     custom_subject_id: number,
     subject_name: string,

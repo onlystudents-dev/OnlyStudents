@@ -5,7 +5,6 @@ import (
 	"errors"
 	db_queries "onlystudents/internal/db/store"
 	"onlystudents/internal/helpers"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/hashicorp/go-set"
@@ -109,13 +108,15 @@ func convertAbsenceByLesson(row db_queries.GetTeacherAbsencesByLessonRow) Absenc
 }
 
 func ListAbsencesForLesson(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
-	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", func(req ListAbsencesByLessonRequest) bool { return req.ClassSubjectsID <= 0 || req.Date <= 0 }, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ListAbsencesByLessonRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesByLessonRow, error) {
-		return helpers.CacheOrGetTeacherAbsencesByLesson(ctx, rdb, queries, scope, ttl, req.ClassSubjectsID, pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true})
+	return helpers.TeacherSummary(c, pool, rdb, "ABSENCES_CACHE_TTL", "", func(req ListAbsencesByLessonRequest) bool {
+		return req.ClassSubjectsID <= 0 || !helpers.ValidateUnix(req.Date)
+	}, func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ListAbsencesByLessonRequest, scope helpers.TeacherScope, ttl int32) ([]db_queries.GetTeacherAbsencesByLessonRow, error) {
+		return helpers.CacheOrGetTeacherAbsencesByLesson(ctx, rdb, queries, scope, ttl, req.ClassSubjectsID, helpers.UnixToDate(req.Date))
 	}, convertAbsenceByLesson)
 }
 
 func ChangeAbsencesValidate(req ChangeAbsencesRequest) bool {
-	if req.Date <= 0 || req.ClassSubjectsID <= 0 || len(req.AbsenceChanges) == 0 {
+	if !helpers.ValidateUnix(req.Date) || req.ClassSubjectsID <= 0 || len(req.AbsenceChanges) == 0 {
 		return true
 	}
 
@@ -165,7 +166,7 @@ func ChangeAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 					changed_student_ids.Insert(rows[0])
 				case ChangeAdd:
 					row_count, err := queries.TeacherAddAbsence(ctx, db_queries.TeacherAddAbsenceParams{
-						Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
+						Date:            helpers.UnixToDate(req.Date),
 						Type:            string(*absence_change.AbsenceType),
 						Note:            pgtype.Text{String: "", Valid: false},
 						TeacherID:       teacher_scope.TeacherID,
@@ -182,7 +183,7 @@ func ChangeAbsences(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) error {
 				case ChangeUpdate:
 					rows, err := queries.TeacherEditAbsence(ctx, db_queries.TeacherEditAbsenceParams{
 						ID:              *absence_change.ID,
-						Date:            pgtype.Date{Time: time.Unix(req.Date, 0), Valid: true},
+						Date:            helpers.UnixToDate(req.Date),
 						Type:            string(*absence_change.AbsenceType),
 						Note:            pgtype.Text{String: "", Valid: false},
 						TeacherID:       teacher_scope.TeacherID,
