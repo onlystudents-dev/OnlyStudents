@@ -191,22 +191,21 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
                                     </>
                                 )
                             case "files":
-                                return (<>
-                                  {myFiles && myFiles.map((myFile) => (
-                                    <div className="config">
-                                      <a href={`/uploads/${myFile.uuid}`} target="_blank" rel="noopener" className="grow">
-                                        <p>
-                                          <FontAwesomeIcon icon={faFile} /> {myFile.has_original_name ? myFile.original_name : myFile.uuid} ({formatFileSize(myFile.size)}) | Uploaded at: {formatUnixDate(myFile.created_at, getLanguage(me)?.key || "en-US") }
-                                        </p>
-                                      </a>
-                                      <Button className="action-button hover:text-(--wrong-color)" icon={faTrash}
-                                              text={getKey("DELETE")} onClick={() => deleteFile(myFile.uuid)} />
-                                    </div>
-                                  ))}
-                                  {!myFiles && (
-                                    <div></div>
-                                  )}
-                                </>)
+                                return (
+                                    <>
+                                        {myFiles?.map((myFile) => (
+                                            <div className="config">
+                                                <a href={`/uploads/${myFile.uuid}`} target="_blank" rel="noopener" className="grow">
+                                                    <p>
+                                                        <FontAwesomeIcon icon={faFile} /> {myFile.has_original_name ? myFile.original_name : myFile.uuid} ({formatFileSize(myFile.size)}) | Uploaded at: {formatUnixDate(myFile.created_at, getLanguage(me)?.key || "en-US") }
+                                                    </p>
+                                                </a>
+                                                <Button className="action-button hover:text-(--wrong-color)" icon={faTrash}
+                                                        text={getKey("DELETE")} onClick={() => deleteFile(myFile.uuid)} />
+                                            </div>
+                                        ))}
+                                    </>
+                                )
                             default:
                                 return null
                         }
@@ -255,20 +254,21 @@ export default function Me({ me, fetchMe, setMe, reload }: {me: Me, fetchMe: Fet
     }
 
     async function deleteFile(file_uuid: string) {
-      await busy(async () => {
-        const response = await fetch(`/api/v1/me/files/${file_uuid}`, {
-          method: "DELETE"
+        await busy(async () => {
+            const response = await fetch(`/api/v1/me/files/${file_uuid}`, {
+                method: "DELETE"
+            })
+
+            if (response.status !== 200) {
+                toast.error(await fromResponse(response))
+            } else {
+                await fetch("/api/v1/me/files").then(async (response) => {
+                    const json = await response.json() as File[]
+                    setMyFiles(json)
+                })
+                toast.success(getKey("FILE_DELETED"))
+            }
         })
-        if (response.status !== 200) {
-          toast.error(await fromResponse(response))
-        } else {
-          await fetch("/api/v1/me/files").then(async (response) => {
-              const json = await response.json() as File[]
-              setMyFiles(json)
-          })
-          toast.success(getKey("FILE_DELETED"))
-        }
-      })
     }
 
     async function sendEmail() {

@@ -49,12 +49,12 @@ export type Theme = {
 }
 
 export type File = {
-  type: string,
-  size: number,
-  has_original_name: boolean,
-  original_name: string,
-  uuid: string,
-  created_at: number
+    type: string,
+    size: number,
+    has_original_name: boolean,
+    original_name: string,
+    uuid: string,
+    created_at: number
 }
 
 export type Lesson = {
