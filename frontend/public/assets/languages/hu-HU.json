@@ -29,6 +29,7 @@
         "EXAMS": "Dolgozatok",
         "HOMEWORK": "Házi feladatok",
         "GROUPS": "Csoportok",
+        "CUSTOM_SUBJECTS": "Egyedi tantárgyak",
         "SUBMISSION": "Beadott munka",
         "NO_SUBMISSION": "Még nincs beküldve.",
         "GIVEN_REASON": "Megadott Ok",
@@ -189,7 +190,8 @@
         "TITLE": "Title",
         "DESCRIPTION": "Leírás",
         "DELETE": "Törlés",
-        "DELETED": "Sikeresen kitörölve"
+        "DELETED": "Sikeresen kitörölve",
+        "SURE?": "Biztos ki akarod azt törölni?"
     },
     "errors": {
         "NOT_FOUND": "Upsz! Ez nem létezik. Kérem, próbálja újra.",

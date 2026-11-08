@@ -29,6 +29,7 @@
         "EXAMS": "Exams",
         "HOMEWORK": "Homework",
         "GROUPS": "Groups",
+        "CUSTOM_SUBJECTS": "Custom subjects",
         "SUBMISSION": "Submission",
         "NO_SUBMISSION": "Not submitted yet.",
         "GIVEN_REASON": "Given Reason",
@@ -189,7 +190,8 @@
         "TITLE": "Title",
         "DESCRIPTION": "Description",
         "DELETE": "Delete",
-        "DELETED": "Successfully deleted"
+        "DELETED": "Successfully deleted",
+        "SURE?": "You sure you wanna delete that?"
     },
     "errors": {
         "NOT_FOUND": "Oops! That doesn't exist. Please try again.",

@@ -750,7 +750,7 @@ func (q *Queries) ReadBellScheduleType(ctx context.Context, schoolID int32) ([]R
 }
 
 const readCustomSubject = `-- name: ReadCustomSubject :many
-SELECT id, subject_name FROM custom_subjects WHERE school_id = $1
+SELECT id, subject_name FROM custom_subjects WHERE school_id = $1 ORDER BY id
 `
 
 type ReadCustomSubjectRow struct {

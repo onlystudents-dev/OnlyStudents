@@ -1,6 +1,7 @@
 import "./navbar.css";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {
+    faBook,
     faHouse,
     faHouseChimney,
     faPenToSquare,
@@ -28,6 +29,7 @@ export default function Navbar({ me, path, navigate }: {me: Me, path: string, na
         grades: faStar,
         exams: faPenToSquare,
         groups: faPeopleGroup,
+        custom_subjects: faBook,
     }
 
     const links = [

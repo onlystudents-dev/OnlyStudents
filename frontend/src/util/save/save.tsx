@@ -31,11 +31,39 @@ export function getDifferences<T extends object>(options: T, defaults: T): Parti
     ) as Partial<T>
 }
 
-export default function Save<T extends Record<string, unknown>>({ options, setOptions, save }: {options: T, setOptions: (value: T) => void, save: (diff: Partial<T>, defaults: Partial<T>) => (boolean | Promise<boolean>)}) {
-    const [defaults, setDefaults] = React.useState<T>(options);
+export type SaveResult<T> = boolean | (keyof T)[]
+
+export default function Save<T extends Record<string, unknown>>({ options, setOptions, save }: { options: T, setOptions: (value: T) => void, save: (diff: Partial<T>, defaults: Partial<T>) => SaveResult<T> | Promise<SaveResult<T>> }) {
+    const [defaults, setDefaults] = React.useState<T>(options)
 
     const differences = getDifferences(options, defaults)
     const count = Object.keys(differences).length
+
+    async function handleSave() {
+        const result = await save(differences, defaults)
+
+        if (result === false) return
+
+        if (result === true) {
+            setDefaults({ ...options })
+            return
+        }
+
+        const failed = new Set(result.map(String))
+        const oldDefaults = defaults as Record<string, unknown>
+
+        const next = Object.fromEntries(
+            [...new Set([...Object.keys(options), ...Object.keys(defaults)])]
+                .flatMap(key => {
+                    if (failed.has(key)) {
+                        return Object.hasOwn(oldDefaults, key) ? [[key, oldDefaults[key]]] : []
+                    }
+                    return Object.hasOwn(options, key) ? [[key, options[key]]] : []
+                })
+        ) as T
+
+        setDefaults(next)
+    }
 
     return (
         <>
@@ -45,7 +73,7 @@ export default function Save<T extends Record<string, unknown>>({ options, setOp
                     <Button onClick={() => setOptions({ ...defaults })} className="breset">
                         {getKey("RESET")}
                     </Button>
-                    <Button onClick={async () => {if (!(await save(differences, defaults))) return; setDefaults({ ...options })}} className="bsave">
+                    <Button onClick={handleSave} className="bsave">
                         {getKey("SAVE")}
                     </Button>
                 </div>

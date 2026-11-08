@@ -119,7 +119,8 @@ VALUES (1, 1, 1, 1, 2),
 INSERT INTO permissions (school_id, teacher_id, permission_id)
 VALUES (1, 1, 1),
        (2, 1, 2),
-       (1, 1, 4);
+       (1, 1, 4),
+       (1, 1, 7);
 
 INSERT INTO teacher_school (teacher_id, school_id)
 VALUES (1, 1),

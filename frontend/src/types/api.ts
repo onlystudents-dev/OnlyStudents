@@ -249,3 +249,8 @@ export type Student = {
     first_name: string,
     last_name: string,
 }
+
+export type CustomSubject = {
+    id: number,
+    subject_name: string,
+}

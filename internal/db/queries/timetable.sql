@@ -39,7 +39,7 @@ UPDATE custom_subjects SET subject_name = $1 WHERE school_id = $2 AND id = $3;
 DELETE FROM custom_subjects WHERE school_id = $1 AND id = $2;
 
 -- name: ReadCustomSubject :many
-SELECT id, subject_name FROM custom_subjects WHERE school_id = $1;
+SELECT id, subject_name FROM custom_subjects WHERE school_id = $1 ORDER BY id;
 
 -- name: CreateRoom :execrows
 INSERT INTO rooms (school_id, name, capacity) VALUES ($1, $2, $3);

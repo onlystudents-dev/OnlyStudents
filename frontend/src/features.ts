@@ -25,5 +25,8 @@ export const features = {
     },
     groups: {
         teacher: lazy(() => import("./ui/teacher/groups.tsx"))
+    },
+    custom_subjects: {
+        teacher: lazy(() => import("./ui/teacher/custom_subjects.tsx"))
     }
 }

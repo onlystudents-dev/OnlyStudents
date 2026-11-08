@@ -36,6 +36,8 @@ export default function Groups({ me, fetchMe }: FeatureProps) {
     )
 
     async function deleteGroup(id: number) {
+        if (!confirm(getKey("SURE?"))) return
+
         const response = await fetchWithSchool(fetchMe, "/api/v1/me/teacher/timetable/group", {
             method: "DELETE",
             headers: {

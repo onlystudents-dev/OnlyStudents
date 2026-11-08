@@ -20,6 +20,7 @@ var FrontendPaths = []string{
 	"/homework",
 	"/absences",
 	"/groups",
+	"/custom_subjects",
 }
 
 var sniffedMIMEs = map[FileCategory][]string{
