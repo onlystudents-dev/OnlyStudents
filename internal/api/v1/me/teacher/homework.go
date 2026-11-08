@@ -58,6 +58,8 @@ type HomeworkSummary struct {
 	HasDescription  bool   `json:"has_description"`
 	Description     string `json:"description"`
 	DueDate         int64  `json:"due_date"`
+	AssignedDate    int64  `json:"assigned_date"`
+	HasAssignedDate bool   `json:"has_assigned_date"`
 	CreatedAt       int64  `json:"created_at"`
 }
 
@@ -140,6 +142,7 @@ func convertHomework(row db_queries.GetTeacherHomeworkRow) HomeworkSummary {
 		HasDescription:  row.Description.Valid,
 		Description:     row.Description.String,
 		DueDate:         row.DueDate.Time.Unix(),
+		AssignedDate:    row.AssignedDate.Time.Unix(),
 		CreatedAt:       row.CreatedAt.Time.Unix(),
 	}
 }

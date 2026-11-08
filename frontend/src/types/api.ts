@@ -107,6 +107,8 @@ export type Homework = {
     has_description: boolean,
     description: string,
     due_date: number,
+    assigned_date: number,
+    has_assigned_date: boolean,
     created_at: number,
 }
 

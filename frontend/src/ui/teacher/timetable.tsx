@@ -473,7 +473,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                                 if (!homework) return (
                                     <>
                                         <div className="border-(--txt-color) w-80 h-40 flex justify-center items-center border-2 rounded-2xl cursor-pointer text-5xl"
-                                             onClick={() => setHomework({ id: 0, due_date: new Date().getTime(), has_description: false, description: "", class_subjects_id: lesson.subject_id, subject: lesson.subject_name, title: "", created_at: new Date().getTime() })}>
+                                             onClick={() => setHomework({ id: 0, due_date: new Date().getTime(), has_description: false, description: "", class_subjects_id: lesson.class_subjects_id, subject: lesson.subject_name, title: "", created_at: new Date().getTime(), assigned_date: new Date().getTime(), has_assigned_date: false })}>
                                             +
                                         </div>
                                     </>
@@ -524,7 +524,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 },
                 body: JSON.stringify({
                     absence_changes: absencesChanges,
-                    class_subjects_id: lesson.subject_id,
+                    class_subjects_id: lesson.class_subjects_id,
                     date: lesson.actual_date
                 }),
             })
@@ -567,7 +567,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                     id: grade.id,
                     actual_date: lesson.actual_date,
                     group_id: lesson.group_id,
-                    class_subjects_id: lesson.subject_id,
+                    class_subjects_id: lesson.class_subjects_id,
                     title: grade.title,
                     description: grade.description,
                     type: grade.type,
@@ -580,7 +580,7 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
             }
         }
 
-        const lesson_grade_response = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/grades?actual_date=${lesson.actual_date}&subject_id=${lesson.subject_id}`)
+        const lesson_grade_response = await fetchWithSchool(fetchMe, `/api/v1/me/teacher/timetable/grades?actual_date=${lesson.actual_date}&class_subjects_id=${lesson.class_subjects_id}`)
         if (!lesson_grade_response.ok) {
             toast.error(await fromResponse(lesson_grade_response))
             return
@@ -628,9 +628,9 @@ function Popup({ lesson, rooms, groups, clear, fetchMe, me, lessonTimes }: Popup
                 has_description: !!homework?.description,
                 description: homework?.description,
                 due_date: homework?.due_date,
-                has_assigned_date: !!homework?.created_at,
-                assigned_date: homework?.created_at,
-                class_subjects_id: lesson.subject_id,
+                has_assigned_date: homework?.has_assigned_date,
+                assigned_date: homework?.assigned_date,
+                class_subjects_id: lesson.class_subjects_id,
                 file_uuid: file?.file_uuid,
             })
         })

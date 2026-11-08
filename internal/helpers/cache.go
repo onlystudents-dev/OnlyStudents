@@ -434,7 +434,7 @@ func InvalidateCachedTeacherLessonGradesBySubject(ctx context.Context, rdb *redi
 }
 
 func CacheOrGetTeacherLessonGradesBySubject(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, scope TeacherScope, ttl int32, id int32, date int64) ([]db_queries.GetTeacherLessonGradesBySubjectRow, error) {
-	key := fmt.Sprintf("teacher_lesson_grades:%d:%d", scope.TeacherID, id)
+	key := fmt.Sprintf("teacher_lesson_grades:%d:%d:%d", scope.TeacherID, id, date)
 	return CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.GetTeacherLessonGradesBySubjectRow, error) {
 		return queries.GetTeacherLessonGradesBySubject(ctx, db_queries.GetTeacherLessonGradesBySubjectParams{
 			TeacherID:  scope.TeacherID,

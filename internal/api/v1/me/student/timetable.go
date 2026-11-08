@@ -187,15 +187,11 @@ func ReadMyRealTimeTable(c fiber.Ctx, pool *pgxpool.Pool, rdb *redis.Client) err
 		},
 		func(ctx context.Context, rdb *redis.Client, queries db_queries.Queries, req ReadRealTimetableRequest, scope helpers.MeScope, ttl int32) ([]db_queries.ReadRealTimeTableRow, error) {
 			start, end := helpers.DateStringToTime(req.StartDate), helpers.DateStringToTime(req.EndDate)
-
-			key := fmt.Sprintf("real_timetable:%d:%d:%d:%d", scope.SchoolID, scope.StudentID, start.Unix(), end.Unix())
-			return helpers.CacheOrGet(ctx, rdb, key, ttl, func() ([]db_queries.ReadRealTimeTableRow, error) {
-				return queries.ReadRealTimeTable(ctx, db_queries.ReadRealTimeTableParams{
-					SchoolID:  scope.SchoolID,
-					ClassID:   scope.ClassID,
-					StartDate: helpers.TimeToDate(start),
-					EndDate:   helpers.TimeToDate(end),
-				})
+			return queries.ReadRealTimeTable(ctx, db_queries.ReadRealTimeTableParams{
+				SchoolID:  scope.SchoolID,
+				ClassID:   scope.ClassID,
+				StartDate: helpers.TimeToDate(start),
+				EndDate:   helpers.TimeToDate(end),
 			})
 		}, convertRealTimeTable)
 }

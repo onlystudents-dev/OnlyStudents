@@ -26,6 +26,7 @@ type TimetableLesson struct {
 	CustomSubject       bool   `json:"custom_subject"`
 	HasSubjectID        bool   `json:"has_subject_id"`
 	SubjectID           int32  `json:"subject_id"`
+	ClassSubjectsID     int32  `json:"class_subjects_id"`
 	HasCustomSubjectID  bool   `json:"has_custom_subject_id"`
 	CustomSubjectID     int32  `json:"custom_subject_id"`
 	SubjectName         string `json:"subject_name"`
@@ -65,6 +66,7 @@ func convertTimeTableLesson(row db_queries.ReadMyRealTimeTableRow) TimetableLess
 		CustomSubject:       row.CustomSubject,
 		HasSubjectID:        row.SubjectID.Valid,
 		SubjectID:           row.SubjectID.Int32,
+		ClassSubjectsID:     row.ClassSubjectsID,
 		HasCustomSubjectID:  row.CustomSubjectID.Valid,
 		CustomSubjectID:     row.CustomSubjectID.Int32,
 		SubjectName:         row.SubjectName,
