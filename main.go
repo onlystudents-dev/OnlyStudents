@@ -169,10 +169,13 @@ func buildRoutes(pool *pgxpool.Pool, rdb *redis.Client, opaque_server *opaque.Se
 					forgetLimit,
 					func(c fiber.Ctx) error { return meapi.E2EERewrap(c, pool, rdb) },
 				}),
-
 				"enroll": helpers.Post([]fiber.Handler{
 					forgetLimit,
 					func(c fiber.Ctx) error { return meapi.EnrollE2EE(c, pool, rdb) },
+				}),
+				"recovery_key_change": helpers.Post([]fiber.Handler{
+					forgetLimit,
+					func(c fiber.Ctx) error { return meapi.E2EERecoveryKeyChange(c, pool, rdb) },
 				}),
 			},
 

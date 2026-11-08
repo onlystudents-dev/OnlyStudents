@@ -195,7 +195,8 @@
         "DELETED": "Sikeresen kitörölve",
         "SURE?": "Biztos ki akarod azt törölni?",
         "NAME": "Név",
-        "ICON": "Ikon"
+        "ICON": "Ikon",
+        "RECOVERY_KEY_CHANGE": "Visszaállítási kulcs megváltoztatása"
     },
     "errors": {
         "INSUFFICIENT_ACCOUNT_STORAGE": "Nincs több tárhelye ezen a fiókon. Menjen a fájlok tabra a fiókjában, és töröljen pár fájlt, vagy vegye fel a kapcsolatot az adminisztrátorral.",
